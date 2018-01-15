@@ -166,6 +166,11 @@ namespace forth {
                             auto top(machine.popParameter());
                             machine.pushParameter(top.numValue != 0 ? 1 : 0);
                         });
+            addWord("+", [](Machine& machine) {
+                        auto top(machine.popParameter());
+                        auto lower(machine.popParameter());
+                        machine.pushParameter(top.numValue + lower.numValue);
+                    });
 
         }
     }

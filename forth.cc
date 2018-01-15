@@ -21,6 +21,9 @@ namespace forth {
     };
     union Datum {
         Datum() = default;
+        Datum(Integer x) : numValue(x) { }
+        Datum(Address x) : address(x) { }
+        Datum(Floating x) : fp(x) { }
         ~Datum() = default;
         Datum(const Datum& other);
         Integer numValue;
@@ -151,13 +154,6 @@ namespace forth {
                     return out;
                 });
     }
-    NativeMachineOperation integerBinaryOperation(std::function<Integer(const Datum&, const Datum&)> fn) noexcept {
-        return binaryOperation([fn](auto top, auto lower) {
-                    Datum out;
-                    out.numValue = fn(top, lower);
-                    return out;
-                });
-    }
     NativeMachineOperation unaryOperation(std::function<Datum(const Datum&)> fn) noexcept {
         return [fn](Machine& machine) {
             auto top(machine.popParameter());
@@ -168,13 +164,6 @@ namespace forth {
         return unaryOperation([fn](auto top) {
                     Datum out;
                     out.numValue = fn(top) ? 1 : 0;
-                    return out;
-                });
-    }
-    NativeMachineOperation unaryIntegerOperation(std::function<Integer(const Datum&)> fn) noexcept {
-        return unaryOperation([fn](auto top) {
-                    Datum out;
-                    out.numValue = fn(top);
                     return out;
                 });
     }
@@ -198,20 +187,28 @@ namespace forth {
             addWord("dup", [](Machine& machine) { machine.duplicateParameter(); });
             addWord("over", [](Machine& machine) { machine.placeOverParameter(); });
             addWord("swap", [](Machine& machine) { machine.swapParameters(); });
-            addWord("minus", unaryIntegerOperation([](auto top) { return -top.numValue; }));
-            addWord("abs", unaryIntegerOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
+            addWord("minus", unaryOperation([](auto top) { return -top.numValue; }));
+            addWord("abs", unaryOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
             addWord(",", [](Machine& machine) {
                             auto top(machine.popParameter());
                             machine.typeValue(Discriminant::Number, top);
                         });
             addWord("zero", unaryBooleanOperation([](auto top) { return top.numValue == 0; }));
             addWord("nonzero", unaryBooleanOperation([](auto top) { return top.numValue != 0; }));
-            addWord("+", integerBinaryOperation([](auto top, auto lower) { return top.numValue + lower.numValue; }));
-            addWord("*", integerBinaryOperation([](auto top, auto lower) { return top.numValue * lower.numValue; }));
-            addWord("-", integerBinaryOperation([](auto top, auto lower) { return lower.numValue - top.numValue; }));
-            addWord("/", integerBinaryOperation([](auto top, auto lower) { return lower.numValue / top.numValue; }));
-            addWord("mod", integerBinaryOperation([](auto top, auto lower) { return lower.numValue % top.numValue; }));
-
+            addWord("+", binaryOperation([](auto top, auto lower) { return top.numValue + lower.numValue; }));
+            addWord("*", binaryOperation([](auto top, auto lower) { return top.numValue * lower.numValue; }));
+            addWord("-", binaryOperation([](auto top, auto lower) { return lower.numValue - top.numValue; }));
+            addWord("/", binaryOperation([](auto top, auto lower) { return lower.numValue / top.numValue; }));
+            addWord("mod", binaryOperation([](auto top, auto lower) { return lower.numValue % top.numValue; }));
+            addWord("equal?", booleanBinaryOperation([](auto top, auto lower) { return lower.numValue == top.numValue; }));
+            addWord("<", booleanBinaryOperation([](auto top, auto lower) { return lower.numValue < top.numValue; }));
+            addWord(">", booleanBinaryOperation([](auto top, auto lower) { return lower.numValue > top.numValue; }));
+            addWord(">=", booleanBinaryOperation([](auto top, auto lower) { return lower.numValue >= top.numValue; }));
+            addWord("<=", booleanBinaryOperation([](auto top, auto lower) { return lower.numValue <= top.numValue; }));
+            addWord("+f", binaryOperation([](auto top, auto lower) { return top.fp + lower.fp; }));
+            addWord("*f", binaryOperation([](auto top, auto lower) { return top.fp * lower.fp; }));
+            addWord("-f", binaryOperation([](auto top, auto lower) { return lower.fp - top.fp; }));
+            addWord("/f", binaryOperation([](auto top, auto lower) { return lower.fp / top.fp; }));
         }
     }
     void Machine::addWord(DictionaryEntry* entry) {

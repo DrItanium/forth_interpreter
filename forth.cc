@@ -9,7 +9,12 @@ std::string readWord(std::istream& input) {
 int main() {
     auto execute = true;
     while (execute) {
-        
+        auto result = readWord(std::cin);
+        if (result == "quit") {
+            execute = false;
+        } else {
+            std::cout << "word: " << result << std::endl;
+        }
     }
     return 0;
 }

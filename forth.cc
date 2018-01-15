@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <limits>
+#include <sstream>
 
 namespace forth {
     using Address = uint32_t;
@@ -152,7 +153,24 @@ namespace forth {
             if (result == "quit") {
                 break;
             } else {
+                // attempt to parse integers first!
+                std::istringstream parseAttempt(result);
+                Integer tmpInt;
+                parseAttempt >> tmpInt;
+                if (!parseAttempt.fail()) {
+                    pushParameter(tmpInt);
+                    continue;
+                }
+                // then try floating point
+                parseAttempt.clear();
+                Floating tmpFloat;
+                parseAttempt >> tmpFloat;
+                if (!parseAttempt.fail()) {
+                    pushParameter(tmpFloat);
+                    continue;
+                }
                 auto& entry = lookupWord(result);
+                // check and see if were'
                 if (forth::Machine::isNullEntry(entry)) {
                     handleError(result, "?");
                     continue;

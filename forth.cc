@@ -24,9 +24,10 @@ namespace forth {
         Datum(Integer x) : numValue(x) { }
         Datum(Address x) : address(x) { }
         Datum(Floating x) : fp(x) { }
-        Datum(bool x) : address(x ? 1 : 0) { }
+        Datum(bool x) : truth() { }
         ~Datum() = default;
         Datum(const Datum& other);
+        bool truth;
         Integer numValue;
         Address address;
         Floating fp;
@@ -212,9 +213,14 @@ namespace forth {
             addWord(">=u", binaryOperation([](auto top, auto lower) { return lower.address >= top.address; }));
             addWord("<=u", binaryOperation([](auto top, auto lower) { return lower.address <= top.address; }));
             addWord("not", unaryOperation([](auto top) { return top.address == 0 ? 1 : 0; }));
-            addWord("and", binaryOperation([](auto top, auto lower) { return top.address && lower.address; }));
-            addWord("or", binaryOperation([](auto top, auto lower) { return top.address || lower.address; }));
-            addWord("xor", binaryOperation([](auto top, auto lower) { return top.address || lower.address; }));
+            addWord("and", binaryOperation([](auto top, auto lower) { return top.address & lower.address; }));
+            addWord("or", binaryOperation([](auto top, auto lower) { return top.address | lower.address; }));
+            addWord("xor", binaryOperation([](auto top, auto lower) { return top.address ^ lower.address; }));
+            addWord("land", binaryOperation([](auto top, auto lower) { return top.truth && lower.truth; }));
+            addWord("lor", binaryOperation([](auto top, auto lower) { return top.truth || lower.truth; }));
+            addWord("lxor", binaryOperation([](auto top, auto lower) { return top.truth ^ lower.truth; }));
+            addWord("implies", binaryOperation([](auto top, auto lower) { return (!top.truth) || lower.truth; }));
+
 
         }
     }

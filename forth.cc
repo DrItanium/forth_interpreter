@@ -24,6 +24,7 @@ namespace forth {
         Datum(Integer x) : numValue(x) { }
         Datum(Address x) : address(x) { }
         Datum(Floating x) : fp(x) { }
+        Datum(bool x) : address(x ? 1 : 0) { }
         ~Datum() = default;
         Datum(const Datum& other);
         Integer numValue;
@@ -147,25 +148,11 @@ namespace forth {
             machine.pushParameter(fn(top, lower));
         };
     }
-    NativeMachineOperation booleanBinaryOperation(std::function<bool(const Datum&, const Datum&)> fn) noexcept {
-        return binaryOperation([fn](auto top, auto lower) {
-                    Datum out;
-                    out.numValue = fn(top, lower) ? 1 : 0;
-                    return out;
-                });
-    }
     NativeMachineOperation unaryOperation(std::function<Datum(const Datum&)> fn) noexcept {
         return [fn](Machine& machine) {
             auto top(machine.popParameter());
             machine.pushParameter(fn(top));
         };
-    }
-    NativeMachineOperation unaryBooleanOperation(std::function<bool(const Datum&)> fn) noexcept {
-        return unaryOperation([fn](auto top) {
-                    Datum out;
-                    out.numValue = fn(top) ? 1 : 0;
-                    return out;
-                });
     }
     void Machine::initializeBaseDictionary() {
         if (!_initializedBaseDictionary) {
@@ -193,22 +180,42 @@ namespace forth {
                             auto top(machine.popParameter());
                             machine.typeValue(Discriminant::Number, top);
                         });
-            addWord("zero", unaryBooleanOperation([](auto top) { return top.numValue == 0; }));
-            addWord("nonzero", unaryBooleanOperation([](auto top) { return top.numValue != 0; }));
+            addWord("zero", unaryOperation([](auto top) { return top.numValue == 0; }));
+            addWord("nonzero", unaryOperation([](auto top) { return top.numValue != 0; }));
             addWord("+", binaryOperation([](auto top, auto lower) { return top.numValue + lower.numValue; }));
             addWord("*", binaryOperation([](auto top, auto lower) { return top.numValue * lower.numValue; }));
             addWord("-", binaryOperation([](auto top, auto lower) { return lower.numValue - top.numValue; }));
             addWord("/", binaryOperation([](auto top, auto lower) { return lower.numValue / top.numValue; }));
             addWord("mod", binaryOperation([](auto top, auto lower) { return lower.numValue % top.numValue; }));
-            addWord("equal?", booleanBinaryOperation([](auto top, auto lower) { return lower.numValue == top.numValue; }));
-            addWord("<", booleanBinaryOperation([](auto top, auto lower) { return lower.numValue < top.numValue; }));
-            addWord(">", booleanBinaryOperation([](auto top, auto lower) { return lower.numValue > top.numValue; }));
-            addWord(">=", booleanBinaryOperation([](auto top, auto lower) { return lower.numValue >= top.numValue; }));
-            addWord("<=", booleanBinaryOperation([](auto top, auto lower) { return lower.numValue <= top.numValue; }));
+            addWord("==", binaryOperation([](auto top, auto lower) { return lower.numValue == top.numValue; }));
+            addWord("<", binaryOperation([](auto top, auto lower) { return lower.numValue < top.numValue; }));
+            addWord(">", binaryOperation([](auto top, auto lower) { return lower.numValue > top.numValue; }));
+            addWord(">=", binaryOperation([](auto top, auto lower) { return lower.numValue >= top.numValue; }));
+            addWord("<=", binaryOperation([](auto top, auto lower) { return lower.numValue <= top.numValue; }));
             addWord("+f", binaryOperation([](auto top, auto lower) { return top.fp + lower.fp; }));
             addWord("*f", binaryOperation([](auto top, auto lower) { return top.fp * lower.fp; }));
             addWord("-f", binaryOperation([](auto top, auto lower) { return lower.fp - top.fp; }));
             addWord("/f", binaryOperation([](auto top, auto lower) { return lower.fp / top.fp; }));
+            addWord("==f", binaryOperation([](auto top, auto lower) { return lower.fp == top.fp; }));
+            addWord("<f", binaryOperation([](auto top, auto lower) { return lower.fp < top.fp; }));
+            addWord(">f", binaryOperation([](auto top, auto lower) { return lower.fp > top.fp; }));
+            addWord(">=f", binaryOperation([](auto top, auto lower) { return lower.fp >= top.fp; }));
+            addWord("<=f", binaryOperation([](auto top, auto lower) { return lower.fp <= top.fp; }));
+            addWord("+u", binaryOperation([](auto top, auto lower) { return top.address + lower.address; }));
+            addWord("*u", binaryOperation([](auto top, auto lower) { return top.address * lower.address; }));
+            addWord("-u", binaryOperation([](auto top, auto lower) { return lower.address - top.address; }));
+            addWord("/u", binaryOperation([](auto top, auto lower) { return lower.address / top.address; }));
+            addWord("modu", binaryOperation([](auto top, auto lower) { return lower.address % top.address; }));
+            addWord("==u", binaryOperation([](auto top, auto lower) { return lower.address == top.address; }));
+            addWord("<u", binaryOperation([](auto top, auto lower) { return lower.address < top.address; }));
+            addWord(">u", binaryOperation([](auto top, auto lower) { return lower.address > top.address; }));
+            addWord(">=u", binaryOperation([](auto top, auto lower) { return lower.address >= top.address; }));
+            addWord("<=u", binaryOperation([](auto top, auto lower) { return lower.address <= top.address; }));
+            addWord("not", unaryOperation([](auto top) { return top.address == 0 ? 1 : 0; }));
+            addWord("and", binaryOperation([](auto top, auto lower) { return top.address && lower.address; }));
+            addWord("or", binaryOperation([](auto top, auto lower) { return top.address || lower.address; }));
+            addWord("xor", binaryOperation([](auto top, auto lower) { return top.address || lower.address; }));
+
         }
     }
     void Machine::addWord(DictionaryEntry* entry) {

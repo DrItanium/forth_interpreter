@@ -116,6 +116,7 @@ namespace forth {
             void callSubroutine();
             void returnFromSubroutine();
             void addWord(DictionaryEntry* entry);
+            void addWord(const std::string& name, NativeMachineOperation op);
         private:
             void initializeBaseDictionary();
         private:
@@ -128,40 +129,43 @@ namespace forth {
             Stack<Datum> _parameter;
             bool _initializedBaseDictionary = false;
     };
+    void Machine::addWord(const std::string& name, NativeMachineOperation op) {
+        addWord(new DictionaryEntry(name, op));
+    }
     void Machine::initializeBaseDictionary() {
         if (!_initializedBaseDictionary) {
             _initializedBaseDictionary = true;
             // add dictionary entries
-            addWord(new DictionaryEntry("drop", [](Machine& machine) { machine.dropParameter(); }));
-            addWord(new DictionaryEntry("dup", [](Machine& machine) { machine.duplicateParameter(); }));
-            addWord(new DictionaryEntry("over", [](Machine& machine) { machine.placeOverParameter(); }));
-            addWord(new DictionaryEntry("swap", [](Machine& machine) { machine.swapParameters(); }));
-            addWord(new DictionaryEntry("minus", [](Machine& machine) {
+            addWord("drop", [](Machine& machine) { machine.dropParameter(); });
+            addWord("dup", [](Machine& machine) { machine.duplicateParameter(); });
+            addWord("over", [](Machine& machine) { machine.placeOverParameter(); });
+            addWord("swap", [](Machine& machine) { machine.swapParameters(); });
+            addWord("minus", [](Machine& machine) {
                                 auto top(machine.popParameter());
                                 top.numValue = -top.numValue;
                                 machine.pushParameter(top);
-                        }));
-            addWord(new DictionaryEntry("abs", [](Machine& machine) {
+                        });
+            addWord("abs", [](Machine& machine) {
                         auto top(machine.popParameter());
                         machine.pushParameter((top.numValue < 0) ? -top.numValue : top.numValue);
-                        }));
-            addWord(new DictionaryEntry("type-integer", [](Machine& machine) {
+                        });
+            addWord("type-integer", [](Machine& machine) {
                             auto top(machine.popParameter());
                             machine.typeValue(Discriminant::Number, top);
-                        }));
-            addWord(new DictionaryEntry("type-floating", [](Machine& machine) {
+                        });
+            addWord("type-floating", [](Machine& machine) {
                             auto top(machine.popParameter());
                             machine.typeValue(Discriminant::FloatingPoint, top);
-                        }));
-            addWord(new DictionaryEntry("zero", [](Machine& machine) {
+                        });
+            addWord("zero", [](Machine& machine) {
                            // push 1 onto the stack if the top is zero and zero otherwise
                            auto top(machine.popParameter());
                            machine.pushParameter(top.numValue == 0 ? 1 : 0);
-                        }));
-            addWord(new DictionaryEntry("nonzero", [](Machine& machine) {
+                        });
+            addWord("nonzero", [](Machine& machine) {
                             auto top(machine.popParameter());
                             machine.pushParameter(top.numValue != 0 ? 1 : 0);
-                        }));
+                        });
 
         }
     }

@@ -125,6 +125,7 @@ namespace forth {
             void addWord(const std::string& name, NativeMachineOperation op);
             void terminateExecution();
             void addition(Discriminant type);
+            void listWords();
         private:
             void initializeBaseDictionary();
         private:
@@ -138,6 +139,14 @@ namespace forth {
             bool _initializedBaseDictionary = false;
             bool _keepExecuting = true;
     };
+    void Machine::listWords() {
+        if (_words == nullptr) {
+            return;
+        }
+        for (const auto* entry = _words; entry != nullptr; entry = entry->getNext()) {
+            _output << entry->getName() << std::endl;
+        }
+    }
     void Machine::addWord(const std::string& name, NativeMachineOperation op) {
         addWord(new DictionaryEntry(name, op));
     }
@@ -226,7 +235,7 @@ namespace forth {
             addWord("**", binaryOperation([](auto top, auto lower) { return static_cast<Integer>(std::pow(lower.numValue, top.numValue)); }));
             addWord("**f", binaryOperation([](auto top, auto lower) { return static_cast<Floating>(std::pow(lower.fp, top.fp)); }));
             addWord("**u", binaryOperation([](auto top, auto lower) { return static_cast<Address>(std::pow(lower.address, top.address)); }));
-
+            addWord("words", [](Machine& machine) { machine.listWords(); });
 
         }
     }

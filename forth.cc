@@ -13,6 +13,11 @@ namespace forth {
     using Integer = int32_t;
     using Floating = float;
 
+    enum Discriminant {
+        Number,
+        MemoryAddress,
+        FloatingPoint,
+    };
     union Datum {
         Integer numValue;
         Address address;
@@ -64,7 +69,7 @@ namespace forth {
             static constexpr auto largestAddress = 0xFFFFFF;
             static constexpr auto memoryCapacity = (largestAddress + 1);
         public:
-            Machine(std::istream& input);
+            Machine(std::ostream& output, std::istream& input);
             ~Machine() = default;
             const DictionaryEntry& lookupWord(const std::string& word) noexcept {
                 return _words.lookupWord(word);
@@ -83,15 +88,32 @@ namespace forth {
             Datum popParameter();
         private:
             bool numberRoutine(const std::string& word) noexcept;
+            void typeValue(Discriminant discriminant, const Datum& value);
         private:
+            std::ostream& _output;
             std::istream& _input;
             std::unique_ptr<Integer[]> _memory;
             Dictionary _words;
             Stack<Address> _subroutine;
             Stack<Datum> _parameter;
     };
-
-    Machine::Machine(std::istream& input) : _input(input), _memory(new Integer[memoryCapacity]) { }
+    void Machine::typeValue(Discriminant discriminant, const Datum& value) {
+        switch(discriminant) {
+            case Discriminant::Number:
+                _output << std::dec << value.numValue;
+                break;
+            case Discriminant::FloatingPoint:
+                _output << value.fp;
+                break;
+            case Discriminant::MemoryAddress:
+                _output << std::dec << value.address;
+                break;
+            default:
+                throw "BAD DISCRIMINANT";
+        }
+        _output << std::endl;
+    }
+    Machine::Machine(std::ostream& output, std::istream& input) : _output(output), _input(input), _memory(new Integer[memoryCapacity]) { }
 
     Datum Machine::popParameter() {
         auto top = _parameter.top();
@@ -159,7 +181,7 @@ namespace forth {
             parseAttempt >> tmpFloat;
             if (!parseAttempt.fail()) {
 #ifdef DEBUG
-                std::cout << "attempt floating point number push: " << tmpFloat << std::endl;
+                _output << "attempt floating point number push: " << tmpFloat << std::endl;
 #endif // end DEBUG
                 if (parseAttempt.eof()) {
                     pushParameter(tmpFloat);
@@ -176,7 +198,7 @@ namespace forth {
         parseAttempt >> tmpInt;
         if (!parseAttempt.fail()) {
 #ifdef DEBUG
-            std::cout << "attempt integer number push: " << tmpInt << std::endl;
+            _output << "attempt integer number push: " << tmpInt << std::endl;
 #endif // end DEBUG
             if (parseAttempt.eof()) {
                 // if we hit the end of the word provided then it is an integer, otherwise it is not!
@@ -212,13 +234,13 @@ namespace forth {
         _parameter.swap(_purge1);
         _input.clear();
         _input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        std::cout << word << msg << std::endl;
+        _output << word << msg << std::endl;
     }
 } // end namespace forth
 
 
 int main() {
-    forth::Machine machine (std::cin);
+    forth::Machine machine (std::cout, std::cin);
     machine.controlLoop();
     return 0;
 }

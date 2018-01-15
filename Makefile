@@ -4,7 +4,9 @@ OBJECTS = forth.o
 
 OUTPUT_BINARY = forth
 
-options: 
+all: options ${OUTPUT_BINARY}
+
+options:
 	@echo build options:
 	@echo "CXXFLAGS  = ${CFLAGS}"
 	@echo "LDFLAGS   = ${LDFLAGS}"

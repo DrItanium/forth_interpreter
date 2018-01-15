@@ -36,56 +36,59 @@ namespace forth {
             backingStore[k] = other.backingStore[k];
         }
     }
+    class Machine;
+    using NativeMachineOperation = std::function<void(Machine&)>;
     class DictionaryEntry {
         public:
             DictionaryEntry() = default;
-            DictionaryEntry(const std::string& name);
+            DictionaryEntry(const std::string& name, NativeMachineOperation code = nullptr);
             ~DictionaryEntry() = default;
             const std::string& getName() const noexcept { return _name; }
+            NativeMachineOperation getCode() const noexcept { return _code; }
+            const DictionaryEntry* getNext() const noexcept { return _next; }
+            bool hasNext() const noexcept { return getNext() != nullptr; }
+            void setNext(DictionaryEntry* next) noexcept { _next = next; }
+            Datum* getSpace() noexcept { return _space; }
         private:
             std::string _name;
+            NativeMachineOperation _code;
+            DictionaryEntry* _next;
+            // the parameters field is the only thing that doesn't make total sense right now
+            // but give it some byte storage of about 128 datums
+            Datum _space[128];
     };
-
-    class Dictionary : public std::list<DictionaryEntry> {
-        public:
-            using Parent = std::list<DictionaryEntry>;
-            using Self = Dictionary;
-            static const DictionaryEntry& getNullEntry() noexcept {
-                static DictionaryEntry nullEntry;
-                return nullEntry;
-            }
-        public:
-            using Parent::Parent;
-            const DictionaryEntry& lookupWord(const std::string& word) noexcept;
-    };
-
 
     template<typename T = int>
     using Stack = std::stack<T, std::list<T>>;
 
-    DictionaryEntry::DictionaryEntry(const std::string& name) : _name(name) { }
+    DictionaryEntry::DictionaryEntry(const std::string& name, NativeMachineOperation code) : _name(name), _code(code), _next(nullptr) 
+    {
+        // zero this out :D
+        for (int i = 0; i < 128; ++i) {
+            _space[i].numValue = 0;
+        }
+    }
 
     std::string readWord(std::istream& input) {
         std::string word;
         input >> word;
         return word;
     }
-    const DictionaryEntry& Dictionary::lookupWord(const std::string& word) noexcept {
-        return getNullEntry();
-    }
 
     class Machine {
         public:
-            static bool isNullEntry(const DictionaryEntry& entry) noexcept {
-                return &entry == &(Dictionary::getNullEntry());
-            }
             static constexpr auto largestAddress = 0xFFFFFF;
             static constexpr auto memoryCapacity = (largestAddress + 1);
         public:
             Machine(std::ostream& output, std::istream& input);
             ~Machine() = default;
-            const DictionaryEntry& lookupWord(const std::string& word) noexcept {
-                return _words.lookupWord(word);
+            const DictionaryEntry* lookupWord(const std::string& word) noexcept {
+                for (const auto* entry = &_words; entry->hasNext(); entry = entry->getNext()) {
+                    if (entry->getName() == word) {
+                        return entry;
+                    }
+                }
+                return nullptr;
             }
             void controlLoop() noexcept;
             void handleError(const std::string& word, const std::string& msg) noexcept;
@@ -95,7 +98,6 @@ namespace forth {
             void placeOverParameter();
             const Datum& topParameter();
             const Datum& lowerParameter();
-        private:
             Datum load(Address addr);
             void store(Address addr, Datum value);
             void store(Address addr, Integer value);
@@ -108,11 +110,14 @@ namespace forth {
             Datum popParameter();
             bool numberRoutine(const std::string& word) noexcept;
             void typeValue(Discriminant discriminant, const Datum& value);
+            void callSubroutine();
+            void returnFromSubroutine();
         private:
+            // define the CPU that the forth interpreter sits on top of
             std::ostream& _output;
             std::istream& _input;
             std::unique_ptr<Integer[]> _memory;
-            Dictionary _words;
+            DictionaryEntry _words;
             Stack<Address> _subroutine;
             Stack<Datum> _parameter;
     };
@@ -178,7 +183,7 @@ namespace forth {
         // always type a space out after the number
         _output << ' ' << std::endl;
     }
-    Machine::Machine(std::ostream& output, std::istream& input) : _output(output), _input(input), _memory(new Integer[memoryCapacity]) { }
+    Machine::Machine(std::ostream& output, std::istream& input) :  _output(output), _input(input), _memory(new Integer[memoryCapacity]) { }
 
     Datum Machine::popParameter() {
         auto top(_parameter.top());
@@ -282,9 +287,9 @@ namespace forth {
                 if (numberRoutine(result)) {
                     continue;
                 }
-                auto& entry = lookupWord(result);
+                auto entry = lookupWord(result);
                 // check and see if were'
-                if (forth::Machine::isNullEntry(entry)) {
+                if (entry == nullptr) {
                     handleError(result, "?");
                     continue;
                 }

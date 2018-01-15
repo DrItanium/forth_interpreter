@@ -166,13 +166,9 @@ namespace forth {
                         auto top(machine.popParameter());
                         machine.pushParameter((top.numValue < 0) ? -top.numValue : top.numValue);
                         });
-            addWord("type-integer", [](Machine& machine) {
+            addWord(",", [](Machine& machine) {
                             auto top(machine.popParameter());
                             machine.typeValue(Discriminant::Number, top);
-                        });
-            addWord("type-floating", [](Machine& machine) {
-                            auto top(machine.popParameter());
-                            machine.typeValue(Discriminant::FloatingPoint, top);
                         });
             addWord("zero", [](Machine& machine) {
                            // push 1 onto the stack if the top is zero and zero otherwise

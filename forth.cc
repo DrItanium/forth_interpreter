@@ -157,7 +157,9 @@ namespace forth {
             Floating tmpFloat;
             parseAttempt >> tmpFloat;
             if (!parseAttempt.fail()) {
+#ifdef DEBUG
                 std::cout << "floating point number pushed: " << tmpFloat << std::endl;
+#endif // end DEBUG
                 pushParameter(tmpFloat);
                 return true;
             }
@@ -166,7 +168,9 @@ namespace forth {
         parseAttempt.clear();
         parseAttempt >> tmpInt;
         if (!parseAttempt.fail()) {
+#ifdef DEBUG
             std::cout << "integer number pushed: " << tmpInt << std::endl;
+#endif // end DEBUG
             pushParameter(tmpInt);
             return true;
         }
@@ -187,7 +191,6 @@ namespace forth {
                     handleError(result, "?");
                     continue;
                 }
-                std::cout << "word: " << result << std::endl;
             }
         }
     }

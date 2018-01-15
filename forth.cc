@@ -116,10 +116,23 @@ namespace forth {
             Stack<Address> _subroutine;
             Stack<Datum> _parameter;
     };
-    void Machine::duplicateParameter() {
-        // a -- a a
-        Datum top(_parameter.top());
-        _parameter.push(top);
+    const Datum& Machine::topParameter() {
+        if (_parameter.empty()) {
+            throw "STACK EMPTY!";
+        } else {
+            return _parameter.top();
+        }
+    }
+    const Datum& Machine::lowerParameter() {
+        auto top = popParameter();
+        if (_parameter.empty()) {
+            _parameter.push(top);
+            throw "STACK EMPTY";
+        } else {
+            auto& lower = _parameter.top();
+            _parameter.push(top);
+            return lower;
+        }
     }
     void Machine::placeOverParameter() {
         // a b -- a b a
@@ -127,6 +140,11 @@ namespace forth {
         Datum lower(_parameter.top());
         _parameter.push(top);
         _parameter.push(lower);
+    }
+    void Machine::duplicateParameter() {
+        // a -- a a
+        Datum top(_parameter.top());
+        _parameter.push(top);
     }
     void Machine::swapParameters() {
         // a b -- b a

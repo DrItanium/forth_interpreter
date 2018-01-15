@@ -12,17 +12,30 @@ namespace forth {
     using Address = uint32_t;
     using Integer = int32_t;
     using Floating = float;
-
+    using byte = uint8_t;
+    static_assert((sizeof(Address) == sizeof(Integer)) && (sizeof(Integer) == sizeof(Floating)), "Address, Integer, and Floating are not equal!");
     enum Discriminant {
         Number,
         MemoryAddress,
         FloatingPoint,
     };
     union Datum {
+        Datum() = default;
+        ~Datum() = default;
+        Datum(const Datum& other);
         Integer numValue;
         Address address;
         Floating fp;
+        byte backingStore[sizeof(Integer)];
     };
+
+    Datum::Datum(const Datum& other) {
+        for (auto k = 0; k < sizeof(Integer); ++k) {
+            // make sure that the compiler won't do something goofy when doing
+            // copying
+            backingStore[k] = other.backingStore[k];
+        }
+    }
     class DictionaryEntry {
         public:
             DictionaryEntry() = default;
@@ -76,6 +89,13 @@ namespace forth {
             }
             void controlLoop() noexcept;
             void handleError(const std::string& word, const std::string& msg) noexcept;
+            void dropParameter();
+            void swapParameters();
+            void duplicateParameter();
+            void placeOverParameter();
+            const Datum& topParameter();
+            const Datum& lowerParameter();
+        private:
             Datum load(Address addr);
             void store(Address addr, Datum value);
             void store(Address addr, Integer value);
@@ -86,7 +106,6 @@ namespace forth {
             void pushParameter(Floating value);
             void pushParameter(Address value);
             Datum popParameter();
-        private:
             bool numberRoutine(const std::string& word) noexcept;
             void typeValue(Discriminant discriminant, const Datum& value);
         private:
@@ -97,6 +116,21 @@ namespace forth {
             Stack<Address> _subroutine;
             Stack<Datum> _parameter;
     };
+    void Machine::dropParameter() {
+        if (_parameter.empty()) {
+            throw "STACK EMPTY!";
+        } else {
+            _parameter.pop();
+        }
+    }
+    void Machine::swapParameters() {
+        Datum top(_parameter.top());
+        _parameter.pop();
+        Datum lower(_parameter.top());
+        _parameter.pop();
+        _parameter.push(top);
+        _parameter.push(lower);
+    }
     void Machine::typeValue(Discriminant discriminant, const Datum& value) {
         switch(discriminant) {
             case Discriminant::Number:
@@ -111,7 +145,8 @@ namespace forth {
             default:
                 throw "BAD DISCRIMINANT";
         }
-        _output << std::endl;
+        // always type a space out after the number
+        _output << ' ' << std::endl;
     }
     Machine::Machine(std::ostream& output, std::istream& input) : _output(output), _input(input), _memory(new Integer[memoryCapacity]) { }
 

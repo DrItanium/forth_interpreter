@@ -334,6 +334,9 @@ namespace forth {
                 if (entry == nullptr) {
                     handleError(result, "?");
                     continue;
+                } else {
+                    // for now just do an invocation and then continue
+                    entry->getCode()(*this);
                 }
             }
         }

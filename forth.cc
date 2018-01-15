@@ -153,6 +153,15 @@ namespace forth {
                             auto top(machine.popParameter());
                             machine.typeValue(Discriminant::FloatingPoint, top);
                         }));
+            addWord(new DictionaryEntry("zero", [](Machine& machine) {
+                           // push 1 onto the stack if the top is zero and zero otherwise
+                           auto top(machine.popParameter());
+                           machine.pushParameter(top.numValue == 0 ? 1 : 0);
+                        }));
+            addWord(new DictionaryEntry("nonzero", [](Machine& machine) {
+                            auto top(machine.popParameter());
+                            machine.pushParameter(top.numValue != 0 ? 1 : 0);
+                        }));
 
         }
     }

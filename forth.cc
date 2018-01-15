@@ -125,6 +125,12 @@ namespace forth {
             Stack<Address> _subroutine;
             Stack<Datum> _parameter;
     };
+    void Machine::addWord(DictionaryEntry* entry) noexcept {
+        if (_words != nullptr) {
+            entry->setNext(_words);
+        }
+        _words = entry;
+    }
     const Datum& Machine::topParameter() {
         if (_parameter.empty()) {
             throw "STACK EMPTY!";

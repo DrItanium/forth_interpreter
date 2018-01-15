@@ -83,7 +83,10 @@ namespace forth {
             Machine(std::ostream& output, std::istream& input);
             ~Machine() = default;
             const DictionaryEntry* lookupWord(const std::string& word) noexcept {
-                for (const auto* entry = &_words; entry->hasNext(); entry = entry->getNext()) {
+                if (_words == nullptr) {
+                    return nullptr;
+                }
+                for (const auto* entry = _words; entry->hasNext(); entry = entry->getNext()) {
                     if (entry->getName() == word) {
                         return entry;
                     }
@@ -112,12 +115,13 @@ namespace forth {
             void typeValue(Discriminant discriminant, const Datum& value);
             void callSubroutine();
             void returnFromSubroutine();
+            void addWord(DictionaryEntry* entry);
         private:
             // define the CPU that the forth interpreter sits on top of
             std::ostream& _output;
             std::istream& _input;
             std::unique_ptr<Integer[]> _memory;
-            DictionaryEntry _words;
+            DictionaryEntry* _words;
             Stack<Address> _subroutine;
             Stack<Datum> _parameter;
     };
@@ -183,7 +187,7 @@ namespace forth {
         // always type a space out after the number
         _output << ' ' << std::endl;
     }
-    Machine::Machine(std::ostream& output, std::istream& input) :  _output(output), _input(input), _memory(new Integer[memoryCapacity]) { }
+    Machine::Machine(std::ostream& output, std::istream& input) :  _output(output), _input(input), _memory(new Integer[memoryCapacity]), _words(nullptr) { }
 
     Datum Machine::popParameter() {
         auto top(_parameter.top());

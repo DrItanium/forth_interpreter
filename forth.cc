@@ -123,6 +123,7 @@ namespace forth {
             void addWord(DictionaryEntry* entry);
             void addWord(const std::string& name, NativeMachineOperation op);
             void terminateExecution();
+            void addition(Discriminant type);
         private:
             void initializeBaseDictionary();
         private:
@@ -212,7 +213,8 @@ namespace forth {
             addWord(">u", binaryOperation([](auto top, auto lower) { return lower.address > top.address; }));
             addWord(">=u", binaryOperation([](auto top, auto lower) { return lower.address >= top.address; }));
             addWord("<=u", binaryOperation([](auto top, auto lower) { return lower.address <= top.address; }));
-            addWord("not", unaryOperation([](auto top) { return top.address == 0 ? 1 : 0; }));
+            addWord("not", unaryOperation([](auto top) { return ~top.address; }));
+            addWord("lnot", unaryOperation([](auto top) { return top.truth ? 0 : 1; }));
             addWord("and", binaryOperation([](auto top, auto lower) { return top.address & lower.address; }));
             addWord("or", binaryOperation([](auto top, auto lower) { return top.address | lower.address; }));
             addWord("xor", binaryOperation([](auto top, auto lower) { return top.address ^ lower.address; }));
@@ -220,8 +222,6 @@ namespace forth {
             addWord("lor", binaryOperation([](auto top, auto lower) { return top.truth || lower.truth; }));
             addWord("lxor", binaryOperation([](auto top, auto lower) { return top.truth ^ lower.truth; }));
             addWord("implies", binaryOperation([](auto top, auto lower) { return (!top.truth) || lower.truth; }));
-
-
         }
     }
     void Machine::addWord(DictionaryEntry* entry) {

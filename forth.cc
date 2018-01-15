@@ -116,20 +116,32 @@ namespace forth {
             Stack<Address> _subroutine;
             Stack<Datum> _parameter;
     };
+    void Machine::duplicateParameter() {
+        // a -- a a
+        Datum top(_parameter.top());
+        _parameter.push(top);
+    }
+    void Machine::placeOverParameter() {
+        // a b -- a b a
+        auto top = popParameter();
+        Datum lower(_parameter.top());
+        _parameter.push(top);
+        _parameter.push(lower);
+    }
+    void Machine::swapParameters() {
+        // a b -- b a
+        auto top = popParameter();
+        auto lower = popParameter();
+        _parameter.push(top);
+        _parameter.push(lower);
+    }
     void Machine::dropParameter() {
+        // a --
         if (_parameter.empty()) {
             throw "STACK EMPTY!";
         } else {
             _parameter.pop();
         }
-    }
-    void Machine::swapParameters() {
-        Datum top(_parameter.top());
-        _parameter.pop();
-        Datum lower(_parameter.top());
-        _parameter.pop();
-        _parameter.push(top);
-        _parameter.push(lower);
     }
     void Machine::typeValue(Discriminant discriminant, const Datum& value) {
         switch(discriminant) {
@@ -151,7 +163,7 @@ namespace forth {
     Machine::Machine(std::ostream& output, std::istream& input) : _output(output), _input(input), _memory(new Integer[memoryCapacity]) { }
 
     Datum Machine::popParameter() {
-        auto top = _parameter.top();
+        auto top(_parameter.top());
         _parameter.pop();
         return top;
     }

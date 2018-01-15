@@ -117,6 +117,7 @@ namespace forth {
             void returnFromSubroutine();
             void addWord(DictionaryEntry* entry);
             void addWord(const std::string& name, NativeMachineOperation op);
+            void terminateExecution();
         private:
             void initializeBaseDictionary();
         private:
@@ -128,14 +129,30 @@ namespace forth {
             Stack<Address> _subroutine;
             Stack<Datum> _parameter;
             bool _initializedBaseDictionary = false;
+            bool _keepExecuting = true;
     };
     void Machine::addWord(const std::string& name, NativeMachineOperation op) {
         addWord(new DictionaryEntry(name, op));
+    }
+    void Machine::terminateExecution() {
+        _keepExecuting = false;
     }
     void Machine::initializeBaseDictionary() {
         if (!_initializedBaseDictionary) {
             _initializedBaseDictionary = true;
             // add dictionary entries
+            addWord("quit", [](Machine& machine) { machine.terminateExecution(); });
+            addWord("@", [](Machine& machine) {
+                        // load the value at the given address onto the stack
+                        auto top(machine.popParameter());
+                        machine.pushParameter(machine.load(top.address));
+                    });
+            addWord("=", [](Machine& machine) {
+                         // store into memory at the top address the lower value
+                         auto addr(machine.popParameter());
+                         auto value(machine.popParameter());
+                         machine.store(addr.address, value);
+                    });
             addWord("drop", [](Machine& machine) { machine.dropParameter(); });
             addWord("dup", [](Machine& machine) { machine.duplicateParameter(); });
             addWord("over", [](Machine& machine) { machine.placeOverParameter(); });
@@ -340,23 +357,19 @@ namespace forth {
     void Machine::controlLoop() noexcept {
         // setup initial dictionary
         initializeBaseDictionary();
-        while (true) {
+        while (_keepExecuting) {
             auto result = readWord(_input);
-            if (result == "quit") {
-                break;
+            if (numberRoutine(result)) {
+                continue;
+            }
+            auto entry = lookupWord(result);
+            // check and see if were'
+            if (entry == nullptr) {
+                handleError(result, "?");
+                continue;
             } else {
-                if (numberRoutine(result)) {
-                    continue;
-                }
-                auto entry = lookupWord(result);
-                // check and see if were'
-                if (entry == nullptr) {
-                    handleError(result, "?");
-                    continue;
-                } else {
-                    // for now just do an invocation and then continue
-                    entry->getCode()(*this);
-                }
+                // for now just do an invocation and then continue
+                entry->getCode()(*this);
             }
         }
     }

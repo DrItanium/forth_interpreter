@@ -86,7 +86,7 @@ namespace forth {
                 if (_words == nullptr) {
                     return nullptr;
                 }
-                for (const auto* entry = _words; entry->hasNext(); entry = entry->getNext()) {
+                for (const auto* entry = _words; entry != nullptr; entry = entry->getNext()) {
                     if (entry->getName() == word) {
                         return entry;
                     }
@@ -321,6 +321,7 @@ namespace forth {
     }
     void Machine::controlLoop() noexcept {
         // setup initial dictionary
+        initializeBaseDictionary();
         while (true) {
             auto result = readWord(_input);
             if (result == "quit") {

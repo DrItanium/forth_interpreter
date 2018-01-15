@@ -81,6 +81,8 @@ namespace forth {
             void pushParameter(Address value);
             Datum popParameter();
         private:
+            bool numberRoutine(const std::string& word) noexcept;
+        private:
             std::istream& _input;
             std::unique_ptr<Integer[]> _memory;
             Dictionary _words;
@@ -146,27 +148,32 @@ namespace forth {
         tmp.fp = value;
         store(addr, tmp);
     }
-
+    bool Machine::numberRoutine(const std::string& word) noexcept {
+        // attempt to parse integers first!
+        std::istringstream parseAttempt(word);
+        Integer tmpInt;
+        parseAttempt >> tmpInt;
+        if (!parseAttempt.fail()) {
+            pushParameter(tmpInt);
+            return true;
+        }
+        // then try floating point
+        parseAttempt.clear();
+        Floating tmpFloat;
+        parseAttempt >> tmpFloat;
+        if (!parseAttempt.fail()) {
+            pushParameter(tmpFloat);
+            return true;
+        }
+        return false;
+    }
     void Machine::controlLoop() noexcept {
         while (true) {
             auto result = readWord(_input);
             if (result == "quit") {
                 break;
             } else {
-                // attempt to parse integers first!
-                std::istringstream parseAttempt(result);
-                Integer tmpInt;
-                parseAttempt >> tmpInt;
-                if (!parseAttempt.fail()) {
-                    pushParameter(tmpInt);
-                    continue;
-                }
-                // then try floating point
-                parseAttempt.clear();
-                Floating tmpFloat;
-                parseAttempt >> tmpFloat;
-                if (!parseAttempt.fail()) {
-                    pushParameter(tmpFloat);
+                if (numberRoutine(result)) {
                     continue;
                 }
                 auto& entry = lookupWord(result);

@@ -117,6 +117,8 @@ namespace forth {
             void returnFromSubroutine();
             void addWord(DictionaryEntry* entry);
         private:
+            void initializeBaseDictionary();
+        private:
             // define the CPU that the forth interpreter sits on top of
             std::ostream& _output;
             std::istream& _input;
@@ -124,8 +126,37 @@ namespace forth {
             DictionaryEntry* _words;
             Stack<Address> _subroutine;
             Stack<Datum> _parameter;
+            bool _initializedBaseDictionary = false;
     };
-    void Machine::addWord(DictionaryEntry* entry) noexcept {
+    void Machine::initializeBaseDictionary() {
+        if (!_initializedBaseDictionary) {
+            _initializedBaseDictionary = true;
+            // add dictionary entries
+            addWord(new DictionaryEntry("drop", [](Machine& machine) { machine.dropParameter(); }));
+            addWord(new DictionaryEntry("dup", [](Machine& machine) { machine.duplicateParameter(); }));
+            addWord(new DictionaryEntry("over", [](Machine& machine) { machine.placeOverParameter(); }));
+            addWord(new DictionaryEntry("swap", [](Machine& machine) { machine.swapParameters(); }));
+            addWord(new DictionaryEntry("minus", [](Machine& machine) {
+                                auto top(machine.popParameter());
+                                top.numValue = -top.numValue;
+                                machine.pushParameter(top);
+                        }));
+            addWord(new DictionaryEntry("abs", [](Machine& machine) {
+                        auto top(machine.popParameter());
+                        machine.pushParameter((top.numValue < 0) ? -top.numValue : top.numValue);
+                        }));
+            addWord(new DictionaryEntry("type-integer", [](Machine& machine) {
+                            auto top(machine.popParameter());
+                            machine.typeValue(Discriminant::Number, top);
+                        }));
+            addWord(new DictionaryEntry("type-floating", [](Machine& machine) {
+                            auto top(machine.popParameter());
+                            machine.typeValue(Discriminant::FloatingPoint, top);
+                        }));
+
+        }
+    }
+    void Machine::addWord(DictionaryEntry* entry) {
         if (_words != nullptr) {
             entry->setNext(_words);
         }
@@ -289,6 +320,7 @@ namespace forth {
         return false;
     }
     void Machine::controlLoop() noexcept {
+        // setup initial dictionary
         while (true) {
             auto result = readWord(_input);
             if (result == "quit") {

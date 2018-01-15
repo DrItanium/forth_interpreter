@@ -2,8 +2,20 @@
 #include <string>
 #include <stack>
 #include <list>
+#include <cstdint>
+#include <memory>
+#include <limits>
 
 namespace forth {
+    using Address = uint32_t;
+    using Integer = int32_t;
+    using Floating = float;
+
+    union Datum {
+        Integer numValue;
+        Address address;
+        Floating fp;
+    };
     class DictionaryEntry {
         public:
             DictionaryEntry() = default;
@@ -47,38 +59,123 @@ namespace forth {
             static bool isNullEntry(const DictionaryEntry& entry) noexcept {
                 return &entry == &(Dictionary::getNullEntry());
             }
+            static constexpr auto largestAddress = 0xFFFFFF;
+            static constexpr auto memoryCapacity = (largestAddress + 1);
         public:
-            Machine() = default;
+            Machine(std::istream& input);
             ~Machine() = default;
             const DictionaryEntry& lookupWord(const std::string& word) noexcept {
                 return _words.lookupWord(word);
             }
             void controlLoop() noexcept;
+            void handleError(const std::string& word, const std::string& msg) noexcept;
+            Datum load(Address addr);
+            void store(Address addr, Datum value);
+            void store(Address addr, Integer value);
+            void store(Address addr, Address value);
+            void store(Address addr, Floating fp);
+            void pushParameter(Datum value);
+            void pushParameter(Integer value);
+            void pushParameter(Floating value);
+            void pushParameter(Address value);
+            Datum popParameter();
         private:
+            std::istream& _input;
+            std::unique_ptr<Integer[]> _memory;
             Dictionary _words;
-            Stack<int> _subroutine;
-            Stack<int> _parameter;
+            Stack<Address> _subroutine;
+            Stack<Datum> _parameter;
     };
+
+    Machine::Machine(std::istream& input) : _input(input), _memory(new Integer[memoryCapacity]) { }
+
+    Datum Machine::popParameter() {
+        auto top = _parameter.top();
+        _parameter.pop();
+        return top;
+    }
+
+    void Machine::pushParameter(Datum value) {
+        _parameter.push(value);
+    }
+    void Machine::pushParameter(Integer value) {
+        Datum tmp;
+        tmp.numValue = value;
+        pushParameter(tmp);
+    }
+
+    void Machine::pushParameter(Address value) {
+        Datum tmp;
+        tmp.address = value;
+        pushParameter(tmp);
+    }
+
+    void Machine::pushParameter(Floating fp) {
+        Datum tmp;
+        tmp.fp = fp;
+        pushParameter(tmp);
+    }
+
+    Datum Machine::load(Address addr) {
+        if (addr > largestAddress) {
+            throw "BAD ADDRESS";
+        } else {
+            Datum storage;
+            storage.numValue = _memory[addr];
+            return storage;
+        }
+    }
+    void Machine::store(Address addr, Integer value) {
+        if (addr > largestAddress) {
+            throw "BAD ADDRESS";
+        } else {
+            _memory[addr] = value;
+        }
+    }
+    void Machine::store(Address addr, Datum value) {
+        store(addr, value.numValue);
+    }
+    void Machine::store(Address addr, Address value) {
+        Datum tmp;
+        tmp.address = value;
+        store(addr, tmp);
+    }
+    void Machine::store(Address addr, Floating value) {
+        Datum tmp;
+        tmp.fp = value;
+        store(addr, tmp);
+    }
+
     void Machine::controlLoop() noexcept {
         while (true) {
-            auto result = readWord(std::cin);
+            auto result = readWord(_input);
             if (result == "quit") {
                 break;
             } else {
                 auto& entry = lookupWord(result);
                 if (forth::Machine::isNullEntry(entry)) {
-                    std::cout << "Unknown word: " << result << std::endl;
+                    handleError(result, "?");
                     continue;
                 }
                 std::cout << "word: " << result << std::endl;
             }
         }
     }
+    void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
+        // clear the stacks and the input pointer
+        decltype(_subroutine) _purge0;
+        decltype(_parameter) _purge1;
+        _subroutine.swap(_purge0);
+        _parameter.swap(_purge1);
+        _input.clear();
+        _input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << word << msg << std::endl;
+    }
 } // end namespace forth
 
 
 int main() {
-    forth::Machine machine;
+    forth::Machine machine (std::cin);
     machine.controlLoop();
     return 0;
 }

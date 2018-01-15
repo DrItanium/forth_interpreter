@@ -137,6 +137,47 @@ namespace forth {
     void Machine::terminateExecution() {
         _keepExecuting = false;
     }
+    NativeMachineOperation binaryOperation(std::function<Datum(const Datum&, const Datum&)> fn) noexcept {
+        return [fn](Machine& machine) {
+            auto top(machine.popParameter());
+            auto lower(machine.popParameter());
+            machine.pushParameter(fn(top, lower));
+        };
+    }
+    NativeMachineOperation booleanBinaryOperation(std::function<bool(const Datum&, const Datum&)> fn) noexcept {
+        return binaryOperation([fn](auto top, auto lower) {
+                    Datum out;
+                    out.numValue = fn(top, lower) ? 1 : 0;
+                    return out;
+                });
+    }
+    NativeMachineOperation integerBinaryOperation(std::function<Integer(const Datum&, const Datum&)> fn) noexcept {
+        return binaryOperation([fn](auto top, auto lower) {
+                    Datum out;
+                    out.numValue = fn(top, lower);
+                    return out;
+                });
+    }
+    NativeMachineOperation unaryOperation(std::function<Datum(const Datum&)> fn) noexcept {
+        return [fn](Machine& machine) {
+            auto top(machine.popParameter());
+            machine.pushParameter(fn(top));
+        };
+    }
+    NativeMachineOperation unaryBooleanOperation(std::function<bool(const Datum&)> fn) noexcept {
+        return unaryOperation([fn](auto top) {
+                    Datum out;
+                    out.numValue = fn(top) ? 1 : 0;
+                    return out;
+                });
+    }
+    NativeMachineOperation unaryIntegerOperation(std::function<Integer(const Datum&)> fn) noexcept {
+        return unaryOperation([fn](auto top) {
+                    Datum out;
+                    out.numValue = fn(top);
+                    return out;
+                });
+    }
     void Machine::initializeBaseDictionary() {
         if (!_initializedBaseDictionary) {
             _initializedBaseDictionary = true;
@@ -157,33 +198,19 @@ namespace forth {
             addWord("dup", [](Machine& machine) { machine.duplicateParameter(); });
             addWord("over", [](Machine& machine) { machine.placeOverParameter(); });
             addWord("swap", [](Machine& machine) { machine.swapParameters(); });
-            addWord("minus", [](Machine& machine) {
-                                auto top(machine.popParameter());
-                                top.numValue = -top.numValue;
-                                machine.pushParameter(top);
-                        });
-            addWord("abs", [](Machine& machine) {
-                        auto top(machine.popParameter());
-                        machine.pushParameter((top.numValue < 0) ? -top.numValue : top.numValue);
-                        });
+            addWord("minus", unaryIntegerOperation([](auto top) { return -top.numValue; }));
+            addWord("abs", unaryIntegerOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
             addWord(",", [](Machine& machine) {
                             auto top(machine.popParameter());
                             machine.typeValue(Discriminant::Number, top);
                         });
-            addWord("zero", [](Machine& machine) {
-                           // push 1 onto the stack if the top is zero and zero otherwise
-                           auto top(machine.popParameter());
-                           machine.pushParameter(top.numValue == 0 ? 1 : 0);
-                        });
-            addWord("nonzero", [](Machine& machine) {
-                            auto top(machine.popParameter());
-                            machine.pushParameter(top.numValue != 0 ? 1 : 0);
-                        });
-            addWord("+", [](Machine& machine) {
-                        auto top(machine.popParameter());
-                        auto lower(machine.popParameter());
-                        machine.pushParameter(top.numValue + lower.numValue);
-                    });
+            addWord("zero", unaryBooleanOperation([](auto top) { return top.numValue == 0; }));
+            addWord("nonzero", unaryBooleanOperation([](auto top) { return top.numValue != 0; }));
+            addWord("+", integerBinaryOperation([](auto top, auto lower) { return top.numValue + lower.numValue; }));
+            addWord("*", integerBinaryOperation([](auto top, auto lower) { return top.numValue * lower.numValue; }));
+            addWord("-", integerBinaryOperation([](auto top, auto lower) { return lower.numValue - top.numValue; }));
+            addWord("/", integerBinaryOperation([](auto top, auto lower) { return lower.numValue / top.numValue; }));
+            addWord("mod", integerBinaryOperation([](auto top, auto lower) { return lower.numValue % top.numValue; }));
 
         }
     }

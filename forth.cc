@@ -149,20 +149,25 @@ namespace forth {
         store(addr, tmp);
     }
     bool Machine::numberRoutine(const std::string& word) noexcept {
-        // attempt to parse integers first!
+        // floating point
+        // integers 
+        // first do some inspection first
         std::istringstream parseAttempt(word);
+        if (word.find('.') != std::string::npos) {
+            Floating tmpFloat;
+            parseAttempt >> tmpFloat;
+            if (!parseAttempt.fail()) {
+                std::cout << "floating point number pushed: " << tmpFloat << std::endl;
+                pushParameter(tmpFloat);
+                return true;
+            }
+        }
         Integer tmpInt;
+        parseAttempt.clear();
         parseAttempt >> tmpInt;
         if (!parseAttempt.fail()) {
+            std::cout << "integer number pushed: " << tmpInt << std::endl;
             pushParameter(tmpInt);
-            return true;
-        }
-        // then try floating point
-        parseAttempt.clear();
-        Floating tmpFloat;
-        parseAttempt >> tmpFloat;
-        if (!parseAttempt.fail()) {
-            pushParameter(tmpFloat);
             return true;
         }
         return false;

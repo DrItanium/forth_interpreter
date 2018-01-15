@@ -1,3 +1,4 @@
+//#define DEBUG
 #include <iostream>
 #include <string>
 #include <stack>
@@ -158,10 +159,16 @@ namespace forth {
             parseAttempt >> tmpFloat;
             if (!parseAttempt.fail()) {
 #ifdef DEBUG
-                std::cout << "floating point number pushed: " << tmpFloat << std::endl;
+                std::cout << "attempt floating point number push: " << tmpFloat << std::endl;
 #endif // end DEBUG
-                pushParameter(tmpFloat);
-                return true;
+                if (parseAttempt.eof()) {
+                    pushParameter(tmpFloat);
+                    return true;
+                } else {
+                    // get out of here early since we hit something that looks like 
+                    // a float
+                    return false;
+                }
             }
         }
         Integer tmpInt;
@@ -169,10 +176,13 @@ namespace forth {
         parseAttempt >> tmpInt;
         if (!parseAttempt.fail()) {
 #ifdef DEBUG
-            std::cout << "integer number pushed: " << tmpInt << std::endl;
+            std::cout << "attempt integer number push: " << tmpInt << std::endl;
 #endif // end DEBUG
-            pushParameter(tmpInt);
-            return true;
+            if (parseAttempt.eof()) {
+                // if we hit the end of the word provided then it is an integer, otherwise it is not!
+                pushParameter(tmpInt);
+                return true;
+            }
         }
         return false;
     }

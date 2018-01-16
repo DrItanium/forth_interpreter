@@ -430,13 +430,13 @@ namespace forth {
                     }
                     machine.setT((Discriminant)top.address);
                     });
-            addWord("push.t", [](Machine& machine) { machine.pushParameter((Address)machine.getT()); });
             addWord("pop.a", [](Machine& machine) { machine.setA(machine.popParameter()); });
             addWord("pop.b", [](Machine& machine) { machine.setB(machine.popParameter()); });
             addWord("pop.c", [](Machine& machine) { machine.setC(machine.popParameter()); });
             addWord("push.a", [](Machine& machine) { machine.pushParameter(machine.getA()); });
             addWord("push.b", [](Machine& machine) { machine.pushParameter(machine.getB()); });
             addWord("push.c", [](Machine& machine) { machine.pushParameter(machine.getC()); });
+            addWord("push.t", [](Machine& machine) { machine.pushParameter((Address)machine.getT()); });
             addWord("registers", [](Machine& machine) { machine.printRegisters(); });
             addWord("add", [](Machine& machine) { machine.add(); });
         }

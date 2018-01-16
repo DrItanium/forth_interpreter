@@ -196,6 +196,7 @@ namespace forth {
             Datum popParameter();
             bool numberRoutine(const std::string& word) noexcept;
             void typeValue(Discriminant discriminant, const Datum& value);
+            void typeValue(const Datum& value) { typeValue(_registerT, value); }
             void callSubroutine();
             void returnFromSubroutine();
             void addWord(DictionaryEntry* entry);
@@ -217,15 +218,7 @@ namespace forth {
             Datum& getC() noexcept { return _registerC; }
             void setT(Discriminant type) noexcept { _registerT = type; }
             Discriminant getT() const noexcept { return _registerT; }
-            void add();
             void printRegisters();
-            //void subtract();
-            //void multiply();
-            //void divide();
-            //void modulus();
-            //void greaterThan();
-            //void lessThan();
-            //void equal();
         private:
             void initializeBaseDictionary();
         private:
@@ -252,21 +245,6 @@ namespace forth {
         fn("B", _registerB);
         fn("C", _registerC);
         _output << "T: 0x" << std::hex << (Address)_registerT << std::dec << std::endl;
-    }
-    void Machine::add() {
-        switch(_registerT) {
-            case Discriminant::Number:
-                _registerC = _registerA.numValue + _registerB.numValue;
-                break;
-            case Discriminant::MemoryAddress:
-                _registerC = _registerA.address + _registerB.address;
-                break;
-            case Discriminant::FloatingPoint:
-                _registerC = _registerA.fp + _registerB.address;
-                break;
-            default:
-                throw "ILLEGAL DISCRIMINANT!";
-        }
     }
     void Machine::defineWord() {
         activateCompileMode();
@@ -351,27 +329,9 @@ namespace forth {
             _initializedBaseDictionary = true;
             // add dictionary entries
             addWord("quit", [](Machine& machine) { machine.terminateExecution(); });
-            addWord("@", [](Machine& machine) {
-                        // load the value at the given address onto the stack
-                        auto top(machine.popParameter());
-                        machine.pushParameter(machine.load(top.address));
-                    });
-            addWord("=", [](Machine& machine) {
-                         // store into memory at the top address the lower value
-                         auto addr(machine.popParameter());
-                         auto value(machine.popParameter());
-                         machine.store(addr.address, value);
-                    });
-            addWord("drop", [](Machine& machine) { machine.dropParameter(); });
-            addWord("dup", [](Machine& machine) { machine.duplicateParameter(); });
-            addWord("over", [](Machine& machine) { machine.placeOverParameter(); });
-            addWord("swap", [](Machine& machine) { machine.swapParameters(); });
             addWord("minus", unaryOperation([](auto top) { return -top.numValue; }));
             addWord("abs", unaryOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
-            addWord(",", [](Machine& machine) {
-                            auto top(machine.popParameter());
-                            machine.typeValue(Discriminant::Number, top);
-                        });
+            addWord("type.a", [](Machine& machine) { machine.typeValue(machine.getA()); });
             addWord("zero", unaryOperation([](auto top) { return top.numValue == 0; }));
             addWord("nonzero", unaryOperation([](auto top) { return top.numValue != 0; }));
             addWord("+", binaryOperation([](auto top, auto lower) { return top.numValue + lower.numValue; }));
@@ -439,6 +399,8 @@ namespace forth {
             addWord("push.t", [](Machine& machine) { machine.pushParameter((Address)machine.getT()); });
             addWord("registers", [](Machine& machine) { machine.printRegisters(); });
             addWord("add", [](Machine& machine) { machine.add(); });
+            addWord("mload", [](Machine& machine) { machine.setC(machine.load(machine.getA().address)); });
+            addWord("mstore", [](Machine& machine) { machine.store(machine.getA().address, machine.getB()); });
         }
     }
     void Machine::addWord(DictionaryEntry* entry) {

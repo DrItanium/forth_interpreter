@@ -185,10 +185,12 @@ namespace forth {
             const Datum& topParameter();
             const Datum& lowerParameter();
             Datum load(Address addr);
+            void load() { _registerC = load(_registerA.address); }
             void store(Address addr, Datum value);
             void store(Address addr, Integer value);
             void store(Address addr, Address value);
             void store(Address addr, Floating fp);
+            void store() { store(_registerA.address, _registerB); }
             void pushParameter(Datum value);
             void pushParameter(Integer value);
             void pushParameter(Floating value);
@@ -220,6 +222,12 @@ namespace forth {
             void setT(Discriminant type) noexcept { _registerT = type; }
             Discriminant getT() const noexcept { return _registerT; }
             void printRegisters();
+            void add();
+            void subtract();
+            void divide();
+            void multiply();
+            void equals();
+            void minus();
         private:
             void initializeBaseDictionary();
         private:
@@ -238,6 +246,21 @@ namespace forth {
             Datum _registerA, _registerB, _registerC;
             Discriminant _registerT;
     };
+    void Machine::add() {
+        switch(_registerT) {
+            case Discriminant::Number:
+                _registerC = _registerA.numValue + _registerB.numValue;
+                break;
+            case Discriminant::MemoryAddress:
+                _registerC = _registerA.address + _registerB.address;
+                break;
+            case Discriminant::FloatingPoint:
+                _registerC = _registerA.fp + _registerB.fp;
+                break;
+            default:
+                throw "Illegal Discriminant";
+        }
+    }
     void Machine::printRegisters() {
         auto fn = [this](const std::string& title, const Datum& r) {
             _output << title << ": {" << r.numValue << ", 0x" << std::hex << r.address << ", " << std::dec << r.fp << "}" << std::endl;
@@ -399,8 +422,9 @@ namespace forth {
             addWord("push.b", [](Machine* machine) { machine->pushParameter(machine->getB()); });
             addWord("push.c", [](Machine* machine) { machine->pushParameter(machine->getC()); });
             addWord("push.t", [](Machine* machine) { machine->pushParameter((Address)machine->getT()); });
-            addWord("mload", [](Machine* machine) { machine->setC(machine->load(machine->getA().address)); });
-            addWord("mstore", [](Machine* machine) { machine->store(machine->getA().address, machine->getB()); });
+            addWord("mload", std::mem_fn(&Machine::load));
+            addWord("mstore", std::mem_fn(&Machine::store));
+            addWord("add", std::mem_fn(&Machine::add));
         }
     }
     void Machine::addWord(DictionaryEntry* entry) {

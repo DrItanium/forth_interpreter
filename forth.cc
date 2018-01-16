@@ -20,6 +20,7 @@ namespace forth {
         Number,
         MemoryAddress,
         FloatingPoint,
+        Boolean,
     };
     union Datum {
         Datum() = default;
@@ -440,6 +441,10 @@ namespace forth {
                 break;
             case Discriminant::MemoryAddress:
                 _output << std::dec << value.address;
+                break;
+            case Discriminant::Boolean:
+                _output << std::boolalpha << value.truth;
+                _output << std::noboolalpha;
                 break;
             default:
                 throw "BAD DISCRIMINANT";

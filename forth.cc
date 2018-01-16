@@ -1,4 +1,4 @@
-//#define DEBUG
+#define DEBUG
 #include <iostream>
 #include <string>
 #include <stack>
@@ -82,6 +82,9 @@ namespace forth {
                 if (_code != nullptr) {
                     _code(machine);
                 } else {
+#ifdef DEBUG
+                    std::cout << "Invoking body of " << getName() << std::endl;
+#endif
                     for (const auto & value : _space) {
                         value.invoke(machine);
                     }
@@ -101,35 +104,35 @@ namespace forth {
         DictionaryEntry::SpaceEntry se;
         se._type = decltype(se)::Discriminant::Signed;
         se._int = x;
-        _space.emplace_back(se);
+        _space.push_back(se);
     }
 
     void DictionaryEntry::addSpaceEntry(Address x) {
         DictionaryEntry::SpaceEntry se;
         se._type = decltype(se)::Discriminant::Unsigned;
         se._addr = x;
-        _space.emplace_back(se);
+        _space.push_back(se);
     }
 
     void DictionaryEntry::addSpaceEntry(Floating x) {
         DictionaryEntry::SpaceEntry se;
         se._type = decltype(se)::Discriminant::FloatingPoint;
         se._fp = x;
-        _space.emplace_back(se);
+        _space.push_back(se);
     }
 
     void DictionaryEntry::addSpaceEntry(bool x) {
         DictionaryEntry::SpaceEntry se;
         se._type = decltype(se)::Discriminant::Boolean;
         se._truth = x;
-        _space.emplace_back(se);
+        _space.push_back(se);
     }
 
     void DictionaryEntry::addSpaceEntry(DictionaryEntry* x) {
         DictionaryEntry::SpaceEntry se;
         se._type = decltype(se)::Discriminant::DictEntry;
         se._entry = x;
-        _space.emplace_back(se);
+        _space.push_back(se);
     }
 
 
@@ -215,8 +218,7 @@ namespace forth {
     void Machine::defineWord() {
         activateCompileMode();
         // pass address "execute" to the entry subroutine
-        // TODO: get name somehow
-        //_compileTarget = new DictionaryEntry(
+        _compileTarget = new DictionaryEntry(readWord(_input));
     }
     void Machine::endDefineWord() {
         deactivateCompileMode();
@@ -262,6 +264,10 @@ namespace forth {
         return [fn](Machine& machine) {
             auto top(machine.popParameter());
             auto lower(machine.popParameter());
+#ifdef DEBUG
+            std::cout << "top: " << top.numValue << std::endl;
+            std::cout << "lower: " << lower.numValue << std::endl;
+#endif
             machine.pushParameter(fn(top, lower));
         };
     }
@@ -598,6 +604,10 @@ namespace forth {
                     // okay we have a word, lets add it to the top word in the dictionary
                     // get the front word first and foremost
                     auto* front = _compileTarget;
+#ifdef DEBUG
+                    _output << "Found an entry for: " << result << std::endl;
+                    _output << "Location: " << std::hex << entry << std::dec << std::endl;
+#endif
                     front->addSpaceEntry(entry);
                     continue;
                 }

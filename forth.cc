@@ -231,7 +231,8 @@ namespace forth {
 			std::istream& _input;
 			std::unique_ptr<Integer[]> _memory;
 			DictionaryEntry* _words;
-			Stack<Address> _subroutine;
+			// no need for the subroutine stack
+			//Stack<Address> _subroutine;
 			Stack<Datum> _parameter;
 			bool _initializedBaseDictionary = false;
 			bool _keepExecuting = true;
@@ -654,9 +655,9 @@ namespace forth {
 	}
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
 		// clear the stacks and the input pointer
-		decltype(_subroutine) _purge0;
+		//decltype(_subroutine) _purge0;
 		decltype(_parameter) _purge1;
-		_subroutine.swap(_purge0);
+		//_subroutine.swap(_purge0);
 		_parameter.swap(_purge1);
 		_input.clear();
 		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');

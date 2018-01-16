@@ -211,22 +211,22 @@ namespace forth {
             void endDefineWord();
             DictionaryEntry* getFrontWord();
             bool compileNumber(const std::string& word) noexcept;
-            void popA() { setA(popParameter()); }
             void setA(const Datum& target) noexcept { _registerA = target; }
-            void pushA() { pushParameter(getA()); }
-            Datum& getA() noexcept { return _registerA; }
-            void popB() { setB(popParameter()); }
             void setB(const Datum& target) noexcept { _registerB = target; }
-            void pushB() { pushParameter(getB()); }
-            Datum& getB() noexcept { return _registerB; }
-
-            void popC() { setC(popParameter()); }
             void setC(const Datum& target) noexcept { _registerC = target; }
-            void pushC() { pushParameter(getC()); }
-            Datum& getC() noexcept { return _registerC; }
             void setT(Discriminant type) noexcept { _registerT = type; }
+            Datum& getA() noexcept { return _registerA; }
+            Datum& getB() noexcept { return _registerB; }
+            Datum& getC() noexcept { return _registerC; }
             Discriminant getT() const noexcept { return _registerT; }
             void printRegisters();
+        public:
+            void popA() { setA(popParameter()); }
+            void pushA() { pushParameter(getA()); }
+            void popB() { setB(popParameter()); }
+            void pushB() { pushParameter(getB()); }
+            void popC() { setC(popParameter()); }
+            void pushC() { pushParameter(getC()); }
             void add();
             void subtract();
             void divide();
@@ -420,9 +420,9 @@ namespace forth {
                     }
                     machine->setT((Discriminant)top.address);
                     });
-            addWord("pop.a", std::mem_fn<void()>(&Machine::popA));
-            addWord("pop.b", std::mem_fn<void()>(&Machine::popB));
-            addWord("pop.c", std::mem_fn<void()>(&Machine::popC));
+            addWord("pop.a", std::mem_fn(&Machine::popA));
+            addWord("pop.b", std::mem_fn(&Machine::popB));
+            addWord("pop.c", std::mem_fn(&Machine::popC));
             addWord("push.a", std::mem_fn(&Machine::pushA));
             addWord("push.b", std::mem_fn(&Machine::pushB));
             addWord("push.c", std::mem_fn(&Machine::pushC));

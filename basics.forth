@@ -10,6 +10,7 @@
 : clear-registers 0 pop.a 0 pop.b 0 pop.c t.signed ;
 
 : load-ab pop.a pop.b ;
+: load-ba pop.b pop.a ;
 
 : op-add load-ab add push.c ;
 : op-mul load-ab mul push.c ;
@@ -63,3 +64,8 @@
 : not-zero 0 neq ;
 : not-zerou 0 nequ ;
 : not-zerof 0.0 neqf ;
+
+: op-pow load-ba pow push.c ;
+: ** t.signed op-pow ;
+: **f t.fp op-pow ;
+: **u t.address op-pow ;

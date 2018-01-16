@@ -422,13 +422,13 @@ namespace forth {
 		using Type = decltype(_registerT);
 		switch(_registerT) {
 			case Type::Number:
-				_registerC.numValue = Integer(std::pow(_registerB.numValue, _registerA.numValue));
+				_registerC.numValue = Integer(std::pow(_registerA.numValue, _registerB.numValue));
 				break;
 			case Type::MemoryAddress:
-				_registerC.address = Address(std::pow(_registerB.address, _registerA.address));
+				_registerC.address = Address(std::pow(_registerA.address, _registerB.address));
 				break;
 			case Type::FloatingPoint:
-				_registerC.fp = Floating(std::pow(_registerB.fp, _registerA.fp));
+				_registerC.fp = Floating(std::pow(_registerA.fp, _registerB.fp));
 				break;
 			default:
 				throw "Illegal Discriminant";

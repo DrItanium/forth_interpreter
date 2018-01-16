@@ -180,10 +180,7 @@ namespace forth {
 			void handleError(const std::string& word, const std::string& msg) noexcept;
 			Datum load(Address addr);
 			void load() { _registerC = load(_registerA.address); }
-			void store(Address addr, Datum value);
-			void store(Address addr, Integer value);
-			void store(Address addr, Address value);
-			void store(Address addr, Floating fp);
+			void store(Address addr, const Datum& value);
 			void store() { store(_registerA.address, _registerB); }
 			void pushParameter(Datum value);
 			Datum popParameter();
@@ -548,25 +545,12 @@ namespace forth {
 			return storage;
 		}
 	}
-	void Machine::store(Address addr, Integer value) {
+	void Machine::store(Address addr, const Datum& value) {
 		if (addr > largestAddress) {
 			throw "BAD ADDRESS";
 		} else {
-			_memory[addr] = value;
+			_memory[addr] = value.numValue;
 		}
-	}
-	void Machine::store(Address addr, Datum value) {
-		store(addr, value.numValue);
-	}
-	void Machine::store(Address addr, Address value) {
-		Datum tmp;
-		tmp.address = value;
-		store(addr, tmp);
-	}
-	void Machine::store(Address addr, Floating value) {
-		Datum tmp;
-		tmp.fp = value;
-		store(addr, tmp);
 	}
 	bool Machine::numberRoutine(const std::string& word) noexcept {
 		// floating point

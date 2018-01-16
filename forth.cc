@@ -1,4 +1,4 @@
-#define DEBUG
+//#define DEBUG
 #include <iostream>
 #include <string>
 #include <stack>
@@ -60,7 +60,7 @@ namespace forth {
                     Address _addr;
                     Floating _fp;
                     bool _truth;
-                    DictionaryEntry* _entry;
+                    const DictionaryEntry* _entry;
                 };
                 void invoke(Machine& machine) const;
             };
@@ -77,7 +77,7 @@ namespace forth {
             void addSpaceEntry(Address value);
             void addSpaceEntry(Floating value);
             void addSpaceEntry(bool value);
-            void addSpaceEntry(DictionaryEntry* value);
+            void addSpaceEntry(const DictionaryEntry* value);
             void operator()(Machine& machine) const {
                 if (_code != nullptr) {
                     _code(machine);
@@ -122,13 +122,19 @@ namespace forth {
     }
 
     void DictionaryEntry::addSpaceEntry(bool x) {
+#ifdef DEBUG
+        std::cout << "Adding boolean entry: " << x << std::endl;
+#endif
         DictionaryEntry::SpaceEntry se;
         se._type = decltype(se)::Discriminant::Boolean;
         se._truth = x;
         _space.push_back(se);
     }
 
-    void DictionaryEntry::addSpaceEntry(DictionaryEntry* x) {
+    void DictionaryEntry::addSpaceEntry(const DictionaryEntry* x) {
+#ifdef DEBUG
+        std::cout << "Adding dictionary entry: " << x << std::endl;
+#endif
         DictionaryEntry::SpaceEntry se;
         se._type = decltype(se)::Discriminant::DictEntry;
         se._entry = x;
@@ -228,18 +234,33 @@ namespace forth {
     void DictionaryEntry::SpaceEntry::invoke(Machine& machine) const {
         switch (_type) {
             case DictionaryEntry::SpaceEntry::Discriminant::Signed:
+#ifdef DEBUG
+                std::cout << "pushing integer " << std::dec << _int << " onto stack!" << std::endl;
+#endif
                 machine.pushParameter(_int);
                 break;
             case DictionaryEntry::SpaceEntry::Discriminant::Unsigned:
+#ifdef DEBUG
+                std::cout << "pushing address " << std::hex << _addr  << std::dec << " onto stack!" << std::endl;
+#endif
                 machine.pushParameter(_addr);
                 break;
             case DictionaryEntry::SpaceEntry::Discriminant::FloatingPoint:
+#ifdef DEBUG
+                std::cout << "pushing fp " << _fp << " onto stack!" << std::endl;
+#endif
                 machine.pushParameter(_fp);
                 break;
             case DictionaryEntry::SpaceEntry::Discriminant::Boolean:
+#ifdef DEBUG
+                std::cout << "pushing boolean " << _truth << " onto stack!" << std::endl;
+#endif
                 machine.pushParameter(_truth);
                 break;
             case DictionaryEntry::SpaceEntry::Discriminant::DictEntry:
+#ifdef DEBUG
+                std::cout << "calling dictionary entry: '" << _entry->getName() << "' at " << _entry << std::dec << std::endl;
+#endif
                 _entry->operator()(machine);
                 break;
             default:
@@ -603,12 +624,11 @@ namespace forth {
                 if (entry != nullptr) {
                     // okay we have a word, lets add it to the top word in the dictionary
                     // get the front word first and foremost
-                    auto* front = _compileTarget;
 #ifdef DEBUG
                     _output << "Found an entry for: " << result << std::endl;
                     _output << "Location: " << std::hex << entry << std::dec << std::endl;
 #endif
-                    front->addSpaceEntry(entry);
+                    _compileTarget->addSpaceEntry(entry);
                     continue;
                 }
                 // okay, we need to see if it is a value to compile in

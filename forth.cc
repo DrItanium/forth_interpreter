@@ -186,9 +186,6 @@ namespace forth {
 			void store(Address addr, Floating fp);
 			void store() { store(_registerA.address, _registerB); }
 			void pushParameter(Datum value);
-			void pushParameter(Integer value);
-			void pushParameter(Floating value);
-			void pushParameter(Address value);
 			Datum popParameter();
 			bool numberRoutine(const std::string& word) noexcept;
 			void typeValue(Discriminant discriminant, const Datum& value);
@@ -541,23 +538,6 @@ namespace forth {
 	void Machine::pushParameter(Datum value) {
 		_parameter.push(value);
 	}
-	void Machine::pushParameter(Integer value) {
-		Datum tmp;
-		tmp.numValue = value;
-		pushParameter(tmp);
-	}
-
-	void Machine::pushParameter(Address value) {
-		Datum tmp;
-		tmp.address = value;
-		pushParameter(tmp);
-	}
-
-	void Machine::pushParameter(Floating fp) {
-		Datum tmp;
-		tmp.fp = fp;
-		pushParameter(tmp);
-	}
 
 	Datum Machine::load(Address addr) {
 		if (addr > largestAddress) {
@@ -593,11 +573,11 @@ namespace forth {
 		// integers
 		// first do some inspection first
 		if (word == "true") {
-			pushParameter(1);
+			pushParameter(true);
 			return true;
 		}
 		if (word == "false") {
-			pushParameter(0);
+			pushParameter(false);
 			return true;
 		}
 		std::istringstream parseAttempt(word);

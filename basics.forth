@@ -33,3 +33,13 @@
 : ,f t.fp print.a ;
 : ,u t.address print.a ;
 : ,b t.boolean print.a ;
+: op-not pop.a not.a push.c ;
+: negate t.signed op-not ;
+: negateu t.address op-not ;
+: not t.boolean op-not ;
+
+: op-minus pop.a minus.a push.c ;
+: minus t.signed op-minus ;
+: minusf t.fp op-minus ;
+
+: non-zero zero not ;

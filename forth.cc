@@ -234,6 +234,7 @@ namespace forth {
 			void add();
 			void multiplyOperation();
 			void equals();
+			void powOperation();
 		private:
 			void initializeBaseDictionary();
 		private:
@@ -417,6 +418,22 @@ namespace forth {
 				throw "Illegal Discriminant";
 		}
 	}
+	void Machine::powOperation() {
+		using Type = decltype(_registerT);
+		switch(_registerT) {
+			case Type::Number:
+				_registerC.numValue = Integer(std::pow(_registerB.numValue, _registerA.numValue));
+				break;
+			case Type::MemoryAddress:
+				_registerC.address = Address(std::pow(_registerB.address, _registerA.address));
+				break;
+			case Type::FloatingPoint:
+				_registerC.fp = Floating(std::pow(_registerB.fp, _registerA.fp));
+				break;
+			default:
+				throw "Illegal Discriminant";
+		}
+	}
 
 	void Machine::initializeBaseDictionary() {
 		if (!_initializedBaseDictionary) {
@@ -447,6 +464,7 @@ namespace forth {
 			addWord("minus.a", std::mem_fn(&Machine::minusOperation));
 			addWord("mul", std::mem_fn(&Machine::multiplyOperation));
 			addWord("equals", std::mem_fn(&Machine::equals));
+			addWord("pow", std::mem_fn(&Machine::powOperation));
 			addWord("abs", unaryOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
 			addWord("-", binaryOperation([](auto top, auto lower) { return lower.numValue - top.numValue; }));
 			addWord("/", binaryOperation([](auto top, auto lower) { return lower.numValue / top.numValue; }));
@@ -476,9 +494,9 @@ namespace forth {
 			addWord("lor", binaryOperation([](auto top, auto lower) { return top.truth || lower.truth; }));
 			addWord("lxor", binaryOperation([](auto top, auto lower) { return top.truth ^ lower.truth; }));
 			addWord("implies", binaryOperation([](auto top, auto lower) { return (!top.truth) || lower.truth; }));
-			addWord("**", binaryOperation([](auto top, auto lower) { return static_cast<Integer>(std::pow(lower.numValue, top.numValue)); }));
-			addWord("**f", binaryOperation([](auto top, auto lower) { return static_cast<Floating>(std::pow(lower.fp, top.fp)); }));
-			addWord("**u", binaryOperation([](auto top, auto lower) { return static_cast<Address>(std::pow(lower.address, top.address)); }));
+			//addWord("**", binaryOperation([](auto top, auto lower) { return static_cast<Integer>(std::pow(lower.numValue, top.numValue)); }));
+			//addWord("**f", binaryOperation([](auto top, auto lower) { return static_cast<Floating>(std::pow(lower.fp, top.fp)); }));
+			//addWord("**u", binaryOperation([](auto top, auto lower) { return static_cast<Address>(std::pow(lower.address, top.address)); }));
 		}
 	}
 	void Machine::popT() {

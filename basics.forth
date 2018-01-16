@@ -69,3 +69,8 @@
 : ** t.signed op-pow ;
 : **f t.fp op-pow ;
 : **u t.address op-pow ;
+
+: op-sub load-ba subtract push.c ;
+: - t.signed op-sub ;
+: -f t.fp op-sub ;
+: -u t.address op-sub ;

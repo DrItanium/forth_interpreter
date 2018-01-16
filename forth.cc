@@ -213,6 +213,7 @@ namespace forth {
 			void pushC() { pushParameter(getC()); }
 			void pushT() { pushParameter((Address)getT()); }
 			void add();
+			void subtract();
 			void multiplyOperation();
 			void equals();
 			void powOperation();
@@ -236,21 +237,6 @@ namespace forth {
 			Datum _registerA, _registerB, _registerC;
 			Discriminant _registerT;
 	};
-	void Machine::add() {
-		switch(_registerT) {
-			case Discriminant::Number:
-				_registerC = _registerA.numValue + _registerB.numValue;
-				break;
-			case Discriminant::MemoryAddress:
-				_registerC = _registerA.address + _registerB.address;
-				break;
-			case Discriminant::FloatingPoint:
-				_registerC = _registerA.fp + _registerB.fp;
-				break;
-			default:
-				throw "Illegal Discriminant";
-		}
-	}
 	std::string Machine::readWord() {
 		std::string word;
 		_input >> word;
@@ -423,6 +409,39 @@ namespace forth {
 		}
 	}
 
+	void Machine::subtract() {
+		using Type = decltype(_registerT);
+		switch(_registerT) {
+			case Type::Number:
+				_registerC = _registerA.numValue - _registerB.numValue;
+				break;
+			case Type::MemoryAddress:
+				_registerC = _registerA.address - _registerB.address;
+				break;
+			case Type::FloatingPoint:
+				_registerC = _registerA.fp - _registerB.fp;
+				break;
+			default:
+				throw "Illegal Discriminant";
+		}
+	}
+
+	void Machine::add() {
+		switch(_registerT) {
+			case Discriminant::Number:
+				_registerC = _registerA.numValue + _registerB.numValue;
+				break;
+			case Discriminant::MemoryAddress:
+				_registerC = _registerA.address + _registerB.address;
+				break;
+			case Discriminant::FloatingPoint:
+				_registerC = _registerA.fp + _registerB.fp;
+				break;
+			default:
+				throw "Illegal Discriminant";
+		}
+	}
+
 	void Machine::initializeBaseDictionary() {
 		if (!_initializedBaseDictionary) {
 			_initializedBaseDictionary = true;
@@ -443,6 +462,7 @@ namespace forth {
 			addWord("mload", std::mem_fn<void()>(&Machine::load));
 			addWord("mstore", std::mem_fn<void()>(&Machine::store));
 			addWord("add", std::mem_fn(&Machine::add));
+			addWord("subtract", std::mem_fn(&Machine::subtract));
 			addWord(";", [](Machine* machine) {
 					// in assembly level impls, this resets the instruction
 					// counter to zero, however, with how we use iterators,
@@ -454,20 +474,17 @@ namespace forth {
 			addWord("equals", std::mem_fn(&Machine::equals));
 			addWord("pow", std::mem_fn(&Machine::powOperation));
 			addWord("abs", unaryOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
-			addWord("-", binaryOperation([](auto top, auto lower) { return lower.numValue - top.numValue; }));
 			addWord("/", binaryOperation([](auto top, auto lower) { return lower.numValue / top.numValue; }));
 			addWord("mod", binaryOperation([](auto top, auto lower) { return lower.numValue % top.numValue; }));
 			addWord("<", binaryOperation([](auto top, auto lower) { return lower.numValue < top.numValue; }));
 			addWord(">", binaryOperation([](auto top, auto lower) { return lower.numValue > top.numValue; }));
 			addWord(">=", binaryOperation([](auto top, auto lower) { return lower.numValue >= top.numValue; }));
 			addWord("<=", binaryOperation([](auto top, auto lower) { return lower.numValue <= top.numValue; }));
-			addWord("-f", binaryOperation([](auto top, auto lower) { return lower.fp - top.fp; }));
 			addWord("/f", binaryOperation([](auto top, auto lower) { return lower.fp / top.fp; }));
 			addWord("<f", binaryOperation([](auto top, auto lower) { return lower.fp < top.fp; }));
 			addWord(">f", binaryOperation([](auto top, auto lower) { return lower.fp > top.fp; }));
 			addWord(">=f", binaryOperation([](auto top, auto lower) { return lower.fp >= top.fp; }));
 			addWord("<=f", binaryOperation([](auto top, auto lower) { return lower.fp <= top.fp; }));
-			addWord("-u", binaryOperation([](auto top, auto lower) { return lower.address - top.address; }));
 			addWord("/u", binaryOperation([](auto top, auto lower) { return lower.address / top.address; }));
 			addWord("modu", binaryOperation([](auto top, auto lower) { return lower.address % top.address; }));
 			addWord("<u", binaryOperation([](auto top, auto lower) { return lower.address < top.address; }));

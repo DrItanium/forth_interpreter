@@ -46,7 +46,7 @@ namespace forth {
         }
     }
     class Machine;
-    using NativeMachineOperation = std::function<void(Machine&)>;
+    using NativeMachineOperation = std::function<void(Machine*)>;
     class DictionaryEntry {
         public:
             struct SpaceEntry {
@@ -65,7 +65,7 @@ namespace forth {
                     bool _truth;
                     const DictionaryEntry* _entry;
                 };
-                void invoke(Machine& machine) const;
+                void invoke(Machine* machine) const;
             };
         public:
             DictionaryEntry() = default;
@@ -81,7 +81,7 @@ namespace forth {
             void addSpaceEntry(Floating value);
             void addSpaceEntry(bool value);
             void addSpaceEntry(const DictionaryEntry* value);
-            void operator()(Machine& machine) const {
+            void operator()(Machine* machine) const {
                 if (_code != nullptr) {
                     _code(machine);
                 } else {
@@ -197,6 +197,7 @@ namespace forth {
             bool numberRoutine(const std::string& word) noexcept;
             void typeValue(Discriminant discriminant, const Datum& value);
             void typeValue(const Datum& value) { typeValue(_registerT, value); }
+            void typeValue() { typeValue(_registerA); }
             void callSubroutine();
             void returnFromSubroutine();
             void addWord(DictionaryEntry* entry);
@@ -256,31 +257,31 @@ namespace forth {
         addWord(_compileTarget);
         _compileTarget = nullptr;
     }
-    void DictionaryEntry::SpaceEntry::invoke(Machine& machine) const {
+    void DictionaryEntry::SpaceEntry::invoke(Machine* machine) const {
         switch (_type) {
             case DictionaryEntry::SpaceEntry::Discriminant::Signed:
 #ifdef DEBUG
                 std::cout << "pushing integer " << std::dec << _int << " onto stack!" << std::endl;
 #endif
-                machine.pushParameter(_int);
+                machine->pushParameter(_int);
                 break;
             case DictionaryEntry::SpaceEntry::Discriminant::Unsigned:
 #ifdef DEBUG
                 std::cout << "pushing address " << std::hex << _addr  << std::dec << " onto stack!" << std::endl;
 #endif
-                machine.pushParameter(_addr);
+                machine->pushParameter(_addr);
                 break;
             case DictionaryEntry::SpaceEntry::Discriminant::FloatingPoint:
 #ifdef DEBUG
                 std::cout << "pushing fp " << _fp << " onto stack!" << std::endl;
 #endif
-                machine.pushParameter(_fp);
+                machine->pushParameter(_fp);
                 break;
             case DictionaryEntry::SpaceEntry::Discriminant::Boolean:
 #ifdef DEBUG
                 std::cout << "pushing boolean " << _truth << " onto stack!" << std::endl;
 #endif
-                machine.pushParameter(_truth);
+                machine->pushParameter(_truth);
                 break;
             case DictionaryEntry::SpaceEntry::Discriminant::DictEntry:
 #ifdef DEBUG
@@ -307,20 +308,20 @@ namespace forth {
         _keepExecuting = false;
     }
     NativeMachineOperation binaryOperation(std::function<Datum(const Datum&, const Datum&)> fn) noexcept {
-        return [fn](Machine& machine) {
-            auto top(machine.popParameter());
-            auto lower(machine.popParameter());
+        return [fn](Machine* machine) {
+            auto top(machine->popParameter());
+            auto lower(machine->popParameter());
 #ifdef DEBUG
             std::cout << "top: " << top.numValue << std::endl;
             std::cout << "lower: " << lower.numValue << std::endl;
 #endif
-            machine.pushParameter(fn(top, lower));
+            machine->pushParameter(fn(top, lower));
         };
     }
     NativeMachineOperation unaryOperation(std::function<Datum(const Datum&)> fn) noexcept {
-        return [fn](Machine& machine) {
-            auto top(machine.popParameter());
-            machine.pushParameter(fn(top));
+        return [fn](Machine* machine) {
+            auto top(machine->popParameter());
+            machine->pushParameter(fn(top));
         };
     }
 
@@ -328,10 +329,13 @@ namespace forth {
         if (!_initializedBaseDictionary) {
             _initializedBaseDictionary = true;
             // add dictionary entries
-            addWord("quit", [](Machine& machine) { machine.terminateExecution(); });
+            addWord("quit", std::mem_fn(&Machine::terminateExecution));
+            addWord("registers", std::mem_fn(&Machine::printRegisters));
+            addWord("words", std::mem_fn(&Machine::listWords));
+            addWord(":", std::mem_fn(&Machine::defineWord));
+            addWord("type.a", std::mem_fn(&Machine::typeValue));
             addWord("minus", unaryOperation([](auto top) { return -top.numValue; }));
             addWord("abs", unaryOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
-            addWord("type.a", [](Machine& machine) { machine.typeValue(machine.getA()); });
             addWord("zero", unaryOperation([](auto top) { return top.numValue == 0; }));
             addWord("nonzero", unaryOperation([](auto top) { return top.numValue != 0; }));
             addWord("+", binaryOperation([](auto top, auto lower) { return top.numValue + lower.numValue; }));
@@ -375,31 +379,28 @@ namespace forth {
             addWord("**", binaryOperation([](auto top, auto lower) { return static_cast<Integer>(std::pow(lower.numValue, top.numValue)); }));
             addWord("**f", binaryOperation([](auto top, auto lower) { return static_cast<Floating>(std::pow(lower.fp, top.fp)); }));
             addWord("**u", binaryOperation([](auto top, auto lower) { return static_cast<Address>(std::pow(lower.address, top.address)); }));
-            addWord("words", [](Machine& machine) { machine.listWords(); });
-            addWord(":", [](Machine& machine) { machine.defineWord(); });
-            addWord(";", [](Machine& machine) {
+            addWord(";", [](Machine* machine) {
                         // in assembly level impls, this resets the instruction
                         // counter to zero, however, with how we use iterators,
                         // this isn't necessary!
                     });
-            addWord("pop.t", [](Machine& machine) { 
+            addWord("pop.t", [](Machine* machine) { 
                     static constexpr Address max = (Address)Discriminant::Count;
-                    auto top(machine.popParameter());
+                    auto top(machine->popParameter());
                     if (top.address >= max) {
                         throw "ILLEGAL DISCRIMINANT!";
                     }
-                    machine.setT((Discriminant)top.address);
+                    machine->setT((Discriminant)top.address);
                     });
-            addWord("pop.a", [](Machine& machine) { machine.setA(machine.popParameter()); });
-            addWord("pop.b", [](Machine& machine) { machine.setB(machine.popParameter()); });
-            addWord("pop.c", [](Machine& machine) { machine.setC(machine.popParameter()); });
-            addWord("push.a", [](Machine& machine) { machine.pushParameter(machine.getA()); });
-            addWord("push.b", [](Machine& machine) { machine.pushParameter(machine.getB()); });
-            addWord("push.c", [](Machine& machine) { machine.pushParameter(machine.getC()); });
-            addWord("push.t", [](Machine& machine) { machine.pushParameter((Address)machine.getT()); });
-            addWord("registers", [](Machine& machine) { machine.printRegisters(); });
-            addWord("mload", [](Machine& machine) { machine.setC(machine.load(machine.getA().address)); });
-            addWord("mstore", [](Machine& machine) { machine.store(machine.getA().address, machine.getB()); });
+            addWord("pop.a", [](Machine* machine) { machine->setA(machine->popParameter()); });
+            addWord("pop.b", [](Machine* machine) { machine->setB(machine->popParameter()); });
+            addWord("pop.c", [](Machine* machine) { machine->setC(machine->popParameter()); });
+            addWord("push.a", [](Machine* machine) { machine->pushParameter(machine->getA()); });
+            addWord("push.b", [](Machine* machine) { machine->pushParameter(machine->getB()); });
+            addWord("push.c", [](Machine* machine) { machine->pushParameter(machine->getC()); });
+            addWord("push.t", [](Machine* machine) { machine->pushParameter((Address)machine->getT()); });
+            addWord("mload", [](Machine* machine) { machine->setC(machine->load(machine->getA().address)); });
+            addWord("mstore", [](Machine* machine) { machine->store(machine->getA().address, machine->getB()); });
         }
     }
     void Machine::addWord(DictionaryEntry* entry) {
@@ -672,7 +673,7 @@ namespace forth {
                 }
             } else {
                 if (entry != nullptr) {
-                    entry->operator()(*this);
+                    entry->operator()(this);
                     continue;
                 }
                 if (numberRoutine(result)) {

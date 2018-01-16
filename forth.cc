@@ -211,14 +211,18 @@ namespace forth {
             void endDefineWord();
             DictionaryEntry* getFrontWord();
             bool compileNumber(const std::string& word) noexcept;
-            void setA() { setA(popParameter()); }
+            void popA() { setA(popParameter()); }
             void setA(const Datum& target) noexcept { _registerA = target; }
+            void pushA() { pushParameter(getA()); }
             Datum& getA() noexcept { return _registerA; }
-            void setB() { setB(popParameter()); }
+            void popB() { setB(popParameter()); }
             void setB(const Datum& target) noexcept { _registerB = target; }
+            void pushB() { pushParameter(getB()); }
             Datum& getB() noexcept { return _registerB; }
-            void setC() { setC(popParameter()); }
+
+            void popC() { setC(popParameter()); }
             void setC(const Datum& target) noexcept { _registerC = target; }
+            void pushC() { pushParameter(getC()); }
             Datum& getC() noexcept { return _registerC; }
             void setT(Discriminant type) noexcept { _registerT = type; }
             Discriminant getT() const noexcept { return _registerT; }
@@ -416,12 +420,12 @@ namespace forth {
                     }
                     machine->setT((Discriminant)top.address);
                     });
-            addWord("pop.a", std::mem_fn<void()>(&Machine::setA));
-            addWord("pop.b", std::mem_fn<void()>(&Machine::setB));
-            addWord("pop.c", std::mem_fn<void()>(&Machine::setC));
-            addWord("push.a", [](Machine* machine) { machine->pushParameter(machine->getA()); });
-            addWord("push.b", [](Machine* machine) { machine->pushParameter(machine->getB()); });
-            addWord("push.c", [](Machine* machine) { machine->pushParameter(machine->getC()); });
+            addWord("pop.a", std::mem_fn<void()>(&Machine::popA));
+            addWord("pop.b", std::mem_fn<void()>(&Machine::popB));
+            addWord("pop.c", std::mem_fn<void()>(&Machine::popC));
+            addWord("push.a", std::mem_fn(&Machine::pushA));
+            addWord("push.b", std::mem_fn(&Machine::pushB));
+            addWord("push.c", std::mem_fn(&Machine::pushC));
             addWord("push.t", [](Machine* machine) { machine->pushParameter((Address)machine->getT()); });
             addWord("mload", std::mem_fn<void()>(&Machine::load));
             addWord("mstore", std::mem_fn<void()>(&Machine::store));

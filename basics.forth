@@ -74,3 +74,13 @@
 : - t.signed op-sub ;
 : -f t.fp op-sub ;
 : -u t.address op-sub ;
+
+: op-div load-ba divide push.c ;
+: / t.signed op-div ;
+: /f t.fp op-div ;
+: /u t.address op-div ;
+
+: op-mod load-ba modulo push.c ;
+: mod t.signed op-mod ;
+: modu t.address op-mod ;
+: modf t.fp op-mod ;

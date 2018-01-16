@@ -148,15 +148,8 @@ namespace forth {
 	template<typename T = int>
 		using Stack = std::stack<T, std::list<T>>;
 
-	DictionaryEntry::DictionaryEntry(const std::string& name, NativeMachineOperation code) : _name(name), _code(code), _next(nullptr)
-	{
-	}
+	DictionaryEntry::DictionaryEntry(const std::string& name, NativeMachineOperation code) : _name(name), _code(code), _next(nullptr) { }
 
-	std::string readWord(std::istream& input) {
-		std::string word;
-		input >> word;
-		return word;
-	}
 
 	class Machine {
 		public:
@@ -225,6 +218,7 @@ namespace forth {
 			void powOperation();
 		private:
 			void initializeBaseDictionary();
+			std::string readWord();
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;
@@ -257,6 +251,11 @@ namespace forth {
 				throw "Illegal Discriminant";
 		}
 	}
+	std::string Machine::readWord() {
+		std::string word;
+		_input >> word;
+		return word;
+	}
 	void Machine::printRegisters() {
 		auto fn = [this](const std::string& title, const Datum& r) {
 			_output << title << ": {" << r.numValue << ", 0x" << std::hex << r.address << ", " << std::dec << r.fp << "}" << std::endl;
@@ -269,7 +268,7 @@ namespace forth {
 	void Machine::defineWord() {
 		activateCompileMode();
 		// pass address "execute" to the entry subroutine
-		_compileTarget = new DictionaryEntry(readWord(_input));
+		_compileTarget = new DictionaryEntry(readWord());
 	}
 	void Machine::endDefineWord() {
 		deactivateCompileMode();
@@ -667,7 +666,7 @@ namespace forth {
 		// setup initial dictionary
 		initializeBaseDictionary();
 		while (_keepExecuting) {
-			auto result = readWord(_input);
+			auto result = readWord();
 			// okay, we need to see if we can find the given word!
 			auto* entry = lookupWord(result);
 			if (_compiling) {

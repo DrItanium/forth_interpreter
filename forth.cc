@@ -161,6 +161,7 @@ namespace forth {
             void defineWord();
             void endDefineWord();
             DictionaryEntry* getFrontWord();
+            void compileNumber(const std::string& word);
         private:
             void initializeBaseDictionary();
         private:
@@ -468,6 +469,54 @@ namespace forth {
         }
         return false;
     }
+
+    bool Machine::compileNumber(const std::string& word) noexcept {
+        // floating point
+        // integers
+        // first do some inspection first
+        std::istringstream parseAttempt(word);
+        if (word.find('u') != std::string::npos) {
+            Address tmpAddress;
+            parseAttempt >> tmpAddress;
+            if (!parseAttempt.fail() && parseAttempt.eof()) {
+                pushParameter(tmpAddress);
+                return true;
+            }
+            return false;
+        }
+        parseAttempt.clear();
+        if (word.find('.') != std::string::npos) {
+            Floating tmpFloat;
+            parseAttempt >> tmpFloat;
+            if (!parseAttempt.fail()) {
+#ifdef DEBUG
+                _output << "attempt floating point number push: " << tmpFloat << std::endl;
+#endif // end DEBUG
+                if (parseAttempt.eof()) {
+                    pushParameter(tmpFloat);
+                    return true;
+                } else {
+                    // get out of here early since we hit something that looks like
+                    // a float
+                    return false;
+                }
+            }
+        }
+        Integer tmpInt;
+        parseAttempt.clear();
+        parseAttempt >> tmpInt;
+        if (!parseAttempt.fail()) {
+#ifdef DEBUG
+            _output << "attempt integer number push: " << tmpInt << std::endl;
+#endif // end DEBUG
+            if (parseAttempt.eof()) {
+                // if we hit the end of the word provided then it is an integer, otherwise it is not!
+                pushParameter(tmpInt);
+                return true;
+            }
+        }
+        return false;
+    }
     void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
         // clear the stacks and the input pointer
         decltype(_subroutine) _purge0;
@@ -497,6 +546,7 @@ namespace forth {
                     front->addSpaceEntry(entry);
                     continue;
                 }
+                // okay, we have a separate thing to lookup
 
             } else {
                 if (entry != nullptr) {

@@ -233,10 +233,7 @@ namespace forth {
 			void pushT() { pushParameter((Address)getT()); }
 			void add();
 			void multiplyOperation();
-			void subtract();
-			void divide();
 			void equals();
-			void minus();
 		private:
 			void initializeBaseDictionary();
 		private:
@@ -402,6 +399,24 @@ namespace forth {
 				throw "Illegal Discriminant";
 		}
 	}
+	void Machine::equals() {
+		using Type = decltype(_registerT);
+		switch(_registerT) {
+			case Type::Number:
+				_registerC.truth = _registerA.numValue == _registerB.numValue;
+				break;
+			case Type::MemoryAddress:
+				_registerC.truth = _registerA.address == _registerB.address;
+				break;
+			case Type::FloatingPoint:
+				_registerC.truth = _registerA.fp == _registerB.fp;
+				break;
+			case Type::Boolean:
+				_registerC.truth = _registerA.truth == _registerB.truth;
+			default:
+				throw "Illegal Discriminant";
+		}
+	}
 
 	void Machine::initializeBaseDictionary() {
 		if (!_initializedBaseDictionary) {
@@ -431,19 +446,18 @@ namespace forth {
 			addWord("not.a", std::mem_fn(&Machine::notOperation));
 			addWord("minus.a", std::mem_fn(&Machine::minusOperation));
 			addWord("mul", std::mem_fn(&Machine::multiplyOperation));
+			addWord("equals", std::mem_fn(&Machine::equals));
 			addWord("abs", unaryOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
 			addWord("zero", unaryOperation([](auto top) { return top.numValue == 0; }));
 			addWord("-", binaryOperation([](auto top, auto lower) { return lower.numValue - top.numValue; }));
 			addWord("/", binaryOperation([](auto top, auto lower) { return lower.numValue / top.numValue; }));
 			addWord("mod", binaryOperation([](auto top, auto lower) { return lower.numValue % top.numValue; }));
-			addWord("==", binaryOperation([](auto top, auto lower) { return lower.numValue == top.numValue; }));
 			addWord("<", binaryOperation([](auto top, auto lower) { return lower.numValue < top.numValue; }));
 			addWord(">", binaryOperation([](auto top, auto lower) { return lower.numValue > top.numValue; }));
 			addWord(">=", binaryOperation([](auto top, auto lower) { return lower.numValue >= top.numValue; }));
 			addWord("<=", binaryOperation([](auto top, auto lower) { return lower.numValue <= top.numValue; }));
 			addWord("-f", binaryOperation([](auto top, auto lower) { return lower.fp - top.fp; }));
 			addWord("/f", binaryOperation([](auto top, auto lower) { return lower.fp / top.fp; }));
-			addWord("==f", binaryOperation([](auto top, auto lower) { return lower.fp == top.fp; }));
 			addWord("<f", binaryOperation([](auto top, auto lower) { return lower.fp < top.fp; }));
 			addWord(">f", binaryOperation([](auto top, auto lower) { return lower.fp > top.fp; }));
 			addWord(">=f", binaryOperation([](auto top, auto lower) { return lower.fp >= top.fp; }));
@@ -451,7 +465,6 @@ namespace forth {
 			addWord("-u", binaryOperation([](auto top, auto lower) { return lower.address - top.address; }));
 			addWord("/u", binaryOperation([](auto top, auto lower) { return lower.address / top.address; }));
 			addWord("modu", binaryOperation([](auto top, auto lower) { return lower.address % top.address; }));
-			addWord("==u", binaryOperation([](auto top, auto lower) { return lower.address == top.address; }));
 			addWord("<u", binaryOperation([](auto top, auto lower) { return lower.address < top.address; }));
 			addWord(">u", binaryOperation([](auto top, auto lower) { return lower.address > top.address; }));
 			addWord(">=u", binaryOperation([](auto top, auto lower) { return lower.address >= top.address; }));

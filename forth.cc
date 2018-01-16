@@ -200,8 +200,6 @@ namespace forth {
             void typeValue(Discriminant discriminant, const Datum& value);
             void typeValue(const Datum& value) { typeValue(_registerT, value); }
             void typeValue() { typeValue(_registerA); }
-            void callSubroutine();
-            void returnFromSubroutine();
             void addWord(DictionaryEntry* entry);
             void addWord(const std::string& name, NativeMachineOperation op);
             void terminateExecution();
@@ -213,10 +211,13 @@ namespace forth {
             void endDefineWord();
             DictionaryEntry* getFrontWord();
             bool compileNumber(const std::string& word) noexcept;
+            void setA() { setA(popParameter()); }
             void setA(const Datum& target) noexcept { _registerA = target; }
             Datum& getA() noexcept { return _registerA; }
+            void setB() { setB(popParameter()); }
             void setB(const Datum& target) noexcept { _registerB = target; }
             Datum& getB() noexcept { return _registerB; }
+            void setC() { setC(popParameter()); }
             void setC(const Datum& target) noexcept { _registerC = target; }
             Datum& getC() noexcept { return _registerC; }
             void setT(Discriminant type) noexcept { _registerT = type; }
@@ -415,9 +416,9 @@ namespace forth {
                     }
                     machine->setT((Discriminant)top.address);
                     });
-            addWord("pop.a", [](Machine* machine) { machine->setA(machine->popParameter()); });
-            addWord("pop.b", [](Machine* machine) { machine->setB(machine->popParameter()); });
-            addWord("pop.c", [](Machine* machine) { machine->setC(machine->popParameter()); });
+            addWord("pop.a", std::mem_fn<void()>(&Machine::setA));
+            addWord("pop.b", std::mem_fn<void()>(&Machine::setB));
+            addWord("pop.c", std::mem_fn<void()>(&Machine::setC));
             addWord("push.a", [](Machine* machine) { machine->pushParameter(machine->getA()); });
             addWord("push.b", [](Machine* machine) { machine->pushParameter(machine->getB()); });
             addWord("push.c", [](Machine* machine) { machine->pushParameter(machine->getC()); });

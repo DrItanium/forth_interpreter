@@ -232,9 +232,9 @@ namespace forth {
 			void pushC() { pushParameter(getC()); }
 			void pushT() { pushParameter((Address)getT()); }
 			void add();
+			void multiplyOperation();
 			void subtract();
 			void divide();
-			void multiply();
 			void equals();
 			void minus();
 		private:
@@ -386,6 +386,22 @@ namespace forth {
 				throw "ILLEGAL DISCRIMINANT!";
 		}
 	}
+	void Machine::multiplyOperation() {
+		using Type = decltype(_registerT);
+		switch(_registerT) {
+			case Type::Number:
+				_registerC.numValue = _registerA.numValue * _registerB.numValue;
+				break;
+			case Type::MemoryAddress:
+				_registerC.address = _registerA.address * _registerB.address;
+				break;
+			case Type::FloatingPoint:
+				_registerC.fp = _registerA.fp * _registerB.fp;
+				break;
+			default:
+				throw "Illegal Discriminant";
+		}
+	}
 
 	void Machine::initializeBaseDictionary() {
 		if (!_initializedBaseDictionary) {
@@ -414,11 +430,10 @@ namespace forth {
 					});
 			addWord("not.a", std::mem_fn(&Machine::notOperation));
 			addWord("minus.a", std::mem_fn(&Machine::minusOperation));
+			addWord("mul", std::mem_fn(&Machine::multiplyOperation));
 			addWord("abs", unaryOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
 			addWord("zero", unaryOperation([](auto top) { return top.numValue == 0; }));
 			addWord("nonzero", unaryOperation([](auto top) { return top.numValue != 0; }));
-			//addWord("+", binaryOperation([](auto top, auto lower) { return top.numValue + lower.numValue; }));
-			addWord("*", binaryOperation([](auto top, auto lower) { return top.numValue * lower.numValue; }));
 			addWord("-", binaryOperation([](auto top, auto lower) { return lower.numValue - top.numValue; }));
 			addWord("/", binaryOperation([](auto top, auto lower) { return lower.numValue / top.numValue; }));
 			addWord("mod", binaryOperation([](auto top, auto lower) { return lower.numValue % top.numValue; }));
@@ -427,8 +442,6 @@ namespace forth {
 			addWord(">", binaryOperation([](auto top, auto lower) { return lower.numValue > top.numValue; }));
 			addWord(">=", binaryOperation([](auto top, auto lower) { return lower.numValue >= top.numValue; }));
 			addWord("<=", binaryOperation([](auto top, auto lower) { return lower.numValue <= top.numValue; }));
-			//addWord("+f", binaryOperation([](auto top, auto lower) { return top.fp + lower.fp; }));
-			addWord("*f", binaryOperation([](auto top, auto lower) { return top.fp * lower.fp; }));
 			addWord("-f", binaryOperation([](auto top, auto lower) { return lower.fp - top.fp; }));
 			addWord("/f", binaryOperation([](auto top, auto lower) { return lower.fp / top.fp; }));
 			addWord("==f", binaryOperation([](auto top, auto lower) { return lower.fp == top.fp; }));
@@ -436,8 +449,6 @@ namespace forth {
 			addWord(">f", binaryOperation([](auto top, auto lower) { return lower.fp > top.fp; }));
 			addWord(">=f", binaryOperation([](auto top, auto lower) { return lower.fp >= top.fp; }));
 			addWord("<=f", binaryOperation([](auto top, auto lower) { return lower.fp <= top.fp; }));
-			//addWord("+u", binaryOperation([](auto top, auto lower) { return top.address + lower.address; }));
-			addWord("*u", binaryOperation([](auto top, auto lower) { return top.address * lower.address; }));
 			addWord("-u", binaryOperation([](auto top, auto lower) { return lower.address - top.address; }));
 			addWord("/u", binaryOperation([](auto top, auto lower) { return lower.address / top.address; }));
 			addWord("modu", binaryOperation([](auto top, auto lower) { return lower.address % top.address; }));
@@ -446,7 +457,6 @@ namespace forth {
 			addWord(">u", binaryOperation([](auto top, auto lower) { return lower.address > top.address; }));
 			addWord(">=u", binaryOperation([](auto top, auto lower) { return lower.address >= top.address; }));
 			addWord("<=u", binaryOperation([](auto top, auto lower) { return lower.address <= top.address; }));
-			//addWord("not", unaryOperation([](auto top) { return ~top.address; }));
 			addWord("lnot", unaryOperation([](auto top) { return top.truth ? 0 : 1; }));
 			addWord("and", binaryOperation([](auto top, auto lower) { return top.address & lower.address; }));
 			addWord("or", binaryOperation([](auto top, auto lower) { return top.address | lower.address; }));

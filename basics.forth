@@ -8,17 +8,26 @@
 : t.fp DISCRIMINANT_FLOATING_POINT pop.t ;
 : t.boolean DISCRIMINANT_BOOLEAN pop.t ;
 : clear-registers 0 pop.a 0 pop.b 0 pop.c t.signed ;
-: op-add pop.a pop.b add push.c ;
+
+: load-ab pop.a pop.b ;
+
+: op-add load-ab add push.c ;
+: op-mul load-ab mul push.c ;
+
 : + t.signed op-add ;
 : +f t.fp op-add ;
 : +u t.address op-add ;
 
+: * t.signed op-mul ;
+: *f t.fp op-mul ;
+: *u t.address op-mul ;
+
 : drop pop.a ;
 : dup pop.a push.a push.a ;
-: swap pop.a pop.b push.b push.a ;
-: over pop.a pop.b push.b push.a push.b ;
+: swap load-ab push.b push.a ;
+: over load-ab push.b push.a push.b ;
 : @ pop.a mload push.c ;
-: = pop.a pop.b mstore ;
+: = load-ab mstore ;
 : print.a pop.a type.a ;
 : , t.signed print.a ;
 : ,f t.fp print.a ;

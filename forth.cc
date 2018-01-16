@@ -654,6 +654,8 @@ namespace forth {
 } // end namespace forth
 
 
+//TODO: add support for catching exceptions and calling handleError with the exception information
+
 int main() {
     forth::Machine machine (std::cout, std::cin);
     machine.controlLoop();

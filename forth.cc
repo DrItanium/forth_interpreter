@@ -448,7 +448,6 @@ namespace forth {
 			addWord("mul", std::mem_fn(&Machine::multiplyOperation));
 			addWord("equals", std::mem_fn(&Machine::equals));
 			addWord("abs", unaryOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
-			addWord("zero", unaryOperation([](auto top) { return top.numValue == 0; }));
 			addWord("-", binaryOperation([](auto top, auto lower) { return lower.numValue - top.numValue; }));
 			addWord("/", binaryOperation([](auto top, auto lower) { return lower.numValue / top.numValue; }));
 			addWord("mod", binaryOperation([](auto top, auto lower) { return lower.numValue % top.numValue; }));

@@ -55,3 +55,11 @@
 : nequ t.address op-not-equals ;
 : neqf t.fp op-not-equals ;
 : neql t.boolean op-not-equals ;
+
+: zero 0 eq ;
+: zerou 0 equ ;
+: zerof 0.0 eqf ;
+
+: not-zero 0 neq ;
+: not-zerou 0 nequ ;
+: not-zerof 0.0 neqf ;

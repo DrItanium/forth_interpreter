@@ -422,8 +422,8 @@ namespace forth {
             addWord("push.b", [](Machine* machine) { machine->pushParameter(machine->getB()); });
             addWord("push.c", [](Machine* machine) { machine->pushParameter(machine->getC()); });
             addWord("push.t", [](Machine* machine) { machine->pushParameter((Address)machine->getT()); });
-            addWord("mload", std::mem_fn(&Machine::load));
-            addWord("mstore", std::mem_fn(&Machine::store));
+            addWord("mload", std::mem_fn<void()>(&Machine::load));
+            addWord("mstore", std::mem_fn<void()>(&Machine::store));
             addWord("add", std::mem_fn(&Machine::add));
         }
     }

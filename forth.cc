@@ -369,7 +369,11 @@ namespace forth {
             addWord("**u", binaryOperation([](auto top, auto lower) { return static_cast<Address>(std::pow(lower.address, top.address)); }));
             addWord("words", [](Machine& machine) { machine.listWords(); });
             addWord(":", [](Machine& machine) { machine.defineWord(); });
-            //addWord(";", [](Machine& machine) { machine.endDefineWord(); });
+            addWord(";", [](Machine& machine) {
+                        // in assembly level impls, this resets the instruction
+                        // counter to zero, however, with how we use iterators,
+                        // this isn't necessary!
+                    });
 
         }
     }
@@ -622,7 +626,6 @@ namespace forth {
             if (_compiling) {
                 if (result == ";") {
                     endDefineWord();
-                    continue;
                 }
                 if (entry != nullptr) {
                     // okay we have a word, lets add it to the top word in the dictionary

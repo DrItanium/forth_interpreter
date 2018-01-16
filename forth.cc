@@ -16,11 +16,12 @@ namespace forth {
     using Floating = float;
     using byte = uint8_t;
     static_assert((sizeof(Address) == sizeof(Integer)) && (sizeof(Integer) == sizeof(Floating)), "Address, Integer, and Floating are not equal!");
-    enum Discriminant {
+    enum class Discriminant : Address {
         Number,
         MemoryAddress,
         FloatingPoint,
         Boolean,
+        Count,
     };
     union Datum {
         Datum() = default;
@@ -208,6 +209,23 @@ namespace forth {
             void endDefineWord();
             DictionaryEntry* getFrontWord();
             bool compileNumber(const std::string& word) noexcept;
+            void setA(const Datum& target) noexcept { _registerA = target; }
+            Datum& getA() noexcept { return _registerA; }
+            void setB(const Datum& target) noexcept { _registerB = target; }
+            Datum& getB() noexcept { return _registerB; }
+            void setC(const Datum& target) noexcept { _registerC = target; }
+            Datum& getC() noexcept { return _registerC; }
+            void setT(Discriminant type) noexcept { _registerT = type; }
+            Discriminant getT() const noexcept { return _registerT; }
+            void add();
+            void printRegisters();
+            //void subtract();
+            //void multiply();
+            //void divide();
+            //void modulus();
+            //void greaterThan();
+            //void lessThan();
+            //void equal();
         private:
             void initializeBaseDictionary();
         private:
@@ -222,7 +240,34 @@ namespace forth {
             bool _keepExecuting = true;
             bool _compiling = false;
             DictionaryEntry* _compileTarget = nullptr;
+            // internal "registers"
+            Datum _registerA, _registerB, _registerC;
+            Discriminant _registerT;
     };
+    void Machine::printRegisters() {
+        auto fn = [this](const std::string& title, const Datum& r) {
+            _output << title << ": {" << r.numValue << ", 0x" << std::hex << r.address << ", " << std::dec << r.fp << "}" << std::endl;
+        };
+        fn("A", _registerA);
+        fn("B", _registerB);
+        fn("C", _registerC);
+        _output << "T: 0x" << std::hex << (Address)_registerT << std::dec << std::endl;
+    }
+    void Machine::add() {
+        switch(_registerT) {
+            case Discriminant::Number:
+                _registerC = _registerA.numValue + _registerB.numValue;
+                break;
+            case Discriminant::MemoryAddress:
+                _registerC = _registerA.address + _registerB.address;
+                break;
+            case Discriminant::FloatingPoint:
+                _registerC = _registerA.fp + _registerB.address;
+                break;
+            default:
+                throw "ILLEGAL DISCRIMINANT!";
+        }
+    }
     void Machine::defineWord() {
         activateCompileMode();
         // pass address "execute" to the entry subroutine
@@ -377,7 +422,23 @@ namespace forth {
                         // counter to zero, however, with how we use iterators,
                         // this isn't necessary!
                     });
-
+            addWord("pop.t", [](Machine& machine) { 
+                    static constexpr Address max = (Address)Discriminant::Count;
+                    auto top(machine.popParameter());
+                    if (top.address >= max) {
+                        throw "ILLEGAL DISCRIMINANT!";
+                    }
+                    machine.setT((Discriminant)top.address);
+                    });
+            addWord("push.t", [](Machine& machine) { machine.pushParameter((Address)machine.getT()); });
+            addWord("pop.a", [](Machine& machine) { machine.setA(machine.popParameter()); });
+            addWord("pop.b", [](Machine& machine) { machine.setB(machine.popParameter()); });
+            addWord("pop.c", [](Machine& machine) { machine.setC(machine.popParameter()); });
+            addWord("push.a", [](Machine& machine) { machine.pushParameter(machine.getA()); });
+            addWord("push.b", [](Machine& machine) { machine.pushParameter(machine.getB()); });
+            addWord("push.c", [](Machine& machine) { machine.pushParameter(machine.getC()); });
+            addWord("registers", [](Machine& machine) { machine.printRegisters(); });
+            addWord("add", [](Machine& machine) { machine.add(); });
         }
     }
     void Machine::addWord(DictionaryEntry* entry) {

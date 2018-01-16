@@ -447,6 +447,11 @@ namespace forth {
 			_initializedBaseDictionary = true;
 			// add dictionary entries
 			addWord("quit", std::mem_fn(&Machine::terminateExecution));
+			addWord(";", [](Machine* machine) {
+					// in assembly level impls, this resets the instruction
+					// counter to zero, however, with how we use iterators,
+					// this isn't necessary!
+					});
 			addWord("registers", std::mem_fn(&Machine::printRegisters));
 			addWord("words", std::mem_fn(&Machine::listWords));
 			addWord(":", std::mem_fn(&Machine::defineWord));
@@ -463,11 +468,6 @@ namespace forth {
 			addWord("mstore", std::mem_fn<void()>(&Machine::store));
 			addWord("add", std::mem_fn(&Machine::add));
 			addWord("subtract", std::mem_fn(&Machine::subtract));
-			addWord(";", [](Machine* machine) {
-					// in assembly level impls, this resets the instruction
-					// counter to zero, however, with how we use iterators,
-					// this isn't necessary!
-					});
 			addWord("not.a", std::mem_fn(&Machine::notOperation));
 			addWord("minus.a", std::mem_fn(&Machine::minusOperation));
 			addWord("mul", std::mem_fn(&Machine::multiplyOperation));
@@ -499,9 +499,6 @@ namespace forth {
 			addWord("lor", binaryOperation([](auto top, auto lower) { return top.truth || lower.truth; }));
 			addWord("lxor", binaryOperation([](auto top, auto lower) { return top.truth ^ lower.truth; }));
 			addWord("implies", binaryOperation([](auto top, auto lower) { return (!top.truth) || lower.truth; }));
-			//addWord("**", binaryOperation([](auto top, auto lower) { return static_cast<Integer>(std::pow(lower.numValue, top.numValue)); }));
-			//addWord("**f", binaryOperation([](auto top, auto lower) { return static_cast<Floating>(std::pow(lower.fp, top.fp)); }));
-			//addWord("**u", binaryOperation([](auto top, auto lower) { return static_cast<Address>(std::pow(lower.address, top.address)); }));
 		}
 	}
 	void Machine::popT() {

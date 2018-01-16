@@ -43,3 +43,15 @@
 : minusf t.fp op-minus ;
 
 : non-zero zero not ;
+
+: op-equals load-ab equals push.c ;
+: eq t.signed op-equals ;
+: equ t.address op-equals ;
+: eqf t.fp op-equals ;
+: eql t.boolean op-equals ;
+
+: op-not-equals op-equals not ;
+: neq t.signed op-not-equals ;
+: nequ t.address op-not-equals ;
+: neqf t.fp op-not-equals ;
+: neql t.boolean op-not-equals ;

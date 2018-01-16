@@ -299,6 +299,7 @@ namespace forth {
             machine.pushParameter(fn(top));
         };
     }
+
     void Machine::initializeBaseDictionary() {
         if (!_initializedBaseDictionary) {
             _initializedBaseDictionary = true;
@@ -625,9 +626,7 @@ namespace forth {
             // okay, we need to see if we can find the given word!
             auto* entry = lookupWord(result);
             if (_compiling) {
-                if (result == ";") {
-                    endDefineWord();
-                }
+                auto finishedCompiling = (result == ";");
                 if (entry != nullptr) {
                     // okay we have a word, lets add it to the top word in the dictionary
                     // get the front word first and foremost
@@ -636,6 +635,9 @@ namespace forth {
                     _output << "Location: " << std::hex << entry << std::dec << std::endl;
 #endif
                     _compileTarget->addSpaceEntry(entry);
+                    if (finishedCompiling) {
+                        endDefineWord();
+                    }
                     continue;
                 }
                 // okay, we need to see if it is a value to compile in

@@ -443,8 +443,7 @@ namespace forth {
                 _output << std::dec << value.address;
                 break;
             case Discriminant::Boolean:
-                _output << std::boolalpha << value.truth;
-                _output << std::noboolalpha;
+                _output << std::boolalpha << value.truth << std::noboolalpha;
                 break;
             default:
                 throw "BAD DISCRIMINANT";

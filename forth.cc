@@ -101,7 +101,7 @@ namespace forth {
     template<typename T = int>
     using Stack = std::stack<T, std::list<T>>;
 
-    DictionaryEntry::DictionaryEntry(const std::string& name, NativeMachineOperation code) : _name(name), _code(code), _next(nullptr) 
+    DictionaryEntry::DictionaryEntry(const std::string& name, NativeMachineOperation code) : _name(name), _code(code), _next(nullptr)
     {
     }
 
@@ -156,6 +156,11 @@ namespace forth {
             void terminateExecution();
             void addition(Discriminant type);
             void listWords();
+            void activateCompileMode() { _compiling = true; }
+            void deactivateCompileMode() { _compiling = false; }
+            void defineWord();
+            void endDefineWord();
+            DictionaryEntry* getFrontWord();
         private:
             void initializeBaseDictionary();
         private:
@@ -168,7 +173,15 @@ namespace forth {
             Stack<Datum> _parameter;
             bool _initializedBaseDictionary = false;
             bool _keepExecuting = true;
+            bool _compiling = false;
     };
+    void defineWord() {
+        activateCompileMode();
+        // pass address "execute" to the entry subroutine
+    }
+    void endDefineWord() {
+        deactivateCompileMode();
+    }
     void DictionaryEntry::SpaceEntry::invoke(Machine& machine) {
         switch (_type) {
             case DictionaryEntry::SpaceEntry::Discriminant::Signed:
@@ -287,6 +300,8 @@ namespace forth {
             addWord("**f", binaryOperation([](auto top, auto lower) { return static_cast<Floating>(std::pow(lower.fp, top.fp)); }));
             addWord("**u", binaryOperation([](auto top, auto lower) { return static_cast<Address>(std::pow(lower.address, top.address)); }));
             addWord("words", [](Machine& machine) { machine.listWords(); });
+            addWord(":", [](Machine& machine) { machine.defineWord(); });
+            //addWord(";", [](Machine& machine) { machine.endDefineWord(); });
 
         }
     }
@@ -418,7 +433,7 @@ namespace forth {
     }
     bool Machine::numberRoutine(const std::string& word) noexcept {
         // floating point
-        // integers 
+        // integers
         // first do some inspection first
         std::istringstream parseAttempt(word);
         if (word.find('.') != std::string::npos) {
@@ -432,7 +447,7 @@ namespace forth {
                     pushParameter(tmpFloat);
                     return true;
                 } else {
-                    // get out of here early since we hit something that looks like 
+                    // get out of here early since we hit something that looks like
                     // a float
                     return false;
                 }
@@ -453,25 +468,6 @@ namespace forth {
         }
         return false;
     }
-    void Machine::controlLoop() noexcept {
-        // setup initial dictionary
-        initializeBaseDictionary();
-        while (_keepExecuting) {
-            auto result = readWord(_input);
-            if (numberRoutine(result)) {
-                continue;
-            }
-            auto entry = lookupWord(result);
-            // check and see if were'
-            if (entry == nullptr) {
-                handleError(result, "?");
-                continue;
-            } else {
-                // for now just do an invocation and then continue
-                entry->getCode()(*this);
-            }
-        }
-    }
     void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
         // clear the stacks and the input pointer
         decltype(_subroutine) _purge0;
@@ -481,6 +477,39 @@ namespace forth {
         _input.clear();
         _input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         _output << word << msg << std::endl;
+    }
+    void Machine::controlLoop() noexcept {
+        // setup initial dictionary
+        initializeBaseDictionary();
+        while (_keepExecuting) {
+            auto result = readWord(_input);
+            // okay, we need to see if we can find the given word!
+            auto* entry = lookupWord(result);
+            if (_compiling) {
+                if (result == ";") {
+                    endDefineWord();
+                    continue;
+                }
+                if (entry != nullptr) {
+                    // okay we have a word, lets add it to the top word in the dictionary
+                    // get the front word first and foremost
+                    auto* front = getFrontWord();
+                    front->addSpaceEntry(entry);
+                    continue;
+                }
+
+            } else {
+                if (entry != nullptr) {
+                    entry->operator()(*this);
+                    continue;
+                }
+                if (numberRoutine(result)) {
+                    continue;
+                }
+                // fall through case, we couldn't figure it out!
+                handleError(result, "?");
+            }
+        }
     }
 } // end namespace forth
 

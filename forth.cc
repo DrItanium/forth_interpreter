@@ -62,7 +62,7 @@ namespace forth {
                     bool _truth;
                     DictionaryEntry* _entry;
                 };
-                void invoke(Machine& machine);
+                void invoke(Machine& machine) const;
             };
         public:
             DictionaryEntry() = default;
@@ -78,16 +78,16 @@ namespace forth {
             void addSpaceEntry(Floating value);
             void addSpaceEntry(bool value);
             void addSpaceEntry(DictionaryEntry* value);
-            void operator()(Machine& machine) {
+            void operator()(Machine& machine) const {
                 if (_code != nullptr) {
                     _code(machine);
                 } else {
-                    for (auto & value : _space) {
+                    for (const auto & value : _space) {
                         value.invoke(machine);
                     }
                     // iterate through the set of space entries
                 }
-            };
+            }
         private:
             std::string _name;
             NativeMachineOperation _code;
@@ -96,6 +96,41 @@ namespace forth {
             // but give it some byte storage of about 128 datums
             std::list<SpaceEntry> _space;
     };
+
+    void DictionaryEntry::addSpaceEntry(Integer x) {
+        DictionaryEntry::SpaceEntry se;
+        se._type = decltype(se)::Discriminant::Signed;
+        se._int = x;
+        _space.emplace_back(se);
+    }
+
+    void DictionaryEntry::addSpaceEntry(Address x) {
+        DictionaryEntry::SpaceEntry se;
+        se._type = decltype(se)::Discriminant::Unsigned;
+        se._addr = x;
+        _space.emplace_back(se);
+    }
+
+    void DictionaryEntry::addSpaceEntry(Floating x) {
+        DictionaryEntry::SpaceEntry se;
+        se._type = decltype(se)::Discriminant::FloatingPoint;
+        se._fp = x;
+        _space.emplace_back(se);
+    }
+
+    void DictionaryEntry::addSpaceEntry(bool x) {
+        DictionaryEntry::SpaceEntry se;
+        se._type = decltype(se)::Discriminant::Boolean;
+        se._truth = x;
+        _space.emplace_back(se);
+    }
+
+    void DictionaryEntry::addSpaceEntry(DictionaryEntry* x) {
+        DictionaryEntry::SpaceEntry se;
+        se._type = decltype(se)::Discriminant::DictEntry;
+        se._entry = x;
+        _space.emplace_back(se);
+    }
 
 
     template<typename T = int>
@@ -161,7 +196,7 @@ namespace forth {
             void defineWord();
             void endDefineWord();
             DictionaryEntry* getFrontWord();
-            void compileNumber(const std::string& word);
+            bool compileNumber(const std::string& word) noexcept;
         private:
             void initializeBaseDictionary();
         private:
@@ -175,15 +210,20 @@ namespace forth {
             bool _initializedBaseDictionary = false;
             bool _keepExecuting = true;
             bool _compiling = false;
+            DictionaryEntry* _compileTarget = nullptr;
     };
-    void defineWord() {
+    void Machine::defineWord() {
         activateCompileMode();
         // pass address "execute" to the entry subroutine
+        // TODO: get name somehow
+        //_compileTarget = new DictionaryEntry(
     }
-    void endDefineWord() {
+    void Machine::endDefineWord() {
         deactivateCompileMode();
+        addWord(_compileTarget);
+        _compileTarget = nullptr;
     }
-    void DictionaryEntry::SpaceEntry::invoke(Machine& machine) {
+    void DictionaryEntry::SpaceEntry::invoke(Machine& machine) const {
         switch (_type) {
             case DictionaryEntry::SpaceEntry::Discriminant::Signed:
                 machine.pushParameter(_int);
@@ -436,44 +476,14 @@ namespace forth {
         // floating point
         // integers
         // first do some inspection first
-        std::istringstream parseAttempt(word);
-        if (word.find('.') != std::string::npos) {
-            Floating tmpFloat;
-            parseAttempt >> tmpFloat;
-            if (!parseAttempt.fail()) {
-#ifdef DEBUG
-                _output << "attempt floating point number push: " << tmpFloat << std::endl;
-#endif // end DEBUG
-                if (parseAttempt.eof()) {
-                    pushParameter(tmpFloat);
-                    return true;
-                } else {
-                    // get out of here early since we hit something that looks like
-                    // a float
-                    return false;
-                }
-            }
+        if (word == "true") {
+            pushParameter(1);
+            return true;
         }
-        Integer tmpInt;
-        parseAttempt.clear();
-        parseAttempt >> tmpInt;
-        if (!parseAttempt.fail()) {
-#ifdef DEBUG
-            _output << "attempt integer number push: " << tmpInt << std::endl;
-#endif // end DEBUG
-            if (parseAttempt.eof()) {
-                // if we hit the end of the word provided then it is an integer, otherwise it is not!
-                pushParameter(tmpInt);
-                return true;
-            }
+        if (word == "false") {
+            pushParameter(0);
+            return true;
         }
-        return false;
-    }
-
-    bool Machine::compileNumber(const std::string& word) noexcept {
-        // floating point
-        // integers
-        // first do some inspection first
         std::istringstream parseAttempt(word);
         if (word.find('u') != std::string::npos) {
             Address tmpAddress;
@@ -517,6 +527,51 @@ namespace forth {
         }
         return false;
     }
+
+    bool Machine::compileNumber(const std::string& word) noexcept {
+        // floating point
+        // integers
+        // first do some inspection first
+        if (word == "true") {
+            _compileTarget->addSpaceEntry(true);
+            return true;
+        }
+        if (word == "false") {
+            _compileTarget->addSpaceEntry(false);
+            return true;
+        }
+        std::istringstream parseAttempt(word);
+        if (word.find('u') != std::string::npos) {
+            Address tmpAddress;
+            parseAttempt >> tmpAddress;
+            if (!parseAttempt.fail() && parseAttempt.eof()) {
+                _compileTarget->addSpaceEntry(tmpAddress);
+                return true;
+            }
+            return false;
+        }
+        parseAttempt.clear();
+        if (word.find('.') != std::string::npos) {
+            Floating tmpFloat;
+            parseAttempt >> tmpFloat;
+            if (!parseAttempt.fail() && parseAttempt.eof()) {
+                _compileTarget->addSpaceEntry(tmpFloat);
+                return true;
+            }
+            // get out of here early since we hit something that looks like
+            // a float
+            return false;
+        }
+        Integer tmpInt;
+        parseAttempt.clear();
+        parseAttempt >> tmpInt;
+        if (!parseAttempt.fail() && parseAttempt.eof()) {
+            // if we hit the end of the word provided then it is an integer, otherwise it is not!
+            _compileTarget->addSpaceEntry(tmpInt);
+            return true;
+        }
+        return false;
+    }
     void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
         // clear the stacks and the input pointer
         decltype(_subroutine) _purge0;
@@ -542,12 +597,14 @@ namespace forth {
                 if (entry != nullptr) {
                     // okay we have a word, lets add it to the top word in the dictionary
                     // get the front word first and foremost
-                    auto* front = getFrontWord();
+                    auto* front = _compileTarget;
                     front->addSpaceEntry(entry);
                     continue;
                 }
-                // okay, we have a separate thing to lookup
-
+                // okay, we need to see if it is a value to compile in
+                if (compileNumber(result)) {
+                    continue;
+                }
             } else {
                 if (entry != nullptr) {
                     entry->operator()(*this);
@@ -557,8 +614,8 @@ namespace forth {
                     continue;
                 }
                 // fall through case, we couldn't figure it out!
-                handleError(result, "?");
             }
+            handleError(result, "?");
         }
     }
 } // end namespace forth

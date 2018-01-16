@@ -361,13 +361,13 @@ namespace forth {
 		using Type = decltype(_registerT);
 		switch(_registerT) {
 			case Type::Number:
-				_registerA.numValue = ~_registerA.numValue;
+				_registerC.numValue = ~_registerA.numValue;
 				break;
 			case Type::MemoryAddress:
-				_registerA.address = ~_registerA.address;
+				_registerC.address = ~_registerA.address;
 				break;
 			case Type::Boolean:
-				_registerA.truth = !_registerA.truth;
+				_registerC.truth = !_registerA.truth;
 				break;
 			default:
 				throw "ILLEGAL DISCRIMINANT";
@@ -377,10 +377,10 @@ namespace forth {
 		using Type = decltype(_registerT);
 		switch(_registerT) {
 			case Type::Number:
-				_registerA.numValue = -_registerA.numValue;
+				_registerC.numValue = -_registerA.numValue;
 				break;
 			case Type::FloatingPoint:
-				_registerA.fp = -_registerA.fp;
+				_registerC.fp = -_registerA.fp;
 				break;
 			default:
 				throw "ILLEGAL DISCRIMINANT!";
@@ -433,7 +433,6 @@ namespace forth {
 			addWord("mul", std::mem_fn(&Machine::multiplyOperation));
 			addWord("abs", unaryOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
 			addWord("zero", unaryOperation([](auto top) { return top.numValue == 0; }));
-			addWord("nonzero", unaryOperation([](auto top) { return top.numValue != 0; }));
 			addWord("-", binaryOperation([](auto top, auto lower) { return lower.numValue - top.numValue; }));
 			addWord("/", binaryOperation([](auto top, auto lower) { return lower.numValue / top.numValue; }));
 			addWord("mod", binaryOperation([](auto top, auto lower) { return lower.numValue % top.numValue; }));

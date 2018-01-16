@@ -82,7 +82,7 @@ namespace forth {
                 if (_code != nullptr) {
                     _code(machine);
                 } else {
-                    for (auto const& value : _space) {
+                    for (auto & value : _space) {
                         value.invoke(machine);
                     }
                     // iterate through the set of space entries
@@ -183,7 +183,7 @@ namespace forth {
             case DictionaryEntry::SpaceEntry::Discriminant::Boolean:
                 machine.pushParameter(_truth);
                 break;
-            case DictionaryEntry::SpaceEntry::Discriminant::DictionaryEntry:
+            case DictionaryEntry::SpaceEntry::Discriminant::DictEntry:
                 _entry->operator()(machine);
                 break;
             default:

@@ -398,7 +398,6 @@ namespace forth {
             addWord("push.c", [](Machine& machine) { machine.pushParameter(machine.getC()); });
             addWord("push.t", [](Machine& machine) { machine.pushParameter((Address)machine.getT()); });
             addWord("registers", [](Machine& machine) { machine.printRegisters(); });
-            addWord("add", [](Machine& machine) { machine.add(); });
             addWord("mload", [](Machine& machine) { machine.setC(machine.load(machine.getA().address)); });
             addWord("mstore", [](Machine& machine) { machine.store(machine.getA().address, machine.getB()); });
         }

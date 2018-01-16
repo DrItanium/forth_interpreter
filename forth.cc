@@ -178,12 +178,6 @@ namespace forth {
 			}
 			void controlLoop() noexcept;
 			void handleError(const std::string& word, const std::string& msg) noexcept;
-			void dropParameter();
-			void swapParameters();
-			void duplicateParameter();
-			void placeOverParameter();
-			const Datum& topParameter();
-			const Datum& lowerParameter();
 			Datum load(Address addr);
 			void load() { _registerC = load(_registerA.address); }
 			void store(Address addr, Datum value);
@@ -512,51 +506,6 @@ namespace forth {
 			entry->setNext(_words);
 		}
 		_words = entry;
-	}
-	const Datum& Machine::topParameter() {
-		if (_parameter.empty()) {
-			throw "STACK EMPTY!";
-		} else {
-			return _parameter.top();
-		}
-	}
-	const Datum& Machine::lowerParameter() {
-		auto top = popParameter();
-		if (_parameter.empty()) {
-			_parameter.push(top);
-			throw "STACK EMPTY";
-		} else {
-			auto& lower = _parameter.top();
-			_parameter.push(top);
-			return lower;
-		}
-	}
-	void Machine::placeOverParameter() {
-		// a b -- a b a
-		auto top = popParameter();
-		Datum lower(_parameter.top());
-		_parameter.push(top);
-		_parameter.push(lower);
-	}
-	void Machine::duplicateParameter() {
-		// a -- a a
-		Datum top(_parameter.top());
-		_parameter.push(top);
-	}
-	void Machine::swapParameters() {
-		// a b -- b a
-		auto top = popParameter();
-		auto lower = popParameter();
-		_parameter.push(top);
-		_parameter.push(lower);
-	}
-	void Machine::dropParameter() {
-		// a --
-		if (_parameter.empty()) {
-			throw "STACK EMPTY!";
-		} else {
-			_parameter.pop();
-		}
 	}
 	void Machine::typeValue(Discriminant discriminant, const Datum& value) {
 		switch(discriminant) {

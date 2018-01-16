@@ -46,6 +46,25 @@ namespace forth {
     using NativeMachineOperation = std::function<void(Machine&)>;
     class DictionaryEntry {
         public:
+            struct SpaceEntry {
+                enum class Discriminant {
+                    Signed,
+                    Unsigned,
+                    FloatingPoint,
+                    Boolean,
+                    DictEntry,
+                };
+                Discriminant _type;
+                union {
+                    Integer _int;
+                    Address _addr;
+                    Floating _fp;
+                    bool _truth;
+                    DictionaryEntry* _entry;
+                };
+                void invoke(Machine& machine);
+            };
+        public:
             DictionaryEntry() = default;
             DictionaryEntry(const std::string& name, NativeMachineOperation code = nullptr);
             ~DictionaryEntry() = default;
@@ -54,25 +73,36 @@ namespace forth {
             const DictionaryEntry* getNext() const noexcept { return _next; }
             bool hasNext() const noexcept { return getNext() != nullptr; }
             void setNext(DictionaryEntry* next) noexcept { _next = next; }
-            Datum* getSpace() noexcept { return _space; }
+            void addSpaceEntry(Integer value);
+            void addSpaceEntry(Address value);
+            void addSpaceEntry(Floating value);
+            void addSpaceEntry(bool value);
+            void addSpaceEntry(DictionaryEntry* value);
+            void operator()(Machine& machine) {
+                if (_code != nullptr) {
+                    _code(machine);
+                } else {
+                    for (auto const& value : _space) {
+                        value.invoke(machine);
+                    }
+                    // iterate through the set of space entries
+                }
+            };
         private:
             std::string _name;
             NativeMachineOperation _code;
             DictionaryEntry* _next;
             // the parameters field is the only thing that doesn't make total sense right now
             // but give it some byte storage of about 128 datums
-            Datum _space[128];
+            std::list<SpaceEntry> _space;
     };
+
 
     template<typename T = int>
     using Stack = std::stack<T, std::list<T>>;
 
     DictionaryEntry::DictionaryEntry(const std::string& name, NativeMachineOperation code) : _name(name), _code(code), _next(nullptr) 
     {
-        // zero this out :D
-        for (int i = 0; i < 128; ++i) {
-            _space[i].numValue = 0;
-        }
     }
 
     std::string readWord(std::istream& input) {
@@ -139,6 +169,27 @@ namespace forth {
             bool _initializedBaseDictionary = false;
             bool _keepExecuting = true;
     };
+    void DictionaryEntry::SpaceEntry::invoke(Machine& machine) {
+        switch (_type) {
+            case DictionaryEntry::SpaceEntry::Discriminant::Signed:
+                machine.pushParameter(_int);
+                break;
+            case DictionaryEntry::SpaceEntry::Discriminant::Unsigned:
+                machine.pushParameter(_addr);
+                break;
+            case DictionaryEntry::SpaceEntry::Discriminant::FloatingPoint:
+                machine.pushParameter(_fp);
+                break;
+            case DictionaryEntry::SpaceEntry::Discriminant::Boolean:
+                machine.pushParameter(_truth);
+                break;
+            case DictionaryEntry::SpaceEntry::Discriminant::DictionaryEntry:
+                _entry->operator()(machine);
+                break;
+            default:
+                throw "UNKNOWN ENTRY KIND!";
+        }
+    }
     void Machine::listWords() {
         if (_words == nullptr) {
             return;

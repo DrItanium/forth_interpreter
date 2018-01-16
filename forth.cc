@@ -104,21 +104,21 @@ namespace forth {
         DictionaryEntry::SpaceEntry se;
         se._type = decltype(se)::Discriminant::Signed;
         se._int = x;
-        _space.push_back(se);
+        _space.emplace_back(se);
     }
 
     void DictionaryEntry::addSpaceEntry(Address x) {
         DictionaryEntry::SpaceEntry se;
         se._type = decltype(se)::Discriminant::Unsigned;
         se._addr = x;
-        _space.push_back(se);
+        _space.emplace_back(se);
     }
 
     void DictionaryEntry::addSpaceEntry(Floating x) {
         DictionaryEntry::SpaceEntry se;
         se._type = decltype(se)::Discriminant::FloatingPoint;
         se._fp = x;
-        _space.push_back(se);
+        _space.emplace_back(se);
     }
 
     void DictionaryEntry::addSpaceEntry(bool x) {
@@ -128,7 +128,7 @@ namespace forth {
         DictionaryEntry::SpaceEntry se;
         se._type = decltype(se)::Discriminant::Boolean;
         se._truth = x;
-        _space.push_back(se);
+        _space.emplace_back(se);
     }
 
     void DictionaryEntry::addSpaceEntry(const DictionaryEntry* x) {
@@ -138,7 +138,7 @@ namespace forth {
         DictionaryEntry::SpaceEntry se;
         se._type = decltype(se)::Discriminant::DictEntry;
         se._entry = x;
-        _space.push_back(se);
+        _space.emplace_back(se);
     }
 
 
@@ -444,6 +444,9 @@ namespace forth {
     Machine::Machine(std::ostream& output, std::istream& input) :  _output(output), _input(input), _memory(new Integer[memoryCapacity]), _words(nullptr) { }
 
     Datum Machine::popParameter() {
+        if (_parameter.empty()) {
+            throw "STACK EMPTY!";
+        }
         auto top(_parameter.top());
         _parameter.pop();
         return top;

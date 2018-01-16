@@ -333,7 +333,7 @@ namespace forth {
             addWord("registers", std::mem_fn(&Machine::printRegisters));
             addWord("words", std::mem_fn(&Machine::listWords));
             addWord(":", std::mem_fn(&Machine::defineWord));
-            addWord("type.a", std::mem_fn(&Machine::typeValue));
+            addWord("type.a", std::mem_fn<void()>(&Machine::typeValue));
             addWord("minus", unaryOperation([](auto top) { return -top.numValue; }));
             addWord("abs", unaryOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
             addWord("zero", unaryOperation([](auto top) { return top.numValue == 0; }));

@@ -226,6 +226,7 @@ namespace forth {
 			void greaterThanOperation();
 			void lessThanOperation();
 			void xorOperation();
+			void absoluteValue();
 		private:
 			void initializeBaseDictionary();
 			std::string readWord();
@@ -319,6 +320,23 @@ namespace forth {
 	}
 	void Machine::terminateExecution() {
 		_keepExecuting = false;
+	}
+	NativeMachineOperation binaryOperation(std::function<Datum(const Datum&, const Datum&)> fn) noexcept {
+		return [fn](Machine* machine) {
+			auto top(machine->popParameter());
+			auto lower(machine->popParameter());
+#ifdef DEBUG
+			std::cout << "top: " << top.numValue << std::endl;
+			std::cout << "lower: " << lower.numValue << std::endl;
+#endif
+			machine->pushParameter(fn(top, lower));
+		};
+	}
+	NativeMachineOperation unaryOperation(std::function<Datum(const Datum&)> fn) noexcept {
+		return [fn](Machine* machine) {
+			auto top(machine->popParameter());
+			machine->pushParameter(fn(top));
+		};
 	}
 	void Machine::notOperation() {
 		// invert register a
@@ -556,12 +574,31 @@ namespace forth {
 		// this isn't necessary!
 	}
 
+	void Machine::absoluteValue() {
+		using Type = decltype(_registerT);
+		switch (_registerT) {
+			case Type::Number:
+				_registerC = _registerA.numValue < 0 ? -_registerA.numValue : _registerA.numValue;
+				break;
+			case Type::MemoryAddress:
+				_registerC = _registerA;
+				break;
+			case Type::FloatingPoint:
+				_registerC = _registerA.fp < 0 ? -_registerA.fp : _registerA.fp;
+				break;
+			default:
+				throw "Illegal discriminant";
+		}
+	}
+
 	void Machine::initializeBaseDictionary() {
 		if (!_initializedBaseDictionary) {
 			_initializedBaseDictionary = true;
 			// add dictionary entries
 			addWord("quit", std::mem_fn(&Machine::terminateExecution));
 			addWord(";", std::mem_fn(&Machine::semicolonOperation));
+			//addWord(";", [](Machine* machine) {
+			//		});
 			addWord("registers", std::mem_fn(&Machine::printRegisters));
 			addWord("words", std::mem_fn(&Machine::listWords));
 			addWord(":", std::mem_fn(&Machine::defineWord));
@@ -590,7 +627,7 @@ namespace forth {
 			addWord(">", std::mem_fn(&Machine::greaterThanOperation));
 			addWord("or", std::mem_fn(&Machine::orOperation));
 			addWord("xor", std::mem_fn(&Machine::xorOperation));
-			addWord("abs", unaryOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
+			addWord("abs", std::mem_fn(&Machine::absoluteValue));
 		}
 	}
 	void Machine::popT() {

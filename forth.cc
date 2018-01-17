@@ -586,12 +586,6 @@ namespace forth {
 			addWord(">", std::mem_fn(&Machine::greaterThanOperation));
 			addWord("or", std::mem_fn(&Machine::orOperation));
 			addWord("abs", unaryOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
-			addWord(">=", binaryOperation([](auto top, auto lower) { return lower.numValue >= top.numValue; }));
-			addWord("<=", binaryOperation([](auto top, auto lower) { return lower.numValue <= top.numValue; }));
-			addWord(">=f", binaryOperation([](auto top, auto lower) { return lower.fp >= top.fp; }));
-			addWord("<=f", binaryOperation([](auto top, auto lower) { return lower.fp <= top.fp; }));
-			addWord(">=u", binaryOperation([](auto top, auto lower) { return lower.address >= top.address; }));
-			addWord("<=u", binaryOperation([](auto top, auto lower) { return lower.address <= top.address; }));
 			addWord("xor", binaryOperation([](auto top, auto lower) { return top.address ^ lower.address; }));
 			addWord("lxor", binaryOperation([](auto top, auto lower) { return top.truth ^ lower.truth; }));
 			addWord("implies", binaryOperation([](auto top, auto lower) { return (!top.truth) || lower.truth; }));

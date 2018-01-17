@@ -101,3 +101,12 @@
 : oru t.address op-or ;
 : orf t.fp op-or ;
 : bor t.boolean op-or ;
+
+: >= < not ;
+: >=f <f not ;
+: >=u <u not ;
+
+: <= > not ;
+: <=f >f not ;
+: <=u >u not ;
+

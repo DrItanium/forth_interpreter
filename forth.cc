@@ -16,6 +16,17 @@ namespace forth {
 	using Floating = float;
 	using byte = uint8_t;
 	static_assert((sizeof(Address) == sizeof(Integer)) && (sizeof(Integer) == sizeof(Floating)), "Address, Integer, and Floating are not equal!");
+    class Problem {
+        public:
+            Problem(const std::string& word, const std::string& message);
+            ~Problem() = default;
+            const std::string& getWord() const noexcept { return _word; }
+            const std::string& getMessage() const noexcept { return _message; }
+        private:
+            std::string _word;
+            std::string _message;
+    };
+    Problem::Problem(const std::string& word, const std::string& message) : _word(word), _message(message) { }
     class DictionaryEntry;
 	enum class Discriminant : Address {
 		Number,
@@ -97,10 +108,13 @@ namespace forth {
 #ifdef DEBUG
 					std::cout << "Invoking body of " << getName() << std::endl;
 #endif
-					for (const auto & value : _space) {
-                        value(machine);
-					}
-					// iterate through the set of space entries
+                    try {
+                        for (const auto & value : _space) {
+                            value(machine);
+                        }
+                    } catch (Problem& p) {
+                        throw Problem(getName(), p.getMessage());
+                    }
 				}
 			}
 		private:
@@ -318,7 +332,7 @@ namespace forth {
 				_entry->operator()(machine);
 				break;
 			default:
-				throw "UNKNOWN ENTRY KIND!";
+                throw Problem("unknown", "UNKNOWN ENTRY KIND!");
 		}
 	}
 	void Machine::listWords() {
@@ -371,7 +385,7 @@ namespace forth {
 				_registerC.truth = !_registerA.truth;
 				break;
 			default:
-				throw "ILLEGAL DISCRIMINANT";
+                throw Problem("not", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::minusOperation() {
@@ -384,7 +398,7 @@ namespace forth {
 				_registerC.fp = -_registerA.fp;
 				break;
 			default:
-				throw "ILLEGAL DISCRIMINANT!";
+                throw Problem("minus", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::multiplyOperation() {
@@ -400,7 +414,7 @@ namespace forth {
 				_registerC.fp = _registerA.fp * _registerB.fp;
 				break;
 			default:
-				throw "Illegal Discriminant";
+                throw Problem("*", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::equals() {
@@ -418,7 +432,7 @@ namespace forth {
 			case Type::Boolean:
 				_registerC.truth = _registerA.truth == _registerB.truth;
 			default:
-				throw "Illegal Discriminant";
+                throw Problem("==", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::powOperation() {
@@ -434,7 +448,7 @@ namespace forth {
 				_registerC.fp = Floating(std::pow(_registerA.fp, _registerB.fp));
 				break;
 			default:
-				throw "Illegal Discriminant";
+                throw Problem("**", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
@@ -451,7 +465,7 @@ namespace forth {
 				_registerC = _registerA.fp - _registerB.fp;
 				break;
 			default:
-				throw "Illegal Discriminant";
+                throw Problem("-", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
@@ -468,7 +482,7 @@ namespace forth {
 				_registerC = _registerA.fp / _registerB.fp;
 				break;
 			default:
-				throw "Illegal Discriminant";
+                throw Problem("/", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
@@ -482,7 +496,7 @@ namespace forth {
 				_registerC = _registerA.address % _registerB.address;
 				break;
 			default:
-				throw "Illegal Discriminant";
+                throw Problem("mod", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
@@ -498,7 +512,7 @@ namespace forth {
 				_registerC = _registerA.fp + _registerB.fp;
 				break;
 			default:
-				throw "Illegal Discriminant";
+                throw Problem("+", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
@@ -515,7 +529,7 @@ namespace forth {
 				_registerC = _registerA.truth && _registerB.truth;
 				break;
 			default:
-				throw "Illegal Discriminant";
+                throw Problem("and", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
@@ -532,7 +546,7 @@ namespace forth {
 				_registerC = _registerA.truth || _registerB.truth;
 				break;
 			default:
-				throw "Illegal Discriminant";
+                throw Problem("or", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
@@ -549,7 +563,7 @@ namespace forth {
 				_registerC = _registerA.fp > _registerB.fp;
 				break;
 			default:
-				throw "Illegal Discriminant";
+                throw Problem(">", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
@@ -566,7 +580,7 @@ namespace forth {
 				_registerC = _registerA.fp < _registerB.fp;
 				break;
 			default:
-				throw "Illegal Discriminant";
+                throw Problem("<", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
@@ -583,7 +597,7 @@ namespace forth {
 				_registerC = _registerA.truth ^ _registerB.truth;
 				break;
 			default:
-				throw "Illegal Discriminant";
+                throw Problem("xor", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
@@ -606,7 +620,7 @@ namespace forth {
 				_registerC = _registerA.fp < 0 ? -_registerA.fp : _registerA.fp;
 				break;
 			default:
-				throw "Illegal discriminant";
+                throw Problem("abs", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
@@ -620,7 +634,7 @@ namespace forth {
 				_registerC.address = _registerA.address << _registerB.address;
 				break;
 			default:
-				throw "Illegal discriminant";
+                throw Problem("<<", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
@@ -634,7 +648,7 @@ namespace forth {
 				_registerC.address = _registerA.address >> _registerB.address;
 				break;
 			default:
-				throw "Illegal discriminant";
+                throw Problem(">>", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
@@ -642,7 +656,7 @@ namespace forth {
 		static constexpr Address max = (Address)Discriminant::Count;
 		auto top(popParameter());
 		if (top.address >= max) {
-			throw "ILLEGAL DISCRIMINANT!";
+            throw Problem("pop.t", "ILLEGAL DISCRIMINANT!");
 		}
 		setT((Discriminant)top.address);
 	}
@@ -667,7 +681,7 @@ namespace forth {
 				_output << std::boolalpha << value.truth << std::noboolalpha;
 				break;
 			default:
-				throw "BAD DISCRIMINANT";
+                throw Problem("type.a", "BAD DISCRIMINANT!");
 		}
 		// always type a space out after the number
 		_output << ' ' << std::endl;
@@ -676,7 +690,7 @@ namespace forth {
 
 	Datum Machine::popParameter() {
 		if (_parameter.empty()) {
-			throw "STACK EMPTY!";
+			throw Problem("pop-parameter", "STACK EMPTY!");
 		}
         auto top(_parameter.front());
 		_parameter.pop_front();
@@ -689,7 +703,7 @@ namespace forth {
 
 	Datum Machine::load(Address addr) {
 		if (addr > largestAddress) {
-			throw "BAD ADDRESS";
+			throw Problem("mload", "BAD ADDRESS!");
 		} else {
 			Datum storage;
 			storage.numValue = _memory[addr];
@@ -698,7 +712,7 @@ namespace forth {
 	}
 	void Machine::store(Address addr, const Datum& value) {
 		if (addr > largestAddress) {
-			throw "BAD ADDRESS";
+			throw Problem("mstore", "BAD ADDRESS!");
 		} else {
 			_memory[addr] = value.numValue;
 		}
@@ -817,39 +831,43 @@ namespace forth {
 		// setup initial dictionary
 		initializeBaseDictionary();
 		while (_keepExecuting) {
-			auto result = readWord();
-			// okay, we need to see if we can find the given word!
-			auto* entry = lookupWord(result);
-			if (_compiling) {
-				auto finishedCompiling = (result == ";");
-				if (entry != nullptr) {
-					// okay we have a word, lets add it to the top word in the dictionary
-					// get the front word first and foremost
+            try {
+                auto result = readWord();
+                // okay, we need to see if we can find the given word!
+                auto* entry = lookupWord(result);
+                if (_compiling) {
+                    auto finishedCompiling = (result == ";");
+                    if (entry != nullptr) {
+                        // okay we have a word, lets add it to the top word in the dictionary
+                        // get the front word first and foremost
 #ifdef DEBUG
-					_output << "Found an entry for: " << result << std::endl;
-					_output << "Location: " << std::hex << entry << std::dec << std::endl;
+                        _output << "Found an entry for: " << result << std::endl;
+                        _output << "Location: " << std::hex << entry << std::dec << std::endl;
 #endif
-					_compileTarget->addSpaceEntry(entry);
-					if (finishedCompiling) {
-						endDefineWord();
-					}
-					continue;
-				}
-				// okay, we need to see if it is a value to compile in
-				if (compileNumber(result)) {
-					continue;
-				}
-			} else {
-				if (entry != nullptr) {
-					entry->operator()(this);
-					continue;
-				}
-				if (numberRoutine(result)) {
-					continue;
-				}
-				// fall through case, we couldn't figure it out!
-			}
-			handleError(result, "?");
+                        _compileTarget->addSpaceEntry(entry);
+                        if (finishedCompiling) {
+                            endDefineWord();
+                        }
+                        continue;
+                    }
+                    // okay, we need to see if it is a value to compile in
+                    if (compileNumber(result)) {
+                        continue;
+                    }
+                } else {
+                    if (entry != nullptr) {
+                        entry->operator()(this);
+                        continue;
+                    }
+                    if (numberRoutine(result)) {
+                        continue;
+                    }
+                    // fall through case, we couldn't figure it out!
+                }
+                handleError(result, "?");
+            } catch(Problem& p) {
+                handleError(p.getWord(), p.getMessage());
+            }
 		}
 	}
 	void Machine::initializeBaseDictionary() {

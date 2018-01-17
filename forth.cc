@@ -690,7 +690,7 @@ namespace forth {
 
 	Datum Machine::popParameter() {
 		if (_parameter.empty()) {
-			throw Problem("pop-parameter", "STACK EMPTY!");
+			throw Problem("", "STACK EMPTY!");
 		}
         auto top(_parameter.front());
 		_parameter.pop_front();
@@ -825,7 +825,7 @@ namespace forth {
 		//_parameter.swap(_purge1);
 		_input.clear();
 		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		_output << word << msg << std::endl;
+		_output << word << " " << msg << std::endl;
 	}
 	void Machine::controlLoop() noexcept {
 		// setup initial dictionary

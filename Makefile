@@ -8,7 +8,7 @@ all: options ${OUTPUT_BINARY}
 
 options:
 	@echo build options:
-	@echo "CXXFLAGS  = ${CFLAGS}"
+	@echo "CXXFLAGS  = ${CXXFLAGS}"
 	@echo "LDFLAGS   = ${LDFLAGS}"
 	@echo "CXX       = ${CXX}"
 

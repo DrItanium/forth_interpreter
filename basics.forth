@@ -127,3 +127,17 @@
 : >> load-ba >> push.c ;
 : >>u t.address >> ;
 : >> t.signed >> ;
+
+: @@ pop.a mload mload push.c ;
+
+: rot pop.c pop.b pop.a push.b push.c push.a ;
+: -rot rot rot ;
+
+: nip swap drop ;
+: tuck swap over ;
+
+: 2dup over over ;
+: 2drop drop drop ;
+
+: 3* * * ;
+: 3+ + + ;

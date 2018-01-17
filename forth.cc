@@ -820,9 +820,9 @@ namespace forth {
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
 		// clear the stacks and the input pointer
 		//decltype(_subroutine) _purge0;
-		//decltype(_parameter) _purge1;
+		decltype(_parameter) _purge1;
 		//_subroutine.swap(_purge0);
-		//_parameter.swap(_purge1);
+		_parameter.swap(_purge1);
 		_input.clear();
 		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		_output << word << " " << msg << std::endl;

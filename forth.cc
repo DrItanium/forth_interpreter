@@ -29,7 +29,7 @@ namespace forth {
 		Datum(Integer x) : numValue(x) { }
 		Datum(Address x) : address(x) { }
 		Datum(Floating x) : fp(x) { }
-		Datum(bool x) : truth() { }
+		Datum(bool x) : truth(x) { }
 		~Datum() = default;
 		Datum(const Datum& other);
 		bool truth;
@@ -802,9 +802,9 @@ namespace forth {
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
 		// clear the stacks and the input pointer
 		//decltype(_subroutine) _purge0;
-		decltype(_parameter) _purge1;
+		//decltype(_parameter) _purge1;
 		//_subroutine.swap(_purge0);
-		_parameter.swap(_purge1);
+		//_parameter.swap(_purge1);
 		_input.clear();
 		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		_output << word << msg << std::endl;

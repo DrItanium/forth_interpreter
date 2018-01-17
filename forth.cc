@@ -190,6 +190,7 @@ namespace forth {
 			void deactivateCompileMode() { _compiling = false; }
 			void defineWord();
 			void endDefineWord();
+			void semicolonOperation();
 			DictionaryEntry* getFrontWord();
 			bool compileNumber(const std::string& word) noexcept;
 			void setA(const Datum& target) noexcept { _registerA = target; }
@@ -318,23 +319,6 @@ namespace forth {
 	}
 	void Machine::terminateExecution() {
 		_keepExecuting = false;
-	}
-	NativeMachineOperation binaryOperation(std::function<Datum(const Datum&, const Datum&)> fn) noexcept {
-		return [fn](Machine* machine) {
-			auto top(machine->popParameter());
-			auto lower(machine->popParameter());
-#ifdef DEBUG
-			std::cout << "top: " << top.numValue << std::endl;
-			std::cout << "lower: " << lower.numValue << std::endl;
-#endif
-			machine->pushParameter(fn(top, lower));
-		};
-	}
-	NativeMachineOperation unaryOperation(std::function<Datum(const Datum&)> fn) noexcept {
-		return [fn](Machine* machine) {
-			auto top(machine->popParameter());
-			machine->pushParameter(fn(top));
-		};
 	}
 	void Machine::notOperation() {
 		// invert register a
@@ -566,16 +550,18 @@ namespace forth {
 		}
 	}
 
+	void Machine::semicolonOperation() {
+		// in assembly level impls, this resets the instruction
+		// counter to zero, however, with how we use iterators,
+		// this isn't necessary!
+	}
+
 	void Machine::initializeBaseDictionary() {
 		if (!_initializedBaseDictionary) {
 			_initializedBaseDictionary = true;
 			// add dictionary entries
 			addWord("quit", std::mem_fn(&Machine::terminateExecution));
-			addWord(";", [](Machine* machine) {
-					// in assembly level impls, this resets the instruction
-					// counter to zero, however, with how we use iterators,
-					// this isn't necessary!
-					});
+			addWord(";", std::mem_fn(&Machine::semicolonOperation));
 			addWord("registers", std::mem_fn(&Machine::printRegisters));
 			addWord("words", std::mem_fn(&Machine::listWords));
 			addWord(":", std::mem_fn(&Machine::defineWord));

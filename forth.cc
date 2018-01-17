@@ -224,6 +224,7 @@ namespace forth {
 			void orOperation();
 			void greaterThanOperation();
 			void lessThanOperation();
+			void xorOperation();
 		private:
 			void initializeBaseDictionary();
 			std::string readWord();
@@ -548,6 +549,23 @@ namespace forth {
 		}
 	}
 
+	void Machine::xorOperation() {
+		using Type = decltype(_registerT);
+		switch (_registerT) {
+			case Type::Number:
+				_registerC = _registerA.numValue ^ _registerB.numValue;
+				break;
+			case Type::MemoryAddress:
+				_registerC = _registerA.address ^ _registerB.numValue;
+				break;
+			case Type::Boolean:
+				_registerC = _registerA.truth ^ _registerB.truth;
+				break;
+			default:
+				throw "Illegal Discriminant";
+		}
+	}
+
 	void Machine::initializeBaseDictionary() {
 		if (!_initializedBaseDictionary) {
 			_initializedBaseDictionary = true;
@@ -585,10 +603,8 @@ namespace forth {
 			addWord("<", std::mem_fn(&Machine::lessThanOperation));
 			addWord(">", std::mem_fn(&Machine::greaterThanOperation));
 			addWord("or", std::mem_fn(&Machine::orOperation));
+			addWord("xor", std::mem_fn(&Machine::xorOperation));
 			addWord("abs", unaryOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
-			addWord("xor", binaryOperation([](auto top, auto lower) { return top.address ^ lower.address; }));
-			addWord("lxor", binaryOperation([](auto top, auto lower) { return top.truth ^ lower.truth; }));
-			addWord("implies", binaryOperation([](auto top, auto lower) { return (!top.truth) || lower.truth; }));
 		}
 	}
 	void Machine::popT() {

@@ -97,10 +97,10 @@
 
 
 : op-or load-ba or push.c ;
-: or t.signed op-or ;
+: ors t.signed op-or ;
 : oru t.address op-or ;
 : orf t.fp op-or ;
-: bor t.boolean op-or ;
+: or t.boolean op-or ;
 
 : >= < not ;
 : >=f <f not ;
@@ -110,3 +110,16 @@
 : <=f >f not ;
 : <=u >u not ;
 
+
+: implies or not ;
+
+: op-xor load-ba xor push.c ;
+: xors t.signed op-xor ;
+: xoru t.address op-xor ;
+: xor t.boolean op-xor ;
+
+: op-and load-ba and push.c ;
+: and t.boolean op-and ;
+: ands t.signed op-and ;
+: andu t.address op-and ;
+: 

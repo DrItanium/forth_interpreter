@@ -220,6 +220,10 @@ namespace forth {
 			void divide();
 			void notOperation();
 			void minusOperation();
+			void andOperation();
+			void orOperation();
+			void greaterThanOperation();
+			void lessThanOperation();
 		private:
 			void initializeBaseDictionary();
 			std::string readWord();
@@ -476,6 +480,74 @@ namespace forth {
 		}
 	}
 
+	void Machine::andOperation() {
+		using Type = decltype(_registerT);
+		switch (_registerT) {
+			case Type::Number:
+				_registerC = _registerA.numValue & _registerB.numValue;
+				break;
+			case Type::MemoryAddress:
+				_registerC = _registerA.address & _registerB.numValue;
+				break;
+			case Type::Boolean:
+				_registerC = _registerA.truth && _registerB.truth;
+				break;
+			default:
+				throw "Illegal Discriminant";
+		}
+	}
+
+	void Machine::orOperation() {
+		using Type = decltype(_registerT);
+		switch (_registerT) {
+			case Type::Number:
+				_registerC = _registerA.numValue | _registerB.numValue;
+				break;
+			case Type::MemoryAddress:
+				_registerC = _registerA.address | _registerB.numValue;
+				break;
+			case Type::Boolean:
+				_registerC = _registerA.truth || _registerB.truth;
+				break;
+			default:
+				throw "Illegal Discriminant";
+		}
+	}
+
+	void Machine::greaterThanOperation() {
+		using Type = decltype(_registerT);
+		switch (_registerT) {
+			case Type::Number:
+				_registerC = _registerA.numValue > _registerB.numValue;
+				break;
+			case Type::MemoryAddress:
+				_registerC = _registerA.address > _registerB.numValue;
+				break;
+			case Type::FloatingPoint:
+				_registerC = _registerA.fp > _registerB.fp;
+				break;
+			default:
+				throw "Illegal Discriminant";
+		}
+	}
+
+	void Machine::lessThanOperation() {
+		using Type = decltype(_registerT);
+		switch (_registerT) {
+			case Type::Number:
+				_registerC = _registerA.numValue < _registerB.numValue;
+				break;
+			case Type::MemoryAddress:
+				_registerC = _registerA.address < _registerB.numValue;
+				break;
+			case Type::FloatingPoint:
+				_registerC = _registerA.fp < _registerB.fp;
+				break;
+			default:
+				throw "Illegal Discriminant";
+		}
+	}
+
 	void Machine::initializeBaseDictionary() {
 		if (!_initializedBaseDictionary) {
 			_initializedBaseDictionary = true;
@@ -509,30 +581,18 @@ namespace forth {
 			addWord("pow", std::mem_fn(&Machine::powOperation));
 			addWord("modulo", std::mem_fn(&Machine::modulo));
 			addWord("divide", std::mem_fn(&Machine::divide));
+			addWord("and", std::mem_fn(&Machine::andOperation));
+			addWord("<", std::mem_fn(&Machine::lessThanOperation));
+			addWord(">", std::mem_fn(&Machine::greaterThanOperation));
+			addWord("or", std::mem_fn(&Machine::orOperation));
 			addWord("abs", unaryOperation([](auto top) { return top.numValue < 0 ? -top.numValue : top.numValue; }));
-			//addWord("/", binaryOperation([](auto top, auto lower) { return lower.numValue / top.numValue; }));
-			//addWord("mod", binaryOperation([](auto top, auto lower) { return lower.numValue % top.numValue; }));
-			addWord("<", binaryOperation([](auto top, auto lower) { return lower.numValue < top.numValue; }));
-			addWord(">", binaryOperation([](auto top, auto lower) { return lower.numValue > top.numValue; }));
 			addWord(">=", binaryOperation([](auto top, auto lower) { return lower.numValue >= top.numValue; }));
 			addWord("<=", binaryOperation([](auto top, auto lower) { return lower.numValue <= top.numValue; }));
-			//addWord("/f", binaryOperation([](auto top, auto lower) { return lower.fp / top.fp; }));
-			addWord("<f", binaryOperation([](auto top, auto lower) { return lower.fp < top.fp; }));
-			addWord(">f", binaryOperation([](auto top, auto lower) { return lower.fp > top.fp; }));
 			addWord(">=f", binaryOperation([](auto top, auto lower) { return lower.fp >= top.fp; }));
 			addWord("<=f", binaryOperation([](auto top, auto lower) { return lower.fp <= top.fp; }));
-			//addWord("/u", binaryOperation([](auto top, auto lower) { return lower.address / top.address; }));
-			//addWord("modu", binaryOperation([](auto top, auto lower) { return lower.address % top.address; }));
-			addWord("<u", binaryOperation([](auto top, auto lower) { return lower.address < top.address; }));
-			addWord(">u", binaryOperation([](auto top, auto lower) { return lower.address > top.address; }));
 			addWord(">=u", binaryOperation([](auto top, auto lower) { return lower.address >= top.address; }));
 			addWord("<=u", binaryOperation([](auto top, auto lower) { return lower.address <= top.address; }));
-			addWord("lnot", unaryOperation([](auto top) { return top.truth ? 0 : 1; }));
-			addWord("and", binaryOperation([](auto top, auto lower) { return top.address & lower.address; }));
-			addWord("or", binaryOperation([](auto top, auto lower) { return top.address | lower.address; }));
 			addWord("xor", binaryOperation([](auto top, auto lower) { return top.address ^ lower.address; }));
-			addWord("land", binaryOperation([](auto top, auto lower) { return top.truth && lower.truth; }));
-			addWord("lor", binaryOperation([](auto top, auto lower) { return top.truth || lower.truth; }));
 			addWord("lxor", binaryOperation([](auto top, auto lower) { return top.truth ^ lower.truth; }));
 			addWord("implies", binaryOperation([](auto top, auto lower) { return (!top.truth) || lower.truth; }));
 		}

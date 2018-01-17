@@ -84,3 +84,20 @@
 : mod t.signed op-mod ;
 : modu t.address op-mod ;
 : modf t.fp op-mod ;
+
+: op-gt load-ba > push.c ;
+: > t.signed op-gt ;
+: >f t.fp op-gt ;
+: >u t.address op-gt ;
+
+: op-lt load-ba < push.c ;
+: < t.signed op-lt ;
+: <f t.fp op-lt ;
+: <u t.address op-lt ;
+
+
+: op-or load-ba or push.c ;
+: or t.signed op-or ;
+: oru t.address op-or ;
+: orf t.fp op-or ;
+: bor t.boolean op-or ;

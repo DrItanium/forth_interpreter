@@ -37,7 +37,6 @@ namespace forth {
 		Address address;
 		Floating fp;
 		byte backingStore[sizeof(Integer)];
-
 	};
 
 	std::ostream& operator<<(std::ostream& out, const Datum& dt) {
@@ -154,8 +153,8 @@ namespace forth {
 	}
 
 
-	template<typename T = int>
-		using Stack = std::stack<T, std::list<T>>;
+    template<typename T>
+    using Stack = std::list<T>;
 
 	DictionaryEntry::DictionaryEntry(const std::string& name, NativeMachineOperation code) : _name(name), _code(code), _next(nullptr) { }
 
@@ -211,6 +210,7 @@ namespace forth {
 			Datum& getC() noexcept { return _registerC; }
 			Discriminant getT() const noexcept { return _registerT; }
 			void printRegisters();
+            void printStack();
 		public:
 			void popA() { setA(popParameter()); }
 			void popB() { setB(popParameter()); }
@@ -674,13 +674,13 @@ namespace forth {
 		if (_parameter.empty()) {
 			throw "STACK EMPTY!";
 		}
-		auto top(_parameter.top());
-		_parameter.pop();
+        auto top(_parameter.front());
+		_parameter.pop_front();
 		return top;
 	}
 
 	void Machine::pushParameter(Datum value) {
-		_parameter.push(value);
+        _parameter.emplace_front(value);
 	}
 
 	Datum Machine::load(Address addr) {
@@ -856,6 +856,7 @@ namespace forth {
 			addWord(";", std::mem_fn(&Machine::semicolonOperation));
 			addWord("registers", std::mem_fn(&Machine::printRegisters));
 			addWord("words", std::mem_fn(&Machine::listWords));
+            addWord("stack", std::mem_fn(&Machine::printStack));
 			addWord(":", std::mem_fn(&Machine::defineWord));
 			addWord("type.a", std::mem_fn<void()>(&Machine::typeValue));
 			addWord("pop.t", std::mem_fn(&Machine::popT));
@@ -887,6 +888,11 @@ namespace forth {
 			addWord("<<", std::mem_fn(&Machine::shiftLeftOperation));
 		}
 	}
+    void Machine::printStack() {
+        for (const auto& element : _parameter) {
+            _output << "\t- " << element << std::endl;
+        }
+    }
 } // end namespace forth
 
 

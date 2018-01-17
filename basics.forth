@@ -90,10 +90,10 @@
 : >f t.fp op-gt ;
 : >u t.address op-gt ;
 
-: op-lt load-ba < push.c ;
-: < t.signed op-lt ;
-: <f t.fp op-lt ;
-: <u t.address op-lt ;
+: < load-ba < push.c ;
+: <u t.address < ;
+: <f t.fp < ;
+: < t.signed < ;
 
 
 : op-or load-ba or push.c ;
@@ -122,4 +122,11 @@
 : and t.boolean op-and ;
 : ands t.signed op-and ;
 : andu t.address op-and ;
-: 
+
+: << load-ba << push.c ;
+: <<u t.address << ;
+: << t.signed << ;
+
+: >> load-ba >> push.c ;
+: >>u t.address >> ;
+: >> t.signed >> ;

@@ -227,6 +227,8 @@ namespace forth {
 			void lessThanOperation();
 			void xorOperation();
 			void absoluteValue();
+			void shiftLeftOperation();
+			void shiftRightOperation();
 		private:
 			void initializeBaseDictionary();
 			std::string readWord();
@@ -591,43 +593,34 @@ namespace forth {
 		}
 	}
 
-	void Machine::initializeBaseDictionary() {
-		if (!_initializedBaseDictionary) {
-			_initializedBaseDictionary = true;
-			// add dictionary entries
-			addWord("quit", std::mem_fn(&Machine::terminateExecution));
-			addWord(";", std::mem_fn(&Machine::semicolonOperation));
-			addWord("registers", std::mem_fn(&Machine::printRegisters));
-			addWord("words", std::mem_fn(&Machine::listWords));
-			addWord(":", std::mem_fn(&Machine::defineWord));
-			addWord("type.a", std::mem_fn<void()>(&Machine::typeValue));
-			addWord("pop.t", std::mem_fn(&Machine::popT));
-			addWord("pop.a", std::mem_fn(&Machine::popA));
-			addWord("pop.b", std::mem_fn(&Machine::popB));
-			addWord("pop.c", std::mem_fn(&Machine::popC));
-			addWord("push.a", std::mem_fn(&Machine::pushA));
-			addWord("push.b", std::mem_fn(&Machine::pushB));
-			addWord("push.c", std::mem_fn(&Machine::pushC));
-			addWord("push.t", std::mem_fn(&Machine::pushT));
-			addWord("mload", std::mem_fn<void()>(&Machine::load));
-			addWord("mstore", std::mem_fn<void()>(&Machine::store));
-			addWord("add", std::mem_fn(&Machine::add));
-			addWord("subtract", std::mem_fn(&Machine::subtract));
-			addWord("not.a", std::mem_fn(&Machine::notOperation));
-			addWord("minus.a", std::mem_fn(&Machine::minusOperation));
-			addWord("mul", std::mem_fn(&Machine::multiplyOperation));
-			addWord("equals", std::mem_fn(&Machine::equals));
-			addWord("pow", std::mem_fn(&Machine::powOperation));
-			addWord("modulo", std::mem_fn(&Machine::modulo));
-			addWord("divide", std::mem_fn(&Machine::divide));
-			addWord("and", std::mem_fn(&Machine::andOperation));
-			addWord("<", std::mem_fn(&Machine::lessThanOperation));
-			addWord(">", std::mem_fn(&Machine::greaterThanOperation));
-			addWord("or", std::mem_fn(&Machine::orOperation));
-			addWord("xor", std::mem_fn(&Machine::xorOperation));
-			addWord("abs", std::mem_fn(&Machine::absoluteValue));
+	void Machine::shiftLeftOperation() {
+		using Type = decltype(_registerT);
+		switch (_registerT) {
+			case Type::Number:
+				_registerC.numValue = _registerA.numValue << _registerB.address;
+				break;
+			case Type::MemoryAddress:
+				_registerC.address = _registerA.address << _registerB.address;
+				break;
+			default:
+				throw "Illegal discriminant";
 		}
 	}
+
+	void Machine::shiftRightOperation() {
+		using Type = decltype(_registerT);
+		switch (_registerT) {
+			case Type::Number:
+				_registerC.numValue = _registerA.numValue >> _registerB.address;
+				break;
+			case Type::MemoryAddress:
+				_registerC.address = _registerA.address >> _registerB.address;
+				break;
+			default:
+				throw "Illegal discriminant";
+		}
+	}
+
 	void Machine::popT() {
 		static constexpr Address max = (Address)Discriminant::Count;
 		auto top(popParameter());
@@ -840,6 +833,45 @@ namespace forth {
 				// fall through case, we couldn't figure it out!
 			}
 			handleError(result, "?");
+		}
+	}
+	void Machine::initializeBaseDictionary() {
+		if (!_initializedBaseDictionary) {
+			_initializedBaseDictionary = true;
+			// add dictionary entries
+			addWord("quit", std::mem_fn(&Machine::terminateExecution));
+			addWord(";", std::mem_fn(&Machine::semicolonOperation));
+			addWord("registers", std::mem_fn(&Machine::printRegisters));
+			addWord("words", std::mem_fn(&Machine::listWords));
+			addWord(":", std::mem_fn(&Machine::defineWord));
+			addWord("type.a", std::mem_fn<void()>(&Machine::typeValue));
+			addWord("pop.t", std::mem_fn(&Machine::popT));
+			addWord("pop.a", std::mem_fn(&Machine::popA));
+			addWord("pop.b", std::mem_fn(&Machine::popB));
+			addWord("pop.c", std::mem_fn(&Machine::popC));
+			addWord("push.a", std::mem_fn(&Machine::pushA));
+			addWord("push.b", std::mem_fn(&Machine::pushB));
+			addWord("push.c", std::mem_fn(&Machine::pushC));
+			addWord("push.t", std::mem_fn(&Machine::pushT));
+			addWord("mload", std::mem_fn<void()>(&Machine::load));
+			addWord("mstore", std::mem_fn<void()>(&Machine::store));
+			addWord("add", std::mem_fn(&Machine::add));
+			addWord("subtract", std::mem_fn(&Machine::subtract));
+			addWord("not.a", std::mem_fn(&Machine::notOperation));
+			addWord("minus.a", std::mem_fn(&Machine::minusOperation));
+			addWord("mul", std::mem_fn(&Machine::multiplyOperation));
+			addWord("equals", std::mem_fn(&Machine::equals));
+			addWord("pow", std::mem_fn(&Machine::powOperation));
+			addWord("modulo", std::mem_fn(&Machine::modulo));
+			addWord("divide", std::mem_fn(&Machine::divide));
+			addWord("and", std::mem_fn(&Machine::andOperation));
+			addWord("<", std::mem_fn(&Machine::lessThanOperation));
+			addWord(">", std::mem_fn(&Machine::greaterThanOperation));
+			addWord("or", std::mem_fn(&Machine::orOperation));
+			addWord("xor", std::mem_fn(&Machine::xorOperation));
+			addWord("abs", std::mem_fn(&Machine::absoluteValue));
+			addWord(">>", std::mem_fn(&Machine::shiftRightOperation));
+			addWord("<<", std::mem_fn(&Machine::shiftLeftOperation));
 		}
 	}
 } // end namespace forth

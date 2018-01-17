@@ -2,7 +2,6 @@
 //#define DEBUG
 #include <iostream>
 #include <string>
-#include <stack>
 #include <list>
 #include <cstdint>
 #include <memory>

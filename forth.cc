@@ -597,8 +597,6 @@ namespace forth {
 			// add dictionary entries
 			addWord("quit", std::mem_fn(&Machine::terminateExecution));
 			addWord(";", std::mem_fn(&Machine::semicolonOperation));
-			//addWord(";", [](Machine* machine) {
-			//		});
 			addWord("registers", std::mem_fn(&Machine::printRegisters));
 			addWord("words", std::mem_fn(&Machine::listWords));
 			addWord(":", std::mem_fn(&Machine::defineWord));

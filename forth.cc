@@ -16,6 +16,7 @@ namespace forth {
 	using Floating = float;
 	using byte = uint8_t;
 	static_assert((sizeof(Address) == sizeof(Integer)) && (sizeof(Integer) == sizeof(Floating)), "Address, Integer, and Floating are not equal!");
+    class DictionaryEntry;
 	enum class Discriminant : Address {
 		Number,
 		MemoryAddress,
@@ -73,6 +74,7 @@ namespace forth {
 					const DictionaryEntry* _entry;
 				};
 				void invoke(Machine* machine) const;
+                void operator()(Machine* machine) const;
 			};
 		public:
 			DictionaryEntry() = default;
@@ -96,7 +98,7 @@ namespace forth {
 					std::cout << "Invoking body of " << getName() << std::endl;
 #endif
 					for (const auto & value : _space) {
-						value.invoke(machine);
+                        value(machine);
 					}
 					// iterate through the set of space entries
 				}
@@ -280,6 +282,9 @@ namespace forth {
 		addWord(_compileTarget);
 		_compileTarget = nullptr;
 	}
+    void DictionaryEntry::SpaceEntry::operator()(Machine* machine) const {
+        invoke(machine);
+    }
 	void DictionaryEntry::SpaceEntry::invoke(Machine* machine) const {
 		switch (_type) {
 			case DictionaryEntry::SpaceEntry::Discriminant::Signed:

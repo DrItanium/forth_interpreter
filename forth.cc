@@ -9,6 +9,7 @@
 #include <limits>
 #include <sstream>
 #include <cmath>
+#include <set>
 
 namespace forth {
 	using Address = uint32_t;
@@ -320,8 +321,13 @@ namespace forth {
 		if (_words == nullptr) {
 			return;
 		}
+		std::set<std::string> entries;
 		for (const auto* entry = _words; entry != nullptr; entry = entry->getNext()) {
-			_output << entry->getName() << std::endl;
+			entries.insert(entry->getName());
+		}
+		_output << "words: " << std::endl;
+		for (const auto& entry : entries) {
+			_output << "\t - " << entry << std::endl;
 		}
 	}
 	void Machine::addWord(const std::string& name, NativeMachineOperation op) {

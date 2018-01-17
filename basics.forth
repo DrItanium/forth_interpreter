@@ -80,27 +80,26 @@
 : /f t.fp op-div ;
 : /u t.address op-div ;
 
-: op-mod load-ba modulo push.c ;
-: mod t.signed op-mod ;
-: modu t.address op-mod ;
-: modf t.fp op-mod ;
+: mod load-ba modulo push.c ;
+: modu t.address mod ;
+: modf t.fp mod ;
+: mod t.signed mod ;
 
-: op-gt load-ba > push.c ;
-: > t.signed op-gt ;
-: >f t.fp op-gt ;
-: >u t.address op-gt ;
+: > load-ba > push.c ;
+: >f t.fp > ;
+: >u t.address > ;
+: > t.signed > ;
 
 : < load-ba < push.c ;
 : <u t.address < ;
 : <f t.fp < ;
 : < t.signed < ;
 
-
-: op-or load-ba or push.c ;
-: ors t.signed op-or ;
-: oru t.address op-or ;
-: orf t.fp op-or ;
-: or t.boolean op-or ;
+: or load-ba or push.c ;
+: ors t.signed or ;
+: oru t.address or ;
+: orf t.fp or ;
+: or t.boolean or ;
 
 : >= < not ;
 : >=f <f not ;
@@ -113,15 +112,15 @@
 
 : implies or not ;
 
-: op-xor load-ba xor push.c ;
-: xors t.signed op-xor ;
-: xoru t.address op-xor ;
-: xor t.boolean op-xor ;
+: xor load-ba xor push.c ;
+: xors t.signed xor ;
+: xoru t.address xor ;
+: xor t.boolean xor ;
 
-: op-and load-ba and push.c ;
-: and t.boolean op-and ;
-: ands t.signed op-and ;
-: andu t.address op-and ;
+: and load-ba and push.c ;
+: ands t.signed and ;
+: andu t.address and ;
+: and t.boolean and ;
 
 : << load-ba << push.c ;
 : <<u t.address << ;

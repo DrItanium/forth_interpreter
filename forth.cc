@@ -36,8 +36,16 @@ namespace forth {
 		Address address;
 		Floating fp;
 		byte backingStore[sizeof(Integer)];
+
 	};
 
+	std::ostream& operator<<(std::ostream& out, const Datum& dt) {
+		// save flags
+		auto flags = out.flags();
+		out << "{" << dt.numValue << ", 0x" << std::hex << dt.address << ", " << std::dec << dt.fp << ", " << std::boolalpha << dt.truth << "}" ;
+		out.setf(flags); // restore after done
+		return out;
+	}
 	Datum::Datum(const Datum& other) {
 		for (auto k = 0; k < sizeof(Integer); ++k) {
 			// make sure that the compiler won't do something goofy when doing
@@ -202,7 +210,6 @@ namespace forth {
 			Datum& getC() noexcept { return _registerC; }
 			Discriminant getT() const noexcept { return _registerT; }
 			void printRegisters();
-			void printStack();
 		public:
 			void popA() { setA(popParameter()); }
 			void popB() { setB(popParameter()); }
@@ -256,7 +263,7 @@ namespace forth {
 	}
 	void Machine::printRegisters() {
 		auto fn = [this](const std::string& title, const Datum& r) {
-			_output << title << ": {" << r.numValue << ", 0x" << std::hex << r.address << ", " << std::dec << r.fp << "}" << std::endl;
+			_output << title << ": " << r << std::endl;
 		};
 		fn("A", _registerA);
 		fn("B", _registerB);

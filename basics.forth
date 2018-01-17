@@ -12,16 +12,16 @@
 : load-ab pop.a pop.b ;
 : load-ba pop.b pop.a ;
 
-: op-add load-ab add push.c ;
-: op-mul load-ab mul push.c ;
+: + load-ab + push.c ;
+: * load-ab * push.c ;
 
-: + t.signed op-add ;
-: +f t.fp op-add ;
-: +u t.address op-add ;
+: +f t.fp + ;
+: +u t.address + ;
+: + t.signed + ;
 
-: * t.signed op-mul ;
-: *f t.fp op-mul ;
-: *u t.address op-mul ;
+: *f t.fp * ;
+: *u t.address * ;
+: * t.signed * ;
 
 : drop pop.a ;
 : dup pop.a push.a push.a ;
@@ -43,44 +43,42 @@
 : minus t.signed op-minus ;
 : minusf t.fp op-minus ;
 
-: non-zero zero not ;
+: == load-ab == push.c ;
+: != == not ;
+: ==u t.address == ;
+: ==f t.fp == ;
+: ==b t.boolean == ;
+: == t.signed == ;
 
-: op-equals load-ab equals push.c ;
-: eq t.signed op-equals ;
-: equ t.address op-equals ;
-: eqf t.fp op-equals ;
-: eql t.boolean op-equals ;
+: !=l t.boolean != ;
+: !=f t.fp != ;
+: !=u t.address != ;
+: != t.signed != ;
 
-: op-not-equals op-equals not ;
-: neq t.signed op-not-equals ;
-: nequ t.address op-not-equals ;
-: neqf t.fp op-not-equals ;
-: neql t.boolean op-not-equals ;
+: zero 0 == ;
+: zerou 0 ==u ;
+: zerof 0.0 ==f ;
 
-: zero 0 eq ;
-: zerou 0 equ ;
-: zerof 0.0 eqf ;
+: not-zero 0 != ;
+: not-zerou 0 !=u ;
+: not-zerof 0.0 !=f ;
 
-: not-zero 0 neq ;
-: not-zerou 0 nequ ;
-: not-zerof 0.0 neqf ;
+: ** load-ba ** push.c ;
+: **f t.fp ** ;
+: **u t.address ** ;
+: ** t.signed ** ;
 
-: op-pow load-ba pow push.c ;
-: ** t.signed op-pow ;
-: **f t.fp op-pow ;
-: **u t.address op-pow ;
+: - load-ba - push.c ;
+: -f t.fp - ;
+: -u t.address - ;
+: - t.signed - ;
 
-: op-sub load-ba subtract push.c ;
-: - t.signed op-sub ;
-: -f t.fp op-sub ;
-: -u t.address op-sub ;
+: / load-ba / push.c ;
+: /f t.fp / ;
+: /u t.address / ;
+: / t.signed / ;
 
-: op-div load-ba divide push.c ;
-: / t.signed op-div ;
-: /f t.fp op-div ;
-: /u t.address op-div ;
-
-: mod load-ba modulo push.c ;
+: mod load-ba mod push.c ;
 : modu t.address mod ;
 : modf t.fp mod ;
 : mod t.signed mod ;

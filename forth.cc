@@ -11,9 +11,9 @@
 #include <set>
 
 namespace forth {
-	using Address = uint32_t;
-	using Integer = int32_t;
-	using Floating = float;
+	using Address = uint64_t;
+	using Integer = int64_t;
+	using Floating = double;
 	using byte = uint8_t;
 	static_assert((sizeof(Address) == sizeof(Integer)) && (sizeof(Integer) == sizeof(Floating)), "Address, Integer, and Floating are not equal!");
     class Problem {
@@ -125,6 +125,7 @@ namespace forth {
 			// but give it some byte storage of about 128 datums
 			std::list<SpaceEntry> _space;
 	};
+
 
 	void DictionaryEntry::addSpaceEntry(Integer x) {
 		DictionaryEntry::SpaceEntry se;
@@ -262,7 +263,7 @@ namespace forth {
 			std::unique_ptr<Integer[]> _memory;
 			DictionaryEntry* _words;
 			// no need for the subroutine stack
-			//Stack<Address> _subroutine;
+			Stack<DictionaryEntry*> _subroutine;
 			Stack<Datum> _parameter;
 			bool _initializedBaseDictionary = false;
 			bool _keepExecuting = true;
@@ -594,7 +595,7 @@ namespace forth {
 				_registerC = _registerA.address ^ _registerB.numValue;
 				break;
 			case Type::Boolean:
-				_registerC = _registerA.truth ^ _registerB.truth;
+				_registerC.truth = _registerA.truth ^ _registerB.truth;
 				break;
 			default:
                 throw Problem("xor", "ILLEGAL DISCRIMINANT!");
@@ -819,10 +820,8 @@ namespace forth {
 	}
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
 		// clear the stacks and the input pointer
-		//decltype(_subroutine) _purge0;
-		decltype(_parameter) _purge1;
-		//_subroutine.swap(_purge0);
-		_parameter.swap(_purge1);
+        _parameter.clear();
+        _subroutine.clear();
 		_input.clear();
 		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		_output << word << " " << msg << std::endl;

@@ -337,11 +337,22 @@ namespace forth {
         if (!_compiling) {
             throw Problem("if", "must be defining a word!");
         }
+        _subroutine.push_back(_compileTarget);
+        _compileTarget = new DictionaryEntry("");
+        _compileTarget.markFakeEntry();
         auto word = readWord();
         const auto* entry = lookupWord(word);
+        // Since else is optional, we have to be careful and somehow detail that 
+        // this operation is 
         if (entry != nullptr) {
+            // TODO: add support for nesting entries by adding addresses onto the
+            // stack temporarily
+            // load the c register from the stack
             _compileTarget->addSpaceEntry(lookupWord("pop.c"));
+            // compile the address of the entry we're looking for into 
             _compileTarget->loadWordEntryIntoA(entry);
+            // compile in a fake address to the nop command
+            _compileTarget->loadWordEntryIntoB(lookupWord("nop"));
         } else {
             throw Problem(word, "?");
         }
@@ -350,6 +361,14 @@ namespace forth {
         if (!_compiling) {
             throw Problem("else", "must be defining a word!");
         }
+        auto word = readWord();
+        const auto* entry = lookupWord(word);
+        // Right now, we just add a new entry to the current compileTarget
+        if (entry != nullptr) {
+            _compileTarget->loadWordEntryIntoB(entry);
+        } else {
+            throw Problem(word, "?");
+        }
     }
 
     void Machine::thenStatement() {
@@ -357,8 +376,14 @@ namespace forth {
             throw Problem("then", "must be defining a word!");
         }
         _compileTarget->addChooseOperation();
-        _compileTarget->
-
+        _compileTarget->addInvokeCOperation();
+        if (_subroutine.empty()) {
+            throw Problem("then", "Not in a function");
+        }
+        addWord(_compileTarget);
+        auto parent = _subroutine.back();
+        parent.addSpaceEntry(_compileTarget);
+        _compileTarget = parent;
     }
 	std::string Machine::readWord() {
 		std::string word;
@@ -993,6 +1018,7 @@ namespace forth {
 		if (!_initializedBaseDictionary) {
 			_initializedBaseDictionary = true;
 			// add dictionary entries
+            addWord("nop", [](Machine*) { });
 			addWord("quit", std::mem_fn(&Machine::terminateExecution));
 			addWord(";", std::mem_fn(&Machine::semicolonOperation));
 			addWord("registers", std::mem_fn(&Machine::printRegisters));

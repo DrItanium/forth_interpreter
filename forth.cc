@@ -962,6 +962,7 @@ namespace forth {
             delete _compileTarget;
             _compileTarget = nullptr;
         }
+        _compiling = false;
 	}
 	void Machine::controlLoop() noexcept {
 		// setup initial dictionary

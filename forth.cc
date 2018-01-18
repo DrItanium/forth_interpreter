@@ -1054,6 +1054,9 @@ namespace forth {
 			addWord("abs", std::mem_fn(&Machine::absoluteValue));
 			addWord(">>", std::mem_fn(&Machine::shiftRightOperation));
 			addWord("<<", std::mem_fn(&Machine::shiftLeftOperation));
+            addWord("if", std::mem_fn(&Machine::ifCondition));
+            addWord("else", std::mem_fn(&Machine::elseCondition));
+            addWord("then", std::mem_fn(&Machine::thenStatement));
 		}
 	}
     void Machine::printStack() {
@@ -1064,8 +1067,7 @@ namespace forth {
 } // end namespace forth
 
 
-//TODO: add support for catching exceptions and calling handleError with the exception information
-
+// TODO: add support for invoking some keywords at compile time!
 int main() {
 	forth::Machine machine (std::cout, std::cin);
 	machine.controlLoop();

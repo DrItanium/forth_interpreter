@@ -42,13 +42,14 @@ namespace forth {
 		Datum(Address x) : address(x) { }
 		Datum(Floating x) : fp(x) { }
 		Datum(bool x) : truth(x) { }
+        Datum(const DictionaryEntry* x) : entry(x) { }
 		~Datum() = default;
 		Datum(const Datum& other);
 		bool truth;
 		Integer numValue;
 		Address address;
 		Floating fp;
-        DictionaryEntry* entry;
+        const DictionaryEntry* entry;
 		byte backingStore[sizeof(Integer)];
 	};
 
@@ -79,6 +80,10 @@ namespace forth {
 					FloatingPoint,
 					Boolean,
 					DictEntry,
+                    LoadWordIntoA,
+                    LoadWordIntoB,
+                    ChooseRegisterAndStoreInC,
+                    InvokeRegisterC,
 				};
 				Discriminant _type;
 				union {
@@ -95,6 +100,8 @@ namespace forth {
 			DictionaryEntry() = default;
 			DictionaryEntry(const std::string& name, NativeMachineOperation code = nullptr);
 			~DictionaryEntry() = default;
+            void markFakeEntry() noexcept { _fake = true; }
+            bool isFake() const noexcept { return _fake; }
 			const std::string& getName() const noexcept { return _name; }
 			NativeMachineOperation getCode() const noexcept { return _code; }
 			const DictionaryEntry* getNext() const noexcept { return _next; }
@@ -105,6 +112,20 @@ namespace forth {
 			void addSpaceEntry(Floating value);
 			void addSpaceEntry(bool value);
 			void addSpaceEntry(const DictionaryEntry* value);
+            void addLoadWordEntryIntoA(const DictionaryEntry* value);
+            void addLoadWordEntryIntoB(const DictionaryEntry* value);
+            void addChooseOperation() { 
+                SpaceEntry tmp;
+                tmp._type = SpaceEntry::Discriminant::ChooseRegisterAndStoreInC;
+                tmp._entry = nullptr;
+                _space.emplace_back(tmp);
+            }
+            void addInvokeCOperation() {
+                SpaceEntry tmp;
+                tmp._type = SpaceEntry::Discriminant::InvokeRegisterC;
+                tmp._entry = nullptr;
+                _space.emplace_back(tmp);
+            }
 			void operator()(Machine* machine) const {
 				if (_code != nullptr) {
 					_code(machine);
@@ -128,7 +149,22 @@ namespace forth {
 			// the parameters field is the only thing that doesn't make total sense right now
 			// but give it some byte storage of about 128 datums
 			std::list<SpaceEntry> _space;
+            bool _fake = false;
 	};
+
+    void DictionaryEntry::addLoadWordEntryIntoA(const DictionaryEntry* value) {
+        SpaceEntry se;
+        se._type = SpaceEntry::Discriminant::LoadWordIntoA;
+        se._entry = value;
+        _space.emplace_back(se);
+    }
+
+    void DictionaryEntry::addLoadWordEntryIntoB(const DictionaryEntry* value) {
+        SpaceEntry se;
+        se._type = SpaceEntry::Discriminant::LoadWordIntoB;
+        se._entry = value;
+        _space.emplace_back(se);
+    }
 
 
 	void DictionaryEntry::addSpaceEntry(Integer x) {
@@ -191,7 +227,7 @@ namespace forth {
 					return nullptr;
 				}
 				for (const auto* entry = _words; entry != nullptr; entry = entry->getNext()) {
-					if (entry->getName() == word) {
+					if (entry->getName() == word && !entry->isFake()) {
 						return entry;
 					}
 				}
@@ -258,6 +294,11 @@ namespace forth {
 			void absoluteValue();
 			void shiftLeftOperation();
 			void shiftRightOperation();
+            void ifCondition();
+            void elseCondition();
+            void thenStatement();
+            void invokeCRegister();
+            void chooseRegister();
 		private:
 			void initializeBaseDictionary();
 			std::string readWord();
@@ -278,6 +319,47 @@ namespace forth {
 			Datum _registerA, _registerB, _registerC;
 			Discriminant _registerT;
 	};
+    void Machine::chooseRegister() {
+        _registerC = _registerC.truth ? _registerA : _registerB;
+    }
+    void Machine::invokeCRegister() {
+        using Type = decltype(_registerT);
+        if (_registerT != Type::Word) {
+            throw Problem("invoke.c", "incorrect discriminant!");
+        } else {
+            // THIS IS SUPER DUPER UNSAFE AND BAD THINGS CAN HAPPEN!!!!
+            // TODO: figure out a safer way to solve this issue
+            _registerC.entry->operator()(this);
+        }
+    }
+    void Machine::ifCondition() {
+        // if we're not in compilation mode then error out
+        if (!_compiling) {
+            throw Problem("if", "must be defining a word!");
+        }
+        auto word = readWord();
+        const auto* entry = lookupWord(word);
+        if (entry != nullptr) {
+            _compileTarget->addSpaceEntry(lookupWord("pop.c"));
+            _compileTarget->loadWordEntryIntoA(entry);
+        } else {
+            throw Problem(word, "?");
+        }
+    }
+    void Machine::elseCondition() {
+        if (!_compiling) {
+            throw Problem("else", "must be defining a word!");
+        }
+    }
+
+    void Machine::thenStatement() {
+        if (!_compiling) {
+            throw Problem("then", "must be defining a word!");
+        }
+        _compileTarget->addChooseOperation();
+        _compileTarget->
+
+    }
 	std::string Machine::readWord() {
 		std::string word;
 		_input >> word;
@@ -293,11 +375,17 @@ namespace forth {
 		_output << "T: 0x" << std::hex << (Address)_registerT << std::dec << std::endl;
 	}
 	void Machine::defineWord() {
+        if (_compiling || _compileTarget != nullptr) {
+            throw Problem(":", "already compiling");
+        }
 		activateCompileMode();
 		// pass address "execute" to the entry subroutine
 		_compileTarget = new DictionaryEntry(readWord());
 	}
 	void Machine::endDefineWord() {
+        if (!_compiling || _compileTarget == nullptr) {
+            throw Problem(";", "not compiling!");
+        }
 		deactivateCompileMode();
 		addWord(_compileTarget);
 		_compileTarget = nullptr;
@@ -306,37 +394,50 @@ namespace forth {
         invoke(machine);
     }
 	void DictionaryEntry::SpaceEntry::invoke(Machine* machine) const {
+        using Type = DictionaryEntry::SpaceEntry::Discriminant;
 		switch (_type) {
-			case DictionaryEntry::SpaceEntry::Discriminant::Signed:
+			case Type::Signed:
 #ifdef DEBUG
 				std::cout << "pushing integer " << std::dec << _int << " onto stack!" << std::endl;
 #endif
 				machine->pushParameter(_int);
 				break;
-			case DictionaryEntry::SpaceEntry::Discriminant::Unsigned:
+			case Type::Unsigned:
 #ifdef DEBUG
 				std::cout << "pushing address " << std::hex << _addr  << std::dec << " onto stack!" << std::endl;
 #endif
 				machine->pushParameter(_addr);
 				break;
-			case DictionaryEntry::SpaceEntry::Discriminant::FloatingPoint:
+			case Type::FloatingPoint:
 #ifdef DEBUG
 				std::cout << "pushing fp " << _fp << " onto stack!" << std::endl;
 #endif
 				machine->pushParameter(_fp);
 				break;
-			case DictionaryEntry::SpaceEntry::Discriminant::Boolean:
+			case Type::Boolean:
 #ifdef DEBUG
 				std::cout << "pushing boolean " << _truth << " onto stack!" << std::endl;
 #endif
 				machine->pushParameter(_truth);
 				break;
-			case DictionaryEntry::SpaceEntry::Discriminant::DictEntry:
+			case Type::DictEntry:
 #ifdef DEBUG
 				std::cout << "calling dictionary entry: '" << _entry->getName() << "' at " << _entry << std::dec << std::endl;
 #endif
 				_entry->operator()(machine);
 				break;
+            case Type::LoadWordIntoA:
+                machine->setA(_entry);
+                break;
+            case Type::LoadWordIntoB:
+                machine->setB(_entry);
+                break;
+            case Type::ChooseRegisterAndStoreInC:
+                machine->chooseRegister();
+                break;
+            case Type::InvokeRegisterC:
+                machine->invokeCRegister();
+                break;
 			default:
                 throw Problem("unknown", "UNKNOWN ENTRY KIND!");
 		}
@@ -832,6 +933,10 @@ namespace forth {
 		_input.clear();
 		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		_output << word << " " << msg << std::endl;
+        if (_compileTarget != nullptr) {
+            delete _compileTarget;
+            _compileTarget = nullptr;
+        }
 	}
 	void Machine::controlLoop() noexcept {
 		// setup initial dictionary
@@ -839,7 +944,11 @@ namespace forth {
 		while (_keepExecuting) {
             try {
                 auto result = readWord();
-                // okay, we need to see if we can find the given word!
+                //bool dontExecuteWord = !result.empty() && (result.front() == "~");
+                // okay, we need to see if we can find the given word, first strip off the ~ 
+                //if (dontExecuteWord) {
+                //    result = result.substr(1);
+                //}
                 auto* entry = lookupWord(result);
                 if (_compiling) {
                     auto finishedCompiling = (result == ";");
@@ -850,10 +959,14 @@ namespace forth {
                         _output << "Found an entry for: " << result << std::endl;
                         _output << "Location: " << std::hex << entry << std::dec << std::endl;
 #endif
+                        //if (dontExecuteWord) {
+                        //    // add a new spaceEntry to push this value onto the data stack
+                        //} else {
                         _compileTarget->addSpaceEntry(entry);
                         if (finishedCompiling) {
                             endDefineWord();
                         }
+                        //}
                         continue;
                     }
                     // okay, we need to see if it is a value to compile in

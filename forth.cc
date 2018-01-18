@@ -339,7 +339,7 @@ namespace forth {
         }
         _subroutine.push_back(_compileTarget);
         _compileTarget = new DictionaryEntry("");
-        _compileTarget.markFakeEntry();
+        _compileTarget->markFakeEntry();
         auto word = readWord();
         const auto* entry = lookupWord(word);
         // Since else is optional, we have to be careful and somehow detail that 
@@ -350,9 +350,9 @@ namespace forth {
             // load the c register from the stack
             _compileTarget->addSpaceEntry(lookupWord("pop.c"));
             // compile the address of the entry we're looking for into 
-            _compileTarget->loadWordEntryIntoA(entry);
+            _compileTarget->addLoadWordEntryIntoA(entry);
             // compile in a fake address to the nop command
-            _compileTarget->loadWordEntryIntoB(lookupWord("nop"));
+            _compileTarget->addLoadWordEntryIntoB(lookupWord("nop"));
         } else {
             throw Problem(word, "?");
         }
@@ -365,7 +365,7 @@ namespace forth {
         const auto* entry = lookupWord(word);
         // Right now, we just add a new entry to the current compileTarget
         if (entry != nullptr) {
-            _compileTarget->loadWordEntryIntoB(entry);
+            _compileTarget->addLoadWordEntryIntoB(entry);
         } else {
             throw Problem(word, "?");
         }
@@ -382,7 +382,7 @@ namespace forth {
         }
         addWord(_compileTarget);
         auto parent = _subroutine.back();
-        parent.addSpaceEntry(_compileTarget);
+        parent->addSpaceEntry(_compileTarget);
         _compileTarget = parent;
     }
 	std::string Machine::readWord() {

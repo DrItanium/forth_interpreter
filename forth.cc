@@ -33,6 +33,7 @@ namespace forth {
 		MemoryAddress,
 		FloatingPoint,
 		Boolean,
+        Word,
 		Count,
 	};
 	union Datum {
@@ -47,13 +48,16 @@ namespace forth {
 		Integer numValue;
 		Address address;
 		Floating fp;
+        DictionaryEntry* entry;
 		byte backingStore[sizeof(Integer)];
 	};
 
 	std::ostream& operator<<(std::ostream& out, const Datum& dt) {
 		// save flags
 		auto flags = out.flags();
-		out << "{" << dt.numValue << ", 0x" << std::hex << dt.address << ", " << std::dec << dt.fp << ", " << std::boolalpha << dt.truth << "}" ;
+		out << "{" << dt.numValue << ", 0x" << std::hex << dt.address << ", " << std::dec << dt.fp << ", " << std::boolalpha << dt.truth;
+        out << ", !" << std::hex << dt.entry;
+        out << "}" ;
 		out.setf(flags); // restore after done
 		return out;
 	}
@@ -199,6 +203,7 @@ namespace forth {
 			void load() { _registerC = load(_registerA.address); }
 			void store(Address addr, const Datum& value);
 			void store() { store(_registerA.address, _registerB); }
+            void pushWord(DictionaryEntry* entry);
 			void pushParameter(Datum value);
 			Datum popParameter();
 			bool numberRoutine(const std::string& word) noexcept;
@@ -681,6 +686,8 @@ namespace forth {
 			case Discriminant::Boolean:
 				_output << std::boolalpha << value.truth << std::noboolalpha;
 				break;
+            case Discriminant::Word:
+                _output << std::hex << value.entry << ": " << std::dec << value.entry->getName();
 			default:
                 throw Problem("type.a", "BAD DISCRIMINANT!");
 		}

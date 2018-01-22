@@ -10,22 +10,14 @@
 #include <cmath>
 #include <set>
 
+#include "Problem.h"
+
 namespace forth {
 	using Address = uint64_t;
 	using Integer = int64_t;
 	using Floating = double;
 	using byte = uint8_t;
 	static_assert((sizeof(Address) == sizeof(Integer)) && (sizeof(Integer) == sizeof(Floating)), "Address, Integer, and Floating are not equal!");
-    class Problem {
-        public:
-            Problem(const std::string& word, const std::string& message);
-            ~Problem() = default;
-            const std::string& getWord() const noexcept { return _word; }
-            const std::string& getMessage() const noexcept { return _message; }
-        private:
-            std::string _word;
-            std::string _message;
-    };
     Problem::Problem(const std::string& word, const std::string& message) : _word(word), _message(message) { }
     class DictionaryEntry;
 	enum class Discriminant : Address {

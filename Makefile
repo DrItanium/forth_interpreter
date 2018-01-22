@@ -26,4 +26,4 @@ clean:
 
 .PHONY: options clean all
 
-forth.o: forth.cc
+forth.o: forth.cc Problem.h

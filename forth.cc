@@ -84,7 +84,6 @@ namespace forth {
                     LoadWordIntoB,
                     ChooseRegisterAndStoreInC,
                     InvokeRegisterC,
-                    SetRegisterT,
 				};
 				Discriminant _type;
 				union {
@@ -358,7 +357,12 @@ namespace forth {
             // compile in a fake address to the nop command
             _compileTarget->addLoadWordEntryIntoB(lookupWord("nop"));
         } else {
-            if (!compileNumber(word)) {
+            _compileTarget->addSpaceEntry(lookupWord("pop.c"));
+            if (compileNumber(word)) {
+                _compileTarget->addSpaceEntry(lookupWord("pop.a"));
+                // compile in a fake address to the nop command
+                _compileTarget->addLoadWordEntryIntoB(lookupWord("nop"));
+            } else {
                 throw Problem(word, "?");
             }
         }
@@ -373,7 +377,11 @@ namespace forth {
         if (entry != nullptr) {
             _compileTarget->addLoadWordEntryIntoB(entry);
         } else {
-            if (!compileNumber(word)) {
+            if (compileNumber(word)) {
+                // this is a special case where we may need to make a custom fake 
+                // word for the purposes of invocation
+                _compileTarget->addSpaceEntry(lookupWord("pop.b"));
+            } else {
                 throw Problem(word, "?");
             }
         }
@@ -383,8 +391,9 @@ namespace forth {
         if (!_compiling) {
             throw Problem("then", "must be defining a word!");
         }
+        _compileTarget->addSpaceEntry(static_cast<Address>(Discriminant::Word));
+        _compileTarget->addSpaceEntry(lookupWord("pop.t"));
         _compileTarget->addChooseOperation();
-        _compileTarget->
         _compileTarget->addInvokeCOperation();
         if (_subroutine.empty()) {
             throw Problem("then", "Not in a function");

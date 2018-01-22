@@ -3,7 +3,6 @@
 #include <iostream>
 #include <string>
 #include <list>
-#include <cstdint>
 #include <memory>
 #include <limits>
 #include <sstream>
@@ -199,9 +198,6 @@ namespace forth {
 	}
 
 
-    template<typename T>
-    using Stack = std::list<T>;
-
 	DictionaryEntry::DictionaryEntry(const std::string& name, NativeMachineOperation code) : _name(name), _code(code), _next(nullptr) { }
 
 
@@ -299,8 +295,8 @@ namespace forth {
 			std::unique_ptr<Integer[]> _memory;
 			DictionaryEntry* _words;
 			// no need for the subroutine stack
-			Stack<DictionaryEntry*> _subroutine;
-			Stack<Datum> _parameter;
+            std::list<DictionaryEntry*> _subroutine;
+            std::list<Datum> _parameter;
 			bool _initializedBaseDictionary = false;
 			bool _keepExecuting = true;
 			bool _compiling = false;

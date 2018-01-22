@@ -321,6 +321,17 @@ namespace forth {
 			// internal "registers"
 			Datum _registerA, _registerB, _registerC;
 			Discriminant _registerT;
+            using MemFuncEntry = decltype(std::mem_fn(&Machine::popA));
+            const DictionaryEntry* _popA = nullptr;
+            const DictionaryEntry* _popB = nullptr;
+            const DictionaryEntry* _popC = nullptr;
+            const DictionaryEntry* _popT = nullptr;
+            const DictionaryEntry* _pushA = nullptr;
+            const DictionaryEntry* _pushB = nullptr;
+            const DictionaryEntry* _pushC = nullptr;
+            const DictionaryEntry* _pushT = nullptr;
+            const DictionaryEntry* _nop = nullptr;
+
 	};
     void Machine::chooseRegister() {
         _registerC = _registerC.truth ? _registerA : _registerB;
@@ -351,17 +362,17 @@ namespace forth {
             // TODO: add support for nesting entries by adding addresses onto the
             // stack temporarily
             // load the c register from the stack
-            _compileTarget->addSpaceEntry(lookupWord("pop.c"));
+            _compileTarget->addSpaceEntry(_popC);
             // compile the address of the entry we're looking for into 
             _compileTarget->addLoadWordEntryIntoA(entry);
             // compile in a fake address to the nop command
-            _compileTarget->addLoadWordEntryIntoB(lookupWord("nop"));
+            _compileTarget->addLoadWordEntryIntoB(_nop);
         } else {
-            _compileTarget->addSpaceEntry(lookupWord("pop.c"));
+            _compileTarget->addSpaceEntry(_popC);
             if (compileNumber(word)) {
-                _compileTarget->addSpaceEntry(lookupWord("pop.a"));
+                _compileTarget->addSpaceEntry(_popA);
                 // compile in a fake address to the nop command
-                _compileTarget->addLoadWordEntryIntoB(lookupWord("nop"));
+                _compileTarget->addLoadWordEntryIntoB(_nop);
             } else {
                 throw Problem(word, "?");
             }
@@ -380,7 +391,7 @@ namespace forth {
             if (compileNumber(word)) {
                 // this is a special case where we may need to make a custom fake 
                 // word for the purposes of invocation
-                _compileTarget->addSpaceEntry(lookupWord("pop.b"));
+                _compileTarget->addSpaceEntry(_popB);
             } else {
                 throw Problem(word, "?");
             }
@@ -395,7 +406,7 @@ namespace forth {
             throw Problem("then", "Not in a function");
         }
         _compileTarget->addSpaceEntry(static_cast<Address>(Discriminant::Word));
-        _compileTarget->addSpaceEntry(lookupWord("pop.t"));
+        _compileTarget->addSpaceEntry(_popT);
         _compileTarget->addChooseOperation();
         _compileTarget->addInvokeCOperation();
         addWord(_compileTarget);
@@ -1075,6 +1086,15 @@ namespace forth {
             addWord("if", std::mem_fn(&Machine::ifCondition), true);
             addWord("else", std::mem_fn(&Machine::elseCondition), true);
             addWord("then", std::mem_fn(&Machine::thenStatement), true);
+            _nop = lookupWord("nop");
+            _popT = lookupWord("pop.t");
+            _popA = lookupWord("pop.a");
+            _popB = lookupWord("pop.b");
+            _popC = lookupWord("pop.c");
+            _pushT = lookupWord("push.t");
+            _pushA = lookupWord("push.a");
+            _pushB = lookupWord("push.b");
+            _pushC = lookupWord("push.c");
 		}
 	}
     void Machine::printStack() {

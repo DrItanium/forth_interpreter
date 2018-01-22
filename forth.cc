@@ -391,13 +391,13 @@ namespace forth {
         if (!_compiling) {
             throw Problem("then", "must be defining a word!");
         }
+        if (_subroutine.empty()) {
+            throw Problem("then", "Not in a function");
+        }
         _compileTarget->addSpaceEntry(static_cast<Address>(Discriminant::Word));
         _compileTarget->addSpaceEntry(lookupWord("pop.t"));
         _compileTarget->addChooseOperation();
         _compileTarget->addInvokeCOperation();
-        if (_subroutine.empty()) {
-            throw Problem("then", "Not in a function");
-        }
         addWord(_compileTarget);
         auto parent = _subroutine.back();
         parent->addSpaceEntry(_compileTarget);

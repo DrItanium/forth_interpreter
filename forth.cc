@@ -84,6 +84,7 @@ namespace forth {
                     LoadWordIntoB,
                     ChooseRegisterAndStoreInC,
                     InvokeRegisterC,
+                    SetRegisterT,
 				};
 				Discriminant _type;
 				union {
@@ -357,7 +358,9 @@ namespace forth {
             // compile in a fake address to the nop command
             _compileTarget->addLoadWordEntryIntoB(lookupWord("nop"));
         } else {
-            throw Problem(word, "?");
+            if (!compileNumber(word)) {
+                throw Problem(word, "?");
+            }
         }
     }
     void Machine::elseCondition() {
@@ -370,7 +373,9 @@ namespace forth {
         if (entry != nullptr) {
             _compileTarget->addLoadWordEntryIntoB(entry);
         } else {
-            throw Problem(word, "?");
+            if (!compileNumber(word)) {
+                throw Problem(word, "?");
+            }
         }
     }
 
@@ -379,6 +384,7 @@ namespace forth {
             throw Problem("then", "must be defining a word!");
         }
         _compileTarget->addChooseOperation();
+        _compileTarget->
         _compileTarget->addInvokeCOperation();
         if (_subroutine.empty()) {
             throw Problem("then", "Not in a function");
@@ -1057,9 +1063,9 @@ namespace forth {
 			addWord("abs", std::mem_fn(&Machine::absoluteValue));
 			addWord(">>", std::mem_fn(&Machine::shiftRightOperation));
 			addWord("<<", std::mem_fn(&Machine::shiftLeftOperation));
-            addWord("if", std::mem_fn(&Machine::ifCondition));
-            addWord("else", std::mem_fn(&Machine::elseCondition));
-            addWord("then", std::mem_fn(&Machine::thenStatement));
+            addWord("if", std::mem_fn(&Machine::ifCondition), true);
+            addWord("else", std::mem_fn(&Machine::elseCondition), true);
+            addWord("then", std::mem_fn(&Machine::thenStatement), true);
 		}
 	}
     void Machine::printStack() {

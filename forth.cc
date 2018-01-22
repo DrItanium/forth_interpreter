@@ -98,36 +98,12 @@ namespace forth {
 			void addSpaceEntry(Floating value);
 			void addSpaceEntry(bool value);
 			void addSpaceEntry(const DictionaryEntry* value);
+            void addSpaceEntry(SpaceEntry::Discriminant type, const DictionaryEntry* value);
             void addLoadWordEntryIntoA(const DictionaryEntry* value);
             void addLoadWordEntryIntoB(const DictionaryEntry* value);
-            void addChooseOperation() { 
-                SpaceEntry tmp;
-                tmp._type = SpaceEntry::Discriminant::ChooseRegisterAndStoreInC;
-                tmp._entry = nullptr;
-                _space.emplace_back(tmp);
-            }
-            void addInvokeCOperation() {
-                SpaceEntry tmp;
-                tmp._type = SpaceEntry::Discriminant::InvokeRegisterC;
-                tmp._entry = nullptr;
-                _space.emplace_back(tmp);
-            }
-			void operator()(Machine* machine) const {
-				if (_code != nullptr) {
-					_code(machine);
-				} else {
-#ifdef DEBUG
-					std::cout << "Invoking body of " << getName() << std::endl;
-#endif
-                    try {
-                        for (const auto & value : _space) {
-                            value(machine);
-                        }
-                    } catch (Problem& p) {
-                        throw Problem(getName(), p.getMessage());
-                    }
-				}
-			}
+            void addChooseOperation();
+            void addInvokeCOperation();
+			void operator()(Machine* machine) const;
             void markCompileTimeInvoke() noexcept { _compileTimeInvoke = true; }
             bool compileTimeInvoke() const noexcept { return _compileTimeInvoke; }
 		private:
@@ -140,59 +116,71 @@ namespace forth {
             bool _fake = false;
             bool _compileTimeInvoke = false;
 	};
-
-    void DictionaryEntry::addLoadWordEntryIntoA(const DictionaryEntry* value) {
+    void DictionaryEntry::operator()(Machine* machine) const {
+        if (_code != nullptr) {
+            _code(machine);
+        } else {
+            try {
+                for (const auto & value : _space) {
+                    value(machine);
+                }
+            } catch (Problem& p) {
+                throw Problem(getName(), p.getMessage());
+            }
+        }
+    }
+    void DictionaryEntry::addChooseOperation() {
+        addSpaceEntry(SpaceEntry::Discriminant::ChooseRegisterAndStoreInC, nullptr);
+    }
+    void DictionaryEntry::addInvokeCOperation() {
+        addSpaceEntry(SpaceEntry::Discriminant::InvokeRegisterC, nullptr);
+    }
+    void DictionaryEntry::addSpaceEntry(SpaceEntry::Discriminant type, const DictionaryEntry* value) {
         SpaceEntry se;
-        se._type = SpaceEntry::Discriminant::LoadWordIntoA;
+        se._type = type;
         se._entry = value;
         _space.emplace_back(se);
     }
+    void DictionaryEntry::addLoadWordEntryIntoA(const DictionaryEntry* value) {
+        addSpaceEntry(SpaceEntry::Discriminant::LoadWordIntoA, value);
+    }
 
     void DictionaryEntry::addLoadWordEntryIntoB(const DictionaryEntry* value) {
-        SpaceEntry se;
-        se._type = SpaceEntry::Discriminant::LoadWordIntoB;
-        se._entry = value;
-        _space.emplace_back(se);
+        addSpaceEntry(SpaceEntry::Discriminant::LoadWordIntoB, value);
     }
 
 
 	void DictionaryEntry::addSpaceEntry(Integer x) {
-		DictionaryEntry::SpaceEntry se;
-		se._type = decltype(se)::Discriminant::Signed;
+		SpaceEntry se;
+		se._type = SpaceEntry::Discriminant::Signed;
 		se._int = x;
 		_space.emplace_back(se);
 	}
 
 	void DictionaryEntry::addSpaceEntry(Address x) {
-		DictionaryEntry::SpaceEntry se;
-		se._type = decltype(se)::Discriminant::Unsigned;
+		SpaceEntry se;
+		se._type = SpaceEntry::Discriminant::Unsigned;
 		se._addr = x;
 		_space.emplace_back(se);
 	}
 
 	void DictionaryEntry::addSpaceEntry(Floating x) {
-		DictionaryEntry::SpaceEntry se;
-		se._type = decltype(se)::Discriminant::FloatingPoint;
+		SpaceEntry se;
+		se._type = SpaceEntry::Discriminant::FloatingPoint;
 		se._fp = x;
 		_space.emplace_back(se);
 	}
 
 	void DictionaryEntry::addSpaceEntry(bool x) {
-#ifdef DEBUG
-		std::cout << "Adding boolean entry: " << x << std::endl;
-#endif
-		DictionaryEntry::SpaceEntry se;
-		se._type = decltype(se)::Discriminant::Boolean;
+		SpaceEntry se;
+		se._type = SpaceEntry::Discriminant::Boolean;
 		se._truth = x;
 		_space.emplace_back(se);
 	}
 
 	void DictionaryEntry::addSpaceEntry(const DictionaryEntry* x) {
-#ifdef DEBUG
-		std::cout << "Adding dictionary entry: " << x << std::endl;
-#endif
-		DictionaryEntry::SpaceEntry se;
-		se._type = decltype(se)::Discriminant::DictEntry;
+		SpaceEntry se;
+		se._type = SpaceEntry::Discriminant::DictEntry;
 		se._entry = x;
 		_space.emplace_back(se);
 	}
@@ -208,17 +196,7 @@ namespace forth {
 		public:
 			Machine(std::ostream& output, std::istream& input);
 			~Machine() = default;
-			const DictionaryEntry* lookupWord(const std::string& word) noexcept {
-				if (_words == nullptr) {
-					return nullptr;
-				}
-				for (const auto* entry = _words; entry != nullptr; entry = entry->getNext()) {
-					if (entry->getName() == word && !entry->isFake()) {
-						return entry;
-					}
-				}
-				return nullptr;
-			}
+			const DictionaryEntry* lookupWord(const std::string& word) noexcept;
 			void controlLoop() noexcept;
 			void handleError(const std::string& word, const std::string& msg) noexcept;
 			Datum load(Address addr);
@@ -315,6 +293,17 @@ namespace forth {
             const DictionaryEntry* _nop = nullptr;
 
 	};
+    const DictionaryEntry* Machine::lookupWord(const std::string& word) noexcept {
+        if (_words == nullptr) {
+            return nullptr;
+        }
+        for (const auto* entry = _words; entry != nullptr; entry = entry->getNext()) {
+            if (entry->getName() == word && !entry->isFake()) {
+                return entry;
+            }
+        }
+        return nullptr;
+    }
     void Machine::chooseRegister() {
         _registerC = _registerC.truth ? _registerA : _registerB;
     }

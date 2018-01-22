@@ -1,3 +1,5 @@
+#ifndef PROBLEM_H__
+#define PROBLEM_H__
 // concept of a problem to be thrown
 #include <string>
 namespace forth {
@@ -12,3 +14,5 @@ namespace forth {
             std::string _message;
     };
 } // end namespace forth
+
+#endif

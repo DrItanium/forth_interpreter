@@ -321,7 +321,6 @@ namespace forth {
 			// internal "registers"
 			Datum _registerA, _registerB, _registerC;
 			Discriminant _registerT;
-            using MemFuncEntry = decltype(std::mem_fn(&Machine::popA));
             const DictionaryEntry* _popA = nullptr;
             const DictionaryEntry* _popB = nullptr;
             const DictionaryEntry* _popC = nullptr;
@@ -518,23 +517,6 @@ namespace forth {
 	}
 	void Machine::terminateExecution() {
 		_keepExecuting = false;
-	}
-	NativeMachineOperation binaryOperation(std::function<Datum(const Datum&, const Datum&)> fn) noexcept {
-		return [fn](Machine* machine) {
-			auto top(machine->popParameter());
-			auto lower(machine->popParameter());
-#ifdef DEBUG
-			std::cout << "top: " << top.numValue << std::endl;
-			std::cout << "lower: " << lower.numValue << std::endl;
-#endif
-			machine->pushParameter(fn(top, lower));
-		};
-	}
-	NativeMachineOperation unaryOperation(std::function<Datum(const Datum&)> fn) noexcept {
-		return [fn](Machine* machine) {
-			auto top(machine->popParameter());
-			machine->pushParameter(fn(top));
-		};
 	}
 	void Machine::notOperation() {
 		// invert register a

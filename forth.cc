@@ -142,6 +142,8 @@ namespace forth {
                     }
 				}
 			}
+            void markCompileTimeInvoke() noexcept { _compileTimeInvoke = true; }
+            bool compileTimeInvoke() const noexcept { return _compileTimeInvoke; }
 		private:
 			std::string _name;
 			NativeMachineOperation _code;
@@ -150,6 +152,7 @@ namespace forth {
 			// but give it some byte storage of about 128 datums
 			std::list<SpaceEntry> _space;
             bool _fake = false;
+            bool _compileTimeInvoke = false;
 	};
 
     void DictionaryEntry::addLoadWordEntryIntoA(const DictionaryEntry* value) {
@@ -247,7 +250,7 @@ namespace forth {
 			void typeValue(const Datum& value) { typeValue(_registerT, value); }
 			void typeValue() { typeValue(_registerA); }
 			void addWord(DictionaryEntry* entry);
-			void addWord(const std::string& name, NativeMachineOperation op);
+			void addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke = false);
 			void terminateExecution();
 			void addition(Discriminant type);
 			void listWords();
@@ -480,8 +483,12 @@ namespace forth {
 			_output << "\t - " << entry << std::endl;
 		}
 	}
-	void Machine::addWord(const std::string& name, NativeMachineOperation op) {
-		addWord(new DictionaryEntry(name, op));
+	void Machine::addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke) {
+        auto* entry = new DictionaryEntry(name, op);
+        if (compileTimeInvoke) {
+            entry->markCompileTimeInvoke();
+        }
+        addWord(entry);
 	}
 	void Machine::terminateExecution() {
 		_keepExecuting = false;
@@ -970,11 +977,6 @@ namespace forth {
 		while (_keepExecuting) {
             try {
                 auto result = readWord();
-                //bool dontExecuteWord = !result.empty() && (result.front() == "~");
-                // okay, we need to see if we can find the given word, first strip off the ~ 
-                //if (dontExecuteWord) {
-                //    result = result.substr(1);
-                //}
                 auto* entry = lookupWord(result);
                 if (_compiling) {
                     auto finishedCompiling = (result == ";");
@@ -985,14 +987,15 @@ namespace forth {
                         _output << "Found an entry for: " << result << std::endl;
                         _output << "Location: " << std::hex << entry << std::dec << std::endl;
 #endif
-                        //if (dontExecuteWord) {
-                        //    // add a new spaceEntry to push this value onto the data stack
-                        //} else {
-                        _compileTarget->addSpaceEntry(entry);
-                        if (finishedCompiling) {
-                            endDefineWord();
+                        if (entry->compileTimeInvoke()) {
+                            // add a new spaceEntry to push this value onto the data stack
+                            entry->operator()(this);
+                        } else {
+                            _compileTarget->addSpaceEntry(entry);
+                            if (finishedCompiling) {
+                                endDefineWord();
+                            }
                         }
-                        //}
                         continue;
                     }
                     // okay, we need to see if it is a value to compile in

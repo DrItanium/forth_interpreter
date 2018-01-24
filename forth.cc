@@ -99,6 +99,7 @@ namespace forth {
 			void addSpaceEntry(bool value);
 			void addSpaceEntry(const DictionaryEntry* value);
             void addSpaceEntry(SpaceEntry::Discriminant type, const DictionaryEntry* value);
+            void addTypeDataEntry(forth::Discriminant type);
             void addLoadWordEntryIntoA(const DictionaryEntry* value);
             void addLoadWordEntryIntoB(const DictionaryEntry* value);
             void addChooseOperation();
@@ -116,6 +117,9 @@ namespace forth {
             bool _fake = false;
             bool _compileTimeInvoke = false;
 	};
+    void DictionaryEntry::addTypeDataEntry(forth::Discriminant type) {
+        addSpaceEntry(static_cast<Address>(type));
+    }
     void DictionaryEntry::operator()(Machine* machine) const {
         if (_code != nullptr) {
             _code(machine);
@@ -221,7 +225,7 @@ namespace forth {
 			void endDefineWord();
 			void semicolonOperation();
 			DictionaryEntry* getFrontWord();
-			bool compileNumber(const std::string& word) noexcept;
+			bool compileNumber(const std::string& word, bool putTypeDataOntoStack = false) noexcept;
 			void setA(const Datum& target) noexcept { _registerA = target; }
 			void setB(const Datum& target) noexcept { _registerB = target; }
 			void setC(const Datum& target) noexcept { _registerC = target; }
@@ -237,6 +241,8 @@ namespace forth {
 			void popB() { setB(popParameter()); }
 			void popC() { setC(popParameter()); }
 			void popT();
+			void popTA();
+			void popTB();
 			void pushA() { pushParameter(getA()); }
 			void pushB() { pushParameter(getB()); }
 			void pushC() { pushParameter(getC()); }
@@ -282,6 +288,8 @@ namespace forth {
 			// internal "registers"
 			Datum _registerA, _registerB, _registerC;
 			Discriminant _registerT, _registerTA, _registerTB;
+            const DictionaryEntry* _popTA = nullptr;
+            const DictionaryEntry* _popTB = nullptr;
             const DictionaryEntry* _popA = nullptr;
             const DictionaryEntry* _popB = nullptr;
             const DictionaryEntry* _popC = nullptr;
@@ -344,15 +352,22 @@ namespace forth {
             // stack temporarily
             // load the c register from the stack
             _compileTarget->addSpaceEntry(_popC);
+            _compileTarget->addTypeDataEntry(Discriminant::Word);
+            _compileTarget->addSpaceEntry(_popTA);
             // compile the address of the entry we're looking for into 
             _compileTarget->addLoadWordEntryIntoA(entry);
             // compile in a fake address to the nop command
+            _compileTarget->addTypeDataEntry(Discriminant::Word);
+            _compileTarget->addSpaceEntry(_popTB);
             _compileTarget->addLoadWordEntryIntoB(_nop);
         } else {
             _compileTarget->addSpaceEntry(_popC);
-            if (compileNumber(word)) {
+            if (compileNumber(word, true)) {
+                _compileTarget->addSpaceEntry(_popTA);
                 _compileTarget->addSpaceEntry(_popA);
                 // compile in a fake address to the nop command
+                _compileTarget->addTypeDataEntry(Discriminant::Word);
+                _compileTarget->addSpaceEntry(_popTB);
                 _compileTarget->addLoadWordEntryIntoB(_nop);
             } else {
                 throw Problem(word, "?");
@@ -367,9 +382,13 @@ namespace forth {
         const auto* entry = lookupWord(word);
         // Right now, we just add a new entry to the current compileTarget
         if (entry != nullptr) {
+            _compileTarget->addTypeDataEntry(Discriminant::Word);
+            _compileTarget->addSpaceEntry(_popTB);
             _compileTarget->addLoadWordEntryIntoB(entry);
         } else {
-            if (compileNumber(word)) {
+            if (compileNumber(word, true)) {
+                // we use the type data that will be pushed onto the stack
+                _compileTarget->addSpaceEntry(_popTB);
                 // this is a special case where we may need to make a custom fake 
                 // word for the purposes of invocation
                 _compileTarget->addSpaceEntry(_popB);
@@ -386,8 +405,6 @@ namespace forth {
         if (_subroutine.empty()) {
             throw Problem("then", "Not in a function");
         }
-        _compileTarget->addSpaceEntry(static_cast<Address>(Discriminant::Word));
-        _compileTarget->addSpaceEntry(_popT);
         _compileTarget->addChooseOperation();
         _compileTarget->addInvokeCOperation();
         addWord(_compileTarget);
@@ -789,6 +806,25 @@ namespace forth {
 		}
 		setT((Discriminant)top.address);
 	}
+
+    void Machine::popTA() {
+		static constexpr Address max = (Address)Discriminant::Count;
+		auto top(popParameter());
+		if (top.address >= max) {
+            throw Problem("pop.ta", "ILLEGAL DISCRIMINANT!");
+		}
+        _registerTA = (Discriminant)top.address;
+    }
+
+    void Machine::popTB() {
+		static constexpr Address max = (Address)Discriminant::Count;
+		auto top(popParameter());
+		if (top.address >= max) {
+            throw Problem("pop.tb", "ILLEGAL DISCRIMINANT!");
+		}
+        _registerTB = (Discriminant)top.address;
+    }
+
 	void Machine::addWord(DictionaryEntry* entry) {
 		if (_words != nullptr) {
 			entry->setNext(_words);
@@ -904,16 +940,22 @@ namespace forth {
 		return false;
 	}
 
-	bool Machine::compileNumber(const std::string& word) noexcept {
+	bool Machine::compileNumber(const std::string& word, bool putTypeDataOntoStack) noexcept {
 		// floating point
 		// integers
 		// first do some inspection first
 		if (word == "true") {
 			_compileTarget->addSpaceEntry(true);
+            if (putTypeDataOntoStack) {
+                _compileTarget->addTypeDataEntry(Discriminant::Boolean);
+            }
 			return true;
 		}
 		if (word == "false") {
 			_compileTarget->addSpaceEntry(false);
+            if (putTypeDataOntoStack) {
+                _compileTarget->addTypeDataEntry(Discriminant::Boolean);
+            }
 			return true;
 		}
 		std::istringstream parseAttempt(word);
@@ -922,6 +964,9 @@ namespace forth {
 			parseAttempt >> tmpAddress;
 			if (!parseAttempt.fail() && parseAttempt.eof()) {
 				_compileTarget->addSpaceEntry(tmpAddress);
+            if (putTypeDataOntoStack) {
+                _compileTarget->addTypeDataEntry(Discriminant::MemoryAddress);
+            }
 				return true;
 			}
 			return false;
@@ -932,6 +977,9 @@ namespace forth {
 			parseAttempt >> tmpFloat;
 			if (!parseAttempt.fail() && parseAttempt.eof()) {
 				_compileTarget->addSpaceEntry(tmpFloat);
+                if (putTypeDataOntoStack) {
+                    _compileTarget->addTypeDataEntry(Discriminant::Floating);
+                }
 				return true;
 			}
 			// get out of here early since we hit something that looks like
@@ -944,6 +992,9 @@ namespace forth {
 		if (!parseAttempt.fail() && parseAttempt.eof()) {
 			// if we hit the end of the word provided then it is an integer, otherwise it is not!
 			_compileTarget->addSpaceEntry(tmpInt);
+            if (putTypeDataOntoStack) {
+                _compileTarget->addTypeDataEntry(Discriminant::Number);
+            }
 			return true;
 		}
 		return false;
@@ -1028,6 +1079,8 @@ namespace forth {
 			addWord("push.b", std::mem_fn(&Machine::pushB));
 			addWord("push.c", std::mem_fn(&Machine::pushC));
 			addWord("push.t", std::mem_fn(&Machine::pushT));
+            addWord("pop.tb", std::mem_fn(&Machine::popTB));
+            addWord("pop.ta", std::mem_fn(&Machine::popTA));
 			addWord("mload", std::mem_fn<void()>(&Machine::load));
 			addWord("mstore", std::mem_fn<void()>(&Machine::store));
 			addWord("+", std::mem_fn(&Machine::add));
@@ -1059,6 +1112,8 @@ namespace forth {
             _pushA = lookupWord("push.a");
             _pushB = lookupWord("push.b");
             _pushC = lookupWord("push.c");
+            _popTA = lookupWord("pop.ta");
+            _popTB = lookupWord("pop.tb");
 		}
 	}
     void Machine::printStack() {

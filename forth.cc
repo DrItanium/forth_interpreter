@@ -328,8 +328,8 @@ namespace forth {
                 _registerC.entry->operator()(this);
                 break;
             case Type::Number:
-            case Type::Floating:
-                _popC->invoke(this);
+            case Type::FloatingPoint:
+                popC();
                 break;
             default:
                 throw Problem("invoke.c", "incorrect discriminant!");
@@ -978,7 +978,7 @@ namespace forth {
 			if (!parseAttempt.fail() && parseAttempt.eof()) {
 				_compileTarget->addSpaceEntry(tmpFloat);
                 if (putTypeDataOntoStack) {
-                    _compileTarget->addTypeDataEntry(Discriminant::Floating);
+                    _compileTarget->addTypeDataEntry(Discriminant::FloatingPoint);
                 }
 				return true;
 			}

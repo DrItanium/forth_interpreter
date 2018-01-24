@@ -281,7 +281,7 @@ namespace forth {
 			DictionaryEntry* _compileTarget = nullptr;
 			// internal "registers"
 			Datum _registerA, _registerB, _registerC;
-			Discriminant _registerT;
+			Discriminant _registerT, _registerTA, _registerTB;
             const DictionaryEntry* _popA = nullptr;
             const DictionaryEntry* _popB = nullptr;
             const DictionaryEntry* _popC = nullptr;
@@ -305,16 +305,26 @@ namespace forth {
         return nullptr;
     }
     void Machine::chooseRegister() {
-        _registerC = _registerC.truth ? _registerA : _registerB;
+        if (_registerC.truth) {
+            _registerT = _registerTA;
+            _registerC = _registerA;
+        } else {
+            _registerT = _registerTB;
+            _registerC = _registerB;
+        }
     }
     void Machine::invokeCRegister() {
         using Type = decltype(_registerT);
-        if (_registerT != Type::Word) {
-            throw Problem("invoke.c", "incorrect discriminant!");
-        } else {
-            // THIS IS SUPER DUPER UNSAFE AND BAD THINGS CAN HAPPEN!!!!
-            // TODO: figure out a safer way to solve this issue
-            _registerC.entry->operator()(this);
+        switch (_registerT) {
+            case Type::Word:
+                _registerC.entry->operator()(this);
+                break;
+            case Type::Number:
+            case Type::Floating:
+                _popC->invoke(this);
+                break;
+            default:
+                throw Problem("invoke.c", "incorrect discriminant!");
         }
     }
     void Machine::ifCondition() {

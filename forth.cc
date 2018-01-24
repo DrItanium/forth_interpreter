@@ -82,6 +82,7 @@ namespace forth {
 				void invoke(Machine* machine) const;
                 void operator()(Machine* machine) const;
 			};
+            using SpaceEntries = std::list<SpaceEntry>;
 		public:
 			DictionaryEntry() = default;
 			DictionaryEntry(const std::string& name, NativeMachineOperation code = nullptr);
@@ -107,13 +108,17 @@ namespace forth {
 			void operator()(Machine* machine) const;
             void markCompileTimeInvoke() noexcept { _compileTimeInvoke = true; }
             bool compileTimeInvoke() const noexcept { return _compileTimeInvoke; }
+            SpaceEntries::const_iterator begin() const noexcept { return _space.cbegin(); }
+            SpaceEntries::const_iterator end() const noexcept { return _space.cend(); }
+            SpaceEntries::const_iterator cbegin() const noexcept { return _space.cbegin(); }
+            SpaceEntries::const_iterator cend() const noexcept { return _space.cend(); }
 		private:
 			std::string _name;
 			NativeMachineOperation _code;
 			DictionaryEntry* _next;
 			// the parameters field is the only thing that doesn't make total sense right now
 			// but give it some byte storage of about 128 datums
-			std::list<SpaceEntry> _space;
+			SpaceEntries _space;
             bool _fake = false;
             bool _compileTimeInvoke = false;
 	};
@@ -269,7 +274,12 @@ namespace forth {
             void thenStatement();
             void invokeCRegister();
             void chooseRegister();
+            /**
+             * Printout the contents of the given word!
+             */
+            void disassembleWord();
 		private:
+            void disassembleWord(const DictionaryEntry* entry);
 			void initializeBaseDictionary();
 			std::string readWord();
 		private:
@@ -301,6 +311,78 @@ namespace forth {
             const DictionaryEntry* _nop = nullptr;
 
 	};
+    void Machine::disassembleWord(const DictionaryEntry* entry) {
+        if (entry->isFake()) {
+            _output << "compiled entry: { " << std::endl;
+        }
+        _output << entry->getName() << ": " << std::endl;
+        if (entry->getCode() != nullptr) {
+            _output << "\tNative Operation!" << std::endl;
+        } else {
+            auto flags = _output.flags();
+            auto outputDictionaryEntry = [this, entry](auto const & space) {
+                if (entry->isFake()) {
+                    disassembleWord(space._entry);
+                } else {
+                    _output << space._entry->getName();
+                }
+            };
+            for (auto const & q : *entry) {
+                using Type = decltype(q._type);
+                _output << "\t";
+                switch (q._type) {
+                    case Type::Signed:
+                        _output << std::dec << q._int;
+                        break;
+                    case Type::Unsigned:
+                        _output << std::hex << "0x" << q._addr;
+                        break;
+                    case Type::FloatingPoint:
+                        _output << std::dec << q._fp;
+                        break;
+                    case Type::Boolean:
+                        _output << std::boolalpha << q._truth;
+                        break;
+                    case Type::DictEntry:
+                        outputDictionaryEntry(q);
+                        break;
+                    case Type::LoadWordIntoA:
+                        _output << "native:lw.a";
+                        break;
+                    case Type::LoadWordIntoB:
+                        _output << "native:lw.b";
+                        break;
+                    case Type::ChooseRegisterAndStoreInC:
+                        _output << "native:choose-and-store-into-c";
+                        break;
+                    case Type::InvokeRegisterC:
+                        _output << "native:invoke.c";
+                        break;
+                    default:
+                        _output << std::endl;
+                        throw Problem("disassemble", "Unknown entry type!");
+                }
+                _output << std::endl;
+            }
+            _output.setf(flags);
+        }
+        if (entry->isFake()) {
+            _output << "}" << std::endl;
+        }
+    }
+    void Machine::disassembleWord() {
+        // read the next word
+        auto word = readWord();
+        const auto* entry = lookupWord(word);
+        if (entry != nullptr) {
+            disassembleWord(entry);
+        } else {
+            std::stringstream str;
+            str << word << " is not a word!";
+            auto msg = str.str();
+            throw Problem("disassemble", msg);
+        }
+    }
     const DictionaryEntry* Machine::lookupWord(const std::string& word) noexcept {
         if (_words == nullptr) {
             return nullptr;
@@ -1103,6 +1185,7 @@ namespace forth {
             addWord("if", std::mem_fn(&Machine::ifCondition), true);
             addWord("else", std::mem_fn(&Machine::elseCondition), true);
             addWord("then", std::mem_fn(&Machine::thenStatement), true);
+            addWord("disassemble", std::mem_fn<void()>(&Machine::disassembleWord));
             _nop = lookupWord("nop");
             _popT = lookupWord("pop.t");
             _popA = lookupWord("pop.a");

@@ -314,43 +314,45 @@ namespace forth {
     void Machine::disassembleWord(const DictionaryEntry* entry) {
         if (entry->isFake()) {
             _output << "compiled entry: { " << std::endl;
+        } else {
+            _output << entry->getName() << ": " << std::endl;
         }
-        _output << entry->getName() << ": " << std::endl;
         if (entry->getCode() != nullptr) {
             _output << "\tNative Operation!" << std::endl;
         } else {
             auto flags = _output.flags();
-            auto outputDictionaryEntry = [this, entry](auto const & space) {
-                if (entry->isFake()) {
-                    disassembleWord(space._entry);
+            auto outputDictionaryEntry = [this, entry](auto space) {
+                auto innerTarget = space->_entry;
+                if (innerTarget->isFake()) {
+                    disassembleWord(innerTarget);
                 } else {
-                    _output << space._entry->getName();
+                    _output << innerTarget->getName();
                 }
             };
-            for (auto const & q : *entry) {
-                using Type = decltype(q._type);
+            for (auto x = entry->begin(); x != entry->end(); ++x) {
+                using Type = decltype(x->_type);
                 _output << "\t";
-                switch (q._type) {
+                switch (x->_type) {
                     case Type::Signed:
-                        _output << std::dec << q._int;
+                        _output << std::dec << x->_int;
                         break;
                     case Type::Unsigned:
-                        _output << std::hex << "0x" << q._addr;
+                        _output << std::hex << "0x" << x->_addr;
                         break;
                     case Type::FloatingPoint:
-                        _output << std::dec << q._fp;
+                        _output << std::dec << x->_fp;
                         break;
                     case Type::Boolean:
-                        _output << std::boolalpha << q._truth;
+                        _output << std::boolalpha << x->_truth;
                         break;
                     case Type::DictEntry:
-                        outputDictionaryEntry(q);
+                        outputDictionaryEntry(x);
                         break;
                     case Type::LoadWordIntoA:
-                        _output << "native:lw.a";
+                        _output << "native:lw.a " << x->_entry->getName();
                         break;
                     case Type::LoadWordIntoB:
-                        _output << "native:lw.b";
+                        _output << "native:lw.b " << x->_entry->getName();
                         break;
                     case Type::ChooseRegisterAndStoreInC:
                         _output << "native:choose-and-store-into-c";
@@ -411,7 +413,7 @@ namespace forth {
                 break;
             case Type::Number:
             case Type::FloatingPoint:
-                popC();
+                pushC();
                 break;
             default:
                 throw Problem("invoke.c", "incorrect discriminant!");

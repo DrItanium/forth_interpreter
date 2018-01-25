@@ -229,29 +229,22 @@ namespace forth {
 			void defineWord();
 			void endDefineWord();
 			void semicolonOperation();
-			DictionaryEntry* getFrontWord();
 			bool compileNumber(const std::string& word, bool putTypeDataOntoStack = false) noexcept;
 			void setA(const Datum& target) noexcept { _registerA = target; }
 			void setB(const Datum& target) noexcept { _registerB = target; }
-			void setC(const Datum& target) noexcept { _registerC = target; }
-			void setT(Discriminant type) noexcept { _registerT = type; }
-			Datum& getA() noexcept { return _registerA; }
-			Datum& getB() noexcept { return _registerB; }
-			Datum& getC() noexcept { return _registerC; }
-			Discriminant getT() const noexcept { return _registerT; }
 			void printRegisters();
             void printStack();
 		public:
-			void popA() { setA(popParameter()); }
-			void popB() { setB(popParameter()); }
-			void popC() { setC(popParameter()); }
+			void popA();
+			void popB();
+			void popC();
 			void popT();
 			void popTA();
 			void popTB();
-			void pushA() { pushParameter(getA()); }
-			void pushB() { pushParameter(getB()); }
-			void pushC() { pushParameter(getC()); }
-			void pushT() { pushParameter((Address)getT()); }
+			void pushA();
+			void pushB();
+			void pushC();
+			void pushT();
 			void add();
 			void subtract();
 			void multiplyOperation();
@@ -310,6 +303,27 @@ namespace forth {
             const DictionaryEntry* _nop = nullptr;
 
 	};
+    void Machine::pushT() {
+        pushParameter(static_cast<Address>(_registerT));
+    }
+    void Machine::popA() {
+        _registerA = popParameter();
+    }
+    void Machine::popB() {
+        _registerB = popParameter();
+    }
+    void Machine::popC() {
+        _registerC = popParameter();
+    }
+    void Machine::pushA() {
+        pushParameter(_registerA);
+    }
+    void Machine::pushB() {
+        pushParameter(_registerB);
+    }
+    void Machine::pushC() {
+        pushParameter(_registerC);
+    }
     void Machine::disassembleWord(const DictionaryEntry* entry) {
         if (entry->isFake()) {
             _output << "compiled entry: { " << std::endl;
@@ -877,7 +891,7 @@ namespace forth {
 		if (top.address >= max) {
             throw Problem("pop.t", "ILLEGAL DISCRIMINANT!");
 		}
-		setT((Discriminant)top.address);
+        _registerT = (Discriminant)top.address;
 	}
 
     void Machine::popTA() {

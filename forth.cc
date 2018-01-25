@@ -232,9 +232,11 @@ namespace forth {
 			bool compileNumber(const std::string& word, bool putTypeDataOntoStack = false) noexcept;
 			void setA(const Datum& target) noexcept { _registerA = target; }
 			void setB(const Datum& target) noexcept { _registerB = target; }
+            void chooseRegister();
+            void invokeCRegister();
+		private:
 			void printRegisters();
             void printStack();
-		public:
 			void popA();
 			void popB();
 			void popC();
@@ -264,8 +266,6 @@ namespace forth {
             void ifCondition();
             void elseCondition();
             void thenStatement();
-            void invokeCRegister();
-            void chooseRegister();
             /**
              * Printout the contents of the given word!
              */

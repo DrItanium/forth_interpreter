@@ -266,7 +266,6 @@ namespace forth {
 			void greaterThanOperation();
 			void lessThanOperation();
 			void xorOperation();
-			void absoluteValue();
 			void shiftLeftOperation();
 			void shiftRightOperation();
             void ifCondition();
@@ -837,23 +836,6 @@ namespace forth {
 		// this isn't necessary!
 	}
 
-	void Machine::absoluteValue() {
-		using Type = decltype(_registerT);
-		switch (_registerT) {
-			case Type::Number:
-				_registerC = _registerA.numValue < 0 ? -_registerA.numValue : _registerA.numValue;
-				break;
-			case Type::MemoryAddress:
-				_registerC = _registerA;
-				break;
-			case Type::FloatingPoint:
-				_registerC = _registerA.fp < 0 ? -_registerA.fp : _registerA.fp;
-				break;
-			default:
-                throw Problem("abs", "ILLEGAL DISCRIMINANT!");
-		}
-	}
-
 	void Machine::shiftLeftOperation() {
 		using Type = decltype(_registerT);
 		switch (_registerT) {
@@ -1154,6 +1136,7 @@ namespace forth {
 			addWord("words", std::mem_fn(&Machine::listWords));
             addWord("stack", std::mem_fn(&Machine::printStack));
 			addWord(":", std::mem_fn(&Machine::defineWord));
+            addWord("disassemble", std::mem_fn<void()>(&Machine::disassembleWord));
 			addWord("type.a", std::mem_fn<void()>(&Machine::typeValue));
 			addWord("pop.t", std::mem_fn(&Machine::popT));
 			addWord("pop.a", std::mem_fn(&Machine::popA));
@@ -1181,13 +1164,11 @@ namespace forth {
 			addWord(">", std::mem_fn(&Machine::greaterThanOperation));
 			addWord("or", std::mem_fn(&Machine::orOperation));
 			addWord("xor", std::mem_fn(&Machine::xorOperation));
-			addWord("abs", std::mem_fn(&Machine::absoluteValue));
 			addWord(">>", std::mem_fn(&Machine::shiftRightOperation));
 			addWord("<<", std::mem_fn(&Machine::shiftLeftOperation));
             addWord("if", std::mem_fn(&Machine::ifCondition), true);
             addWord("else", std::mem_fn(&Machine::elseCondition), true);
             addWord("then", std::mem_fn(&Machine::thenStatement), true);
-            addWord("disassemble", std::mem_fn<void()>(&Machine::disassembleWord));
             _nop = lookupWord("nop");
             _popT = lookupWord("pop.t");
             _popA = lookupWord("pop.a");

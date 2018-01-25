@@ -24,6 +24,8 @@
 : *u t.address * ;
 : * t.signed * ;
 
+: c-to-a push.c pop.a ;
+
 : drop pop.a ;
 : dup pop.a push.a push.a ;
 : swap load-ab push.b push.a ;
@@ -142,3 +144,6 @@
 
 : 3* * * ;
 : 3+ + + ;
+: minus.c c-to-a minus ;
+: minusf.c c-to-a minusf ;
+: abs dup 0 < if minus.c then ;

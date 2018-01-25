@@ -523,6 +523,10 @@ namespace forth {
         printT("T", _registerT);
         printT("A.T", _registerTA);
         printT("B.T", _registerTB);
+#ifdef DEBUG
+        // extended data
+        _output << "IsCompiling: " << _compiling << std::endl;
+#endif
 		_output.setf(flags); // restore after done
 	}
 	void Machine::defineWord() {
@@ -1129,6 +1133,7 @@ namespace forth {
                     }
                 } else {
                     if (entry != nullptr) {
+
                         entry->operator()(this);
                         continue;
                     }

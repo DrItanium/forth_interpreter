@@ -231,6 +231,8 @@ namespace forth {
 			void semicolonOperation();
 			bool compileNumber(const std::string& word, bool putTypeDataOntoStack = false) noexcept;
 			void setA(const Datum& target) noexcept { _registerA = target; }
+			void setTA(Discriminant target) noexcept { _registerTA = target; }
+			void setTB(Discriminant target) noexcept { _registerTB = target; }
 			void setB(const Datum& target) noexcept { _registerB = target; }
             void chooseRegister();
             void invokeCRegister();
@@ -449,13 +451,9 @@ namespace forth {
             // stack temporarily
             // load the c register from the stack
             _compileTarget->addSpaceEntry(_popC);
-            _compileTarget->addTypeDataEntry(Discriminant::Word);
-            _compileTarget->addSpaceEntry(_popTA);
             // compile the address of the entry we're looking for into 
             _compileTarget->addLoadWordEntryIntoA(entry);
             // compile in a fake address to the nop command
-            _compileTarget->addTypeDataEntry(Discriminant::Word);
-            _compileTarget->addSpaceEntry(_popTB);
             _compileTarget->addLoadWordEntryIntoB(_nop);
         } else {
             _compileTarget->addSpaceEntry(_popC);
@@ -463,8 +461,6 @@ namespace forth {
                 _compileTarget->addSpaceEntry(_popTA);
                 _compileTarget->addSpaceEntry(_popA);
                 // compile in a fake address to the nop command
-                _compileTarget->addTypeDataEntry(Discriminant::Word);
-                _compileTarget->addSpaceEntry(_popTB);
                 _compileTarget->addLoadWordEntryIntoB(_nop);
             } else {
                 throw Problem(word, "?");
@@ -479,8 +475,6 @@ namespace forth {
         const auto* entry = lookupWord(word);
         // Right now, we just add a new entry to the current compileTarget
         if (entry != nullptr) {
-            _compileTarget->addTypeDataEntry(Discriminant::Word);
-            _compileTarget->addSpaceEntry(_popTB);
             _compileTarget->addLoadWordEntryIntoB(entry);
         } else {
             if (compileNumber(word, true)) {
@@ -583,9 +577,11 @@ namespace forth {
 				_entry->operator()(machine);
 				break;
             case Type::LoadWordIntoA:
+                machine->setTA(forth::Discriminant::Word);
                 machine->setA(_entry);
                 break;
             case Type::LoadWordIntoB:
+                machine->setTB(forth::Discriminant::Word);
                 machine->setB(_entry);
                 break;
             case Type::ChooseRegisterAndStoreInC:

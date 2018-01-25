@@ -1,4 +1,4 @@
-// Currently on chapter 4.4.3
+// Currently on chapter 4.4.4
 //#define DEBUG
 #include <iostream>
 #include <string>
@@ -501,13 +501,20 @@ namespace forth {
 		return word;
 	}
 	void Machine::printRegisters() {
+		auto flags = _output.flags();
 		auto fn = [this](const std::string& title, const Datum& r) {
 			_output << title << ": " << r << std::endl;
 		};
+        auto printT = [this](const std::string& title, auto value) {
+            _output << title << ": 0x" << std::hex << static_cast<Address>(value) << std::endl;
+        };
 		fn("A", _registerA);
 		fn("B", _registerB);
 		fn("C", _registerC);
-		_output << "T: 0x" << std::hex << (Address)_registerT << std::dec << std::endl;
+        printT("T", _registerT);
+        printT("A.T", _registerTA);
+        printT("B.T", _registerTB);
+		_output.setf(flags); // restore after done
 	}
 	void Machine::defineWord() {
         if (_compiling || _compileTarget != nullptr) {

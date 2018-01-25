@@ -8,10 +8,20 @@
 : t.address DISCRIMINANT_ADDRESS pop.t ;
 : t.fp DISCRIMINANT_FLOATING_POINT pop.t ;
 : t.boolean DISCRIMINANT_BOOLEAN pop.t ;
-: clear-registers 0 pop.a 0 pop.b 0 pop.c t.signed ;
+: ta.signed DISCRIMINANT_SIGNED pop.ta ;
+: ta.address DISCRIMINANT_ADDRESS pop.ta ;
+: ta.fp DISCRIMINANT_FLOATING_POINT pop.ta ;
+: ta.boolean DISCRIMINANT_BOOLEAN pop.ta ;
+: tb.signed DISCRIMINANT_SIGNED pop.tb ;
+: tb.address DISCRIMINANT_ADDRESS pop.tb ;
+: tb.fp DISCRIMINANT_FLOATING_POINT pop.tb ;
+: tb.boolean DISCRIMINANT_BOOLEAN pop.tb ;
+
+: clear-registers 0 pop.a 0 pop.b 0 pop.c t.signed ta.signed tb.signed ;
 
 : load-ab pop.a pop.b ;
 : load-ba pop.b pop.a ;
+: c-to-a push.c pop.a ;
 
 : + load-ab + push.c ;
 : * load-ab * push.c ;
@@ -24,7 +34,6 @@
 : *u t.address * ;
 : * t.signed * ;
 
-: c-to-a push.c pop.a ;
 
 : drop pop.a ;
 : dup pop.a push.a push.a ;
@@ -147,3 +156,5 @@
 : minus.c c-to-a minus ;
 : minusf.c c-to-a minusf ;
 : abs dup 0 < if minus.c then ;
+
+clear-registers

@@ -45,6 +45,10 @@
                 0) then
          (modify-instance ?z
                           (contents $?a ?n $?after $?b))
+         (progn$ (?curr ?after)
+                 (if (instancep ?curr) then
+                   (send ?curr
+                         put-parent ?p)))
          (modify-instance ?o
                           (contents $?before then))))
 
@@ -61,20 +65,26 @@
                           (contents $?a ?n then $?b))
          (modify-instance ?o
                           (contents $?contents)))
+
 (defrule MAIN::hoist-everything-after-the-then-in-an-if-statement
+         (declare (salience 10))
          ?o <- (object (is-a if-statement)
                        (contents $?a then $?b)
-                       (parent ?p)
-                       (name ?n))
+                       (name ?n)
+                       (parent ?p))
+         (test (> (length$ ?b) 0))
          (object (is-a statement)
                  (name ?p)
                  (contents $?c ?n $?d))
          =>
-         (if (> (length$ ?b) 0) then
-           (modify-instance ?o
-                            (contents $?a then))
-           (modify-instance ?p
-                            (contents $?c ?n $?b $?d))))
+         (modify-instance ?o
+                          (contents $?a then))
+         (modify-instance ?p
+                          (contents $?c ?n $?b $?d))
+         (progn$ (?curr $?b)
+                 (if (instancep ?curr) then
+                   (send ?curr
+                         put-parent ?p))))
 
 (defrule MAIN::identify-else-statement
          (declare (salience 1))
@@ -83,15 +93,13 @@
                        (name ?name))
          =>
          (modify-instance ?o
-                          (contents (make-instance of statement
-                                                   (parent ?name)
-                                                   (contents $?before))
+                          (contents $?before
                                     (make-instance of else-statement
                                                    (parent ?name)
                                                    (contents $?rest)))))
 
 
 (deffacts MAIN::test-parse
-          (parse statement : donuts if 0 else 1 then ::)
+          ;(parse statement : donuts if 0 else 1 then ::)
           (parse statement : donuts2 if 0 if 1 else 2 then else 3 then ::))
 

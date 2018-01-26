@@ -217,7 +217,7 @@ namespace forth {
             void pushWord(DictionaryEntry* entry);
 			void pushParameter(Datum value);
 			Datum popParameter();
-			bool numberRoutine(const std::string& word) noexcept;
+			bool numberRoutine(const std::string& word, bool putTypeDataOntoStack = false) noexcept;
 			void typeValue(Discriminant discriminant, const Datum& value);
 			void typeValue(const Datum& value) { typeValue(_registerT, value); }
 			void typeValue() { typeValue(_registerA); }
@@ -231,7 +231,6 @@ namespace forth {
 			void defineWord();
 			void endDefineWord();
 			void semicolonOperation();
-			bool compileNumber(const std::string& word, bool putTypeDataOntoStack = false) noexcept;
 			void setA(const Datum& target) noexcept { _registerA = target; }
 			void setTA(Discriminant target) noexcept { _registerTA = target; }
 			void setTB(Discriminant target) noexcept { _registerTB = target; }
@@ -459,7 +458,7 @@ namespace forth {
             _compileTarget->addLoadWordEntryIntoB(_nop);
         } else {
             _compileTarget->addSpaceEntry(_popC);
-            if (compileNumber(word, true)) {
+            if (numberRoutine(word, true)) {
                 _compileTarget->addSpaceEntry(_popTA);
                 _compileTarget->addSpaceEntry(_popA);
                 // compile in a fake address to the nop command
@@ -479,7 +478,7 @@ namespace forth {
         if (entry != nullptr) {
             _compileTarget->addLoadWordEntryIntoB(entry);
         } else {
-            if (compileNumber(word, true)) {
+            if (numberRoutine(word, true)) {
                 // we use the type data that will be pushed onto the stack
                 _compileTarget->addSpaceEntry(_popTB);
                 // this is a special case where we may need to make a custom fake 
@@ -973,121 +972,86 @@ namespace forth {
 			_memory[addr] = value.numValue;
 		}
 	}
-	bool Machine::numberRoutine(const std::string& word) noexcept {
+	bool Machine::numberRoutine(const std::string& word, bool putTypeDataOntoStack) noexcept {
 		// floating point
 		// integers
 		// first do some inspection first
 		if (word == "true") {
-			pushParameter(true);
-			return true;
-		}
-		if (word == "false") {
-			pushParameter(false);
-			return true;
-		}
-		std::istringstream parseAttempt(word);
-		if (word.find('u') != std::string::npos) {
-			Address tmpAddress;
-			parseAttempt >> tmpAddress;
-			if (!parseAttempt.fail() && parseAttempt.eof()) {
-				pushParameter(tmpAddress);
-				return true;
-			}
-			return false;
-		}
-		parseAttempt.clear();
-		if (word.find('.') != std::string::npos) {
-			Floating tmpFloat;
-			parseAttempt >> tmpFloat;
-			if (!parseAttempt.fail()) {
-#ifdef DEBUG
-				_output << "attempt floating point number push: " << tmpFloat << std::endl;
-#endif // end DEBUG
-				if (parseAttempt.eof()) {
-					pushParameter(tmpFloat);
-					return true;
-				} else {
-					// get out of here early since we hit something that looks like
-					// a float
-					return false;
-				}
-			}
-		}
-		Integer tmpInt;
-		parseAttempt.clear();
-		parseAttempt >> tmpInt;
-		if (!parseAttempt.fail()) {
-#ifdef DEBUG
-			_output << "attempt integer number push: " << tmpInt << std::endl;
-#endif // end DEBUG
-			if (parseAttempt.eof()) {
-				// if we hit the end of the word provided then it is an integer, otherwise it is not!
-				pushParameter(tmpInt);
-				return true;
-			}
-		}
-		return false;
-	}
-
-	bool Machine::compileNumber(const std::string& word, bool putTypeDataOntoStack) noexcept {
-		// floating point
-		// integers
-		// first do some inspection first
-		if (word == "true") {
-			_compileTarget->addSpaceEntry(true);
-            if (putTypeDataOntoStack) {
-                _compileTarget->addTypeDataEntry(Discriminant::Boolean);
-            }
-			return true;
-		}
-		if (word == "false") {
-			_compileTarget->addSpaceEntry(false);
-            if (putTypeDataOntoStack) {
-                _compileTarget->addTypeDataEntry(Discriminant::Boolean);
-            }
-			return true;
-		}
-		std::istringstream parseAttempt(word);
-		if (word.find('u') != std::string::npos) {
-			Address tmpAddress;
-			parseAttempt >> tmpAddress;
-			if (!parseAttempt.fail() && parseAttempt.eof()) {
-				_compileTarget->addSpaceEntry(tmpAddress);
-            if (putTypeDataOntoStack) {
-                _compileTarget->addTypeDataEntry(Discriminant::MemoryAddress);
-            }
-				return true;
-			}
-			return false;
-		}
-		parseAttempt.clear();
-		if (word.find('.') != std::string::npos) {
-			Floating tmpFloat;
-			parseAttempt >> tmpFloat;
-			if (!parseAttempt.fail() && parseAttempt.eof()) {
-				_compileTarget->addSpaceEntry(tmpFloat);
+            if (_compiling) {
+                _compileTarget->addSpaceEntry(true);
                 if (putTypeDataOntoStack) {
-                    _compileTarget->addTypeDataEntry(Discriminant::FloatingPoint);
+                    _compileTarget->addTypeDataEntry(Discriminant::Boolean);
+                }
+            } else {
+			    pushParameter(true);
+            }
+			return true;
+		}
+		if (word == "false") {
+            if (_compiling) {
+                _compileTarget->addSpaceEntry(false);
+                if (putTypeDataOntoStack) {
+                    _compileTarget->addTypeDataEntry(Discriminant::Boolean);
+                }
+            } else {
+			    pushParameter(false);
+            }
+			return true;
+		}
+		std::istringstream parseAttempt(word);
+		if (word.find('u') != std::string::npos) {
+			Address tmpAddress;
+			parseAttempt >> tmpAddress;
+			if (!parseAttempt.fail() && parseAttempt.eof()) {
+                if (_compiling) {
+                    _compileTarget->addSpaceEntry(tmpAddress);
+                    if (putTypeDataOntoStack) {
+                        _compileTarget->addTypeDataEntry(Discriminant::MemoryAddress);
+                    }
+                } else {
+				    pushParameter(tmpAddress);
                 }
 				return true;
 			}
-			// get out of here early since we hit something that looks like
-			// a float
 			return false;
 		}
+		parseAttempt.clear();
+        if (word.find('.') != std::string::npos) {
+            Floating tmpFloat;
+            parseAttempt >> tmpFloat;
+            if (!parseAttempt.fail() && parseAttempt.eof()) {
+                if (_compiling) {
+                    _compileTarget->addSpaceEntry(tmpFloat);
+                    if (putTypeDataOntoStack) {
+                        _compileTarget->addTypeDataEntry(Discriminant::FloatingPoint);
+                    }
+                } else {
+                    pushParameter(tmpFloat);
+                }
+                return true;
+            }
+            // get out of here early since we hit something that looks like
+            // a float
+            return false;
+        }
 		Integer tmpInt;
 		parseAttempt.clear();
 		parseAttempt >> tmpInt;
-		if (!parseAttempt.fail() && parseAttempt.eof()) {
-			// if we hit the end of the word provided then it is an integer, otherwise it is not!
-			_compileTarget->addSpaceEntry(tmpInt);
-            if (putTypeDataOntoStack) {
-                _compileTarget->addTypeDataEntry(Discriminant::Number);
+        if (!parseAttempt.fail() && parseAttempt.eof()) {
+            if (_compiling) {
+                _compileTarget->addSpaceEntry(tmpInt);
+                if (putTypeDataOntoStack) {
+                    _compileTarget->addTypeDataEntry(Discriminant::Number);
+                }
+            } else {
+                // if we hit the end of the word provided then it is an integer, otherwise it is not!
+                pushParameter(tmpInt);
             }
-			return true;
-		}
+            return true;
+        }
 		return false;
 	}
+
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
 		// clear the stacks and the input pointer
         _parameter.clear();
@@ -1113,10 +1077,6 @@ namespace forth {
                     if (entry != nullptr) {
                         // okay we have a word, lets add it to the top word in the dictionary
                         // get the front word first and foremost
-#ifdef DEBUG
-                        _output << "Found an entry for: " << result << std::endl;
-                        _output << "Location: " << std::hex << entry << std::dec << std::endl;
-#endif
                         if (entry->compileTimeInvoke()) {
                             // add a new spaceEntry to push this value onto the data stack
                             entry->operator()(this);
@@ -1128,21 +1088,18 @@ namespace forth {
                         }
                         continue;
                     }
-                    // okay, we need to see if it is a value to compile in
-                    if (compileNumber(result)) {
-                        continue;
-                    }
                 } else {
                     if (entry != nullptr) {
-
                         entry->operator()(this);
                         continue;
                     }
-                    if (numberRoutine(result)) {
-                        continue;
-                    }
-                    // fall through case, we couldn't figure it out!
                 }
+                // okay, we need to see if it is a value to compile in or
+                // add to the stack
+                if (numberRoutine(result)) {
+                    continue;
+                }
+                // fall through case, we couldn't figure it out!
                 handleError(result, "?");
             } catch(Problem& p) {
                 handleError(p.getWord(), p.getMessage());

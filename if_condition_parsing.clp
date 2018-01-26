@@ -11,7 +11,7 @@
   (is-a statement))
 (defclass MAIN::else-statement
   (is-a statement))
-          
+
 (defrule MAIN::make-base-statement
          ?f <- (parse statement $?contents)
          =>
@@ -43,14 +43,14 @@
          =>
          (if (> (length$ ?after)
                 0) then
-         (modify-instance ?z
-                          (contents $?a ?n $?after $?b))
-         (progn$ (?curr ?after)
-                 (if (instancep ?curr) then
-                   (send ?curr
-                         put-parent ?p)))
-         (modify-instance ?o
-                          (contents $?before then))))
+           (modify-instance ?z
+                            (contents $?a ?n $?after $?b))
+           (progn$ (?curr ?after)
+                   (if (instancep ?curr) then
+                     (send ?curr
+                           put-parent ?p)))
+           (modify-instance ?o
+                            (contents $?before then))))
 
 (defrule MAIN::hoist-then-statement-from-else-statement
          ?o <- (object (is-a else-statement)
@@ -67,7 +67,7 @@
                           (contents $?contents)))
 
 (defrule MAIN::hoist-everything-after-the-then-in-an-if-statement
-         (declare (salience 10))
+         (declare (salience 3))
          ?o <- (object (is-a if-statement)
                        (contents $?a then $?b)
                        (name ?n)
@@ -98,8 +98,48 @@
                                                    (parent ?name)
                                                    (contents $?rest)))))
 
+(defrule MAIN::identify-on-true-portion-of-if-with-else
+         ?o <- (object (is-a if-statement)
+                       (contents $?before ?else then)
+                       (name ?if))
+         (object (is-a else-statement)
+                 (name ?else))
+         (not (made on-true for ?if))
+         =>
+         (assert (made on-true for ?if))
+         (modify-instance ?o 
+                          (contents (make-instance of statement
+                                                   (contents $?before)
+                                                   (parent ?if))
+                                    ?else
+                                    then)))
+
+(defrule MAIN::identify-on-true-portion-of-if-without-else
+         ?o <- (object (is-a if-statement)
+                       (contents $?before ?else then)
+                       (name ?if))
+         (object (is-a ~else-statement)
+                 (name ?else))
+         (not (made on-true for ?if))
+         =>
+         (assert (made on-true for ?if))
+         (send ?else
+               put-parent
+               (make-instance of statement
+                              (contents $?before
+                                        ?else)
+                              (parent ?if)))
+         (modify-instance ?o
+                          (contents (send ?else
+                                          get-parent)
+                                    then)))
+
+
+
 
 (deffacts MAIN::test-parse
-          ;(parse statement : donuts if 0 else 1 then ::)
-          (parse statement : donuts2 if 0 if 1 else 2 then else 3 then ::))
+          (parse statement : donuts if 0 else 1 then ::)
+          (parse statement : donuts2 if 0 if 1 else 2 then else 3 then ::)
+          (parse statement : donuts3 if + - * if 128 256 else 320 then then ::)
+          )
 

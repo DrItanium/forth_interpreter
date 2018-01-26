@@ -273,9 +273,9 @@ namespace forth {
             /**
              * Printout the contents of the given word!
              */
-            void disassembleWord();
+            void seeWord();
 		private:
-            void disassembleWord(const DictionaryEntry* entry);
+            void seeWord(const DictionaryEntry* entry);
 			void initializeBaseDictionary();
 			std::string readWord();
 		private:
@@ -328,7 +328,7 @@ namespace forth {
     void Machine::pushC() {
         pushParameter(_registerC);
     }
-    void Machine::disassembleWord(const DictionaryEntry* entry) {
+    void Machine::seeWord(const DictionaryEntry* entry) {
         if (entry->isFake()) {
             _output << "compiled entry: { " << std::endl;
         } else {
@@ -341,7 +341,7 @@ namespace forth {
             auto outputDictionaryEntry = [this, entry](auto space) {
                 auto innerTarget = space->_entry;
                 if (innerTarget->isFake()) {
-                    disassembleWord(innerTarget);
+                    seeWord(innerTarget);
                 } else {
                     _output << innerTarget->getName();
                 }
@@ -379,7 +379,7 @@ namespace forth {
                         break;
                     default:
                         _output << std::endl;
-                        throw Problem("disassemble", "Unknown entry type!");
+                        throw Problem("see", "Unknown entry type!");
                 }
                 _output << std::endl;
             }
@@ -389,17 +389,17 @@ namespace forth {
             _output << "}" << std::endl;
         }
     }
-    void Machine::disassembleWord() {
+    void Machine::seeWord() {
         // read the next word
         auto word = readWord();
         const auto* entry = lookupWord(word);
         if (entry != nullptr) {
-            disassembleWord(entry);
+            seeWord(entry);
         } else {
             std::stringstream str;
             str << word << " is not a word!";
             auto msg = str.str();
-            throw Problem("disassemble", msg);
+            throw Problem("see", msg);
         }
     }
     const DictionaryEntry* Machine::lookupWord(const std::string& word) noexcept {
@@ -692,19 +692,18 @@ namespace forth {
 		using Type = decltype(_registerT);
 		switch(_registerT) {
 			case Type::Number:
-				_registerC.numValue = Integer(std::pow(_registerA.numValue, _registerB.numValue));
+				_registerC = Integer(std::pow(_registerA.numValue, _registerB.numValue));
 				break;
 			case Type::MemoryAddress:
-				_registerC.address = Address(std::pow(_registerA.address, _registerB.address));
+				_registerC = Address(std::pow(_registerA.address, _registerB.address));
 				break;
 			case Type::FloatingPoint:
-				_registerC.fp = Floating(std::pow(_registerA.fp, _registerB.fp));
+				_registerC = Floating(std::pow(_registerA.fp, _registerB.fp));
 				break;
 			default:
                 throw Problem("**", "ILLEGAL DISCRIMINANT!");
 		}
 	}
-
 	void Machine::subtract() {
 		using Type = decltype(_registerT);
 		switch(_registerT) {
@@ -1161,7 +1160,7 @@ namespace forth {
 			addWord("words", std::mem_fn(&Machine::listWords));
             addWord("stack", std::mem_fn(&Machine::printStack));
 			addWord(":", std::mem_fn(&Machine::defineWord));
-            addWord("disassemble", std::mem_fn<void()>(&Machine::disassembleWord));
+            addWord("see", std::mem_fn<void()>(&Machine::seeWord));
 			addWord("type.a", std::mem_fn<void()>(&Machine::typeValue));
 			addWord("pop.t", std::mem_fn(&Machine::popT));
 			addWord("pop.a", std::mem_fn(&Machine::popA));

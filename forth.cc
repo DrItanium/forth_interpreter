@@ -71,6 +71,7 @@ namespace forth {
                     LoadWordIntoB,
                     ChooseRegisterAndStoreInC,
                     InvokeRegisterC,
+                    IfContainer,
 				};
 				Discriminant _type;
 				union {
@@ -501,6 +502,7 @@ namespace forth {
         _compileTarget->addInvokeCOperation();
         addWord(_compileTarget);
         auto parent = _subroutine.back();
+        _subroutine.pop_back();
         parent->addSpaceEntry(_compileTarget);
         _compileTarget = parent;
     }

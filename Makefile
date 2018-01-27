@@ -30,4 +30,4 @@ clean:
 
 forth.o: forth.cc Problem.h Types.h Datum.h DictionaryEntry.h Datum.h Machine.h
 Datum.o: Datum.cc Types.h Datum.h 
-DictionaryEntry.o: DictionaryEntry.cc DictionaryEntry.h Types.h Datum.h Problem.h
+DictionaryEntry.o: DictionaryEntry.cc DictionaryEntry.h Types.h Datum.h Problem.h Machine.h

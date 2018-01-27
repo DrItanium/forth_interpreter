@@ -728,35 +728,7 @@ namespace forth {
             addWord("stack", std::mem_fn(&Machine::printStack));
 			addWord(":", std::mem_fn(&Machine::defineWord));
             addWord("see", std::mem_fn<void()>(&Machine::seeWord));
-			addWord("type.a", std::mem_fn<void()>(&Machine::typeValue));
-			addWord("pop.t",  std::mem_fn(&Machine::popRegister<TargetRegister::RegisterT>));
-            addWord("pop.tb", std::mem_fn(&Machine::popRegister<TargetRegister::RegisterTB>));
-            addWord("pop.ta", std::mem_fn(&Machine::popRegister<TargetRegister::RegisterTA>));
-			addWord("pop.a", std::mem_fn(&Machine::popRegister<TargetRegister::RegisterA>));
-			addWord("pop.b", std::mem_fn(&Machine::popRegister<TargetRegister::RegisterB>));
-			addWord("pop.c", std::mem_fn(&Machine::popRegister<TargetRegister::RegisterC>));
-			addWord("push.a", std::mem_fn(&Machine::pushRegister<TargetRegister::RegisterA>));
-			addWord("push.b", std::mem_fn(&Machine::pushRegister<TargetRegister::RegisterB>));
-			addWord("push.c", std::mem_fn(&Machine::pushRegister<TargetRegister::RegisterC>));
-			addWord("push.t", std::mem_fn(&Machine::pushRegister<TargetRegister::RegisterT>));
-			addWord("mload", std::mem_fn<void()>(&Machine::load));
-			addWord("mstore", std::mem_fn<void()>(&Machine::store));
-			addWord("+", std::mem_fn(&Machine::add));
-			addWord("-", std::mem_fn(&Machine::subtract));
-			addWord("not.a", std::mem_fn(&Machine::notOperation));
-			addWord("minus.a", std::mem_fn(&Machine::minusOperation));
-			addWord("*", std::mem_fn(&Machine::multiplyOperation));
-			addWord("==", std::mem_fn(&Machine::equals));
-			addWord("**", std::mem_fn(&Machine::powOperation));
-			addWord("mod", std::mem_fn(&Machine::modulo));
-			addWord("/", std::mem_fn(&Machine::divide));
-			addWord("and", std::mem_fn(&Machine::andOperation));
-			addWord("<", std::mem_fn(&Machine::lessThanOperation));
-			addWord(">", std::mem_fn(&Machine::greaterThanOperation));
-			addWord("or", std::mem_fn(&Machine::orOperation));
-			addWord("xor", std::mem_fn(&Machine::xorOperation));
-			addWord(">>", std::mem_fn(&Machine::shiftRightOperation));
-			addWord("<<", std::mem_fn(&Machine::shiftLeftOperation));
+            addWord("pop.s", std::mem_fn(&Machine::popRegister<TargetRegister::RegisterS>);
             addWord("if", std::mem_fn(&Machine::ifCondition), true);
             addWord("else", std::mem_fn(&Machine::elseCondition), true);
             addWord("then", std::mem_fn(&Machine::thenStatement), true);
@@ -825,6 +797,7 @@ namespace forth {
             case 0x22: typeValue(); break;
             case 0x23: load(); break;
             case 0x24: store(); break;
+            case 0x25: powOperation(); break;
             default:
                 throw Problem("uc", "Unknown instruction address!");
         }

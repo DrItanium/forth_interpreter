@@ -2,6 +2,10 @@
 #ifndef DICTIONARY_ENTRY_H__
 #define DICTIONARY_ENTRY_H__
 #include "Types.h"
+#include "Datum.h"
+#include <list>
+#include <string>
+#include <functional>
 
 namespace forth {
 	class Machine;

@@ -2,6 +2,7 @@
 #ifndef DATUM_H__
 #define DATUM_H__
 #include "Types.h"
+#include <iostream>
 namespace forth {
     class DictionaryEntry;
     enum class Discriminant : Address {

@@ -94,6 +94,13 @@ namespace forth {
                         break;
                     case Type::RegisterTX:
                         tmp = static_cast<Address>(_registerTX);
+                        break;
+                    case Type::RegisterS:
+                        tmp = _registerS;
+                        break;
+                    case Type::RegisterX:
+                        tmp = _registerX;
+                        break;
                     default:
                         throw Problem("push.register", "Unknown register!");
                 }
@@ -128,6 +135,12 @@ namespace forth {
                         break;
                     case Type::RegisterTX:
                         _registerTX = (Discriminant)top.address;
+                        break;
+                    case Type::RegisterS:
+                        _registerS = top;
+                        break;
+                    case Type::RegisterX:
+                        _registerX = top;
                         break;
                     default:
                         throw Problem("pop.register", "Unknown register!");

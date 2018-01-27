@@ -163,6 +163,7 @@ namespace forth {
 			void terminateExecution();
             void seeWord(const DictionaryEntry* entry);
 			void initializeBaseDictionary();
+            void cacheBasicEntries();
 			std::string readWord();
 		private:
 			// define the CPU that the forth interpreter sits on top of
@@ -174,6 +175,7 @@ namespace forth {
             std::list<DictionaryEntry*> _subroutine;
             std::list<Datum> _parameter;
 			bool _initializedBaseDictionary = false;
+            bool _cachedBasicEntries = false;
 			bool _keepExecuting = true;
 			bool _compiling = false;
 			DictionaryEntry* _compileTarget = nullptr;

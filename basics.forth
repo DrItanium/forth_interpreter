@@ -1,10 +1,6 @@
 : uc pop.s uc ;
 : bye quit ;
 
-: DISCRIMINANT_SIGNED 0 ;
-: DISCRIMINANT_ADDRESS 1 ;
-: DISCRIMINANT_FLOATING_POINT 2 ;
-: DISCRIMINANT_BOOLEAN 3 ;
 
 : OPERATION_NOP 0 ;
 : OPERATION_ADD 1 ;
@@ -45,6 +41,31 @@
 : OPERATION_STORE 36 ;
 : OPERATION_POW 37 ;
 : nop OPERATION_NOP uc ;
+: pop.t OPERATION_POP_T uc ;
+: pop.ta OPERATION_POP_TA uc ;
+: pop.tb OPERATION_POP_TB uc ;
+: pop.tx OPERATION_POP_TX uc ;
+: pop.a OPERATION_POP_A uc ;
+: pop.b OPERATION_POP_B uc ;
+: pop.c OPERATION_POP_C uc ;
+: pop.x OPERATION_POP_X uc ;
+: pop.s OPERATION_POP_S uc ;
+: push.t OPERATION_PUSH_T uc ;
+: push.ta OPERATION_PUSH_TA uc ;
+: push.tb OPERATION_PUSH_TB uc ;
+: push.tx OPERATION_PUSH_TX uc ;
+: push.a OPERATION_PUSH_A uc ;
+: push.b OPERATION_PUSH_B uc ;
+: push.c OPERATION_PUSH_C uc ;
+: push.x OPERATION_PUSH_X uc ;
+: push.s OPERATION_PUSH_S uc ;
+cache-basic-entries 
+
+: cache-basic-entries ;
+: DISCRIMINANT_SIGNED 0 ;
+: DISCRIMINANT_ADDRESS 1 ;
+: DISCRIMINANT_FLOATING_POINT 2 ;
+: DISCRIMINANT_BOOLEAN 3 ;
 : + OPERATION_ADD uc ;
 : - OPERATION_SUB uc ;
 : * OPERATION_MUL uc ;
@@ -65,24 +86,6 @@
 : >> OPERATION_SHIFT_RIGHT uc ;
 : << OPERATION_SHIFT_RIGHT uc ;
 
-: pop.t OPERATION_POP_T uc ;
-: pop.ta OPERATION_POP_TA uc ;
-: pop.tb OPERATION_POP_TB uc ;
-: pop.tx OPERATION_POP_TX uc ;
-: pop.a OPERATION_POP_A uc ;
-: pop.b OPERATION_POP_B uc ;
-: pop.c OPERATION_POP_C uc ;
-: pop.x OPERATION_POP_X uc ;
-: pop.s OPERATION_POP_S uc ;
-: push.t OPERATION_PUSH_T uc ;
-: push.ta OPERATION_PUSH_TA uc ;
-: push.tb OPERATION_PUSH_TB uc ;
-: push.tx OPERATION_PUSH_TX uc ;
-: push.a OPERATION_PUSH_A uc ;
-: push.b OPERATION_PUSH_B uc ;
-: push.c OPERATION_PUSH_C uc ;
-: push.x OPERATION_PUSH_X uc ;
-: push.s OPERATION_PUSH_S uc ;
 : zero.a 0 pop.a ;
 : zero.b 0 pop.b ;
 : zero.c 0 pop.c ;

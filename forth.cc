@@ -720,7 +720,6 @@ namespace forth {
 		if (!_initializedBaseDictionary) {
 			_initializedBaseDictionary = true;
 			// add dictionary entries
-            addWord("nop", [](Machine*) { });
 			addWord("quit", std::mem_fn(&Machine::terminateExecution));
 			addWord(";", std::mem_fn(&Machine::semicolonOperation));
 			addWord("registers", std::mem_fn(&Machine::printRegisters));
@@ -728,25 +727,12 @@ namespace forth {
             addWord("stack", std::mem_fn(&Machine::printStack));
 			addWord(":", std::mem_fn(&Machine::defineWord));
             addWord("see", std::mem_fn<void()>(&Machine::seeWord));
-            addWord("pop.s", std::mem_fn(&Machine::popRegister<TargetRegister::RegisterS>);
+            addWord("pop.s", std::mem_fn(&Machine::popRegister<TargetRegister::RegisterS>));
             addWord("if", std::mem_fn(&Machine::ifCondition), true);
             addWord("else", std::mem_fn(&Machine::elseCondition), true);
             addWord("then", std::mem_fn(&Machine::thenStatement), true);
             addWord("uc", std::mem_fn(&Machine::dispatchInstruction));
-            _nop = lookupWord("nop");
-            _popT = lookupWord("pop.t");
-            _popA = lookupWord("pop.a");
-            _popB = lookupWord("pop.b");
-            _popC = lookupWord("pop.c");
-            _pushT = lookupWord("push.t");
-            _pushA = lookupWord("push.a");
-            _pushB = lookupWord("push.b");
-            _pushC = lookupWord("push.c");
-            _popTA = lookupWord("pop.ta");
-            _popTB = lookupWord("pop.tb");
-            _popTX = lookupWord("pop.tx");
-            _popX = lookupWord("pop.x");
-            _popX = lookupWord("pop.s");
+            addWord("cache-basic-entries", std::mem_fn(&Machine::cacheBasicEntries));
 		}
 	}
     void Machine::printStack() {
@@ -802,6 +788,27 @@ namespace forth {
                 throw Problem("uc", "Unknown instruction address!");
         }
         
+    }
+    void Machine::cacheBasicEntries() {
+        if (!_cachedBasicEntries) {
+            _cachedBasicEntries = true;
+            _popT = lookupWord("pop.t");
+            _popA = lookupWord("pop.a");
+            _popB = lookupWord("pop.b");
+            _popC = lookupWord("pop.c");
+            _pushT = lookupWord("push.t");
+            _pushA = lookupWord("push.a");
+            _pushB = lookupWord("push.b");
+            _pushC = lookupWord("push.c");
+            _popTA = lookupWord("pop.ta");
+            _popTB = lookupWord("pop.tb");
+            _popTX = lookupWord("pop.tx");
+            _popX = lookupWord("pop.x");
+            _popS = lookupWord("pop.s");
+            _pushS = lookupWord("push.s");
+            _pushX = lookupWord("push.x");
+            _nop = lookupWord("nop");
+        }
     }
 } // end namespace forth
 

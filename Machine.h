@@ -3,6 +3,7 @@
 #define MACHINE_H__
 #include "Types.h"
 #include <iostream>
+#include <memory>
 #include "DictionaryEntry.h"
 #include "Datum.h"
 

@@ -237,45 +237,6 @@ namespace forth {
 		addWord(_compileTarget);
 		_compileTarget = nullptr;
 	}
-    void DictionaryEntry::SpaceEntry::operator()(Machine* machine) const {
-        invoke(machine);
-    }
-	void DictionaryEntry::SpaceEntry::invoke(Machine* machine) const {
-        using Type = DictionaryEntry::SpaceEntry::Discriminant;
-		switch (_type) {
-			case Type::Signed:
-				machine->pushParameter(_int);
-				break;
-			case Type::Unsigned:
-				machine->pushParameter(_addr);
-				break;
-			case Type::FloatingPoint:
-				machine->pushParameter(_fp);
-				break;
-			case Type::Boolean:
-				machine->pushParameter(_truth);
-				break;
-			case Type::DictEntry:
-				_entry->operator()(machine);
-				break;
-            case Type::LoadWordIntoA:
-                machine->setTA(forth::Discriminant::Word);
-                machine->setA(_entry);
-                break;
-            case Type::LoadWordIntoB:
-                machine->setTB(forth::Discriminant::Word);
-                machine->setB(_entry);
-                break;
-            case Type::ChooseRegisterAndStoreInC:
-                machine->chooseRegister();
-                break;
-            case Type::InvokeRegisterC:
-                machine->invokeCRegister();
-                break;
-			default:
-                throw Problem("unknown", "UNKNOWN ENTRY KIND!");
-		}
-	}
 	void Machine::listWords() {
 		if (_words == nullptr) {
 			return;

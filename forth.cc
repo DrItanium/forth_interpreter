@@ -760,6 +760,7 @@ namespace forth {
             addWord("if", std::mem_fn(&Machine::ifCondition), true);
             addWord("else", std::mem_fn(&Machine::elseCondition), true);
             addWord("then", std::mem_fn(&Machine::thenStatement), true);
+            addWord("uc", std::mem_fn(&Machine::dispatchInstruction));
             _nop = lookupWord("nop");
             _popT = lookupWord("pop.t");
             _popA = lookupWord("pop.a");
@@ -771,12 +772,63 @@ namespace forth {
             _pushC = lookupWord("push.c");
             _popTA = lookupWord("pop.ta");
             _popTB = lookupWord("pop.tb");
+            _popTX = lookupWord("pop.tx");
+            _popX = lookupWord("pop.x");
+            _popX = lookupWord("pop.s");
 		}
 	}
     void Machine::printStack() {
         for (const auto& element : _parameter) {
             _output << "\t- " << element << std::endl;
         }
+    }
+    void Machine::dispatchInstruction() {
+        // use the s register as the current instruction
+        // slice out the lowest eight bits
+        auto op = static_cast<byte>(_registerS.address & 0x00000000000000FF);
+
+        switch (op) {
+            case 0x00: break; // nop
+            case 0x01: add(); break; 
+            case 0x02: subtract(); break; 
+            case 0x03: multiplyOperation(); break; 
+            case 0x04: divide(); break;
+            case 0x05: modulo(); break;
+            case 0x06: notOperation(); break; 
+            case 0x07: minusOperation(); break; 
+            case 0x08: andOperation(); break; 
+            case 0x09: orOperation(); break; 
+            case 0x0A: greaterThanOperation(); break; // greater than
+            case 0x0B: lessThanOperation(); break;
+            case 0x0C: xorOperation(); break;
+            case 0x0D: shiftLeftOperation(); break;
+            case 0x0E: shiftRightOperation(); break;
+            case 0x0F: popRegister<TargetRegister::RegisterA>(); break;
+            case 0x10: popRegister<TargetRegister::RegisterB>(); break;
+            case 0x11: popRegister<TargetRegister::RegisterC>(); break;
+            case 0x12: popRegister<TargetRegister::RegisterS>(); break;
+            case 0x13: popRegister<TargetRegister::RegisterX>(); break;
+            case 0x14: popRegister<TargetRegister::RegisterT>(); break;
+            case 0x15: popRegister<TargetRegister::RegisterTA>(); break;
+            case 0x16: popRegister<TargetRegister::RegisterTB>(); break;
+            case 0x17: popRegister<TargetRegister::RegisterTX>(); break;
+            case 0x18: pushRegister<TargetRegister::RegisterA>(); break;
+            case 0x19: pushRegister<TargetRegister::RegisterB>(); break;
+            case 0x1A: pushRegister<TargetRegister::RegisterC>(); break;
+            case 0x1B: pushRegister<TargetRegister::RegisterS>(); break;
+            case 0x1C: pushRegister<TargetRegister::RegisterX>(); break;
+            case 0x1D: pushRegister<TargetRegister::RegisterT>(); break;
+            case 0x1E: pushRegister<TargetRegister::RegisterTA>(); break;
+            case 0x1F: pushRegister<TargetRegister::RegisterTB>(); break;
+            case 0x20: pushRegister<TargetRegister::RegisterTX>(); break;
+            case 0x21: equals(); break;
+            case 0x22: typeValue(); break;
+            case 0x23: load(); break;
+            case 0x24: store(); break;
+            default:
+                throw Problem("uc", "Unknown instruction address!");
+        }
+        
     }
 } // end namespace forth
 

@@ -52,12 +52,16 @@ namespace forth {
                 RegisterTB,
                 RegisterC,
                 RegisterT,
+                RegisterS, // register select
+                RegisterX, // misc data
+                RegisterTX, // misc type
             };
             static constexpr bool involvesDiscriminantRegister(TargetRegister r) {
                 switch (r) {
                     case TargetRegister::RegisterT:
                     case TargetRegister::RegisterTA:
                     case TargetRegister::RegisterTB:
+                    case TargetRegister::RegisterTX:
                         return true;
                     default:
                         return false;
@@ -88,6 +92,8 @@ namespace forth {
                     case Type::RegisterTB:
                         tmp = static_cast<Address>(_registerTB);
                         break;
+                    case Type::RegisterTX:
+                        tmp = static_cast<Address>(_registerTX);
                     default:
                         throw Problem("push.register", "Unknown register!");
                 }
@@ -118,14 +124,17 @@ namespace forth {
                         _registerTA = (Discriminant)top.address;
                         break;
                     case Type::RegisterTB:
-                        _registerTA = (Discriminant)top.address;
+                        _registerTB = (Discriminant)top.address;
+                        break;
+                    case Type::RegisterTX:
+                        _registerTX = (Discriminant)top.address;
                         break;
                     default:
                         throw Problem("pop.register", "Unknown register!");
                 }
 
             }
-
+            void dispatchInstruction();
             void aluOperation();
 			void add();
 			void subtract();
@@ -169,18 +178,23 @@ namespace forth {
 			bool _compiling = false;
 			DictionaryEntry* _compileTarget = nullptr;
 			// internal "registers"
-			Datum _registerA, _registerB, _registerC;
-			Discriminant _registerT, _registerTA, _registerTB;
+			Datum _registerA, _registerB, _registerC, _registerS, _registerX;
+			Discriminant _registerT, _registerTA, _registerTB, _registerTX;
             const DictionaryEntry* _popTA = nullptr;
             const DictionaryEntry* _popTB = nullptr;
+            const DictionaryEntry* _popTX = nullptr;
             const DictionaryEntry* _popA = nullptr;
             const DictionaryEntry* _popB = nullptr;
             const DictionaryEntry* _popC = nullptr;
             const DictionaryEntry* _popT = nullptr;
+            const DictionaryEntry* _popS = nullptr;
+            const DictionaryEntry* _popX = nullptr;
             const DictionaryEntry* _pushA = nullptr;
             const DictionaryEntry* _pushB = nullptr;
             const DictionaryEntry* _pushC = nullptr;
             const DictionaryEntry* _pushT = nullptr;
+            const DictionaryEntry* _pushX = nullptr;
+            const DictionaryEntry* _pushS = nullptr;
             const DictionaryEntry* _nop = nullptr;
 
 	};

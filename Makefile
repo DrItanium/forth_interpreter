@@ -27,5 +27,5 @@ clean:
 
 .PHONY: options clean all
 
-forth.o: forth.cc Problem.h Types.h Datum.h
+forth.o: forth.cc Problem.h Types.h Datum.h DictionaryEntry.h
 Datum.o: Datum.cc Types.h Datum.h

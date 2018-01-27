@@ -1,6 +1,5 @@
 // Currently on chapter 4.4.4
 // TODO: support nested if statements
-//#define DEBUG
 #include <iostream>
 #include <string>
 #include <list>
@@ -238,18 +237,38 @@ namespace forth {
             void chooseRegister();
             void invokeCRegister();
 		private:
+            enum class TargetRegister : byte {
+                RegisterA,
+                RegisterTA,
+                RegisterB,
+                RegisterTB,
+                RegisterC,
+                RegisterT,
+            };
+            static constexpr bool involvesDiscriminantRegister(TargetRegister r) {
+                switch (r) {
+                    case TargetRegister::RegisterT:
+                    case TargetRegister::RegisterTA:
+                    case TargetRegister::RegisterTB:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
 			void printRegisters();
             void printStack();
-			void popA();
-			void popB();
-			void popC();
-			void popT();
-			void popTA();
-			void popTB();
-			void pushA();
-			void pushB();
-			void pushC();
-			void pushT();
+            void popRegister(TargetRegister reg);
+            void pushRegister(TargetRegister reg);
+			void popA() { popRegister(TargetRegister::RegisterA); }
+			void popB() { popRegister(TargetRegister::RegisterB); }
+			void popC() { popRegister(TargetRegister::RegisterC); }
+			void popT() { popRegister(TargetRegister::RegisterT); }
+			void popTA() { popRegister(TargetRegister::RegisterTA); }
+			void popTB() { popRegister(TargetRegister::RegisterTB); }
+			void pushA() { pushRegister(TargetRegister::RegisterA); }
+			void pushB() { pushRegister(TargetRegister::RegisterB); }
+			void pushC() { pushRegister(TargetRegister::RegisterC); }
+			void pushT() { pushRegister(TargetRegister::RegisterT); }
 			void add();
 			void subtract();
 			void multiplyOperation();
@@ -306,26 +325,62 @@ namespace forth {
             const DictionaryEntry* _nop = nullptr;
 
 	};
-    void Machine::pushT() {
-        pushParameter(static_cast<Address>(_registerT));
+    void Machine::popRegister(Machine::TargetRegister t) {
+        using Type = decltype(t);
+        static constexpr Address max = (Address)Discriminant::Count;
+        auto top(popParameter());
+        if (involvesDiscriminantRegister(t) && top.address >= max) {
+            throw Problem("pop.register", "ILLEGAL DISCRIMINANT!");
+        }
+        switch (t) {
+            case Type::RegisterA:
+                _registerA = top;
+                break;
+            case Type::RegisterB:
+                _registerB = top;
+                break;
+            case Type::RegisterC:
+                _registerC = top;
+                break;
+            case Type::RegisterT:
+                _registerT = (Discriminant)top.address;
+                break;
+            case Type::RegisterTA:
+                _registerTA = (Discriminant)top.address;
+                break;
+            case Type::RegisterTB:
+                _registerTA = (Discriminant)top.address;
+                break;
+            default:
+                throw Problem("pop.register", "Unknown register!");
+        }
     }
-    void Machine::popA() {
-        _registerA = popParameter();
-    }
-    void Machine::popB() {
-        _registerB = popParameter();
-    }
-    void Machine::popC() {
-        _registerC = popParameter();
-    }
-    void Machine::pushA() {
-        pushParameter(_registerA);
-    }
-    void Machine::pushB() {
-        pushParameter(_registerB);
-    }
-    void Machine::pushC() {
-        pushParameter(_registerC);
+    void Machine::pushRegister(Machine::TargetRegister t) {
+        using Type = decltype(t);
+        Datum tmp;
+        switch (t) {
+            case Type::RegisterA:
+                tmp = _registerA;
+                break;
+            case Type::RegisterB:
+                tmp = _registerB;
+                break;
+            case Type::RegisterC:
+                tmp = _registerC;
+                break;
+            case Type::RegisterT:
+                tmp = static_cast<Address>(_registerT);
+                break;
+            case Type::RegisterTA:
+                tmp = static_cast<Address>(_registerTA);
+                break;
+            case Type::RegisterTB:
+                tmp = static_cast<Address>(_registerTB);
+                break;
+            default:
+                throw Problem("push.register", "Unknown register!");
+        }
+        pushParameter(tmp);
     }
     void Machine::seeWord(const DictionaryEntry* entry) {
         if (entry->isFake()) {
@@ -553,33 +608,18 @@ namespace forth {
         using Type = DictionaryEntry::SpaceEntry::Discriminant;
 		switch (_type) {
 			case Type::Signed:
-#ifdef DEBUG
-				std::cout << "pushing integer " << std::dec << _int << " onto stack!" << std::endl;
-#endif
 				machine->pushParameter(_int);
 				break;
 			case Type::Unsigned:
-#ifdef DEBUG
-				std::cout << "pushing address " << std::hex << _addr  << std::dec << " onto stack!" << std::endl;
-#endif
 				machine->pushParameter(_addr);
 				break;
 			case Type::FloatingPoint:
-#ifdef DEBUG
-				std::cout << "pushing fp " << _fp << " onto stack!" << std::endl;
-#endif
 				machine->pushParameter(_fp);
 				break;
 			case Type::Boolean:
-#ifdef DEBUG
-				std::cout << "pushing boolean " << _truth << " onto stack!" << std::endl;
-#endif
 				machine->pushParameter(_truth);
 				break;
 			case Type::DictEntry:
-#ifdef DEBUG
-				std::cout << "calling dictionary entry: '" << _entry->getName() << "' at " << _entry << std::dec << std::endl;
-#endif
 				_entry->operator()(machine);
 				break;
             case Type::LoadWordIntoA:
@@ -886,33 +926,6 @@ namespace forth {
 		}
 	}
 
-	void Machine::popT() {
-		static constexpr Address max = (Address)Discriminant::Count;
-		auto top(popParameter());
-		if (top.address >= max) {
-            throw Problem("pop.t", "ILLEGAL DISCRIMINANT!");
-		}
-        _registerT = (Discriminant)top.address;
-	}
-
-    void Machine::popTA() {
-		static constexpr Address max = (Address)Discriminant::Count;
-		auto top(popParameter());
-		if (top.address >= max) {
-            throw Problem("pop.ta", "ILLEGAL DISCRIMINANT!");
-		}
-        _registerTA = (Discriminant)top.address;
-    }
-
-    void Machine::popTB() {
-		static constexpr Address max = (Address)Discriminant::Count;
-		auto top(popParameter());
-		if (top.address >= max) {
-            throw Problem("pop.tb", "ILLEGAL DISCRIMINANT!");
-		}
-        _registerTB = (Discriminant)top.address;
-    }
-
 	void Machine::addWord(DictionaryEntry* entry) {
 		if (_words != nullptr) {
 			entry->setNext(_words);
@@ -1120,6 +1133,8 @@ namespace forth {
             addWord("see", std::mem_fn<void()>(&Machine::seeWord));
 			addWord("type.a", std::mem_fn<void()>(&Machine::typeValue));
 			addWord("pop.t", std::mem_fn(&Machine::popT));
+            addWord("pop.tb", std::mem_fn(&Machine::popTB));
+            addWord("pop.ta", std::mem_fn(&Machine::popTA));
 			addWord("pop.a", std::mem_fn(&Machine::popA));
 			addWord("pop.b", std::mem_fn(&Machine::popB));
 			addWord("pop.c", std::mem_fn(&Machine::popC));
@@ -1127,8 +1142,6 @@ namespace forth {
 			addWord("push.b", std::mem_fn(&Machine::pushB));
 			addWord("push.c", std::mem_fn(&Machine::pushC));
 			addWord("push.t", std::mem_fn(&Machine::pushT));
-            addWord("pop.tb", std::mem_fn(&Machine::popTB));
-            addWord("pop.ta", std::mem_fn(&Machine::popTA));
 			addWord("mload", std::mem_fn<void()>(&Machine::load));
 			addWord("mstore", std::mem_fn<void()>(&Machine::store));
 			addWord("+", std::mem_fn(&Machine::add));

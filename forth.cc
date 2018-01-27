@@ -222,7 +222,6 @@ namespace forth {
 			void typeValue() { typeValue(_registerA); }
 			void addWord(DictionaryEntry* entry);
 			void addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke = false);
-			void terminateExecution();
 			void addition(Discriminant type);
 			void listWords();
 			void activateCompileMode() { _compiling = true; }
@@ -257,18 +256,68 @@ namespace forth {
             }
 			void printRegisters();
             void printStack();
-            void popRegister(TargetRegister reg);
-            void pushRegister(TargetRegister reg);
-			void popA() { popRegister(TargetRegister::RegisterA); }
-			void popB() { popRegister(TargetRegister::RegisterB); }
-			void popC() { popRegister(TargetRegister::RegisterC); }
-			void popT() { popRegister(TargetRegister::RegisterT); }
-			void popTA() { popRegister(TargetRegister::RegisterTA); }
-			void popTB() { popRegister(TargetRegister::RegisterTB); }
-			void pushA() { pushRegister(TargetRegister::RegisterA); }
-			void pushB() { pushRegister(TargetRegister::RegisterB); }
-			void pushC() { pushRegister(TargetRegister::RegisterC); }
-			void pushT() { pushRegister(TargetRegister::RegisterT); }
+            template<TargetRegister t>
+            void pushRegister() {
+                using Type = decltype(t);
+                Datum tmp;
+                switch (t) {
+                    case Type::RegisterA:
+                        tmp = _registerA;
+                        break;
+                    case Type::RegisterB:
+                        tmp = _registerB;
+                        break;
+                    case Type::RegisterC:
+                        tmp = _registerC;
+                        break;
+                    case Type::RegisterT:
+                        tmp = static_cast<Address>(_registerT);
+                        break;
+                    case Type::RegisterTA:
+                        tmp = static_cast<Address>(_registerTA);
+                        break;
+                    case Type::RegisterTB:
+                        tmp = static_cast<Address>(_registerTB);
+                        break;
+                    default:
+                        throw Problem("push.register", "Unknown register!");
+                }
+                pushParameter(tmp);
+            }
+            template<TargetRegister t>
+            void popRegister() {
+                using Type = decltype(t);
+                static constexpr Address max = (Address)Discriminant::Count;
+                auto top(popParameter());
+                if (involvesDiscriminantRegister(t) && top.address >= max) {
+                    throw Problem("pop.register", "ILLEGAL DISCRIMINANT!");
+                }
+                switch (t) {
+                    case Type::RegisterA:
+                        _registerA = top;
+                        break;
+                    case Type::RegisterB:
+                        _registerB = top;
+                        break;
+                    case Type::RegisterC:
+                        _registerC = top;
+                        break;
+                    case Type::RegisterT:
+                        _registerT = (Discriminant)top.address;
+                        break;
+                    case Type::RegisterTA:
+                        _registerTA = (Discriminant)top.address;
+                        break;
+                    case Type::RegisterTB:
+                        _registerTA = (Discriminant)top.address;
+                        break;
+                    default:
+                        throw Problem("pop.register", "Unknown register!");
+                }
+
+            }
+
+            void aluOperation();
 			void add();
 			void subtract();
 			void multiplyOperation();
@@ -293,6 +342,7 @@ namespace forth {
              */
             void seeWord();
 		private:
+			void terminateExecution();
             void seeWord(const DictionaryEntry* entry);
 			void initializeBaseDictionary();
 			std::string readWord();
@@ -325,63 +375,6 @@ namespace forth {
             const DictionaryEntry* _nop = nullptr;
 
 	};
-    void Machine::popRegister(Machine::TargetRegister t) {
-        using Type = decltype(t);
-        static constexpr Address max = (Address)Discriminant::Count;
-        auto top(popParameter());
-        if (involvesDiscriminantRegister(t) && top.address >= max) {
-            throw Problem("pop.register", "ILLEGAL DISCRIMINANT!");
-        }
-        switch (t) {
-            case Type::RegisterA:
-                _registerA = top;
-                break;
-            case Type::RegisterB:
-                _registerB = top;
-                break;
-            case Type::RegisterC:
-                _registerC = top;
-                break;
-            case Type::RegisterT:
-                _registerT = (Discriminant)top.address;
-                break;
-            case Type::RegisterTA:
-                _registerTA = (Discriminant)top.address;
-                break;
-            case Type::RegisterTB:
-                _registerTA = (Discriminant)top.address;
-                break;
-            default:
-                throw Problem("pop.register", "Unknown register!");
-        }
-    }
-    void Machine::pushRegister(Machine::TargetRegister t) {
-        using Type = decltype(t);
-        Datum tmp;
-        switch (t) {
-            case Type::RegisterA:
-                tmp = _registerA;
-                break;
-            case Type::RegisterB:
-                tmp = _registerB;
-                break;
-            case Type::RegisterC:
-                tmp = _registerC;
-                break;
-            case Type::RegisterT:
-                tmp = static_cast<Address>(_registerT);
-                break;
-            case Type::RegisterTA:
-                tmp = static_cast<Address>(_registerTA);
-                break;
-            case Type::RegisterTB:
-                tmp = static_cast<Address>(_registerTB);
-                break;
-            default:
-                throw Problem("push.register", "Unknown register!");
-        }
-        pushParameter(tmp);
-    }
     void Machine::seeWord(const DictionaryEntry* entry) {
         if (entry->isFake()) {
             _output << "compiled entry: { " << std::endl;
@@ -484,7 +477,7 @@ namespace forth {
                 break;
             case Type::Number:
             case Type::FloatingPoint:
-                pushC();
+                pushRegister<TargetRegister::RegisterC>();
                 break;
             default:
                 throw Problem("invoke.c", "incorrect discriminant!");
@@ -1132,16 +1125,16 @@ namespace forth {
 			addWord(":", std::mem_fn(&Machine::defineWord));
             addWord("see", std::mem_fn<void()>(&Machine::seeWord));
 			addWord("type.a", std::mem_fn<void()>(&Machine::typeValue));
-			addWord("pop.t", std::mem_fn(&Machine::popT));
-            addWord("pop.tb", std::mem_fn(&Machine::popTB));
-            addWord("pop.ta", std::mem_fn(&Machine::popTA));
-			addWord("pop.a", std::mem_fn(&Machine::popA));
-			addWord("pop.b", std::mem_fn(&Machine::popB));
-			addWord("pop.c", std::mem_fn(&Machine::popC));
-			addWord("push.a", std::mem_fn(&Machine::pushA));
-			addWord("push.b", std::mem_fn(&Machine::pushB));
-			addWord("push.c", std::mem_fn(&Machine::pushC));
-			addWord("push.t", std::mem_fn(&Machine::pushT));
+			addWord("pop.t",  std::mem_fn(&Machine::popRegister<TargetRegister::RegisterT>));
+            addWord("pop.tb", std::mem_fn(&Machine::popRegister<TargetRegister::RegisterTB>));
+            addWord("pop.ta", std::mem_fn(&Machine::popRegister<TargetRegister::RegisterTA>));
+			addWord("pop.a", std::mem_fn(&Machine::popRegister<TargetRegister::RegisterA>));
+			addWord("pop.b", std::mem_fn(&Machine::popRegister<TargetRegister::RegisterB>));
+			addWord("pop.c", std::mem_fn(&Machine::popRegister<TargetRegister::RegisterC>));
+			addWord("push.a", std::mem_fn(&Machine::pushRegister<TargetRegister::RegisterA>));
+			addWord("push.b", std::mem_fn(&Machine::pushRegister<TargetRegister::RegisterB>));
+			addWord("push.c", std::mem_fn(&Machine::pushRegister<TargetRegister::RegisterC>));
+			addWord("push.t", std::mem_fn(&Machine::pushRegister<TargetRegister::RegisterT>));
 			addWord("mload", std::mem_fn<void()>(&Machine::load));
 			addWord("mstore", std::mem_fn<void()>(&Machine::store));
 			addWord("+", std::mem_fn(&Machine::add));

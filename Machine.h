@@ -69,87 +69,11 @@ namespace forth {
             }
 			void printRegisters();
             void printStack();
-            template<TargetRegister t>
-            void pushRegister() {
-                using Type = decltype(t);
-                Datum tmp;
-                switch (t) {
-                    case Type::RegisterA:
-                        tmp = _registerA;
-                        break;
-                    case Type::RegisterB:
-                        tmp = _registerB;
-                        break;
-                    case Type::RegisterC:
-                        tmp = _registerC;
-                        break;
-                    case Type::RegisterT:
-                        tmp = static_cast<Address>(_registerT);
-                        break;
-                    case Type::RegisterTA:
-                        tmp = static_cast<Address>(_registerTA);
-                        break;
-                    case Type::RegisterTB:
-                        tmp = static_cast<Address>(_registerTB);
-                        break;
-                    case Type::RegisterTX:
-                        tmp = static_cast<Address>(_registerTX);
-                        break;
-                    case Type::RegisterS:
-                        tmp = _registerS;
-                        break;
-                    case Type::RegisterX:
-                        tmp = _registerX;
-                        break;
-                    default:
-                        throw Problem("push.register", "Unknown register!");
-                }
-                pushParameter(tmp);
-            }
-            template<TargetRegister t>
-            void popRegister() {
-                using Type = decltype(t);
-                static constexpr Address max = (Address)Discriminant::Count;
-                auto top(popParameter());
-                if (involvesDiscriminantRegister(t) && top.address >= max) {
-                    throw Problem("pop.register", "ILLEGAL DISCRIMINANT!");
-                }
-                switch (t) {
-                    case Type::RegisterA:
-                        _registerA = top;
-                        break;
-                    case Type::RegisterB:
-                        _registerB = top;
-                        break;
-                    case Type::RegisterC:
-                        _registerC = top;
-                        break;
-                    case Type::RegisterT:
-                        _registerT = (Discriminant)top.address;
-                        break;
-                    case Type::RegisterTA:
-                        _registerTA = (Discriminant)top.address;
-                        break;
-                    case Type::RegisterTB:
-                        _registerTB = (Discriminant)top.address;
-                        break;
-                    case Type::RegisterTX:
-                        _registerTX = (Discriminant)top.address;
-                        break;
-                    case Type::RegisterS:
-                        _registerS = top;
-                        break;
-                    case Type::RegisterX:
-                        _registerX = top;
-                        break;
-                    default:
-                        throw Problem("pop.register", "Unknown register!");
-                }
-
-            }
+			void pushSRegister() { pushRegister(TargetRegister::RegisterS); }
+			void pushRegister(TargetRegister t);
+			void popRegister(TargetRegister t); 
             void dispatchInstruction();
-			void add();
-			void subtract();
+			void numericCombine(bool subtractB = false);
 			void multiplyOperation();
 			void equals();
 			void powOperation();

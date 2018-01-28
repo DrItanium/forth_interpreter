@@ -487,35 +487,19 @@ namespace forth {
 		// counter to zero, however, with how we use iterators,
 		// this isn't necessary!
 	}
-
-	void Machine::shiftLeftOperation() {
+	void Machine::shiftOperation(bool shiftLeft) {
 		using Type = decltype(_registerT);
 		switch (_registerT) {
 			case Type::Number:
-				_registerC.numValue = _registerA.numValue << _registerB.address;
+				_registerC.numValue = shiftLeft ? (_registerA.numValue  << _registerB.numValue) : (_registerA.numValue >> _registerB.numValue);
 				break;
 			case Type::MemoryAddress:
-				_registerC.address = _registerA.address << _registerB.address;
+				_registerC.address = shiftLeft ? (_registerA.address  << _registerB.address) : (_registerA.address >> _registerB.address);
 				break;
 			default:
-                throw Problem("<<", "ILLEGAL DISCRIMINANT!");
+				throw Problem(shiftLeft ? "<<" : ">>", "ILLEGAL DISCRIMINANT");
 		}
 	}
-
-	void Machine::shiftRightOperation() {
-		using Type = decltype(_registerT);
-		switch (_registerT) {
-			case Type::Number:
-				_registerC.numValue = _registerA.numValue >> _registerB.address;
-				break;
-			case Type::MemoryAddress:
-				_registerC.address = _registerA.address >> _registerB.address;
-				break;
-			default:
-                throw Problem(">>", "ILLEGAL DISCRIMINANT!");
-		}
-	}
-
 	void Machine::addWord(DictionaryEntry* entry) {
 		if (_words != nullptr) {
 			entry->setNext(_words);
@@ -523,6 +507,7 @@ namespace forth {
 		_words = entry;
 	}
 	void Machine::typeValue(Discriminant discriminant, const Datum& value) {
+		auto flags = _output.flags();
 		switch(discriminant) {
 			case Discriminant::Number:
 				_output << std::dec << value.numValue;
@@ -543,6 +528,7 @@ namespace forth {
 		}
 		// always type a space out after the number
 		_output << ' ' << std::endl;
+		_output.setf(flags);
 	}
 	Machine::Machine(std::ostream& output, std::istream& input) :  _output(output), _input(input), _memory(new Integer[memoryCapacity]), _words(nullptr) { }
 
@@ -752,8 +738,8 @@ namespace forth {
             case 0x0A: greaterThanOperation(); break; // greater than
             case 0x0B: lessThanOperation(); break;
             case 0x0C: xorOperation(); break;
-            case 0x0D: shiftLeftOperation(); break;
-            case 0x0E: shiftRightOperation(); break;
+            case 0x0D: shiftOperation(true); break; // shift left
+            case 0x0E: shiftOperation(false); break; // shift right
             case 0x0F: popRegister<TargetRegister::RegisterA>(); break;
             case 0x10: popRegister<TargetRegister::RegisterB>(); break;
             case 0x11: popRegister<TargetRegister::RegisterC>(); break;

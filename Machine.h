@@ -163,8 +163,7 @@ namespace forth {
 			void greaterThanOperation();
 			void lessThanOperation();
 			void xorOperation();
-			void shiftLeftOperation();
-			void shiftRightOperation();
+			void shiftOperation(bool shiftLeft = false);
             void ifCondition();
             void elseCondition();
             void thenStatement();

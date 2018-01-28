@@ -90,6 +90,11 @@ namespace forth {
             void ifCondition();
             void elseCondition();
             void thenStatement();
+			void sinOperation();
+			void cosOperation();
+			void tanOperation();
+			void atanOperation();
+			void atan2Operation();
             /**
              * Printout the contents of the given word!
              */

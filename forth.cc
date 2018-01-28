@@ -749,6 +749,11 @@ namespace forth {
 			case 0x23: load(); break;
 			case 0x24: store(); break;
 			case 0x25: powOperation(); break;
+			case 0x26: sinOperation(); break;
+			case 0x27: cosOperation(); break;
+			case 0x28: tanOperation(); break;
+			case 0x29: atanOperation(); break;
+			case 0x2A: atan2Operation(); break;
 			default:
 					   throw Problem("uc", "Unknown instruction address!");
 		}
@@ -850,6 +855,51 @@ namespace forth {
 				throw Problem("push.register", "Unknown register!");
 		}
 		pushParameter(tmp);
+	}
+	void Machine::sinOperation() {
+		switch (_registerT) {
+			case Discriminant::FloatingPoint:
+				_registerC = sin(_registerA.fp);
+				break;
+			default:
+				throw Problem("sin", "Incorret Discriminant!");
+		}
+	}
+	void Machine::cosOperation() {
+		switch (_registerT) {
+			case Discriminant::FloatingPoint:
+				_registerC = cos(_registerA.fp);
+				break;
+			default:
+				throw Problem("cos", "Incorret Discriminant!");
+		}
+	}
+	void Machine::tanOperation() {
+		switch (_registerT) {
+			case Discriminant::FloatingPoint:
+				_registerC = tan(_registerA.fp);
+				break;
+			default:
+				throw Problem("tan", "Incorret Discriminant!");
+		}
+	}
+	void Machine::atanOperation() {
+		switch (_registerT) {
+			case Discriminant::FloatingPoint:
+				_registerC = atan(_registerA.fp);
+				break;
+			default:
+				throw Problem("atan", "Incorret Discriminant!");
+		}
+	}
+	void Machine::atan2Operation() {
+		switch (_registerT) {
+			case Discriminant::FloatingPoint:
+				_registerC = atan(_registerA.fp);
+				break;
+			default:
+				throw Problem("atan", "Incorret Discriminant!");
+		}
 	}
 } // end namespace forth
 

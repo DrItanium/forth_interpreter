@@ -11,6 +11,12 @@ namespace forth {
         out.setf(flags); // restore after done
         return out;
     }
+	std::ostream& operator<<(std::ostream& out, const Discriminant& dt) {
+		auto flags = out.flags();
+		out << "0x" << std::hex << static_cast<Address>(dt);
+		out.setf(flags);
+		return out;
+	}
     Datum::Datum(const Datum& other) {
         for (auto k = 0; k < sizeof(Integer); ++k) {
             // make sure that the compiler won't do something goofy when doing

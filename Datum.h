@@ -30,5 +30,6 @@ namespace forth {
         byte backingStore[sizeof(Integer)];
     };
     std::ostream& operator<<(std::ostream& out, const Datum& dt);
+	std::ostream& operator<<(std::ostream& out, const Discriminant& d);
 } // end namespace forth
 #endif // end DATUM_H__

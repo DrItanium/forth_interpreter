@@ -203,22 +203,15 @@ namespace forth {
 	}
 	void Machine::printRegisters() {
 		auto flags = _output.flags();
-		auto fn = [this](const std::string& title, const Datum& r) {
-			_output << title << ": " << r << std::endl;
+		auto fn = [this](const std::string& title, auto value) noexcept {
+			_output << title << ": " << value << std::endl;
 		};
-        auto printT = [this](const std::string& title, auto value) {
-            _output << title << ": 0x" << std::hex << static_cast<Address>(value) << std::endl;
-        };
 		fn("A", _registerA);
 		fn("B", _registerB);
 		fn("C", _registerC);
-        printT("T", _registerT);
-        printT("A.T", _registerTA);
-        printT("B.T", _registerTB);
-#ifdef DEBUG
-        // extended data
-        _output << "IsCompiling: " << _compiling << std::endl;
-#endif
+        fn("T", _registerT);
+        fn("A.T", _registerTA);
+        fn("B.T", _registerTB);
 		_output.setf(flags); // restore after done
 	}
 	void Machine::defineWord() {

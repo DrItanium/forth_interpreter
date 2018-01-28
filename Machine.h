@@ -148,7 +148,6 @@ namespace forth {
 
             }
             void dispatchInstruction();
-            void aluOperation();
 			void add();
 			void subtract();
 			void multiplyOperation();

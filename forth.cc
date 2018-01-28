@@ -210,8 +210,11 @@ namespace forth {
 		fn("B", _registerB);
 		fn("C", _registerC);
 		fn("T", _registerT);
+		fn("S", _registerS);
+		fn("X", _registerX);
 		fn("A.T", _registerTA);
 		fn("B.T", _registerTB);
+		fn("X.T", _registerTX);
 		_output.setf(flags); // restore after done
 	}
 	void Machine::defineWord() {

@@ -376,7 +376,7 @@ namespace forth {
 				_registerC = subtractOp ? (_registerA.fp - _registerB.fp) : _registerA.fp + _registerB.fp;
 				break;
 			default:
-				throw Problem("+", "ILLEGAL DISCRIMINANT!");
+				throw Problem(subtractOp ? "-" : "+", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 

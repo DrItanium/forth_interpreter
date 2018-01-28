@@ -37,7 +37,6 @@ namespace forth {
 			void deactivateCompileMode() { _compiling = false; }
 			void defineWord();
 			void endDefineWord();
-			void semicolonOperation();
 			void setA(const Datum& target) noexcept { _registerA = target; }
 			void setTA(Discriminant target) noexcept { _registerTA = target; }
 			void setTB(Discriminant target) noexcept { _registerTB = target; }
@@ -45,6 +44,7 @@ namespace forth {
             void chooseRegister();
             void invokeCRegister();
 		private:
+			void semicolonOperation();
             enum class TargetRegister : byte {
                 RegisterA,
                 RegisterTA,
@@ -170,7 +170,6 @@ namespace forth {
              * Printout the contents of the given word!
              */
             void seeWord();
-		private:
 			void terminateExecution();
             void seeWord(const DictionaryEntry* entry);
 			void initializeBaseDictionary();

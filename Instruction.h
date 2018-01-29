@@ -40,8 +40,42 @@ enum class Operation : byte {
     Tan,
     Atan,
     Atan2,
+    Nor,
+    Nand,
+    Move,
+    Swap,
     Count,
 };
+constexpr int getInstructionWidth(Operation count) noexcept {
+    switch (count) {
+        case Operation::Nop:
+        case Operation::TypeValue:
+        case Operation::Multiply:
+        case Operation::Divide:
+        case Operation::Modulo:
+        case Operation::Not:
+        case Operation::Minus:
+        case Operation::Pow:
+        case Operation::Sin:
+        case Operation::Cos:
+        case Operation::Tan:
+        case Operation::Atan:
+        case Operation::Atan2:
+        case Operation::Load:
+        case Operation::Store:
+        case Operation::Nor:
+        case Operation::Nand:
+            return 1;
+        case Operation::Combine:
+        case Operation::PushRegister:
+        case Operation::PopRegister:
+        case Operation::Move:
+        case Operation::Swap:
+            return 2;
+        default:
+            return 0;
+    }
+}
 
 static_assert(static_cast<byte>(-1) >= static_cast<byte>(Operation::Count), "Too many operations defined!");
 

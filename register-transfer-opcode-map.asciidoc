@@ -1,22 +1,28 @@
-.Register to Register Transfer Compacted Instructions
+.Register to Register Transfer Compacted Instructions (An idea)
 |==========================
 | 16+| dest 
 |src   | A   | TA  | B   | TB  | C   | T   | X   | TX  | S   | sp  | srp  | addr  | value | r13 | r14 | r15 
-|A     |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
+|A     |     |     |     |     |     |     |     |     |     |     |      |       | 1     |     |     |     
 |TA    |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
-|B     |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
+|B     |     |     |     |     |     |     |     |     |     |     |      |       | 2     |     |     |     
 |TB    |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
-|C     |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
+|C     |     |     |     |     |     |     |     |     |     |     |      |       | 3     |     |     |     
 |T     |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
 |X     |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
 |TX    |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
 |S     |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
-|sp    |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
+|sp    |     |     |     |     |     |     |     |     |     |     |      |  4    |       |     |     |     
 |srp   |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
-|addr  |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
-|value |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
+|addr  | 5   |     | 6   |     | 7   |     |     |     |     | 8   |      | 0     |       |     |     |     
+|value | 9   |     | 10  |     | 11  | 12  | 13  |     | 14  |     |      |       |       |     |     |     
 |r13   |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
 |r14   |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
 |r15   |     |     |     |     |     |     |     |     |     |     |      |       |       |     |     |     
 |==========================
 
+
+Table entries which have no contents are not supported by the compacted version! You can encode two moves to
+compacted targets in a single move instruction in this form! It goes the first encoded group followed by the
+second one.
+
+The 

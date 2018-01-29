@@ -46,6 +46,18 @@ enum class Operation : byte {
     Swap,
     Count,
 };
+constexpr byte getDestinationRegister(byte field) noexcept { 
+    return field & 0x0F; 
+}
+constexpr byte getSourceRegister(byte field) noexcept { 
+    return (field & 0xF0) >> 4; 
+}
+constexpr Operation getOperation(byte i) noexcept {
+    return static_cast<Operation>(i);
+}
+constexpr int getInstructionWidth(byte i) noexcept {
+    return getInstructionWidth(getOperation(i));
+}
 constexpr int getInstructionWidth(Operation count) noexcept {
     switch (count) {
         case Operation::Nop:

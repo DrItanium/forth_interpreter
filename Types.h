@@ -8,6 +8,7 @@ namespace forth {
     using Integer = int64_t;
     using HalfInteger = int32_t;
     using QuarterInteger = int16_t;
+    using Floating = double;
     using byte = uint8_t;
     static_assert(sizeof(Address) == sizeof(Integer), "Address and integer must be the same size!");
     static_assert(sizeof(Integer) == sizeof(Floating), "Integer and Floating must be the same size!");

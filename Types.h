@@ -13,7 +13,7 @@ namespace forth {
     static_assert(sizeof(Address) == sizeof(Integer), "Address and integer must be the same size!");
     static_assert(sizeof(Integer) == sizeof(Floating), "Integer and Floating must be the same size!");
     static_assert((sizeof(Address) / sizeof(QuarterAddress)) == 4, "Number of quarter addresses in an address is not 4!");
-    static_assert((sizeof(Address) / sizeof(HalfAddress)) == 4, "Number of half addresses in an address is not 2!");
+    static_assert((sizeof(Address) / sizeof(HalfAddress)) == 2, "Number of half addresses in an address is not 2!");
 }
 
 #endif // end TYPES_H__

@@ -31,5 +31,11 @@ namespace forth {
     };
     std::ostream& operator<<(std::ostream& out, const Datum& dt);
 	std::ostream& operator<<(std::ostream& out, const Discriminant& d);
+
+    struct Register {
+        Register() = default;
+        Discriminant _type;
+        Datum _value;
+    };
 } // end namespace forth
 #endif // end DATUM_H__

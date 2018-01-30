@@ -28,7 +28,7 @@ namespace forth {
 			bool numberRoutine(const std::string& word, bool putTypeDataOntoStack = false) noexcept;
 			void typeValue(Discriminant discriminant, const Datum& value);
 			void typeValue(const Datum& value) { typeValue(_registerT, value); }
-			void typeValue() { typeValue(_registerA); }
+			void typeValue() { typeValue(_registerA._value); }
 			void addWord(DictionaryEntry* entry);
 			void addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke = false);
 			void addition(Discriminant type);
@@ -37,10 +37,10 @@ namespace forth {
 			void deactivateCompileMode() { _compiling = false; }
 			void defineWord();
 			void endDefineWord();
-			void setA(const Datum& target) noexcept { _registerA = target; }
-			void setTA(Discriminant target) noexcept { _registerTA = target; }
-			void setTB(Discriminant target) noexcept { _registerTB = target; }
-			void setB(const Datum& target) noexcept { _registerB = target; }
+			void setA(const Datum& target) noexcept { _registerA._value = target; }
+			void setTA(Discriminant target) noexcept { _registerA._type = target; }
+			void setTB(Discriminant target) noexcept { _registerB._type = target; }
+			void setB(const Datum& target) noexcept { _registerB._value = target; }
             void chooseRegister();
             void invokeCRegister();
 		private:
@@ -119,8 +119,7 @@ namespace forth {
 			bool _compiling = false;
 			DictionaryEntry* _compileTarget = nullptr;
 			// internal "registers"
-			Datum _registerA, _registerB, _registerC, _registerS, _registerX;
-			Discriminant _registerT, _registerTA, _registerTB, _registerTX;
+            Register _registerA, _registerB, _registerC, _registerS, _registerX;
             const DictionaryEntry* _popTA = nullptr;
             const DictionaryEntry* _popTB = nullptr;
             const DictionaryEntry* _popTX = nullptr;

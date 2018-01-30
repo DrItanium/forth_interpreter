@@ -4,10 +4,10 @@
 #include "Types.h"
 #include <iostream>
 namespace forth {
-union Instruction {
-    Instruction(Address v) : _value(v) { };
-    Instruction(const Instruction& other) : _value(other._value) { };
-    ~Instruction() { _value = 0; };
+union Molecule {
+    Molecule(Address v) : _value(v) { };
+    Molecule(const Molecule& other) : _value(other._value) { };
+    ~Molecule() { _value = 0; };
     Address _value;
     byte backingStore[sizeof(Address)];
     QuarterAddress quads[sizeof(Address) / sizeof(QuarterAddress)];

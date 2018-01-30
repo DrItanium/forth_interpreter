@@ -50,35 +50,6 @@ constexpr byte getSourceRegister(byte field) noexcept {
 constexpr Operation getOperation(byte i) noexcept {
     return static_cast<Operation>(i);
 }
-constexpr int getInstructionWidth(Operation count) noexcept {
-    switch (count) {
-        case Operation::Nop:
-        case Operation::TypeValue:
-        case Operation::Multiply:
-        case Operation::Divide:
-        case Operation::Modulo:
-        case Operation::Not:
-        case Operation::Minus:
-        case Operation::Pow:
-        case Operation::Load:
-        case Operation::Store:
-        case Operation::Nor:
-        case Operation::Nand:
-            return 1;
-        case Operation::Combine:
-        case Operation::PushRegister:
-        case Operation::PopRegister:
-        case Operation::Move:
-        case Operation::Swap:
-            return 2;
-        default:
-            return 0;
-    }
-}
-constexpr int getInstructionWidth(byte i) noexcept {
-    return getInstructionWidth(getOperation(i));
-}
-
 static_assert(static_cast<byte>(-1) >= static_cast<byte>(Operation::Count), "Too many operations defined!");
 
 } // end namespace forth

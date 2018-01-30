@@ -48,6 +48,12 @@ namespace forth {
             Address getAddress() const noexcept { return _value.address; }
             const DictionaryEntry* getWord() const noexcept { return _value.entry; }
             Molecule getMolecule() const noexcept { return static_cast<Molecule>(_value.address); }
+            void reset() { 
+                _value.address = 0; 
+                _type = static_cast<decltype(_type)>(0); 
+            }
+            void increment() { ++_value.address; }
+            void decrement() { --_value.address; }
 
         private:
             Discriminant _type;

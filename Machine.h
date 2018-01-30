@@ -55,6 +55,8 @@ namespace forth {
                 RegisterS, // register select
                 RegisterX, // misc data
                 RegisterTX, // misc type
+                RegisterIP, // instruction pointer contents
+                RegisterTIP, // instruction pointer type
             };
             static constexpr bool involvesDiscriminantRegister(TargetRegister r) {
                 switch (r) {
@@ -62,6 +64,7 @@ namespace forth {
                     case TargetRegister::RegisterTA:
                     case TargetRegister::RegisterTB:
                     case TargetRegister::RegisterTX:
+                    case TargetRegister::RegisterTIP:
                         return true;
                     default:
                         return false;
@@ -73,7 +76,7 @@ namespace forth {
 			void pushRegister(TargetRegister t);
 			void popRegister(TargetRegister t); 
             void dispatchInstruction();
-			void numericCombine(bool subtractB = false);
+			void numericCombine(const Molecule& m);
 			void multiplyOperation();
 			void equals();
 			void powOperation();
@@ -114,7 +117,7 @@ namespace forth {
 			bool _compiling = false;
 			DictionaryEntry* _compileTarget = nullptr;
 			// internal "registers"
-            Register _registerA, _registerB, _registerC, _registerS, _registerX;
+            Register _registerA, _registerB, _registerC, _registerS, _registerX, _registerIP;
             const DictionaryEntry* _popTA = nullptr;
             const DictionaryEntry* _popTB = nullptr;
             const DictionaryEntry* _popTX = nullptr;

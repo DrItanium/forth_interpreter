@@ -381,7 +381,12 @@ namespace forth {
 				throw Problem("mod", "ILLEGAL DISCRIMINANT!");
 		}
 	}
-	void Machine::numericCombine(bool subtractOp) {
+	void Machine::numericCombine(const Molecule& m) {
+        auto pos = _registerIP.getAddress();
+        if (pos >= sizeof(Address)) {
+            throw Problem("combine", "IP TOO LARGE");
+        }
+        auto subtractOp = ((m.backingStore[pos] & 0x1) != 0);
         auto fn = [this, subtractOp](auto a, auto b) { 
             _registerC.setValue(subtractOp ? (a - b) : (a + b));
         };
@@ -398,6 +403,7 @@ namespace forth {
 			default:
 				throw Problem(subtractOp ? "-" : "+", "ILLEGAL DISCRIMINANT!");
 		}
+        _registerIP.increment();
 	}
 
 	void Machine::andOperation() {
@@ -723,52 +729,56 @@ namespace forth {
 		}
 	}
 	void Machine::dispatchInstruction() {
+        _registerIP.reset();
 		// use the s register as the current instruction
 		// slice out the lowest eight bits
         auto molecule = _registerS.getMolecule();
-        auto op = getOperation(molecule.backingStore[0]);
-
-		switch (op) {
-            case Operation::Nop: break; // nop
-			case Operation::Combine: numericCombine(); break; // add or subtract
-			//case Operation::: multiplyOperation(); break; 
-			//case Operation::: divide(); break;
-			//case Operation::: modulo(); break;
-			//case Operation::: notOperation(); break; 
-			//case Operation::: minusOperation(); break; 
-			//case Operation::: andOperation(); break; 
-			//case Operation::: orOperation(); break; 
-			//case Operation::: greaterThanOperation(); break; // greater than
-			//case Operation::: lessThanOperation(); break;
-			//case Operation::: xorOperation(); break;
-			//case Operation::: shiftOperation(true); break; // shift left
-			//case Operation::: shiftOperation(false); break; // shift right
-			//case Operation::: popRegister(TargetRegister::RegisterA); break;
-			//case Operation::: popRegister(TargetRegister::RegisterB); break;
-			//case Operation::: popRegister(TargetRegister::RegisterC); break;
-			//case Operation::: popRegister(TargetRegister::RegisterS); break;
-			//case Operation::: popRegister(TargetRegister::RegisterX); break;
-			//case Operation::: popRegister(TargetRegister::RegisterT); break;
-			//case Operation::: popRegister(TargetRegister::RegisterTA); break;
-			//case Operation::: popRegister(TargetRegister::RegisterTB); break;
-			//case Operation::: popRegister(TargetRegister::RegisterTX); break;
-			//case Operation::: pushRegister(TargetRegister::RegisterA); break;
-			//case Operation::: pushRegister(TargetRegister::RegisterB); break;
-			//case Operation::: pushRegister(TargetRegister::RegisterC); break;
-			//case Operation::: pushRegister(TargetRegister::RegisterS); break;
-			//case Operation::: pushRegister(TargetRegister::RegisterX); break;
-			//case Operation::: pushRegister(TargetRegister::RegisterT); break;
-			//case Operation::: pushRegister(TargetRegister::RegisterTA); break;
-			//case Operation::: pushRegister(TargetRegister::RegisterTB); break;
-			//case Operation::: pushRegister(TargetRegister::RegisterTX); break;
-			//case Operation::: equals(); break;
-			//case Operation::: typeValue(); break;
-			//case Operation::: load(); break;
-			//case Operation::: store(); break;
-			//case Operation::: powOperation(); break;
-			default:
-					   throw Problem("uc", "Unknown instruction address!");
-		}
+        while (_registerIP.getAddress() < sizeof(Molecule)) {
+            auto pos = _registerIP.getAddress();
+            auto op = getOperation(molecule.backingStore[pos]);
+            _registerIP.increment();
+            switch (op) {
+                case Operation::Nop: break; // nop
+                case Operation::Combine: numericCombine(molecule); break; // add or subtract
+                case Operation::Multiply: multiplyOperation(); break;
+                case Operation::Equals: equals(); break;
+                                         //case Operation::: divide(); break;
+                                         //case Operation::: modulo(); break;
+                                         //case Operation::: notOperation(); break; 
+                                         //case Operation::: minusOperation(); break; 
+                                         //case Operation::: andOperation(); break; 
+                                         //case Operation::: orOperation(); break; 
+                                         //case Operation::: greaterThanOperation(); break; // greater than
+                                         //case Operation::: lessThanOperation(); break;
+                                         //case Operation::: xorOperation(); break;
+                                         //case Operation::: shiftOperation(true); break; // shift left
+                                         //case Operation::: shiftOperation(false); break; // shift right
+                                         //case Operation::: popRegister(TargetRegister::RegisterA); break;
+                                         //case Operation::: popRegister(TargetRegister::RegisterB); break;
+                                         //case Operation::: popRegister(TargetRegister::RegisterC); break;
+                                         //case Operation::: popRegister(TargetRegister::RegisterS); break;
+                                         //case Operation::: popRegister(TargetRegister::RegisterX); break;
+                                         //case Operation::: popRegister(TargetRegister::RegisterT); break;
+                                         //case Operation::: popRegister(TargetRegister::RegisterTA); break;
+                                         //case Operation::: popRegister(TargetRegister::RegisterTB); break;
+                                         //case Operation::: popRegister(TargetRegister::RegisterTX); break;
+                                         //case Operation::: pushRegister(TargetRegister::RegisterA); break;
+                                         //case Operation::: pushRegister(TargetRegister::RegisterB); break;
+                                         //case Operation::: pushRegister(TargetRegister::RegisterC); break;
+                                         //case Operation::: pushRegister(TargetRegister::RegisterS); break;
+                                         //case Operation::: pushRegister(TargetRegister::RegisterX); break;
+                                         //case Operation::: pushRegister(TargetRegister::RegisterT); break;
+                                         //case Operation::: pushRegister(TargetRegister::RegisterTA); break;
+                                         //case Operation::: pushRegister(TargetRegister::RegisterTB); break;
+                                         //case Operation::: pushRegister(TargetRegister::RegisterTX); break;
+                                         //case Operation::: typeValue(); break;
+                                         //case Operation::: load(); break;
+                                         //case Operation::: store(); break;
+                                         //case Operation::: powOperation(); break;
+                default:
+                                         throw Problem("uc", "Unknown instruction address!");
+            }
+        }
 
 	}
 	void Machine::cacheBasicEntries() {
@@ -826,6 +836,10 @@ namespace forth {
 			case Type::RegisterTX:
                 fn(_registerX);
 				break;
+            case Type::RegisterIP:
+            case Type::RegisterTIP:
+                fn(_registerIP);
+                break;
 			default:
 				throw Problem("pop.register", "Unknown register!");
 		}

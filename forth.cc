@@ -780,6 +780,8 @@ namespace forth {
                 case Operation::SetImmediate16_Lower: setImmediate16Lower(molecule); break;
                 case Operation::SetImmediate16_Higher: setImmediate16Higher(molecule); break;
                 case Operation::SetImmediate16_Highest: setImmediate16Highest(molecule); break;
+                case Operation::Move: moveRegister(molecule); break;
+                case Operation::Swap: swapRegisters(molecule); break;
                 default: throw Problem("uc", "Unknown instruction address!");
             }
         }
@@ -1074,6 +1076,21 @@ namespace forth {
                 src.setValue(v0);
             }
         }
+    }
+    void Machine::swapRegisters(const Molecule& m) {
+        auto args = m.getByte(_registerIP.getAddress());
+        auto dest = getDestinationRegister(args);
+        auto src = getDestinationRegister(args);
+        swapRegisters(static_cast<TargetRegister>(src), static_cast<TargetRegister>(dest));
+        _registerIP.increment();
+    }
+
+    void Machine::moveRegister(const Molecule& m) {
+        auto args = m.getByte(_registerIP.getAddress());
+        auto dest = getDestinationRegister(args);
+        auto src = getDestinationRegister(args);
+        moveRegister(static_cast<TargetRegister>(src), static_cast<TargetRegister>(dest));
+        _registerIP.increment();
     }
 } // end namespace forth
 

@@ -117,8 +117,9 @@ namespace forth {
             void cacheBasicEntries();
 			std::string readWord();
             void moveRegister(TargetRegister from, TargetRegister to);
+            void moveRegister(const Molecule& m);
             void swapRegisters(TargetRegister a, TargetRegister b);
-            void parseHex();
+            void swapRegisters(const Molecule& m);
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;

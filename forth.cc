@@ -554,9 +554,7 @@ namespace forth {
 		if (addr > largestAddress) {
 			throw Problem("mload", "BAD ADDRESS!");
 		} else {
-			Datum storage;
-			storage.numValue = _memory[addr];
-			return storage;
+			return Datum (_memory[addr]);
 		}
 	}
 	void Machine::store(Address addr, const Datum& value) {
@@ -869,6 +867,7 @@ namespace forth {
 		pushParameter(tmp);
 	}
     Register::Register(const Register& r) : _type(r._type), _value(r._value) { }
+    Register::Register() : _type(static_cast<Discriminant>(0)), _value(Address(0)) { }
 } // end namespace forth
 
 

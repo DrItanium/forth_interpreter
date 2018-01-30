@@ -8,7 +8,6 @@ namespace forth {
 union Molecule {
     Molecule(Address v) : _value(v) { };
     Molecule(const Molecule& other) : _value(other._value) { };
-    ~Molecule() { _value = 0; };
     Address _value;
     byte backingStore[sizeof(Address)];
     QuarterAddress quads[sizeof(Address) / sizeof(QuarterAddress)];
@@ -51,9 +50,6 @@ constexpr byte getSourceRegister(byte field) noexcept {
 constexpr Operation getOperation(byte i) noexcept {
     return static_cast<Operation>(i);
 }
-constexpr int getInstructionWidth(byte i) noexcept {
-    return getInstructionWidth(getOperation(i));
-}
 constexpr int getInstructionWidth(Operation count) noexcept {
     switch (count) {
         case Operation::Nop:
@@ -78,6 +74,9 @@ constexpr int getInstructionWidth(Operation count) noexcept {
         default:
             return 0;
     }
+}
+constexpr int getInstructionWidth(byte i) noexcept {
+    return getInstructionWidth(getOperation(i));
 }
 
 static_assert(static_cast<byte>(-1) >= static_cast<byte>(Operation::Count), "Too many operations defined!");

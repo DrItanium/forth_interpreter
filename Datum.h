@@ -17,19 +17,18 @@ namespace forth {
     };
     union Datum {
         Datum() = default;
+        ~Datum() = default;
         Datum(Integer x) : numValue(x) { }
         Datum(Address x) : address(x) { }
         Datum(Floating x) : fp(x) { }
         Datum(bool x) : truth(x) { }
         Datum(const DictionaryEntry* x) : entry(x) { }
-        ~Datum() = default;
         Datum(const Datum& other);
         bool truth;
         Integer numValue;
         Address address;
         Floating fp;
         const DictionaryEntry* entry;
-        Molecule molecule;
         byte backingStore[sizeof(Integer)];
     };
     std::ostream& operator<<(std::ostream& out, const Datum& dt);
@@ -37,7 +36,7 @@ namespace forth {
 
     class Register {
         public:
-            Register() = default;
+            Register();
             Register(const Register& other);
             void setType(Discriminant type) noexcept { _type = type; }
             Discriminant getType() const noexcept { return _type; }
@@ -48,6 +47,7 @@ namespace forth {
             Integer getInt() const noexcept { return _value.numValue; }
             Address getAddress() const noexcept { return _value.address; }
             const DictionaryEntry* getWord() const noexcept { return _value.entry; }
+            Molecule getMolecule() const noexcept { return static_cast<Molecule>(_value.address); }
 
         private:
             Discriminant _type;

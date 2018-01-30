@@ -1,3 +1,3 @@
 CXX = c++
-LDFLAGS += -std=c++14 
-CXXFLAGS += -std=c++14 -g3
+LDFLAGS += -std=c++17 
+CXXFLAGS += -std=c++17 -g3

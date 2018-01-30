@@ -2,6 +2,7 @@
 #ifndef INSTRUCTION_H__
 #define INSTRUCTION_H__
 #include "Types.h"
+#include "Problem.h"
 #include <iostream>
 #include <list>
 namespace forth {
@@ -12,6 +13,12 @@ union Molecule {
     byte backingStore[sizeof(Address)];
     QuarterAddress quads[sizeof(Address) / sizeof(QuarterAddress)];
     HalfAddress halves[sizeof(Address) / sizeof(HalfAddress)];
+
+    byte getByte(Address index) const {
+        if (index >= sizeof(Address)) {
+            throw Problem("getByte", "INSTRUCTION MISALIGNED");
+        }
+    }
 };
 
 enum class Operation : byte {

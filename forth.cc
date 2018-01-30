@@ -867,6 +867,26 @@ namespace forth {
 	}
     Register::Register(const Register& r) : _type(r._type), _value(r._value) { }
     Register::Register() : _type(static_cast<Discriminant>(0)), _value(Address(0)) { }
+    void Machine::popRegister(const Molecule& m) {
+        try {
+            // read the current field
+            // get the destination register to use as a target
+            popRegister(static_cast<Machine::TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress()))));
+            _registerIP.increment();
+        } catch (Problem& p) {
+            throw Problem("pop.register", p.getMessage());
+        }
+    }
+    void Machine::pushRegister(const Molecule& m) {
+        try {
+            // read the current field
+            // get the destination register to use as a target
+            pushRegister(static_cast<Machine::TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress()))));
+            _registerIP.increment();
+        } catch (Problem& p) {
+            throw Problem("push.register", p.getMessage());
+        }
+    }
 } // end namespace forth
 
 

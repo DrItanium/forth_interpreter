@@ -2,6 +2,7 @@
 #ifndef DATUM_H__
 #define DATUM_H__
 #include "Types.h"
+#include "Instruction.h"
 #include <iostream>
 namespace forth {
     class DictionaryEntry;
@@ -11,6 +12,7 @@ namespace forth {
         FloatingPoint,
         Boolean,
         Word,
+        Molecule,
         Count,
     };
     union Datum {
@@ -27,6 +29,7 @@ namespace forth {
         Address address;
         Floating fp;
         const DictionaryEntry* entry;
+        Molecule molecule;
         byte backingStore[sizeof(Integer)];
     };
     std::ostream& operator<<(std::ostream& out, const Datum& dt);
@@ -45,6 +48,7 @@ namespace forth {
             Integer getInt() const noexcept { return _value.numValue; }
             Address getAddress() const noexcept { return _value.address; }
             const DictionaryEntry* getWord() const noexcept { return _value.entry; }
+
         private:
             Discriminant _type;
             Datum _value;

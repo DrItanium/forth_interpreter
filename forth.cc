@@ -733,7 +733,9 @@ namespace forth {
             auto op = getOperation(molecule.getByte(pos));
             _registerIP.increment();
             switch (op) {
-                case Operation::Nop: break; // nop
+                case Operation::Nop: 
+                    moveRegister(TargetRegister::RegisterA, TargetRegister::RegisterA); 
+                    break;
                 case Operation::Add: numericCombine(); break; // add or subtract
                 case Operation::Subtract: numericCombine(true); break; // add or subtract
                 case Operation::ShiftRight: shiftOperation(); break; // shift right 
@@ -1012,6 +1014,46 @@ namespace forth {
             _registerIP.increment();
         } catch (Problem& p) {
             throw Problem("set-immediate-highest-16", p.getMessage());
+        }
+    }
+    void Machine::moveRegister(TargetRegister from, TargetRegister to) {
+        if (from == to) {
+            // do nothing :)
+            return;
+        }
+        Register& src = getRegister(from);
+        Register& dest = getRegister(to);
+        if (involvesDiscriminantRegister(to)) {
+            dest.setType(involvesDiscriminantRegister(from) ? src.getType() : static_cast<Discriminant>(src.getAddress()));
+        } else {
+            dest.setValue(involvesDiscriminantRegister(from) ? static_cast<Address>(src.getType()) : src.getValue());
+        }
+    }
+    void Machine::swapRegisters(TargetRegister from, TargetRegister to) {
+        if (from == to) {
+            // do nothing
+            return;
+        }
+        Register& src = getRegister(from);
+        Register& dest = getRegister(to);
+        if (involvesDiscriminantRegister(to)) {
+            auto v0 = dest.getType();
+            if (involvesDiscriminantRegister(from)) {
+                dest.setType(src.getType());
+                src.setType(v0);
+            } else {
+                dest.setType(static_cast<Discriminant>(src.getAddress()));
+                src.setValue(static_cast<Address>(v0));
+            }
+        } else {
+            Datum v0(dest.getValue());
+            if (involvesDiscriminantRegister(from)) {
+                dest.setValue(static_cast<Address>(src.getType()));
+                src.setType(static_cast<Discriminant>(v0.address));
+            } else {
+                dest.setValue(src.getValue());
+                src.setValue(v0);
+            }
         }
     }
 } // end namespace forth

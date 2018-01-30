@@ -53,8 +53,6 @@ enum class Operation : byte {
     SetImmediate16_Lower,
     SetImmediate16_Higher,
     SetImmediate16_Highest,
-    Nor,
-    Nand,
     Move,
     Swap,
     Count,

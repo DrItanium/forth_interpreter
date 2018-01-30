@@ -103,10 +103,10 @@ namespace forth {
             void ifCondition();
             void elseCondition();
             void thenStatement();
-            void loadImmediate16Lowest(const Molecule& m);
-            void loadImmediate16Lower(const Molecule& m);
-            void loadImmediate16Higher(const Molecule& m);
-            void loadImmediate16Highest(const Molecule& m);
+            void setImmediate16Lowest(const Molecule& m);
+            void setImmediate16Lower(const Molecule& m);
+            void setImmediate16Higher(const Molecule& m);
+            void setImmediate16Highest(const Molecule& m);
             /**
              * Printout the contents of the given word!
              */

@@ -11,13 +11,18 @@ union Molecule {
     Molecule(const Molecule& other) : _value(other._value) { };
     Address _value;
     byte backingStore[sizeof(Address)];
-    QuarterAddress quads[sizeof(Address) / sizeof(QuarterAddress)];
-    HalfAddress halves[sizeof(Address) / sizeof(HalfAddress)];
 
     byte getByte(Address index) const {
         if (index >= sizeof(Address)) {
             throw Problem("getByte", "INSTRUCTION MISALIGNED");
+        } else {
+            return backingStore[index];
         }
+    }
+    QuarterAddress getQuarterAddress(Address index) const {
+        auto lower = static_cast<QuarterAddress>(getByte(index));
+        auto upper = static_cast<QuarterAddress>(getByte(index + 1));
+        return (upper << 8) | lower;
     }
 };
 
@@ -44,10 +49,10 @@ enum class Operation : byte {
     Load,
     Store,
     Pow,
-    LoadImmediate16_Lowest,
-    LoadImmediate16_Lower,
-    LoadImmediate16_Higher,
-    LoadImmediate16_Highest,
+    SetImmediate16_Lowest,
+    SetImmediate16_Lower,
+    SetImmediate16_Higher,
+    SetImmediate16_Highest,
     Nor,
     Nand,
     Move,

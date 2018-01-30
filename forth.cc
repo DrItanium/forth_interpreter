@@ -730,8 +730,9 @@ namespace forth {
         auto molecule = _registerS.getMolecule();
         while (_registerIP.getAddress() < sizeof(Molecule)) {
             auto pos = _registerIP.getAddress();
+            auto op = getOperation(molecule.getByte(pos));
             _registerIP.increment();
-            switch (auto op = getOperation(molecule.backingStore[pos]) ; op) {
+            switch (op) {
                 case Operation::Nop: break; // nop
                 case Operation::Add: numericCombine(); break; // add or subtract
                 case Operation::Subtract: numericCombine(true); break; // add or subtract
@@ -754,14 +755,13 @@ namespace forth {
                 case Operation::PushRegister: pushRegister(molecule); break;
                 case Operation::Load: load(molecule); break;
                 case Operation::Store: store(molecule); break;
-                case Operation::LoadImmediate16_Lowest: loadImmediate16Lowest(molecule); break;
-                case Operation::LoadImmediate16_Lower: loadImmediate16Lower(molecule); break;
-                case Operation::LoadImmediate16_Higher: loadImmediate16Higher(molecule); break;
-                case Operation::LoadImmediate16_Highest: loadImmediate16Highest(molecule); break;
+                case Operation::SetImmediate16_Lowest: setImmediate16Lowest(molecule); break;
+                case Operation::SetImmediate16_Lower: setImmediate16Lower(molecule); break;
+                case Operation::SetImmediate16_Higher: setImmediate16Higher(molecule); break;
+                case Operation::SetImmediate16_Highest: setImmediate16Highest(molecule); break;
                 default: throw Problem("uc", "Unknown instruction address!");
             }
         }
-
 	}
 	void Machine::cacheBasicEntries() {
 		if (!_cachedBasicEntries) {
@@ -970,6 +970,48 @@ namespace forth {
             _registerIP.increment();
         } catch (Problem& p) {
             throw Problem("load", p.getMessage());
+        }
+    }
+    template<typename T, typename R, T mask, T shift = 0>
+    constexpr T encodeBits(T value, R newValue) noexcept {
+        return (value & ~mask) | ((static_cast<T>(newValue) << shift) & mask);
+    }
+    void Machine::setImmediate16Lowest(const Molecule& m) {
+        try {
+            _registerX.setValue(encodeBits<Address, QuarterAddress, 0x000000000000FFFF>(_registerX.getAddress(), m.getQuarterAddress(_registerIP.getAddress())));
+            _registerIP.increment();
+            _registerIP.increment();
+        } catch (Problem& p) {
+            throw Problem("set-immediate-lowest-16", p.getMessage());
+        }
+    }
+    void Machine::setImmediate16Lower(const Molecule& m) {
+        try {
+            _registerX.setValue(encodeBits<Address, QuarterAddress, 0x00000000FFFF0000, 16>(_registerX.getAddress(), m.getQuarterAddress(_registerIP.getAddress())));
+            _registerIP.increment();
+            _registerIP.increment();
+        } catch (Problem& p) {
+            throw Problem("set-immediate-lower-16", p.getMessage());
+        }
+    }
+
+    void Machine::setImmediate16Higher(const Molecule& m) {
+        try {
+            _registerX.setValue(encodeBits<Address, QuarterAddress, 0x0000FFFF00000000, 32>(_registerX.getAddress(), m.getQuarterAddress(_registerIP.getAddress())));
+            _registerIP.increment();
+            _registerIP.increment();
+        } catch (Problem& p) {
+            throw Problem("set-immediate-higher-16", p.getMessage());
+        }
+    }
+
+    void Machine::setImmediate16Highest(const Molecule& m) {
+        try {
+            _registerX.setValue(encodeBits<Address, QuarterAddress, 0xFFFF000000000000, 48>(_registerX.getAddress(), m.getQuarterAddress(_registerIP.getAddress())));
+            _registerIP.increment();
+            _registerIP.increment();
+        } catch (Problem& p) {
+            throw Problem("set-immediate-highest-16", p.getMessage());
         }
     }
 } // end namespace forth

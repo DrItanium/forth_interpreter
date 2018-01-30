@@ -104,19 +104,13 @@ namespace forth {
 		return nullptr;
 	}
 	void Machine::chooseRegister() {
-		if (_registerC.truth) {
-			_registerC._type = _registerA.getType();
-			_registerC._value = _registerA;
-		} else {
-			_registerC._type = _registerB.getType();
-			_registerC._value = _registerB;
-		}
+        _registerC = _registerC.getTruth() ? _registerA : _registerB;
 	}
 	void Machine::invokeCRegister() {
 		using Type = decltype(_registerC.getType());
 		switch (_registerC.getType()) {
 			case Type::Word:
-				_registerC.entry->operator()(this);
+                _registerC.getWord()->operator()(this);
 				break;
 			case Type::Number:
 			case Type::FloatingPoint:
@@ -206,9 +200,9 @@ namespace forth {
 		auto fn = [this](const std::string& title, auto value) noexcept {
 			_output << title << ": " << value << std::endl;
 		};
-		fn("A", _registerA);
-		fn("B", _registerB);
-		fn("C", _registerC);
+		fn("A", _registerA.getValue());
+		fn("B", _registerB.getValue());
+		fn("C", _registerC.getValue());
 		fn("T", _registerC.getType());
 		fn("S", _registerS.getValue());
 		fn("X", _registerX.getValue());
@@ -258,79 +252,89 @@ namespace forth {
 	}
 	void Machine::notOperation() {
 		// invert register a
+        auto fn = [this](auto a) {
+            _registerC.setValue(~a);
+        };
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-				_registerC._value.numValue = ~_registerA.numValue;
+                fn(_registerA.getInt());
 				break;
 			case Type::MemoryAddress:
-				_registerC._value.address = ~_registerA._value.address;
+                fn(_registerA.getAddress());
 				break;
 			case Type::Boolean:
-				_registerC.truth = !_registerA.truth;
+                _registerC.setValue(!_registerA.getTruth());
 				break;
 			default:
 				throw Problem("not", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::minusOperation() {
+        auto fn = [this](auto a) { _registerC.setValue(-a); };
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-				_registerC._value.numValue = -_registerA.numValue;
+                fn(_registerA.getInt());
 				break;
 			case Type::FloatingPoint:
-				_registerC.fp = -_registerA._value.fp;
+                fn(_registerA.getFP());
 				break;
 			default:
 				throw Problem("minus", "ILLEGAL DISCRIMINANT!");
 		}
 	}
+    
 	void Machine::multiplyOperation() {
 		using Type = decltype(_registerC.getType());
+        auto fn = [this](auto a, auto b) { _registerC.setValue(a * b); };
 		switch(_registerC.getType()) {
 			case Type::Number:
-				_registerC._value.numValue = _registerA.numValue * _registerB.numValue;
+                fn(_registerA.getInt(), _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-				_registerC._value.address = _registerA._value.address * _registerB._value.address;
+                fn(_registerA.getAddress(), _registerB.getAddress());
 				break;
 			case Type::FloatingPoint:
-				_registerC.fp = _registerA._value.fp * _registerB.fp;
+                fn(_registerA.getFP(), _registerB.getFP());
 				break;
 			default:
 				throw Problem("*", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::equals() {
+        auto fn = [this](auto a, auto b) { _registerC.setValue(a == b); };
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-				_registerC.truth = _registerA.numValue == _registerB.numValue;
+                fn(_registerA.getInt(), _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-				_registerC.truth = _registerA._value.address == _registerB._value.address;
+                fn(_registerA.getAddress(), _registerB.getAddress());
 				break;
 			case Type::FloatingPoint:
-				_registerC.truth = _registerA._value.fp == _registerB.fp;
+                fn(_registerA.getFP(), _registerB.getFP());
 				break;
 			case Type::Boolean:
-				_registerC.truth = _registerA.truth == _registerB.truth;
+                fn(_registerA.getTruth(), _registerB.getTruth());
 			default:
 				throw Problem("==", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::powOperation() {
+        auto fn = [this](auto a, auto b) {
+            _registerC.setValue(static_cast<decltype(a)>(std::pow(a, b)));
+        };
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-				_registerC._value = Integer(std::pow(_registerA.numValue, _registerB.numValue));
+                fn(_registerA.getInt(), _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-				_registerC._value = Address(std::pow(_registerA._value.address, _registerB._value.address));
+                fn(_registerA.getAddress(), _registerB.getAddress());
 				break;
 			case Type::FloatingPoint:
-				_registerC._value = Floating(std::pow(_registerA._value.fp, _registerB.fp));
+                fn(_registerA.getFP(), _registerB.getFP());
 				break;
 			default:
 				throw Problem("**", "ILLEGAL DISCRIMINANT!");

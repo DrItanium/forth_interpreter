@@ -35,6 +35,7 @@ namespace forth {
     class Register {
         public:
             Register() = default;
+            Register(const Register& other);
             void setType(Discriminant type) noexcept { _type = type; }
             Discriminant getType() const noexcept { return _type; }
             const Datum& getValue() const noexcept { return _value; }

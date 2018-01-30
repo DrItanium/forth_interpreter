@@ -37,10 +37,10 @@ namespace forth {
 			void deactivateCompileMode() { _compiling = false; }
 			void defineWord();
 			void endDefineWord();
-			void setA(const Datum& target) noexcept { _registerA._value = target; }
-			void setTA(Discriminant target) noexcept { _registerA._type = target; }
-			void setTB(Discriminant target) noexcept { _registerB._type = target; }
-			void setB(const Datum& target) noexcept { _registerB._value = target; }
+			void setA(const Datum& target) noexcept { _registerA.setValue(target); }
+			void setTA(Discriminant target) noexcept { _registerA.setType(target); }
+			void setTB(Discriminant target) noexcept { _registerB.setType(target); }
+			void setB(const Datum& target) noexcept { _registerB.setValue(target); }
             void chooseRegister();
             void invokeCRegister();
 		private:

@@ -566,6 +566,9 @@ namespace forth {
 		}
 	}
 	bool Machine::numberRoutine(const std::string& word, bool putTypeDataOntoStack) noexcept {
+        if (word.empty()) { 
+            return false; 
+        }
 		// floating point
 		// integers
 		// first do some inspection first
@@ -592,10 +595,18 @@ namespace forth {
 			return true;
 		}
 		std::istringstream parseAttempt(word);
+        //if (word.find('#') != std::string::npos) {
+        //    Address tmpAddress;
+        //    parseAttempt >> std::hex >> tmpAddress;
+        //    if (!parseAttempt.fail() && parseAttempt.eof()) {
+
+        //    }
+        //    return false;
+        //}
 		if (word.find('u') != std::string::npos) {
 			Address tmpAddress;
 			parseAttempt >> tmpAddress;
-			if (!parseAttempt.fail() && parseAttempt.eof()) {
+			if (!parseAttempt.fail()) {
 				if (_compiling) {
 					_compileTarget->addSpaceEntry(tmpAddress);
 					if (putTypeDataOntoStack) {

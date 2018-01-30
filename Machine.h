@@ -118,6 +118,7 @@ namespace forth {
 			std::string readWord();
             void moveRegister(TargetRegister from, TargetRegister to);
             void swapRegisters(TargetRegister a, TargetRegister b);
+            void parseHex();
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;

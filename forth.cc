@@ -338,16 +338,23 @@ namespace forth {
 	}
 
 	void Machine::divide() {
+        auto fn = [this](auto a, auto b) {
+            if (b == 0) {
+                throw Problem("/", "DIVIDE BY ZERO!");
+            } else {
+                _registerC.setValue(a / b);
+            }
+        };
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-				_registerC._value = _registerA.numValue / _registerB.numValue;
+                fn(_registerA.getInt(), _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-				_registerC._value = _registerA._value.address / _registerB._value.address;
+                fn(_registerA.getAddress(), _registerB.getAddress());
 				break;
 			case Type::FloatingPoint:
-				_registerC._value = _registerA._value.fp / _registerB.fp;
+                _registerC.setValue(_registerA.getFP() / _registerB.getFP());
 				break;
 			default:
 				throw Problem("/", "ILLEGAL DISCRIMINANT!");
@@ -355,28 +362,34 @@ namespace forth {
 	}
 
 	void Machine::modulo() {
+        auto fn = [this](auto a, auto b) {
+            _registerC.setValue(a % b);
+        };
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-				_registerC._value = _registerA.numValue % _registerB.numValue;
+                fn(_registerA.getInt(), _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-				_registerC._value = _registerA._value.address % _registerB._value.address;
+                fn(_registerA.getAddress(), _registerB.getAddress());
 				break;
 			default:
 				throw Problem("mod", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::numericCombine(bool subtractOp) {
+        auto fn = [this, subtractOp](auto a, auto b) { 
+            _registerC.setValue(subtractOp ? (a - b) : (a + b));
+        };
 		switch(_registerC.getType()) {
 			case Discriminant::Number:
-				_registerC._value = subtractOp ? (_registerA.numValue - _registerB.numValue) : _registerA.numValue + _registerB.numValue;
+                fn(_registerA.getInt(), _registerB.getInt());
 				break;
 			case Discriminant::MemoryAddress:
-				_registerC._value = subtractOp ? (_registerA._value.address - _registerB._value.address) : _registerA._value.address + _registerB._value.address;
+                fn(_registerA.getAddress(), _registerB.getAddress());
 				break;
 			case Discriminant::FloatingPoint:
-				_registerC._value = subtractOp ? (_registerA._value.fp - _registerB.fp) : _registerA._value.fp + _registerB.fp;
+                fn(_registerA.getFP(), _registerB.getFP());
 				break;
 			default:
 				throw Problem(subtractOp ? "-" : "+", "ILLEGAL DISCRIMINANT!");
@@ -387,13 +400,13 @@ namespace forth {
 		using Type = decltype(_registerC.getType());
 		switch (_registerC.getType()) {
 			case Type::Number:
-				_registerC._value = _registerA.numValue & _registerB.numValue;
+                _registerC.setValue(_registerA.getInt() & _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-				_registerC._value = _registerA._value.address & _registerB.numValue;
+                _registerC.setValue(_registerA.getAddress() & _registerB.getAddress());
 				break;
 			case Type::Boolean:
-				_registerC._value = _registerA.truth && _registerB.truth;
+                _registerC.setValue(_registerA.getTruth() && _registerB.getTruth());
 				break;
 			default:
 				throw Problem("and", "ILLEGAL DISCRIMINANT!");
@@ -401,7 +414,7 @@ namespace forth {
 	}
 
 	void Machine::orOperation() {
-		using Type = decltype(Discriminant);
+		using Type = forth::Discriminant;
 		switch (_registerC.getType()) {
 			case Type::Number:
                 _registerC.setValue(_registerA.getInt() | _registerB.getInt());
@@ -419,32 +432,34 @@ namespace forth {
 
 	void Machine::greaterThanOperation() {
 		using Type = decltype(_registerC.getType());
+        auto result = false;
 		switch (_registerC.getType()) {
 			case Type::Number:
-				_registerC._value = _registerA.numValue > _registerB.numValue;
+                result = _registerA.getInt() > _registerB.getInt();
 				break;
 			case Type::MemoryAddress:
-				_registerC._value = _registerA._value.address > _registerB._value.address;
+                result = _registerA.getAddress() > _registerB.getAddress();
 				break;
 			case Type::FloatingPoint:
-				_registerC._value = _registerA._value.fp > _registerB.fp;
+                result = _registerA.getFP() > _registerB.getFP();
 				break;
 			default:
 				throw Problem(">", "ILLEGAL DISCRIMINANT!");
 		}
+        _registerC.setValue(result);
 	}
 
 	void Machine::lessThanOperation() {
 		using Type = decltype(_registerC.getType());
 		switch (_registerC.getType()) {
 			case Type::Number:
-				_registerC._value = _registerA._value.numValue < _registerB._value.numValue;
+                _registerC.setValue(_registerA.getInt() < _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-				_registerC._value = _registerA._value.address < _registerB._value.address;
+                _registerC.setValue(_registerA.getAddress() < _registerB.getAddress());
 				break;
 			case Type::FloatingPoint:
-				_registerC._value = _registerA._value.fp < _registerB._value.fp;
+                _registerC.setValue(_registerA.getFP() < _registerB.getFP());
 				break;
 			default:
 				throw Problem("<", "ILLEGAL DISCRIMINANT!");
@@ -455,13 +470,13 @@ namespace forth {
 		using Type = decltype(_registerC.getType());
 		switch (_registerC.getType()) {
 			case Type::Number:
-				_registerC._value = _registerA._value.numValue ^ _registerB._value.numValue;
+                _registerC.setValue(_registerA.getInt() ^ _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-				_registerC._value = _registerA._value.address ^ _registerB._value.address;
+                _registerC.setValue(_registerA.getAddress() ^ _registerB.getAddress());
 				break;
 			case Type::Boolean:
-				_registerC._value.truth = _registerA._value.truth ^ _registerB._value.truth;
+                _registerC.setValue(bool(_registerA.getTruth() ^ _registerB.getTruth()));
 				break;
 			default:
 				throw Problem("xor", "ILLEGAL DISCRIMINANT!");

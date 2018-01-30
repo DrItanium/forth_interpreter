@@ -725,47 +725,47 @@ namespace forth {
 	void Machine::dispatchInstruction() {
 		// use the s register as the current instruction
 		// slice out the lowest eight bits
-		auto op = static_cast<byte>(_registerS.getAddress() & 0x00000000000000FF);
+        auto molecule = _registerS.getMolecule();
+        auto op = getOperation(molecule.backingStore[0]);
 
 		switch (op) {
-			case 0x00: break; // nop
-			case 0x01: numericCombine(false); break; // add
-			case 0x02: numericCombine(true); break;  // subtract
-			case 0x03: multiplyOperation(); break; 
-			case 0x04: divide(); break;
-			case 0x05: modulo(); break;
-			case 0x06: notOperation(); break; 
-			case 0x07: minusOperation(); break; 
-			case 0x08: andOperation(); break; 
-			case 0x09: orOperation(); break; 
-			case 0x0A: greaterThanOperation(); break; // greater than
-			case 0x0B: lessThanOperation(); break;
-			case 0x0C: xorOperation(); break;
-			case 0x0D: shiftOperation(true); break; // shift left
-			case 0x0E: shiftOperation(false); break; // shift right
-			case 0x0F: popRegister(TargetRegister::RegisterA); break;
-			case 0x10: popRegister(TargetRegister::RegisterB); break;
-			case 0x11: popRegister(TargetRegister::RegisterC); break;
-			case 0x12: popRegister(TargetRegister::RegisterS); break;
-			case 0x13: popRegister(TargetRegister::RegisterX); break;
-			case 0x14: popRegister(TargetRegister::RegisterT); break;
-			case 0x15: popRegister(TargetRegister::RegisterTA); break;
-			case 0x16: popRegister(TargetRegister::RegisterTB); break;
-			case 0x17: popRegister(TargetRegister::RegisterTX); break;
-			case 0x18: pushRegister(TargetRegister::RegisterA); break;
-			case 0x19: pushRegister(TargetRegister::RegisterB); break;
-			case 0x1A: pushRegister(TargetRegister::RegisterC); break;
-			case 0x1B: pushRegister(TargetRegister::RegisterS); break;
-			case 0x1C: pushRegister(TargetRegister::RegisterX); break;
-			case 0x1D: pushRegister(TargetRegister::RegisterT); break;
-			case 0x1E: pushRegister(TargetRegister::RegisterTA); break;
-			case 0x1F: pushRegister(TargetRegister::RegisterTB); break;
-			case 0x20: pushRegister(TargetRegister::RegisterTX); break;
-			case 0x21: equals(); break;
-			case 0x22: typeValue(); break;
-			case 0x23: load(); break;
-			case 0x24: store(); break;
-			case 0x25: powOperation(); break;
+            case Operation::Nop: break; // nop
+			case Operation::Combine: numericCombine(); break; // add or subtract
+			//case Operation::: multiplyOperation(); break; 
+			//case Operation::: divide(); break;
+			//case Operation::: modulo(); break;
+			//case Operation::: notOperation(); break; 
+			//case Operation::: minusOperation(); break; 
+			//case Operation::: andOperation(); break; 
+			//case Operation::: orOperation(); break; 
+			//case Operation::: greaterThanOperation(); break; // greater than
+			//case Operation::: lessThanOperation(); break;
+			//case Operation::: xorOperation(); break;
+			//case Operation::: shiftOperation(true); break; // shift left
+			//case Operation::: shiftOperation(false); break; // shift right
+			//case Operation::: popRegister(TargetRegister::RegisterA); break;
+			//case Operation::: popRegister(TargetRegister::RegisterB); break;
+			//case Operation::: popRegister(TargetRegister::RegisterC); break;
+			//case Operation::: popRegister(TargetRegister::RegisterS); break;
+			//case Operation::: popRegister(TargetRegister::RegisterX); break;
+			//case Operation::: popRegister(TargetRegister::RegisterT); break;
+			//case Operation::: popRegister(TargetRegister::RegisterTA); break;
+			//case Operation::: popRegister(TargetRegister::RegisterTB); break;
+			//case Operation::: popRegister(TargetRegister::RegisterTX); break;
+			//case Operation::: pushRegister(TargetRegister::RegisterA); break;
+			//case Operation::: pushRegister(TargetRegister::RegisterB); break;
+			//case Operation::: pushRegister(TargetRegister::RegisterC); break;
+			//case Operation::: pushRegister(TargetRegister::RegisterS); break;
+			//case Operation::: pushRegister(TargetRegister::RegisterX); break;
+			//case Operation::: pushRegister(TargetRegister::RegisterT); break;
+			//case Operation::: pushRegister(TargetRegister::RegisterTA); break;
+			//case Operation::: pushRegister(TargetRegister::RegisterTB); break;
+			//case Operation::: pushRegister(TargetRegister::RegisterTX); break;
+			//case Operation::: equals(); break;
+			//case Operation::: typeValue(); break;
+			//case Operation::: load(); break;
+			//case Operation::: store(); break;
+			//case Operation::: powOperation(); break;
 			default:
 					   throw Problem("uc", "Unknown instruction address!");
 		}

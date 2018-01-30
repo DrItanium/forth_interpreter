@@ -1,7 +1,4 @@
 : uc pop.s uc ;
-: bye quit ;
-
-
 : OPERATION_NOP 0 ;
 : OPERATION_ADD 1 ;
 : OPERATION_SUB 2 ;
@@ -253,5 +250,6 @@ cache-basic-entries
 : minus.c c-to-a minus ;
 : minusf.c c-to-a minusf ;
 : abs dup 0 < if minus.c then ;
+: bye quit ;
 
 clear-registers

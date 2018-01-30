@@ -754,8 +754,11 @@ namespace forth {
                 case Operation::PushRegister: pushRegister(molecule); break;
                 case Operation::Load: load(molecule); break;
                 case Operation::Store: store(molecule); break;
-                default:
-                                       throw Problem("uc", "Unknown instruction address!");
+                case Operation::LoadImmediate16_Lowest: loadImmediate16Lowest(molecule); break;
+                case Operation::LoadImmediate16_Lower: loadImmediate16Lower(molecule); break;
+                case Operation::LoadImmediate16_Higher: loadImmediate16Higher(molecule); break;
+                case Operation::LoadImmediate16_Highest: loadImmediate16Highest(molecule); break;
+                default: throw Problem("uc", "Unknown instruction address!");
             }
         }
 

@@ -114,7 +114,7 @@ cache-basic-entries
 : zero.t t.signed ;
 : zero.tx tx.signed ;
 
-: clear-registers zero.t zero.a zero.b zero.c zero.s zero.x zero.ta zero.tb zero.tx ;
+: clear-registers zero.t zero.a zero.b zero.c zero.x zero.ta zero.tb zero.tx zero.s ;
 
 : load-ab pop.a pop.b ;
 : load-ba pop.b pop.a ;

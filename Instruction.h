@@ -3,6 +3,7 @@
 #define INSTRUCTION_H__
 #include "Types.h"
 #include <iostream>
+#include <list>
 namespace forth {
 union Molecule {
     Molecule(Address v) : _value(v) { };
@@ -13,6 +14,25 @@ union Molecule {
     QuarterAddress quads[sizeof(Address) / sizeof(QuarterAddress)];
     HalfAddress halves[sizeof(Address) / sizeof(HalfAddress)];
 };
+
+class MoleculeWalker {
+    public:
+        MoleculeWalker(Molecule& backingData);
+        ~MoleculeWalker();
+        void reset();
+        int getCurrentPosition() const noexcept { return _index; }
+        byte& operator[](int x);
+        MoleculeWalker& operator++() {
+            ++_index;
+            return *this;
+        }
+        byte currentByte() const;
+        int end() const noexcept { return sizeof(Address); }
+    private:
+        Molecule& _backingData;
+        int _index;
+};
+
 
 enum class Operation : byte {
     Nop,
@@ -90,6 +110,23 @@ constexpr int getInstructionWidth(Operation count) noexcept {
 }
 
 static_assert(static_cast<byte>(-1) >= static_cast<byte>(Operation::Count), "Too many operations defined!");
+
+class Instruction {
+    public:
+        static bool decodeMolecule(Molecule m, std::list<Instruction> container) noexcept;
+    public: 
+        Instruction(Operation op, byte field0 = 0, byte field1 = 0);
+        ~Instruction();
+        Operation getOperation() const noexcept { return _op; }
+        byte getField0() const noexcept { return _field0; }
+        byte getField1() const noexcept { return _field1; }
+        byte getDestinationRegister() const noexcept { return getDestinationRegister(_field0); }
+        byte getSourceRegister() const noexcept { return getSourceRegister(_field1); }
+    private:
+        Operation _op;
+        byte _field0;
+        byte _field1;
+};
 
 } // end namespace forth
 #endif // end INSTRUCTION_H__

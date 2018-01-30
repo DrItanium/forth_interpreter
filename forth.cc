@@ -381,14 +381,9 @@ namespace forth {
 				throw Problem("mod", "ILLEGAL DISCRIMINANT!");
 		}
 	}
-	void Machine::numericCombine(const Molecule& m) {
-        auto pos = _registerIP.getAddress();
-        if (pos >= sizeof(Address)) {
-            throw Problem("combine", "IP TOO LARGE");
-        }
-        auto subtractOp = ((m.backingStore[pos] & 0x1) != 0);
-        auto fn = [this, subtractOp](auto a, auto b) { 
-            _registerC.setValue(subtractOp ? (a - b) : (a + b));
+	void Machine::numericCombine(bool subtract) {
+        auto fn = [this, subtract](auto a, auto b) { 
+            _registerC.setValue(subtract ? (a - b) : (a + b));
         };
 		switch(_registerC.getType()) {
 			case Discriminant::Number:
@@ -401,7 +396,7 @@ namespace forth {
                 fn(_registerA.getFP(), _registerB.getFP());
 				break;
 			default:
-				throw Problem(subtractOp ? "-" : "+", "ILLEGAL DISCRIMINANT!");
+				throw Problem(subtract ? "-" : "+", "ILLEGAL DISCRIMINANT!");
 		}
         _registerIP.increment();
 	}
@@ -739,20 +734,22 @@ namespace forth {
             _registerIP.increment();
             switch (op) {
                 case Operation::Nop: break; // nop
-                case Operation::Combine: numericCombine(molecule); break; // add or subtract
+                case Operation::Add: numericCombine(); break; // add or subtract
+                case Operation::Subtract: numericCombine(true); break; // add or subtract
+                case Operation::ShiftRight: shiftOperation(); break; // shift right 
+                case Operation::ShiftLeft: shiftOperation(true); break; // shift left
                 case Operation::Multiply: multiplyOperation(); break;
                 case Operation::Equals: equals(); break;
-                                         //case Operation::: divide(); break;
-                                         //case Operation::: modulo(); break;
-                                         //case Operation::: notOperation(); break; 
-                                         //case Operation::: minusOperation(); break; 
-                                         //case Operation::: andOperation(); break; 
-                                         //case Operation::: orOperation(); break; 
-                                         //case Operation::: greaterThanOperation(); break; // greater than
-                                         //case Operation::: lessThanOperation(); break;
-                                         //case Operation::: xorOperation(); break;
-                                         //case Operation::: shiftOperation(true); break; // shift left
-                                         //case Operation::: shiftOperation(false); break; // shift right
+                case Operation::Pow: powOperation(); break;
+                case Operation::Divide: divide(); break;
+                case Operation::Modulo: modulo(); break;
+                case Operation::Not: notOperation(); break;
+                case Operation::Minus: minusOperation(); break;
+                case Operation::And: andOperation(); break;
+                case Operation::Or: orOperation(); break;
+                case Operation::GreaterThan: greaterThanOperation(); break; // greater than
+                case Operation::LessThan: lessThanOperation(); break;
+                case Operation::Xor: xorOperation(); break;
                                          //case Operation::: popRegister(TargetRegister::RegisterA); break;
                                          //case Operation::: popRegister(TargetRegister::RegisterB); break;
                                          //case Operation::: popRegister(TargetRegister::RegisterC); break;
@@ -774,7 +771,6 @@ namespace forth {
                                          //case Operation::: typeValue(); break;
                                          //case Operation::: load(); break;
                                          //case Operation::: store(); break;
-                                         //case Operation::: powOperation(); break;
                 default:
                                          throw Problem("uc", "Unknown instruction address!");
             }

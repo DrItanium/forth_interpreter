@@ -16,7 +16,8 @@ union Molecule {
 
 enum class Operation : byte {
     Nop,
-    Combine,
+    Add,
+    Subtract,
     Multiply,
     Divide,
     Modulo,
@@ -27,7 +28,8 @@ enum class Operation : byte {
     GreaterThan,
     LessThan,
     Xor,
-    Shift,
+    ShiftRight,
+    ShiftLeft,
     PopRegister,
     PushRegister,
     Equals,

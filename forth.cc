@@ -750,6 +750,9 @@ namespace forth {
                 case Operation::GreaterThan: greaterThanOperation(); break; // greater than
                 case Operation::LessThan: lessThanOperation(); break;
                 case Operation::Xor: xorOperation(); break;
+                case Operation::TypeValue: typeValue(); break;
+                case Operation::PopRegister: popRegister(molecule); break;
+                case Operation::PushRegister: pushRegister(molecule); break;
                                          //case Operation::: popRegister(TargetRegister::RegisterA); break;
                                          //case Operation::: popRegister(TargetRegister::RegisterB); break;
                                          //case Operation::: popRegister(TargetRegister::RegisterC); break;
@@ -871,6 +874,12 @@ namespace forth {
 			case Type::RegisterX:
 				tmp = _registerX.getValue();
 				break;
+            case Type::RegisterIP:
+                tmp = _registerIP.getValue();
+                break;
+            case Type::RegisterTIP:
+                tmp = static_cast<Address>(_registerIP.getType());
+                break;
 			default:
 				throw Problem("push.register", "Unknown register!");
 		}

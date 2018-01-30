@@ -75,6 +75,8 @@ namespace forth {
 			void popSRegister() { popRegister(TargetRegister::RegisterS); }
 			void pushRegister(TargetRegister t);
 			void popRegister(TargetRegister t); 
+            void pushRegister(const Molecule& m);
+            void popRegister(const Molecule& m);
             void dispatchInstruction();
 			void numericCombine(bool subtract = false);
 			void multiplyOperation();

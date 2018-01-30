@@ -730,9 +730,8 @@ namespace forth {
         auto molecule = _registerS.getMolecule();
         while (_registerIP.getAddress() < sizeof(Molecule)) {
             auto pos = _registerIP.getAddress();
-            auto op = getOperation(molecule.backingStore[pos]);
             _registerIP.increment();
-            switch (op) {
+            switch (auto op = getOperation(molecule.backingStore[pos]) ; op) {
                 case Operation::Nop: break; // nop
                 case Operation::Add: numericCombine(); break; // add or subtract
                 case Operation::Subtract: numericCombine(true); break; // add or subtract

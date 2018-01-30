@@ -105,16 +105,16 @@ namespace forth {
 	}
 	void Machine::chooseRegister() {
 		if (_registerC.truth) {
-			_registerC._type = _registerA._type;
+			_registerC._type = _registerA.getType();
 			_registerC._value = _registerA;
 		} else {
-			_registerC._type = _registerB._type;
+			_registerC._type = _registerB.getType();
 			_registerC._value = _registerB;
 		}
 	}
 	void Machine::invokeCRegister() {
-		using Type = decltype(_registerC._type);
-		switch (_registerC._type) {
+		using Type = decltype(_registerC.getType());
+		switch (_registerC.getType()) {
 			case Type::Word:
 				_registerC.entry->operator()(this);
 				break;
@@ -209,12 +209,12 @@ namespace forth {
 		fn("A", _registerA);
 		fn("B", _registerB);
 		fn("C", _registerC);
-		fn("T", _registerC._type);
-		fn("S", _registerS._value);
-		fn("X", _registerX._value);
-		fn("A.T", _registerA._type);
-		fn("B.T", _registerB._type);
-		fn("X.T", _registerX._type);
+		fn("T", _registerC.getType());
+		fn("S", _registerS.getValue());
+		fn("X", _registerX.getValue());
+		fn("A.T", _registerA.getType());
+		fn("B.T", _registerB.getType());
+		fn("X.T", _registerX.getType());
 		_output.setf(flags); // restore after done
 	}
 	void Machine::defineWord() {
@@ -258,8 +258,8 @@ namespace forth {
 	}
 	void Machine::notOperation() {
 		// invert register a
-		using Type = decltype(_registerC._type);
-		switch(_registerC._type) {
+		using Type = decltype(_registerC.getType());
+		switch(_registerC.getType()) {
 			case Type::Number:
 				_registerC._value.numValue = ~_registerA.numValue;
 				break;
@@ -274,8 +274,8 @@ namespace forth {
 		}
 	}
 	void Machine::minusOperation() {
-		using Type = decltype(_registerC._type);
-		switch(_registerC._type) {
+		using Type = decltype(_registerC.getType());
+		switch(_registerC.getType()) {
 			case Type::Number:
 				_registerC._value.numValue = -_registerA.numValue;
 				break;
@@ -287,8 +287,8 @@ namespace forth {
 		}
 	}
 	void Machine::multiplyOperation() {
-		using Type = decltype(_registerC._type);
-		switch(_registerC._type) {
+		using Type = decltype(_registerC.getType());
+		switch(_registerC.getType()) {
 			case Type::Number:
 				_registerC._value.numValue = _registerA.numValue * _registerB.numValue;
 				break;
@@ -303,8 +303,8 @@ namespace forth {
 		}
 	}
 	void Machine::equals() {
-		using Type = decltype(_registerC._type);
-		switch(_registerC._type) {
+		using Type = decltype(_registerC.getType());
+		switch(_registerC.getType()) {
 			case Type::Number:
 				_registerC.truth = _registerA.numValue == _registerB.numValue;
 				break;
@@ -321,8 +321,8 @@ namespace forth {
 		}
 	}
 	void Machine::powOperation() {
-		using Type = decltype(_registerC._type);
-		switch(_registerC._type) {
+		using Type = decltype(_registerC.getType());
+		switch(_registerC.getType()) {
 			case Type::Number:
 				_registerC._value = Integer(std::pow(_registerA.numValue, _registerB.numValue));
 				break;
@@ -338,8 +338,8 @@ namespace forth {
 	}
 
 	void Machine::divide() {
-		using Type = decltype(_registerC._type);
-		switch(_registerC._type) {
+		using Type = decltype(_registerC.getType());
+		switch(_registerC.getType()) {
 			case Type::Number:
 				_registerC._value = _registerA.numValue / _registerB.numValue;
 				break;
@@ -355,8 +355,8 @@ namespace forth {
 	}
 
 	void Machine::modulo() {
-		using Type = decltype(_registerC._type);
-		switch(_registerC._type) {
+		using Type = decltype(_registerC.getType());
+		switch(_registerC.getType()) {
 			case Type::Number:
 				_registerC._value = _registerA.numValue % _registerB.numValue;
 				break;
@@ -368,7 +368,7 @@ namespace forth {
 		}
 	}
 	void Machine::numericCombine(bool subtractOp) {
-		switch(_registerC._type) {
+		switch(_registerC.getType()) {
 			case Discriminant::Number:
 				_registerC._value = subtractOp ? (_registerA.numValue - _registerB.numValue) : _registerA.numValue + _registerB.numValue;
 				break;
@@ -384,8 +384,8 @@ namespace forth {
 	}
 
 	void Machine::andOperation() {
-		using Type = decltype(_registerC._type);
-		switch (_registerC._type) {
+		using Type = decltype(_registerC.getType());
+		switch (_registerC.getType()) {
 			case Type::Number:
 				_registerC._value = _registerA.numValue & _registerB.numValue;
 				break;
@@ -435,8 +435,8 @@ namespace forth {
 	}
 
 	void Machine::lessThanOperation() {
-		using Type = decltype(_registerC._type);
-		switch (_registerC._type) {
+		using Type = decltype(_registerC.getType());
+		switch (_registerC.getType()) {
 			case Type::Number:
 				_registerC._value = _registerA._value.numValue < _registerB._value.numValue;
 				break;
@@ -452,8 +452,8 @@ namespace forth {
 	}
 
 	void Machine::xorOperation() {
-		using Type = decltype(_registerC._type);
-		switch (_registerC._type) {
+		using Type = decltype(_registerC.getType());
+		switch (_registerC.getType()) {
 			case Type::Number:
 				_registerC._value = _registerA._value.numValue ^ _registerB._value.numValue;
 				break;
@@ -474,13 +474,13 @@ namespace forth {
 		// this isn't necessary!
 	}
 	void Machine::shiftOperation(bool shiftLeft) {
-		using Type = decltype(_registerC._type);
-		switch (_registerC._type) {
+		using Type = decltype(_registerC.getType());
+		switch (_registerC.getType()) {
 			case Type::Number:
-				_registerC._value.numValue = shiftLeft ? (_registerA._value.numValue  << _registerB._value.numValue) : (_registerA._value.numValue >> _registerB._value.numValue);
+                _registerC.setValue(shiftLeft ? (_registerA.getInt()  << _registerB.getInt()) : (_registerA.getInt() >> _registerB.getInt()));
 				break;
 			case Type::MemoryAddress:
-				_registerC._value.address = shiftLeft ? (_registerA._value.address  << _registerB._value.address) : (_registerA._value.address >> _registerB._value.address);
+                _registerC.setValue(shiftLeft ? (_registerA.getAddress()  << _registerB.getAddress()) : (_registerA.getAddress() >> _registerB.getAddress()));
 				break;
 			default:
 				throw Problem(shiftLeft ? "<<" : ">>", "ILLEGAL DISCRIMINANT");
@@ -708,7 +708,7 @@ namespace forth {
 	void Machine::dispatchInstruction() {
 		// use the s register as the current instruction
 		// slice out the lowest eight bits
-		auto op = static_cast<byte>(_registerS._value.address & 0x00000000000000FF);
+		auto op = static_cast<byte>(_registerS.getAddress() & 0x00000000000000FF);
 
 		switch (op) {
 			case 0x00: break; // nop
@@ -782,69 +782,65 @@ namespace forth {
 		if (involvesDiscriminantRegister(t) && top.address >= max) {
 			throw Problem("pop.register", "ILLEGAL DISCRIMINANT!");
 		}
+        Register& current = _registerA;
 		switch (t) {
 			case Type::RegisterA:
-				_registerA._value = top;
-				break;
+            case Type::RegisterTA:
+                break;
 			case Type::RegisterB:
-				_registerB._value = top;
+			case Type::RegisterTB:
+                current = _registerB;
 				break;
 			case Type::RegisterC:
-				_registerC._value = top;
-				break;
 			case Type::RegisterT:
-				_registerC._type = (Discriminant)top.address;
-				break;
-			case Type::RegisterTA:
-				_registerA._type = (Discriminant)top.address;
-				break;
-			case Type::RegisterTB:
-				_registerB._type = (Discriminant)top.address;
-				break;
-			case Type::RegisterTX:
-				_registerX._type = (Discriminant)top.address;
+                current = _registerC;
 				break;
 			case Type::RegisterS:
-				_registerS._value = top;
+                current = _registerS;
 				break;
 			case Type::RegisterX:
-				_registerX._value = top;
+			case Type::RegisterTX:
+                current = _registerX;
 				break;
 			default:
 				throw Problem("pop.register", "Unknown register!");
 		}
-
+        if (involvesDiscriminantRegister(t)) {
+            current.setValue(top);
+        } else {
+            current.setType((Discriminant)top.address);
+        }
 	}
 	void Machine::pushRegister(Machine::TargetRegister t) {
 		using Type = decltype(t);
 		Datum tmp;
 		switch (t) {
 			case Type::RegisterA:
-				tmp = _registerA._value;
+				tmp = _registerA.getValue();
 				break;
 			case Type::RegisterB:
-				tmp = _registerB._value;
+				tmp = _registerB.getValue();
 				break;
 			case Type::RegisterC:
-				tmp = _registerC._value;
+				tmp = _registerC.getValue();
 				break;
 			case Type::RegisterT:
-				tmp = static_cast<Address>(_registerC._type);
+				tmp = static_cast<Address>(_registerC.getType());
 				break;
 			case Type::RegisterTA:
-				tmp = static_cast<Address>(_registerA._type);
+				tmp = static_cast<Address>(_registerA.getType());
 				break;
 			case Type::RegisterTB:
-				tmp = static_cast<Address>(_registerB._type);
+				tmp = static_cast<Address>(_registerB.getType());
 				break;
 			case Type::RegisterTX:
-				tmp = static_cast<Address>(_registerX._type);
+				tmp = static_cast<Address>(_registerX.getType());
 				break;
 			case Type::RegisterS:
-				tmp = _registerS._value;
+				tmp = _registerS.getValue();
 				break;
 			case Type::RegisterX:
-				tmp = _registerX._value;
+				tmp = _registerX.getValue();
 				break;
 			default:
 				throw Problem("push.register", "Unknown register!");

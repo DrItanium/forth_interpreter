@@ -105,16 +105,16 @@ namespace forth {
 	}
 	void Machine::chooseRegister() {
 		if (_registerC.truth) {
-			_registerT = _registerTA;
-			_registerC = _registerA;
+			_registerC._type = _registerA._type;
+			_registerC._value = _registerA;
 		} else {
-			_registerT = _registerTB;
-			_registerC = _registerB;
+			_registerC._type = _registerB._type;
+			_registerC._value = _registerB;
 		}
 	}
 	void Machine::invokeCRegister() {
-		using Type = decltype(_registerT);
-		switch (_registerT) {
+		using Type = decltype(_registerC._type);
+		switch (_registerC._type) {
 			case Type::Word:
 				_registerC.entry->operator()(this);
 				break;
@@ -209,12 +209,12 @@ namespace forth {
 		fn("A", _registerA);
 		fn("B", _registerB);
 		fn("C", _registerC);
-		fn("T", _registerT);
-		fn("S", _registerS);
-		fn("X", _registerX);
-		fn("A.T", _registerTA);
-		fn("B.T", _registerTB);
-		fn("X.T", _registerTX);
+		fn("T", _registerC._type);
+		fn("S", _registerS._value);
+		fn("X", _registerX._value);
+		fn("A.T", _registerA._type);
+		fn("B.T", _registerB._type);
+		fn("X.T", _registerX._type);
 		_output.setf(flags); // restore after done
 	}
 	void Machine::defineWord() {
@@ -258,13 +258,13 @@ namespace forth {
 	}
 	void Machine::notOperation() {
 		// invert register a
-		using Type = decltype(_registerT);
-		switch(_registerT) {
+		using Type = decltype(_registerC._type);
+		switch(_registerC._type) {
 			case Type::Number:
-				_registerC.numValue = ~_registerA.numValue;
+				_registerC._value.numValue = ~_registerA.numValue;
 				break;
 			case Type::MemoryAddress:
-				_registerC.address = ~_registerA.address;
+				_registerC._value.address = ~_registerA._value.address;
 				break;
 			case Type::Boolean:
 				_registerC.truth = !_registerA.truth;
@@ -274,45 +274,45 @@ namespace forth {
 		}
 	}
 	void Machine::minusOperation() {
-		using Type = decltype(_registerT);
-		switch(_registerT) {
+		using Type = decltype(_registerC._type);
+		switch(_registerC._type) {
 			case Type::Number:
-				_registerC.numValue = -_registerA.numValue;
+				_registerC._value.numValue = -_registerA.numValue;
 				break;
 			case Type::FloatingPoint:
-				_registerC.fp = -_registerA.fp;
+				_registerC.fp = -_registerA._value.fp;
 				break;
 			default:
 				throw Problem("minus", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::multiplyOperation() {
-		using Type = decltype(_registerT);
-		switch(_registerT) {
+		using Type = decltype(_registerC._type);
+		switch(_registerC._type) {
 			case Type::Number:
-				_registerC.numValue = _registerA.numValue * _registerB.numValue;
+				_registerC._value.numValue = _registerA.numValue * _registerB.numValue;
 				break;
 			case Type::MemoryAddress:
-				_registerC.address = _registerA.address * _registerB.address;
+				_registerC._value.address = _registerA._value.address * _registerB._value.address;
 				break;
 			case Type::FloatingPoint:
-				_registerC.fp = _registerA.fp * _registerB.fp;
+				_registerC.fp = _registerA._value.fp * _registerB.fp;
 				break;
 			default:
 				throw Problem("*", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::equals() {
-		using Type = decltype(_registerT);
-		switch(_registerT) {
+		using Type = decltype(_registerC._type);
+		switch(_registerC._type) {
 			case Type::Number:
 				_registerC.truth = _registerA.numValue == _registerB.numValue;
 				break;
 			case Type::MemoryAddress:
-				_registerC.truth = _registerA.address == _registerB.address;
+				_registerC.truth = _registerA._value.address == _registerB._value.address;
 				break;
 			case Type::FloatingPoint:
-				_registerC.truth = _registerA.fp == _registerB.fp;
+				_registerC.truth = _registerA._value.fp == _registerB.fp;
 				break;
 			case Type::Boolean:
 				_registerC.truth = _registerA.truth == _registerB.truth;
@@ -321,16 +321,16 @@ namespace forth {
 		}
 	}
 	void Machine::powOperation() {
-		using Type = decltype(_registerT);
-		switch(_registerT) {
+		using Type = decltype(_registerC._type);
+		switch(_registerC._type) {
 			case Type::Number:
-				_registerC = Integer(std::pow(_registerA.numValue, _registerB.numValue));
+				_registerC._value = Integer(std::pow(_registerA.numValue, _registerB.numValue));
 				break;
 			case Type::MemoryAddress:
-				_registerC = Address(std::pow(_registerA.address, _registerB.address));
+				_registerC._value = Address(std::pow(_registerA._value.address, _registerB._value.address));
 				break;
 			case Type::FloatingPoint:
-				_registerC = Floating(std::pow(_registerA.fp, _registerB.fp));
+				_registerC._value = Floating(std::pow(_registerA._value.fp, _registerB.fp));
 				break;
 			default:
 				throw Problem("**", "ILLEGAL DISCRIMINANT!");
@@ -338,16 +338,16 @@ namespace forth {
 	}
 
 	void Machine::divide() {
-		using Type = decltype(_registerT);
-		switch(_registerT) {
+		using Type = decltype(_registerC._type);
+		switch(_registerC._type) {
 			case Type::Number:
-				_registerC = _registerA.numValue / _registerB.numValue;
+				_registerC._value = _registerA.numValue / _registerB.numValue;
 				break;
 			case Type::MemoryAddress:
-				_registerC = _registerA.address / _registerB.address;
+				_registerC._value = _registerA._value.address / _registerB._value.address;
 				break;
 			case Type::FloatingPoint:
-				_registerC = _registerA.fp / _registerB.fp;
+				_registerC._value = _registerA._value.fp / _registerB.fp;
 				break;
 			default:
 				throw Problem("/", "ILLEGAL DISCRIMINANT!");
@@ -355,28 +355,28 @@ namespace forth {
 	}
 
 	void Machine::modulo() {
-		using Type = decltype(_registerT);
-		switch(_registerT) {
+		using Type = decltype(_registerC._type);
+		switch(_registerC._type) {
 			case Type::Number:
-				_registerC = _registerA.numValue % _registerB.numValue;
+				_registerC._value = _registerA.numValue % _registerB.numValue;
 				break;
 			case Type::MemoryAddress:
-				_registerC = _registerA.address % _registerB.address;
+				_registerC._value = _registerA._value.address % _registerB._value.address;
 				break;
 			default:
 				throw Problem("mod", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::numericCombine(bool subtractOp) {
-		switch(_registerT) {
+		switch(_registerC._type) {
 			case Discriminant::Number:
-				_registerC = subtractOp ? (_registerA.numValue - _registerB.numValue) : _registerA.numValue + _registerB.numValue;
+				_registerC._value = subtractOp ? (_registerA.numValue - _registerB.numValue) : _registerA.numValue + _registerB.numValue;
 				break;
 			case Discriminant::MemoryAddress:
-				_registerC = subtractOp ? (_registerA.address - _registerB.address) : _registerA.address + _registerB.address;
+				_registerC._value = subtractOp ? (_registerA._value.address - _registerB._value.address) : _registerA._value.address + _registerB._value.address;
 				break;
 			case Discriminant::FloatingPoint:
-				_registerC = subtractOp ? (_registerA.fp - _registerB.fp) : _registerA.fp + _registerB.fp;
+				_registerC._value = subtractOp ? (_registerA._value.fp - _registerB.fp) : _registerA._value.fp + _registerB.fp;
 				break;
 			default:
 				throw Problem(subtractOp ? "-" : "+", "ILLEGAL DISCRIMINANT!");
@@ -384,16 +384,16 @@ namespace forth {
 	}
 
 	void Machine::andOperation() {
-		using Type = decltype(_registerT);
-		switch (_registerT) {
+		using Type = decltype(_registerC._type);
+		switch (_registerC._type) {
 			case Type::Number:
-				_registerC = _registerA.numValue & _registerB.numValue;
+				_registerC._value = _registerA.numValue & _registerB.numValue;
 				break;
 			case Type::MemoryAddress:
-				_registerC = _registerA.address & _registerB.numValue;
+				_registerC._value = _registerA._value.address & _registerB.numValue;
 				break;
 			case Type::Boolean:
-				_registerC = _registerA.truth && _registerB.truth;
+				_registerC._value = _registerA.truth && _registerB.truth;
 				break;
 			default:
 				throw Problem("and", "ILLEGAL DISCRIMINANT!");
@@ -401,16 +401,16 @@ namespace forth {
 	}
 
 	void Machine::orOperation() {
-		using Type = decltype(_registerT);
-		switch (_registerT) {
+		using Type = decltype(_registerC._type);
+		switch (_registerC._type) {
 			case Type::Number:
-				_registerC = _registerA.numValue | _registerB.numValue;
+				_registerC._value = _registerA.numValue | _registerB.numValue;
 				break;
 			case Type::MemoryAddress:
-				_registerC = _registerA.address | _registerB.numValue;
+				_registerC._value = _registerA._value.address | _registerB.numValue;
 				break;
 			case Type::Boolean:
-				_registerC = _registerA.truth || _registerB.truth;
+				_registerC._value = _registerA.truth || _registerB.truth;
 				break;
 			default:
 				throw Problem("or", "ILLEGAL DISCRIMINANT!");
@@ -418,16 +418,16 @@ namespace forth {
 	}
 
 	void Machine::greaterThanOperation() {
-		using Type = decltype(_registerT);
-		switch (_registerT) {
+		using Type = decltype(_registerC._type);
+		switch (_registerC._type) {
 			case Type::Number:
-				_registerC = _registerA.numValue > _registerB.numValue;
+				_registerC._value = _registerA.numValue > _registerB.numValue;
 				break;
 			case Type::MemoryAddress:
-				_registerC = _registerA.address > _registerB.numValue;
+				_registerC._value = _registerA._value.address > _registerB.numValue;
 				break;
 			case Type::FloatingPoint:
-				_registerC = _registerA.fp > _registerB.fp;
+				_registerC._value = _registerA._value.fp > _registerB.fp;
 				break;
 			default:
 				throw Problem(">", "ILLEGAL DISCRIMINANT!");
@@ -435,16 +435,16 @@ namespace forth {
 	}
 
 	void Machine::lessThanOperation() {
-		using Type = decltype(_registerT);
-		switch (_registerT) {
+		using Type = decltype(_registerC._type);
+		switch (_registerC._type) {
 			case Type::Number:
-				_registerC = _registerA.numValue < _registerB.numValue;
+				_registerC._value = _registerA.numValue < _registerB.numValue;
 				break;
 			case Type::MemoryAddress:
-				_registerC = _registerA.address < _registerB.numValue;
+				_registerC._value = _registerA._value.address < _registerB.numValue;
 				break;
 			case Type::FloatingPoint:
-				_registerC = _registerA.fp < _registerB.fp;
+				_registerC._value = _registerA._value.fp < _registerB.fp;
 				break;
 			default:
 				throw Problem("<", "ILLEGAL DISCRIMINANT!");
@@ -452,13 +452,13 @@ namespace forth {
 	}
 
 	void Machine::xorOperation() {
-		using Type = decltype(_registerT);
-		switch (_registerT) {
+		using Type = decltype(_registerC._type);
+		switch (_registerC._type) {
 			case Type::Number:
-				_registerC = _registerA.numValue ^ _registerB.numValue;
+				_registerC._value = _registerA.numValue ^ _registerB.numValue;
 				break;
 			case Type::MemoryAddress:
-				_registerC = _registerA.address ^ _registerB.numValue;
+				_registerC._value = _registerA._value.address ^ _registerB.numValue;
 				break;
 			case Type::Boolean:
 				_registerC.truth = _registerA.truth ^ _registerB.truth;
@@ -474,13 +474,13 @@ namespace forth {
 		// this isn't necessary!
 	}
 	void Machine::shiftOperation(bool shiftLeft) {
-		using Type = decltype(_registerT);
-		switch (_registerT) {
+		using Type = decltype(_registerC._type);
+		switch (_registerC._type) {
 			case Type::Number:
-				_registerC.numValue = shiftLeft ? (_registerA.numValue  << _registerB.numValue) : (_registerA.numValue >> _registerB.numValue);
+				_registerC._value.numValue = shiftLeft ? (_registerA.numValue  << _registerB.numValue) : (_registerA.numValue >> _registerB.numValue);
 				break;
 			case Type::MemoryAddress:
-				_registerC.address = shiftLeft ? (_registerA.address  << _registerB.address) : (_registerA.address >> _registerB.address);
+				_registerC._value.address = shiftLeft ? (_registerA._value.address  << _registerB._value.address) : (_registerA._value.address >> _registerB._value.address);
 				break;
 			default:
 				throw Problem(shiftLeft ? "<<" : ">>", "ILLEGAL DISCRIMINANT");
@@ -708,7 +708,7 @@ namespace forth {
 	void Machine::dispatchInstruction() {
 		// use the s register as the current instruction
 		// slice out the lowest eight bits
-		auto op = static_cast<byte>(_registerS.address & 0x00000000000000FF);
+		auto op = static_cast<byte>(_registerS._value.address & 0x00000000000000FF);
 
 		switch (op) {
 			case 0x00: break; // nop
@@ -789,31 +789,31 @@ namespace forth {
 		}
 		switch (t) {
 			case Type::RegisterA:
-				_registerA = top;
+				_registerA._value = top;
 				break;
 			case Type::RegisterB:
-				_registerB = top;
+				_registerB._value = top;
 				break;
 			case Type::RegisterC:
-				_registerC = top;
+				_registerC._value = top;
 				break;
 			case Type::RegisterT:
-				_registerT = (Discriminant)top.address;
+				_registerC._type = (Discriminant)top.address;
 				break;
 			case Type::RegisterTA:
-				_registerTA = (Discriminant)top.address;
+				_registerA._type = (Discriminant)top.address;
 				break;
 			case Type::RegisterTB:
-				_registerTB = (Discriminant)top.address;
+				_registerB._type = (Discriminant)top.address;
 				break;
 			case Type::RegisterTX:
-				_registerTX = (Discriminant)top.address;
+				_registerX._type = (Discriminant)top.address;
 				break;
 			case Type::RegisterS:
-				_registerS = top;
+				_registerS._value = top;
 				break;
 			case Type::RegisterX:
-				_registerX = top;
+				_registerX._value = top;
 				break;
 			default:
 				throw Problem("pop.register", "Unknown register!");
@@ -825,31 +825,31 @@ namespace forth {
 		Datum tmp;
 		switch (t) {
 			case Type::RegisterA:
-				tmp = _registerA;
+				tmp = _registerA._value;
 				break;
 			case Type::RegisterB:
-				tmp = _registerB;
+				tmp = _registerB._value;
 				break;
 			case Type::RegisterC:
-				tmp = _registerC;
+				tmp = _registerC._value;
 				break;
 			case Type::RegisterT:
-				tmp = static_cast<Address>(_registerT);
+				tmp = static_cast<Address>(_registerC._type);
 				break;
 			case Type::RegisterTA:
-				tmp = static_cast<Address>(_registerTA);
+				tmp = static_cast<Address>(_registerA._type);
 				break;
 			case Type::RegisterTB:
-				tmp = static_cast<Address>(_registerTB);
+				tmp = static_cast<Address>(_registerB._type);
 				break;
 			case Type::RegisterTX:
-				tmp = static_cast<Address>(_registerTX);
+				tmp = static_cast<Address>(_registerX._type);
 				break;
 			case Type::RegisterS:
-				tmp = _registerS;
+				tmp = _registerS._value;
 				break;
 			case Type::RegisterX:
-				tmp = _registerX;
+				tmp = _registerX._value;
 				break;
 			default:
 				throw Problem("push.register", "Unknown register!");
@@ -857,45 +857,45 @@ namespace forth {
 		pushParameter(tmp);
 	}
 	void Machine::sinOperation() {
-		switch (_registerT) {
+		switch (_registerC._type) {
 			case Discriminant::FloatingPoint:
-				_registerC = sin(_registerA.fp);
+				_registerC._value = sin(_registerA._value.fp);
 				break;
 			default:
 				throw Problem("sin", "Incorret Discriminant!");
 		}
 	}
 	void Machine::cosOperation() {
-		switch (_registerT) {
+		switch (_registerC._type) {
 			case Discriminant::FloatingPoint:
-				_registerC = cos(_registerA.fp);
+				_registerC._value = cos(_registerA._value.fp);
 				break;
 			default:
 				throw Problem("cos", "Incorret Discriminant!");
 		}
 	}
 	void Machine::tanOperation() {
-		switch (_registerT) {
+		switch (_registerC._type) {
 			case Discriminant::FloatingPoint:
-				_registerC = tan(_registerA.fp);
+				_registerC._value = tan(_registerA._value.fp);
 				break;
 			default:
 				throw Problem("tan", "Incorret Discriminant!");
 		}
 	}
 	void Machine::atanOperation() {
-		switch (_registerT) {
+		switch (_registerC._type) {
 			case Discriminant::FloatingPoint:
-				_registerC = atan(_registerA.fp);
+				_registerC._value = atan(_registerA._value.fp);
 				break;
 			default:
 				throw Problem("atan", "Incorret Discriminant!");
 		}
 	}
 	void Machine::atan2Operation() {
-		switch (_registerT) {
+		switch (_registerC._type) {
 			case Discriminant::FloatingPoint:
-				_registerC = atan(_registerA.fp);
+				_registerC._value = atan(_registerA._value.fp);
 				break;
 			default:
 				throw Problem("atan", "Incorret Discriminant!");

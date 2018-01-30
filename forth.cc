@@ -783,9 +783,8 @@ namespace forth {
 	}
 	void Machine::popRegister(Machine::TargetRegister t) {
 		using Type = decltype(t);
-		static constexpr Address max = (Address)Discriminant::Count;
 		auto top(popParameter());
-		if (involvesDiscriminantRegister(t) && top.address >= max) {
+		if (involvesDiscriminantRegister(t) && !forth::legalValue(static_cast<Discriminant>(top.address))) {
 			throw Problem("pop.register", "ILLEGAL DISCRIMINANT!");
 		}
         auto fn = [t, this, &top](Register& current) {
@@ -885,6 +884,89 @@ namespace forth {
             _registerIP.increment();
         } catch (Problem& p) {
             throw Problem("push.register", p.getMessage());
+        }
+    }
+    void Machine::load(const Molecule& m) {
+        try {
+            // figure out which register to get the address from!
+            auto target = static_cast<Machine::TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress())));
+            if (involvesDiscriminantRegister(target)) {
+                throw Problem("", "Can't use the discriminant field of a register as an address!");
+            } else if (!legalValue(target)) {
+                throw Problem("", "Illegal undefined register!");
+            }
+            using Type = decltype(target);
+            load(getRegister(target).getAddress());
+            switch (target) {
+                case Type::RegisterA:
+                    load(_registerA.getAddress());
+                    break;
+                case Type::RegisterB:
+                    load(_registerB.getAddress());
+                    break;
+                case Type::RegisterC:
+                    load(_registerC.getAddress());
+                    break;
+                case Type::RegisterIP:
+                    load(_registerIP.getAddress());
+                    break;
+                case Type::RegisterS:
+                    load(_registerS.getAddress());
+                    break;
+                case Type::RegisterX:
+                    load(_registerX.getAddress());
+                    break;
+                default:
+                    throw Problem("", "Undefined register!");
+            }
+            _registerIP.increment();
+        } catch (Problem& p) {
+            throw Problem("load", p.getMessage());
+        }
+    }
+    Register& Machine::getRegister(TargetRegister t) {
+        using Type = decltype(t);
+        switch (t) {
+            case Type::RegisterA:
+            case Type::RegisterTA:
+                return _registerA;
+            case Type::RegisterB:
+            case Type::RegisterTB:
+                return _registerB;
+            case Type::RegisterC:
+            case Type::RegisterT:
+                return _registerC;
+            case Type::RegisterS:
+                return _registerS;
+            case Type::RegisterX:
+            case Type::RegisterTX:
+                return _registerX;
+            case Type::RegisterIP:
+            case Type::RegisterTIP:
+                return _registerIP;
+            default:
+                throw Problem("getRegister", "Undefined register!");
+        }
+    }
+
+    void Machine::store(const Molecule& m) {
+        try {
+            auto tb = m.getByte(_registerIP.getAddress());
+            // figure out which register to get the address from!
+            auto dest = static_cast<Machine::TargetRegister>(getDestinationRegister(tb));
+            if (!legalValue(dest)) {
+                throw Problem("", "Illegal undefined destination register!");
+            } else if (involvesDiscriminantRegister(dest)) {
+                throw Problem("", "Can't use the discriminant field of a register as an address!");
+            }
+            auto src = static_cast<Machine::TargetRegister>(getSourceRegister(tb));
+            if (!legalValue(dest)) {
+                throw Problem("", "Illegal undefined source register!");
+            }
+            store(getRegister(dest).getAddress(), getRegister(src).getInt());
+            _registerIP.increment();
+        } catch (Problem& p) {
+            throw Problem("load", p.getMessage());
         }
     }
 } // end namespace forth

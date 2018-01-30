@@ -44,23 +44,22 @@ namespace forth {
             void chooseRegister();
             void invokeCRegister();
 		private:
-            void load(const Molecule& m);
-            void store(const Molecule& m);
-			void semicolonOperation();
             enum class TargetRegister : byte {
                 RegisterA,
-                RegisterTA,
                 RegisterB,
-                RegisterTB,
                 RegisterC,
-                RegisterT,
                 RegisterS, // register select
                 RegisterX, // misc data
+                RegisterT,
+                RegisterTA,
+                RegisterTB,
                 RegisterTX, // misc type
                 RegisterIP, // instruction pointer contents
                 RegisterTIP, // instruction pointer type
+                Error,
             };
-            static constexpr bool involvesDiscriminantRegister(TargetRegister r) {
+            static_assert(byte(TargetRegister::Error) <= 16, "Too many registers defined!");
+            static constexpr bool involvesDiscriminantRegister(TargetRegister r) noexcept {
                 switch (r) {
                     case TargetRegister::RegisterT:
                     case TargetRegister::RegisterTA:
@@ -72,6 +71,13 @@ namespace forth {
                         return false;
                 }
             }
+            static constexpr bool legalValue(TargetRegister r) noexcept {
+                return static_cast<byte>(r) < static_cast<byte>(TargetRegister::Error);
+            }
+            Register& getRegister(TargetRegister t);
+            void load(const Molecule& m);
+            void store(const Molecule& m);
+			void semicolonOperation();
 			void printRegisters();
             void printStack();
 			void popSRegister() { popRegister(TargetRegister::RegisterS); }

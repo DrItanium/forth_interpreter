@@ -55,11 +55,6 @@ enum class Operation : byte {
     Load,
     Store,
     Pow,
-    Sin,
-    Cos,
-    Tan,
-    Atan,
-    Atan2,
     Nor,
     Nand,
     Move,
@@ -88,11 +83,6 @@ constexpr int getInstructionWidth(Operation count) noexcept {
         case Operation::Not:
         case Operation::Minus:
         case Operation::Pow:
-        case Operation::Sin:
-        case Operation::Cos:
-        case Operation::Tan:
-        case Operation::Atan:
-        case Operation::Atan2:
         case Operation::Load:
         case Operation::Store:
         case Operation::Nor:

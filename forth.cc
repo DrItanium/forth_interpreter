@@ -866,6 +866,7 @@ namespace forth {
 		}
 		pushParameter(tmp);
 	}
+    Register::Register(const Register& r) : _type(r._type), _value(r._value) { }
 } // end namespace forth
 
 

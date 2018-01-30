@@ -19,16 +19,16 @@ namespace forth {
 			void controlLoop() noexcept;
 			void handleError(const std::string& word, const std::string& msg) noexcept;
 			Datum load(Address addr);
-			void load() { _registerC = load(_registerA.address); }
+			void load() { _registerC.setValue(load(_registerA.getAddress())); }
 			void store(Address addr, const Datum& value);
-			void store() { store(_registerA.address, _registerB); }
+			void store() { store(_registerA.getAddress(), _registerB.getValue()); }
             void pushWord(DictionaryEntry* entry);
 			void pushParameter(Datum value);
 			Datum popParameter();
 			bool numberRoutine(const std::string& word, bool putTypeDataOntoStack = false) noexcept;
 			void typeValue(Discriminant discriminant, const Datum& value);
-			void typeValue(const Datum& value) { typeValue(_registerT, value); }
-			void typeValue() { typeValue(_registerA._value); }
+			void typeValue(const Datum& value) { typeValue(_registerC.getType(), value); }
+			void typeValue() { typeValue(_registerA.getValue()); }
 			void addWord(DictionaryEntry* entry);
 			void addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke = false);
 			void addition(Discriminant type);

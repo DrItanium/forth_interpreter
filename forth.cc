@@ -711,7 +711,7 @@ namespace forth {
 			addWord("stack", std::mem_fn(&Machine::printStack));
 			addWord(":", std::mem_fn(&Machine::defineWord));
 			addWord("see", std::mem_fn<void()>(&Machine::seeWord));
-			addWord("pop.s", std::mem_fn(&Machine::pushSRegister));
+			addWord("pop.s", std::mem_fn(&Machine::popSRegister));
 			addWord("if", std::mem_fn(&Machine::ifCondition), true);
 			addWord("else", std::mem_fn(&Machine::elseCondition), true);
 			addWord("then", std::mem_fn(&Machine::thenStatement), true);

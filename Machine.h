@@ -69,7 +69,7 @@ namespace forth {
             }
 			void printRegisters();
             void printStack();
-			void pushSRegister() { pushRegister(TargetRegister::RegisterS); }
+			void popSRegister() { popRegister(TargetRegister::RegisterS); }
 			void pushRegister(TargetRegister t);
 			void popRegister(TargetRegister t); 
             void dispatchInstruction();

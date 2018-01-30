@@ -595,14 +595,22 @@ namespace forth {
 			return true;
 		}
 		std::istringstream parseAttempt(word);
-        //if (word.find('#') != std::string::npos) {
-        //    Address tmpAddress;
-        //    parseAttempt >> std::hex >> tmpAddress;
-        //    if (!parseAttempt.fail() && parseAttempt.eof()) {
-
-        //    }
-        //    return false;
-        //}
+        if (word.find('#') != std::string::npos) {
+            Address tmpAddress;
+            parseAttempt >> std::hex >> tmpAddress;
+            if (!parseAttempt.fail()) {
+                if (_compiling) {
+                    _compileTarget->addSpaceEntry(tmpAddress);
+                    if (putTypeDataOntoStack) {
+                        _compileTarget->addTypeDataEntry(Discriminant::MemoryAddress);
+                    }
+                }  else {
+                    pushParameter(tmpAddress);
+                }
+                return true;
+            }
+            return false;
+        }
 		if (word.find('u') != std::string::npos) {
 			Address tmpAddress;
 			parseAttempt >> tmpAddress;

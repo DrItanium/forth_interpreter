@@ -753,29 +753,10 @@ namespace forth {
                 case Operation::TypeValue: typeValue(); break;
                 case Operation::PopRegister: popRegister(molecule); break;
                 case Operation::PushRegister: pushRegister(molecule); break;
-                                         //case Operation::: popRegister(TargetRegister::RegisterA); break;
-                                         //case Operation::: popRegister(TargetRegister::RegisterB); break;
-                                         //case Operation::: popRegister(TargetRegister::RegisterC); break;
-                                         //case Operation::: popRegister(TargetRegister::RegisterS); break;
-                                         //case Operation::: popRegister(TargetRegister::RegisterX); break;
-                                         //case Operation::: popRegister(TargetRegister::RegisterT); break;
-                                         //case Operation::: popRegister(TargetRegister::RegisterTA); break;
-                                         //case Operation::: popRegister(TargetRegister::RegisterTB); break;
-                                         //case Operation::: popRegister(TargetRegister::RegisterTX); break;
-                                         //case Operation::: pushRegister(TargetRegister::RegisterA); break;
-                                         //case Operation::: pushRegister(TargetRegister::RegisterB); break;
-                                         //case Operation::: pushRegister(TargetRegister::RegisterC); break;
-                                         //case Operation::: pushRegister(TargetRegister::RegisterS); break;
-                                         //case Operation::: pushRegister(TargetRegister::RegisterX); break;
-                                         //case Operation::: pushRegister(TargetRegister::RegisterT); break;
-                                         //case Operation::: pushRegister(TargetRegister::RegisterTA); break;
-                                         //case Operation::: pushRegister(TargetRegister::RegisterTB); break;
-                                         //case Operation::: pushRegister(TargetRegister::RegisterTX); break;
-                                         //case Operation::: typeValue(); break;
-                                         //case Operation::: load(); break;
-                                         //case Operation::: store(); break;
+                case Operation::Load: load(molecule); break;
+                case Operation::Store: store(molecule); break;
                 default:
-                                         throw Problem("uc", "Unknown instruction address!");
+                                       throw Problem("uc", "Unknown instruction address!");
             }
         }
 

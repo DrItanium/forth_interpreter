@@ -44,6 +44,8 @@ namespace forth {
             void chooseRegister();
             void invokeCRegister();
 		private:
+            void load(const Molecule& m);
+            void store(const Molecule& m);
 			void semicolonOperation();
             enum class TargetRegister : byte {
                 RegisterA,

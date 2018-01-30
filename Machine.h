@@ -81,6 +81,9 @@ namespace forth {
 			void printRegisters();
             void printStack();
 			void popSRegister() { popRegister(TargetRegister::RegisterS); }
+            void popARegister() { popRegister(TargetRegister::RegisterA); }
+            void popBRegister() { popRegister(TargetRegister::RegisterB); }
+            void pushCRegister() { pushRegister(TargetRegister::RegisterC); }
 			void pushRegister(TargetRegister t);
 			void popRegister(TargetRegister t); 
             void pushRegister(const Molecule& m);

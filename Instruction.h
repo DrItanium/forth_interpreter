@@ -55,6 +55,11 @@ enum class Operation : byte {
     SetImmediate16_Highest,
     Move,
     Swap,
+    // common operations
+    PopA,
+    PopB,
+    PopT,
+    PushC,
     Count,
 };
 constexpr byte getDestinationRegister(byte field) noexcept { 

@@ -782,6 +782,10 @@ namespace forth {
                 case Operation::SetImmediate16_Highest: setImmediate16Highest(molecule); break;
                 case Operation::Move: moveRegister(molecule); break;
                 case Operation::Swap: swapRegisters(molecule); break;
+                case Operation::PopA: popRegister(TargetRegister::RegisterA); break;
+                case Operation::PopB: popRegister(TargetRegister::RegisterB); break;
+                case Operation::PopT: popRegister(TargetRegister::RegisterT); break;
+                case Operation::PushC: pushRegister(TargetRegister::RegisterC); break;
                 default: throw Problem("uc", "Unknown instruction address!");
             }
         }

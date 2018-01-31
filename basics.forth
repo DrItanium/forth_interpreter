@@ -181,3 +181,14 @@ cache-basic-entries : cache-basic-entries ;
 
 : >>u dataType:ADDRESS >> ;
 : >> dataType:SIGNED >> ;
+
+: nor  1f06201a091d1c1e# uc ;
+: noru dataType:ADDRESS nor ;
+: nors dataType:SIGNED nor ;
+: nor dataType:BOOLEAN nor ;
+
+: nand 1f06201a081d1c1e# uc ;
+: nandu dataType:ADDRESS nand ; 
+: nands dataType:SIGNED nand ; 
+: nand dataType:BOOLEAN nand ; 
+

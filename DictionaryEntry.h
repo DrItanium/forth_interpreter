@@ -23,7 +23,6 @@ namespace forth {
                     LoadWordIntoB,
                     ChooseRegisterAndStoreInC,
                     InvokeRegisterC,
-                    IfContainer,
 				};
 				Discriminant _type;
 				union {

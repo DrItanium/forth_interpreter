@@ -3,6 +3,7 @@
 #define DICTIONARY_ENTRY_H__
 #include "Types.h"
 #include "Datum.h"
+#include "Instruction.h"
 #include <list>
 #include <string>
 #include <functional>
@@ -23,6 +24,7 @@ namespace forth {
                     LoadWordIntoB,
                     ChooseRegisterAndStoreInC,
                     InvokeRegisterC,
+                    //TODO: add support for embedding molecules
 				};
 				Discriminant _type;
 				union {

@@ -44,36 +44,6 @@ namespace forth {
             void chooseRegister();
             void invokeCRegister();
 		private:
-            enum class TargetRegister : byte {
-                RegisterA,
-                RegisterB,
-                RegisterC,
-                RegisterS, // register select
-                RegisterX, // misc data
-                RegisterT,
-                RegisterTA,
-                RegisterTB,
-                RegisterTX, // misc type
-                RegisterIP, // instruction pointer contents
-                RegisterTIP, // instruction pointer type
-                Error,
-            };
-            static_assert(byte(TargetRegister::Error) <= 16, "Too many registers defined!");
-            static constexpr bool involvesDiscriminantRegister(TargetRegister r) noexcept {
-                switch (r) {
-                    case TargetRegister::RegisterT:
-                    case TargetRegister::RegisterTA:
-                    case TargetRegister::RegisterTB:
-                    case TargetRegister::RegisterTX:
-                    case TargetRegister::RegisterTIP:
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-            static constexpr bool legalValue(TargetRegister r) noexcept {
-                return static_cast<byte>(r) < static_cast<byte>(TargetRegister::Error);
-            }
             Register& getRegister(TargetRegister t);
             void load(const Molecule& m);
             void store(const Molecule& m);

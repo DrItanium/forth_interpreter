@@ -848,7 +848,7 @@ namespace forth {
 			_nop = lookupWord("nop");
 		}
 	}
-	void Machine::popRegister(Machine::TargetRegister t) {
+	void Machine::popRegister(TargetRegister t) {
 		using Type = decltype(t);
 		auto top(popParameter());
 		if (involvesDiscriminantRegister(t) && !forth::legalValue(static_cast<Discriminant>(top.address))) {
@@ -889,7 +889,7 @@ namespace forth {
 				throw Problem("pop.register", "Unknown register!");
 		}
 	}
-	void Machine::pushRegister(Machine::TargetRegister t) {
+	void Machine::pushRegister(TargetRegister t) {
 		using Type = decltype(t);
 		Datum tmp;
 		switch (t) {
@@ -936,7 +936,7 @@ namespace forth {
         try {
             // read the current field
             // get the destination register to use as a target
-            popRegister(static_cast<Machine::TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress()))));
+            popRegister(static_cast<TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress()))));
             _registerIP.increment();
         } catch (Problem& p) {
             throw Problem("pop.register", p.getMessage());
@@ -946,7 +946,7 @@ namespace forth {
         try {
             // read the current field
             // get the destination register to use as a target
-            pushRegister(static_cast<Machine::TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress()))));
+            pushRegister(static_cast<TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress()))));
             _registerIP.increment();
         } catch (Problem& p) {
             throw Problem("push.register", p.getMessage());
@@ -955,7 +955,7 @@ namespace forth {
     void Machine::load(const Molecule& m) {
         try {
             // figure out which register to get the address from!
-            auto target = static_cast<Machine::TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress())));
+            auto target = static_cast<TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress())));
             if (involvesDiscriminantRegister(target)) {
                 throw Problem("", "Can't use the discriminant field of a register as an address!");
             } else if (!legalValue(target)) {
@@ -1019,13 +1019,13 @@ namespace forth {
         try {
             auto tb = m.getByte(_registerIP.getAddress());
             // figure out which register to get the address from!
-            auto dest = static_cast<Machine::TargetRegister>(getDestinationRegister(tb));
+            auto dest = static_cast<TargetRegister>(getDestinationRegister(tb));
             if (!legalValue(dest)) {
                 throw Problem("", "Illegal undefined destination register!");
             } else if (involvesDiscriminantRegister(dest)) {
                 throw Problem("", "Can't use the discriminant field of a register as an address!");
             }
-            auto src = static_cast<Machine::TargetRegister>(getSourceRegister(tb));
+            auto src = static_cast<TargetRegister>(getSourceRegister(tb));
             if (!legalValue(dest)) {
                 throw Problem("", "Illegal undefined source register!");
             }
@@ -1034,10 +1034,6 @@ namespace forth {
         } catch (Problem& p) {
             throw Problem("load", p.getMessage());
         }
-    }
-    template<typename T, typename R, T mask, T shift = 0>
-    constexpr T encodeBits(T value, R newValue) noexcept {
-        return (value & ~mask) | ((static_cast<T>(newValue) << shift) & mask);
     }
     void Machine::setImmediate16Lowest(const Molecule& m) {
         try {

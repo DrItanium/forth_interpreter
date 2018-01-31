@@ -167,6 +167,24 @@ namespace Instruction {
     constexpr Address encodeOperation(byte a = 0, byte b = 0, byte c = 0, byte d = 0, byte e = 0, byte f = 0, byte g = 0, byte h = 0) {
         return encodeBits<Address, HalfAddress, 0xFFFFFFFF00000000, 32>( static_cast<Address>(encodeHalfAddress(a, b, c, d)), encodeHalfAddress(e, f, g, h));
     }
+    template<Address mask, Address shift>
+    constexpr Address encodeByte(byte value, Address target = 0) noexcept {
+        return encodeBits<Address, byte, mask, shift>(target, value);
+    }
+    template<Address mask, Address shift>
+    constexpr Address encodeQuarterAddress(QuarterAddress value, Address target = 0) noexcept {
+        return encodeBits<Address, QuarterAddress, mask, shift>(target, value);
+    }
+    template<byte startOffset>
+    constexpr Address encodeQuarterAddress(QuarterAddress value, Address target = 0) noexcept {
+        static_assert(startOffset < 7, "Illegal quarter address start address");
+        return encodeQuarterAddress<0xFFFF << (startOffset * 8), startOffset * 8>(value, target);
+    }
+    template<byte startOffset>
+    constexpr Address encodeByte(byte value, Address target = 0) noexcept {
+        static_assert(startOffset < 8, "Illegal byte offset start address!");
+        return encodeByte<0xFF << (startOffset * 8), startOffset * 8>(value, target);
+    }
 } // end namespace Instruction
 constexpr bool legalOperation(Operation op) noexcept {
     return static_cast<byte>(Operation::Count) <= static_cast<byte>(op);

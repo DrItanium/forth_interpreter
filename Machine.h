@@ -106,6 +106,8 @@ namespace forth {
             void ifCondition();
             void elseCondition();
             void thenStatement();
+            void beginStatement();
+            void endStatement();
             void setImmediate16Lowest(const Molecule& m);
             void setImmediate16Lower(const Molecule& m);
             void setImmediate16Higher(const Molecule& m);

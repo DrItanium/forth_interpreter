@@ -683,10 +683,44 @@ namespace forth {
 			addWord("if", std::mem_fn(&Machine::ifCondition), true);
 			addWord("else", std::mem_fn(&Machine::elseCondition), true);
 			addWord("then", std::mem_fn(&Machine::thenStatement), true);
+            addWord("begin", std::mem_fn(&Machine::beginStatement), true);
+            addWord("end", std::mem_fn(&Machine::endStatement), true);
 			addWord("uc", std::mem_fn(&Machine::dispatchInstruction));
 			addWord("cache-basic-entries", std::mem_fn(&Machine::cacheBasicEntries));
 		}
 	}
+    void Machine::beginStatement() {
+        if (!_compiling) {
+            throw Problem("begin", "Must be compiling!");
+        }
+		_subroutine.push_back(_compileTarget);
+		_compileTarget = new DictionaryEntry("");
+		_compileTarget->markFakeEntry();
+    }
+    void Machine::endStatement() {
+        if (!_compiling) {
+            throw Problem("end", "Must be compiling!");
+        }
+        if (_subroutine.empty()) {
+            throw Problem("end", "subroutine stack is empty!");
+        }
+
+        auto parent = _subroutine.back();
+        _subroutine.pop_back();
+        addWord(_compileTarget);
+        auto container = new DictionaryEntry("", [body = _compileTarget](Machine* m) {
+                    Datum condition;
+                    do {
+                        body->operator()(m);
+                        condition = m->popParameter();
+                    } while (!condition.truth);
+                });
+        container->markFakeEntry();
+        addWord(container);
+        _compileTarget = parent;
+        _compileTarget->addSpaceEntry(container);
+        // now we have to construct a single entry for the parent which has the conditional code added as well
+    }
 	void Machine::printStack() {
 		for (const auto& element : _parameter) {
 			_output << "\t- " << element << std::endl;

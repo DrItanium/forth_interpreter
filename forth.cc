@@ -710,10 +710,16 @@ namespace forth {
         _subroutine.pop_back();
         addWord(_compileTarget);
         auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
-                _registerS.setValue((Address)0x111d1c);
+                static constexpr auto performEqualityCheck = Instruction::encodeOperation(Instruction::popA(), Instruction::popB(), Instruction::equals());
+                static constexpr auto saveABToStack = Instruction::encodeOperation(
+                        Instruction::pushRegister(TargetRegister::RegisterB),
+                        Instruction::pushRegister(TargetRegister::RegisterA));
+                static_assert(Address(0x111d1c) == performEqualityCheck, "Equality check operation failed!");
+                static_assert(Address(0x00100110) == saveABToStack, "Save AB to stack routine failed!");
+                _registerS.setValue(performEqualityCheck);
                 dispatchInstruction();
                 if (_registerC.getTruth()) {
-                    _registerS.setValue((Address)0x00100110); // put the values back on the stack
+                    _registerS.setValue(saveABToStack); // put the values back on the stack
                     dispatchInstruction();
                     do {
                         body->operator()(m);
@@ -721,12 +727,12 @@ namespace forth {
                         // popa
                         // popb
                         // eq
-                        _registerS.setValue((Address)0x111d1c); // encode our operation set into the body
+                        _registerS.setValue(performEqualityCheck);
                         dispatchInstruction();
                         if (_registerC.getTruth()) {
                             break;
                         } else {
-                            _registerS.setValue((Address)0x00100110); // put the values back on the stack
+                            _registerS.setValue(saveABToStack); // put the values back on the stack
                             dispatchInstruction();
                         }
                     } while (true);

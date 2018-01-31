@@ -156,17 +156,17 @@ namespace Instruction {
     constexpr byte popB() noexcept { return singleByteOp(Operation::PopB); }
     constexpr byte popT() noexcept { return singleByteOp(Operation::PopT); }
     constexpr byte pushC() noexcept { return singleByteOp(Operation::PushC); }
-    constexpr QuarterAddress encodeQuarterAddress(byte a = 0, byte b = 0) noexcept {
-        return encodeBits<QuarterAddress, byte, 0xFF00, 8>(static_cast<QuarterAddress>(a), b);
-    }
-    constexpr HalfAddress encodeHalfAddress(byte a = 0, byte b = 0, byte c = 0, byte d = 0) noexcept {
-        return encodeBits<HalfAddress, QuarterAddress, 0xFFFF0000, 16>(
-                static_cast<HalfAddress>(encodeQuarterAddress(a, b)),
-                encodeQuarterAddress(c, d));
-    }
-    constexpr Address encodeOperation(byte a = 0, byte b = 0, byte c = 0, byte d = 0, byte e = 0, byte f = 0, byte g = 0, byte h = 0) {
-        return encodeBits<Address, HalfAddress, 0xFFFFFFFF00000000, 32>( static_cast<Address>(encodeHalfAddress(a, b, c, d)), encodeHalfAddress(e, f, g, h));
-    }
+    //constexpr QuarterAddress encodeQuarterAddress(byte a = 0, byte b = 0) noexcept {
+    //    return encodeBits<QuarterAddress, byte, 0xFF00, 8>(static_cast<QuarterAddress>(a), b);
+    //}
+    //constexpr HalfAddress encodeHalfAddress(byte a = 0, byte b = 0, byte c = 0, byte d = 0) noexcept {
+    //    return encodeBits<HalfAddress, QuarterAddress, 0xFFFF0000, 16>(
+    //            static_cast<HalfAddress>(encodeQuarterAddress(a, b)),
+    //            encodeQuarterAddress(c, d));
+    //}
+    //constexpr Address encodeOperation(byte a = 0, byte b = 0, byte c = 0, byte d = 0, byte e = 0, byte f = 0, byte g = 0, byte h = 0) {
+    //    return encodeBits<Address, HalfAddress, 0xFFFFFFFF00000000, 32>( static_cast<Address>(encodeHalfAddress(a, b, c, d)), encodeHalfAddress(e, f, g, h));
+    //}
     template<Address mask, Address shift>
     constexpr Address encodeByte(byte value, Address target = 0) noexcept {
         return encodeBits<Address, byte, mask, shift>(target, value);
@@ -176,15 +176,33 @@ namespace Instruction {
         return encodeBits<Address, QuarterAddress, mask, shift>(target, value);
     }
     template<byte startOffset>
-    constexpr Address encodeQuarterAddress(QuarterAddress value, Address target = 0) noexcept {
+    constexpr Address encodeOperation(QuarterAddress value, Address target = 0) noexcept {
         static_assert(startOffset < 7, "Illegal quarter address start address");
         return encodeQuarterAddress<0xFFFF << (startOffset * 8), startOffset * 8>(value, target);
     }
     template<byte startOffset>
-    constexpr Address encodeByte(byte value, Address target = 0) noexcept {
+    constexpr Address encodeOperation(byte value, Address target = 0) noexcept {
         static_assert(startOffset < 8, "Illegal byte offset start address!");
         return encodeByte<0xFF << (startOffset * 8), startOffset * 8>(value, target);
     }
+    template<byte offset, typename T>
+    constexpr Address encodeOperation(Address curr, T first) noexcept {
+        static_assert(offset < 8, "Too many fields provided!");
+        return encodeOperation<offset>(first, curr);
+    }
+    template<byte offset, typename T, typename ... Args>
+    constexpr Address encodeOperation(Address curr, T first, Args&& ... rest) noexcept {
+        static_assert(offset < 8, "Too many fields provided!");
+        return encodeOperation<offset + sizeof(T), Args...>( 
+                encodeOperation<offset, T>(curr, first),
+                std::move(rest)...);
+    }
+
+    template<typename T, typename ... Args>
+    constexpr Address encodeOperation(T first, Args&& ... rest) noexcept {
+        return encodeOperation<0, T, Args...>(0, first, std::move(rest)...);
+    }
+    
 } // end namespace Instruction
 constexpr bool legalOperation(Operation op) noexcept {
     return static_cast<byte>(Operation::Count) <= static_cast<byte>(op);

@@ -533,7 +533,7 @@ namespace forth {
 			_memory[addr] = value.numValue;
 		}
 	}
-	bool Machine::numberRoutine(const std::string& word, bool putTypeDataOntoStack) noexcept {
+	bool Machine::numberRoutine(const std::string& word) noexcept {
         if (word.empty()) { 
             return false; 
         }
@@ -543,9 +543,6 @@ namespace forth {
 		if (word == "true") {
 			if (_compiling) {
 				_compileTarget->addSpaceEntry(true);
-				if (putTypeDataOntoStack) {
-					_compileTarget->addTypeDataEntry(Discriminant::Boolean);
-				}
 			} else {
 				pushParameter(true);
 			}
@@ -554,9 +551,6 @@ namespace forth {
 		if (word == "false") {
 			if (_compiling) {
 				_compileTarget->addSpaceEntry(false);
-				if (putTypeDataOntoStack) {
-					_compileTarget->addTypeDataEntry(Discriminant::Boolean);
-				}
 			} else {
 				pushParameter(false);
 			}
@@ -569,9 +563,6 @@ namespace forth {
             if (!parseAttempt.fail()) {
                 if (_compiling) {
                     _compileTarget->addSpaceEntry(tmpAddress);
-                    if (putTypeDataOntoStack) {
-                        _compileTarget->addTypeDataEntry(Discriminant::MemoryAddress);
-                    }
                 }  else {
                     pushParameter(tmpAddress);
                 }
@@ -585,9 +576,6 @@ namespace forth {
 			if (!parseAttempt.fail()) {
 				if (_compiling) {
 					_compileTarget->addSpaceEntry(tmpAddress);
-					if (putTypeDataOntoStack) {
-						_compileTarget->addTypeDataEntry(Discriminant::MemoryAddress);
-					}
 				} else {
 					pushParameter(tmpAddress);
 				}
@@ -602,9 +590,6 @@ namespace forth {
 			if (!parseAttempt.fail() && parseAttempt.eof()) {
 				if (_compiling) {
 					_compileTarget->addSpaceEntry(tmpFloat);
-					if (putTypeDataOntoStack) {
-						_compileTarget->addTypeDataEntry(Discriminant::FloatingPoint);
-					}
 				} else {
 					pushParameter(tmpFloat);
 				}
@@ -620,9 +605,6 @@ namespace forth {
 		if (!parseAttempt.fail() && parseAttempt.eof()) {
 			if (_compiling) {
 				_compileTarget->addSpaceEntry(tmpInt);
-				if (putTypeDataOntoStack) {
-					_compileTarget->addTypeDataEntry(Discriminant::Number);
-				}
 			} else {
 				// if we hit the end of the word provided then it is an integer, otherwise it is not!
 				pushParameter(tmpInt);

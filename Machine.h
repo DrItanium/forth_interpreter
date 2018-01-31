@@ -25,7 +25,7 @@ namespace forth {
             void pushWord(DictionaryEntry* entry);
 			void pushParameter(Datum value);
 			Datum popParameter();
-			bool numberRoutine(const std::string& word, bool putTypeDataOntoStack = false) noexcept;
+			bool numberRoutine(const std::string& word) noexcept;
 			void typeValue(Discriminant discriminant, const Datum& value);
 			void typeValue(const Datum& value) { typeValue(_registerC.getType(), value); }
 			void typeValue() { typeValue(_registerA.getValue()); }

@@ -27,7 +27,7 @@ union Molecule {
 };
 
 enum class Operation : byte {
-    Nop,
+    Stop,
     Add,
     Subtract,
     Multiply,

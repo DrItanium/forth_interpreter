@@ -752,9 +752,7 @@ namespace forth {
             _registerIP.increment();
 
             switch (op) {
-                case Operation::Nop: 
-                    moveRegister(TargetRegister::RegisterA, TargetRegister::RegisterA); 
-                    break;
+                case Operation::Stop: return; // stop executing code within this molecule
                 case Operation::Add: numericCombine(); break; // add or subtract
                 case Operation::Subtract: numericCombine(true); break; // add or subtract
                 case Operation::ShiftRight: shiftOperation(); break; // shift right 

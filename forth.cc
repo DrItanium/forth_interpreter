@@ -398,7 +398,6 @@ namespace forth {
 			default:
 				throw Problem(subtract ? "-" : "+", "ILLEGAL DISCRIMINANT!");
 		}
-        _registerIP.increment();
 	}
 
 	void Machine::andOperation() {
@@ -751,6 +750,7 @@ namespace forth {
             auto pos = _registerIP.getAddress();
             auto op = getOperation(molecule.getByte(pos));
             _registerIP.increment();
+
             switch (op) {
                 case Operation::Nop: 
                     moveRegister(TargetRegister::RegisterA, TargetRegister::RegisterA); 
@@ -857,42 +857,41 @@ namespace forth {
 		Datum tmp;
 		switch (t) {
 			case Type::RegisterA:
-				tmp = _registerA.getValue();
+                pushParameter(_registerA.getValue());
 				break;
 			case Type::RegisterB:
-				tmp = _registerB.getValue();
+                pushParameter(_registerB.getValue());
 				break;
 			case Type::RegisterC:
-				tmp = _registerC.getValue();
+                pushParameter(_registerC.getValue());
 				break;
 			case Type::RegisterT:
-				tmp = static_cast<Address>(_registerC.getType());
+				pushParameter(static_cast<Address>(_registerC.getType()));
 				break;
 			case Type::RegisterTA:
-				tmp = static_cast<Address>(_registerA.getType());
+				pushParameter(static_cast<Address>(_registerA.getType()));
 				break;
 			case Type::RegisterTB:
-				tmp = static_cast<Address>(_registerB.getType());
+				pushParameter(static_cast<Address>(_registerB.getType()));
 				break;
 			case Type::RegisterTX:
-				tmp = static_cast<Address>(_registerX.getType());
+				pushParameter(static_cast<Address>(_registerX.getType()));
 				break;
+            case Type::RegisterTIP:
+                pushParameter(static_cast<Address>(_registerIP.getType()));
+                break;
 			case Type::RegisterS:
-				tmp = _registerS.getValue();
+                pushParameter(_registerS.getValue());
 				break;
 			case Type::RegisterX:
-				tmp = _registerX.getValue();
+                pushParameter(_registerX.getValue());
 				break;
             case Type::RegisterIP:
-                tmp = _registerIP.getValue();
-                break;
-            case Type::RegisterTIP:
-                tmp = static_cast<Address>(_registerIP.getType());
+                pushParameter(_registerIP.getValue());
                 break;
 			default:
 				throw Problem("push.register", "Unknown register!");
 		}
-		pushParameter(tmp);
 	}
     Register::Register(const Register& r) : _type(r._type), _value(r._value) { }
     Register::Register() : _type(static_cast<Discriminant>(0)), _value(Address(0)) { }

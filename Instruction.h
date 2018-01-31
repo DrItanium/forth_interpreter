@@ -65,6 +65,28 @@ enum class Operation : byte {
     //StoreFull, // two argument
     Count,
 };
+constexpr bool legalOperation(Operation op) noexcept {
+    return static_cast<byte>(Operation::Count) <= static_cast<byte>(op);
+}
+constexpr byte getInstructionWidth(Operation op) noexcept {
+    if (!legalOperation(op)) {
+        return 0;
+    }
+    switch (op) {
+        case Operation::SetImmediate16_Lower:
+        case Operation::SetImmediate16_Lowest:
+        case Operation::SetImmediate16_Higher:
+        case Operation::SetImmediate16_Highest:
+            return 3;
+        case Operation::PopRegister:
+        case Operation::PushRegister:
+        case Operation::Move:
+        case Operation::Swap:
+            return 2;
+        default:
+            return 1;
+    }
+}
 constexpr byte getDestinationRegister(byte field) noexcept { 
     return field & 0x0F; 
 }
@@ -75,6 +97,8 @@ constexpr Operation getOperation(byte i) noexcept {
     return static_cast<Operation>(i);
 }
 static_assert(static_cast<byte>(-1) >= static_cast<byte>(Operation::Count), "Too many operations defined!");
+
+
 
 } // end namespace forth
 #endif // end INSTRUCTION_H__

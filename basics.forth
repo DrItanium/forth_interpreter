@@ -1,48 +1,17 @@
-: bye quit ;
 : uc pop.s uc ;
-: register:a 0 ;
-: register:b 1 ;
-: register:c 2 ;
-: register:s 3 ;
-: register:x 4 ;
-: register:t 5 ;
-: register:ta 6 ;
-: register:tb 7 ;
-: register:tx 8 ;
-: register:ip 9 ;
-: register:tip a# ;
-: op:NOP 0 ;
-: op:ADD 1 ;
-: op:SUB 2 ;
-: op:MUL 3 ;
-: op:DIV 4 ;
-: op:MOD 5 ;
-: op:NOT 6 ;
-: op:MINUS 7 ;
-: op:AND 8 ;
-: op:OR 9 ;
-: op:GREATER_THAN a# ;
-: op:LESS_THAN b# ;
-: op:XOR c# ;
-: op:SHIFT_RIGHT d# ;
-: op:SHIFT_LEFT e# ;
-: op:POP_REGISTER f# ;
-: op:PUSH_REGISTER 10# ;
-: op:EQUALS 11# ;
-: op:TYPE_VALUE 12# ;
-: op:LOAD 13# ; 
-: op:STORE 14# ;
-: op:POW 15# ;
-: op:SET_LOWEST 16# ;
-: op:SET_LOWER 17# ;
-: op:SET_HIGHER 18# ;
-: op:SET_HIGHEST 19# ;
-: op:MOVE 1a# ;
-: op:SWAP 1b# ;
-: op:POPA 1c# ;
-: op:POPB 1d# ;
-: op:POPT 1e# ;
-: op:PUSHC 1f# ;
+
+: register:a 0 ;         : register:b 1 ;        : register:c 2 ;       : register:s 3 ;
+: register:x 4 ;         : register:t 5 ;        : register:ta 6 ;      : register:tb 7 ;
+: register:tx 8 ;        : register:ip 9 ;       : register:tip a# ;
+
+: op:NOP 0  ;            : op:ADD 1 ;            : op:SUB 2 ;           : op:MUL 3 ;
+: op:DIV 4  ;            : op:MOD 5 ;            : op:NOT 6 ;           : op:MINUS 7 ;
+: op:AND 8  ;            : op:OR 9 ;             : op:GREATER_THAN a# ; : op:LESS_THAN b# ;
+: op:XOR c# ;            : op:SHIFT_RIGHT d# ;   : op:SHIFT_LEFT e# ;   : op:POP_REGISTER f# ;
+: op:PUSH_REGISTER 10# ; : op:EQUALS 11# ;       : op:TYPE_VALUE 12# ;  : op:LOAD 13# ;
+: op:STORE 14# ;         : op:POW 15# ;          : op:SET_LOWEST 16# ;  : op:SET_LOWER 17# ;
+: op:SET_HIGHER 18# ;    : op:SET_HIGHEST 19# ;  : op:MOVE 1a# ;        : op:SWAP 1b# ;
+: op:POPA 1c# ;          : op:POPB 1d# ;         : op:POPT 1e# ;        : op:PUSHC 1f# ;
 
 : nop      op:NOP uc ;
 : pop.a    op:POPA uc ;
@@ -50,6 +19,7 @@
 : pop.t    op:POPT uc ;
 : push.c   op:PUSHC uc ;
 : push.a   op:PUSH_REGISTER uc ;
+
 : pop.ab   0000000000001d1c# uc ;
 : pop.ba   0000000000001c1d# uc ;
 : pop.c    000000000000020f# uc ;
@@ -90,56 +60,38 @@
 : istore   000014201a131d1c# uc ;
 : pow      0000001f151d1c1e# uc ;
 : swap.ab  00000000101b1d1c# uc ;
-: swap.ba  swap.ab ;
-: drop     pop.a ;
 : dup      000000001000101c# uc ;
-: 3*       011d201a011d1c1e# uc push.c ;
+: 3+       011d201a011d1c1e# uc push.c ;
+: 3-       021d201a021d1c1e# uc push.c ;
+: 3*       031d201a031d1c1e# uc push.c ;
+: 3/       041d201a041d1c1e# uc push.c ;
 : square   00001f01011a1c1e# uc ;
 : cube     01021b01011a1c1e# uc push.c ;
-: muc load uc ;
-: iuc uc ;
+: print.a  0000000000121c1e# uc ;
+: swap     0000000101101d1c# uc ;
+: over     0110001001101d1c# uc ;
 
-cache-basic-entries 
-: cache-basic-entries ;
 : dataType:SIGNED 0 ;
 : dataType:ADDRESS 1 ;
-: dataType:FLOATING_POINT 2 ;
+: dataType:FP 2 ;
 : dataType:BOOLEAN 3 ;
 
-: zero.a 0 pop.a ;
-: zero.b 0 pop.b ;
-: zero.c 0 pop.c ;
-: zero.s 0 pop.s ;
-: zero.x 0 pop.x ;
-: zero.ip 0 pop.ip ;
+: swap.ba  swap.ab ;
+: drop     pop.a ;
+: @        load ;
+: =        store ;
 
-: t.signed dataType:SIGNED pop.t ;
-: t.address dataType:ADDRESS pop.t ;
-: t.fp dataType:FLOATING_POINT pop.t ;
-: t.boolean dataType:BOOLEAN pop.t ;
-: ta.signed dataType:SIGNED pop.ta ;
-: ta.address dataType:ADDRESS pop.ta ;
-: ta.fp dataType:FLOATING_POINT pop.ta ; : ta.boolean dataType:BOOLEAN pop.ta ;
-: tb.signed dataType:SIGNED pop.tb ;
-: tb.address dataType:ADDRESS pop.tb ;
-: tb.fp dataType:FLOATING_POINT pop.tb ;
-: tb.boolean dataType:BOOLEAN pop.tb ;
-: tx.signed dataType:SIGNED pop.tx ;
-: tx.address dataType:ADDRESS pop.tx ;
-: tx.fp dataType:FLOATING_POINT pop.tx ;
-: tx.boolean dataType:BOOLEAN pop.tx ;
-: tip.signed dataType:SIGNED pop.tip ;
-: tip.address dataType:ADDRESS pop.tip ;
-: tip.fp dataType:FLOATING_POINT pop.tip ;
-: tip.boolean dataType:BOOLEAN pop.tip ;
+: ,  dataType:SIGNED  print.a ;
+: ,f dataType:FP      print.a ;
+: ,u dataType:ADDRESS print.a ;
+: ,b dataType:BOOLEAN print.a ;
 
-: zero.ta ta.signed ;
-: zero.tb tb.signed ;
-: zero.t t.signed ;
-: zero.tx tx.signed ;
-: zero.tip tip.signed ;
+: negate  dataType:SIGNED  not ;
+: negateu dataType:ADDRESS not ;
+: not     dataType:BOOLEAN not ;
 
-: clear-registers zero.t zero.a zero.b zero.c zero.x zero.ta zero.tb zero.tx zero.ip zero.tip zero.s ;
+: minusf dataType:FP     minus ;
+: minus  dataType:SIGNED minus ;
 
-: swap 0000000101101d1c# uc ;
-
+cache-basic-entries
+: cache-basic-entries ;

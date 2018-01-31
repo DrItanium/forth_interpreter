@@ -765,11 +765,14 @@ namespace forth {
         _subroutine.pop_back();
         addWord(_compileTarget);
         auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
+                static constexpr auto checkCondition = Instruction::encodeOperation( Instruction::popA(), Instruction::notOp());
+                static_assert(0x061c == checkCondition, "conditional operation failed!");
                     do {
                         body->operator()(m);
                         // pop.a
                         // not
-                        _registerS.setValue((Address)0x061c); // 
+                        _registerS.setValue(checkCondition);
+                        dispatchInstruction();
                         if (_registerC.getTruth()) {
                             break;
                         }

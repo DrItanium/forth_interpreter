@@ -709,18 +709,29 @@ namespace forth {
         auto parent = _subroutine.back();
         _subroutine.pop_back();
         addWord(_compileTarget);
-        auto container = new DictionaryEntry("", [body = _compileTarget](Machine* m) {
-                Datum counter;
-                Datum max;
+        auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
                 do {
                     body->operator()(m);
-                    counter = m->popParameter();
-                    max = m->popParameter();
-                    m->pushParameter(max);
-                    m->pushParameter(counter);
-                } while (counter.numValue != max.numValue);
+                    // compacted operation:
+                    // popa
+                    // popb
+                    // eq
+                    _registerS.setValue((Address)0x111d1c); // encode our operation set into the body
+                    dispatchInstruction();
+                    if (_registerC.getTruth()) {
+                        break;
+                    } else {
+                        _registerS.setValue((Address)0x00100110); // put the values back on the stack
+                        dispatchInstruction();
+                    }
+                } while (true);
 
                 });
+        container->markFakeEntry();
+        addWord(container);
+        _compileTarget = parent;
+        _compileTarget->addSpaceEntry(container);
+
     }
     void Machine::beginStatement() {
         if (!_compiling) {
@@ -741,12 +752,17 @@ namespace forth {
         auto parent = _subroutine.back();
         _subroutine.pop_back();
         addWord(_compileTarget);
-        auto container = new DictionaryEntry("", [body = _compileTarget](Machine* m) {
+        auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
                     Datum condition;
                     do {
                         body->operator()(m);
-                        condition = m->popParameter();
-                    } while (!condition.truth);
+                        // pop.a
+                        // not
+                        _registerS.setValue((Address)0x061c); // 
+                        if (_registerC.getTruth()) {
+                            break;
+                        }
+                    } while (true);
                 });
         container->markFakeEntry();
         addWord(container);

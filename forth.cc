@@ -125,54 +125,23 @@ namespace forth {
 		if (!_compiling) {
 			throw Problem("if", "must be defining a word!");
 		}
+        auto currentTarget = _compileTarget;
 		_subroutine.push_back(_compileTarget);
 		_compileTarget = new DictionaryEntry("");
 		_compileTarget->markFakeEntry();
-		auto word = readWord();
-		const auto* entry = lookupWord(word);
-		// Since else is optional, we have to be careful and somehow detail that 
-		// this operation is 
-		if (entry != nullptr) {
-			// TODO: add support for nesting entries by adding addresses onto the
-			// stack temporarily
-			// load the c register from the stack
-			_compileTarget->addSpaceEntry(_popC);
-			// compile the address of the entry we're looking for into 
-			_compileTarget->addLoadWordEntryIntoA(entry);
-			// compile in a fake address to the nop command
-			_compileTarget->addLoadWordEntryIntoB(_nop);
-		} else {
-			_compileTarget->addSpaceEntry(_popC);
-			if (numberRoutine(word, true)) {
-				_compileTarget->addSpaceEntry(_popTA);
-				_compileTarget->addSpaceEntry(_popA);
-				// compile in a fake address to the nop command
-				_compileTarget->addLoadWordEntryIntoB(_nop);
-			} else {
-				throw Problem(word, "?");
-			}
-		}
+        currentTarget->addSpaceEntry(_popC);
+        currentTarget->addLoadWordEntryIntoA(_compileTarget);
+        currentTarget->addLoadWordEntryIntoB(_nop);
+        // use the normal compilation process onto the _compileTarget we built
 	}
 	void Machine::elseCondition() {
 		if (!_compiling) {
 			throw Problem("else", "must be defining a word!");
 		}
-		auto word = readWord();
-		const auto* entry = lookupWord(word);
-		// Right now, we just add a new entry to the current compileTarget
-		if (entry != nullptr) {
-			_compileTarget->addLoadWordEntryIntoB(entry);
-		} else {
-			if (numberRoutine(word, true)) {
-				// we use the type data that will be pushed onto the stack
-				_compileTarget->addSpaceEntry(_popTB);
-				// this is a special case where we may need to make a custom fake 
-				// word for the purposes of invocation
-				_compileTarget->addSpaceEntry(_popB);
-			} else {
-				throw Problem(word, "?");
-			}
-		}
+        auto currentTarget = _compileTarget;
+        _subroutine.push_back(_compileTarget);
+        _compileTarget = new DictionaryEntry("");
+        _compileTarget->markFakeEntry();
 	}
 
 	void Machine::thenStatement() {

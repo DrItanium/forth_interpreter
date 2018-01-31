@@ -108,6 +108,8 @@ namespace forth {
             void thenStatement();
             void beginStatement();
             void endStatement();
+            void doStatement();
+            void continueStatement();
             void setImmediate16Lowest(const Molecule& m);
             void setImmediate16Lower(const Molecule& m);
             void setImmediate16Higher(const Molecule& m);

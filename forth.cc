@@ -687,8 +687,41 @@ namespace forth {
             addWord("end", std::mem_fn(&Machine::endStatement), true);
 			addWord("uc", std::mem_fn(&Machine::dispatchInstruction));
 			addWord("cache-basic-entries", std::mem_fn(&Machine::cacheBasicEntries));
+            addWord("do", std::mem_fn(&Machine::doStatement), true);
+            addWord("continue", std::mem_fn(&Machine::continueStatement), true);
 		}
 	}
+    void Machine::doStatement() {
+        if (!_compiling) {
+            throw Problem("do", "Not compiling!");
+        }
+        _subroutine.push_back(_compileTarget);
+        _compileTarget = new DictionaryEntry("");
+        _compileTarget->markFakeEntry();
+    }
+    void Machine::continueStatement() {
+        if (!_compiling) {
+            throw Problem("continue", "not compiling!");
+        } 
+        if (_subroutine.empty()) {
+            throw Problem("continue", "subroutine stack is empty!");
+        }
+        auto parent = _subroutine.back();
+        _subroutine.pop_back();
+        addWord(_compileTarget);
+        auto container = new DictionaryEntry("", [body = _compileTarget](Machine* m) {
+                Datum counter;
+                Datum max;
+                do {
+                    body->operator()(m);
+                    counter = m->popParameter();
+                    max = m->popParameter();
+                    m->pushParameter(max);
+                    m->pushParameter(counter);
+                } while (counter.numValue != max.numValue);
+
+                });
+    }
     void Machine::beginStatement() {
         if (!_compiling) {
             throw Problem("begin", "Must be compiling!");

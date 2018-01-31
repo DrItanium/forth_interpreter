@@ -163,3 +163,21 @@ cache-basic-entries : cache-basic-entries ;
 
 : abs dup 0 < if minus then ;
 : absf dup 0.0 <f if minusf then ;
+
+: >= < not ;
+: >=f <f not ;
+: >=u <u not ;
+
+: <= > not ;
+: <=f >f not ;
+: <=u >u not ;
+
+: xors dataType:SIGNED xor ;
+: xoru dataType:ADDRESS xor ;
+: xor dataType:BOOLEAN xor ;
+
+: <<u dataType:ADDRESS << ;
+: << dataType:SIGNED << ;
+
+: >>u dataType:ADDRESS >> ;
+: >> dataType:SIGNED >> ;

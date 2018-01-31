@@ -317,6 +317,7 @@ namespace forth {
 				break;
 			case Type::Boolean:
                 fn(_registerA.getTruth(), _registerB.getTruth());
+                break;
 			default:
 				throw Problem("==", "ILLEGAL DISCRIMINANT!");
 		}

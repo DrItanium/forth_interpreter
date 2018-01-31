@@ -60,6 +60,9 @@ enum class Operation : byte {
     PopB,
     PopT,
     PushC,
+    // Full versions of already existing operations
+    //LoadFull, // two argument
+    //StoreFull, // two argument
     Count,
 };
 constexpr byte getDestinationRegister(byte field) noexcept { 

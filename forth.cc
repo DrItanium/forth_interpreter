@@ -710,21 +710,27 @@ namespace forth {
         _subroutine.pop_back();
         addWord(_compileTarget);
         auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
-                do {
-                    body->operator()(m);
-                    // compacted operation:
-                    // popa
-                    // popb
-                    // eq
-                    _registerS.setValue((Address)0x111d1c); // encode our operation set into the body
+                _registerS.setValue((Address)0x111d1c);
+                dispatchInstruction();
+                if (_registerC.getTruth()) {
+                    _registerS.setValue((Address)0x00100110); // put the values back on the stack
                     dispatchInstruction();
-                    if (_registerC.getTruth()) {
-                        break;
-                    } else {
-                        _registerS.setValue((Address)0x00100110); // put the values back on the stack
+                    do {
+                        body->operator()(m);
+                        // compacted operation:
+                        // popa
+                        // popb
+                        // eq
+                        _registerS.setValue((Address)0x111d1c); // encode our operation set into the body
                         dispatchInstruction();
-                    }
-                } while (true);
+                        if (_registerC.getTruth()) {
+                            break;
+                        } else {
+                            _registerS.setValue((Address)0x00100110); // put the values back on the stack
+                            dispatchInstruction();
+                        }
+                    } while (true);
+                }
 
                 });
         container->markFakeEntry();

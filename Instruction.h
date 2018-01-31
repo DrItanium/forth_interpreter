@@ -156,17 +156,6 @@ namespace Instruction {
     constexpr byte popB() noexcept { return singleByteOp(Operation::PopB); }
     constexpr byte popT() noexcept { return singleByteOp(Operation::PopT); }
     constexpr byte pushC() noexcept { return singleByteOp(Operation::PushC); }
-    //constexpr QuarterAddress encodeQuarterAddress(byte a = 0, byte b = 0) noexcept {
-    //    return encodeBits<QuarterAddress, byte, 0xFF00, 8>(static_cast<QuarterAddress>(a), b);
-    //}
-    //constexpr HalfAddress encodeHalfAddress(byte a = 0, byte b = 0, byte c = 0, byte d = 0) noexcept {
-    //    return encodeBits<HalfAddress, QuarterAddress, 0xFFFF0000, 16>(
-    //            static_cast<HalfAddress>(encodeQuarterAddress(a, b)),
-    //            encodeQuarterAddress(c, d));
-    //}
-    //constexpr Address encodeOperation(byte a = 0, byte b = 0, byte c = 0, byte d = 0, byte e = 0, byte f = 0, byte g = 0, byte h = 0) {
-    //    return encodeBits<Address, HalfAddress, 0xFFFFFFFF00000000, 32>( static_cast<Address>(encodeHalfAddress(a, b, c, d)), encodeHalfAddress(e, f, g, h));
-    //}
     template<Address mask, Address shift>
     constexpr Address encodeByte(byte value, Address target = 0) noexcept {
         return encodeBits<Address, byte, mask, shift>(target, value);

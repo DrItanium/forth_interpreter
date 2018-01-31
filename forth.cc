@@ -1120,7 +1120,7 @@ namespace forth {
     void Machine::swapRegisters(const Molecule& m) {
         auto args = m.getByte(_registerIP.getAddress());
         auto dest = getDestinationRegister(args);
-        auto src = getDestinationRegister(args);
+        auto src = getSourceRegister(args);
         swapRegisters(static_cast<TargetRegister>(src), static_cast<TargetRegister>(dest));
         _registerIP.increment();
     }
@@ -1128,7 +1128,7 @@ namespace forth {
     void Machine::moveRegister(const Molecule& m) {
         auto args = m.getByte(_registerIP.getAddress());
         auto dest = getDestinationRegister(args);
-        auto src = getDestinationRegister(args);
+        auto src = getSourceRegister(args);
         moveRegister(static_cast<TargetRegister>(src), static_cast<TargetRegister>(dest));
         _registerIP.increment();
     }

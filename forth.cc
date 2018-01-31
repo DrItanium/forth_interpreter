@@ -759,7 +759,6 @@ namespace forth {
         _subroutine.pop_back();
         addWord(_compileTarget);
         auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
-                    Datum condition;
                     do {
                         body->operator()(m);
                         // pop.a

@@ -138,10 +138,11 @@ namespace forth {
 		if (!_compiling) {
 			throw Problem("else", "must be defining a word!");
 		}
-        auto currentTarget = _compileTarget;
-        _subroutine.push_back(_compileTarget);
-        _compileTarget = new DictionaryEntry("");
-        _compileTarget->markFakeEntry();
+        auto* elseBlock = new DictionaryEntry("");
+        elseBlock->markFakeEntry();
+        _subroutine.back()->addLoadWordEntryIntoB(elseBlock);
+        // let the if block dangle off since it is referenced else where
+        _compileTarget = elseBlock;
 	}
 
 	void Machine::thenStatement() {
@@ -151,13 +152,11 @@ namespace forth {
 		if (_subroutine.empty()) {
 			throw Problem("then", "Not in a function");
 		}
+        auto parent = _subroutine.back();
+        _subroutine.pop_back();
+        _compileTarget = parent;
 		_compileTarget->addChooseOperation();
 		_compileTarget->addInvokeCOperation();
-		addWord(_compileTarget);
-		auto parent = _subroutine.back();
-		_subroutine.pop_back();
-		parent->addSpaceEntry(_compileTarget);
-		_compileTarget = parent;
 	}
 	std::string Machine::readWord() {
 		std::string word;

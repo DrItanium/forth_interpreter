@@ -172,9 +172,9 @@ cache-basic-entries : cache-basic-entries ;
 : <=f >f not ;
 : <=u >u not ;
 
-: xors dataType:SIGNED xor ;
-: xoru dataType:ADDRESS xor ;
-: xor dataType:BOOLEAN xor ;
+: ^s dataType:SIGNED ^ ;
+: ^u dataType:ADDRESS ^ ;
+: ^ dataType:BOOLEAN ^ ;
 
 : <<u dataType:ADDRESS << ;
 : << dataType:SIGNED << ;

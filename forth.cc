@@ -196,16 +196,16 @@ namespace forth {
 		_compileTarget = nullptr;
 	}
 	void Machine::listWords() {
-		if (_words == nullptr) {
-			return;
-		}
+        _output << "words: " << std::endl;
+        if (_words == nullptr) {
+            return;
+        }
 		std::set<std::string> entries;
 		for (const auto* entry = _words; entry != nullptr; entry = entry->getNext()) {
-			entries.insert(entry->getName());
-		}
-		_output << "words: " << std::endl;
-		for (const auto& entry : entries) {
-			_output << "\t - " << entry << std::endl;
+            if (!entries.count(entry->getName())) {
+                _output << "\t - " << entry->getName() << std::endl;
+                entries.insert(entry->getName());
+            }
 		}
 	}
 	void Machine::addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke) {

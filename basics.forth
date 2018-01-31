@@ -93,29 +93,29 @@
 : =        store ;
 : ==       istore ;
 
-: ,  dataType:SIGNED  print.a ;
-: ,f dataType:FP      print.a ;
-: ,u dataType:ADDRESS print.a ;
-: ,b dataType:BOOLEAN print.a ;
+: ,  dataType:SIGNED  pop.t print.a ;
+: ,f dataType:FP      pop.t print.a ;
+: ,u dataType:ADDRESS pop.t print.a ;
+: ,b dataType:BOOLEAN pop.t print.a ;
 
-: negate  dataType:SIGNED  not ;
-: negateu dataType:ADDRESS not ;
-: not     dataType:BOOLEAN not ;
+: negate  dataType:SIGNED  pop.t not ;
+: negateu dataType:ADDRESS pop.t not ;
+: not     dataType:BOOLEAN pop.t not ;
 
-: minusf dataType:FP     minus ;
-: minus  dataType:SIGNED minus ;
+: minusf dataType:FP     pop.t minus ;
+: minus  dataType:SIGNED pop.t minus ;
 
 cache-basic-entries : cache-basic-entries ;
 
-: equ dataType:ADDRESS eq ;
-: eqf dataType:FP eq ;
-: eqb dataType:BOOLEAN eq ;
-: eq  dataType:SIGNED eq ;
+: equ dataType:ADDRESS pop.t eq ;
+: eqf dataType:FP pop.t eq ;
+: eqb dataType:BOOLEAN pop.t eq ;
+: eq  dataType:SIGNED pop.t eq ;
 
-: nequ dataType:ADDRESS neq ;
-: neqf dataType:FP neq ;
-: neqb dataType:BOOLEAN neq ;
-: neq dataType:SIGNED neq ;
+: nequ dataType:ADDRESS pop.t neq ;
+: neqf dataType:FP pop.t neq ;
+: neqb dataType:BOOLEAN pop.t neq ;
+: neq dataType:SIGNED pop.t neq ;
 
 : zero? 0 eq ;
 : zerou? 0 equ ;
@@ -129,39 +129,39 @@ cache-basic-entries : cache-basic-entries ;
 : powu dataType:ADDRESS pow ;
 : pow dataType:SIGNED pow ;
 
-: +u dataType:ADDRESS + ;
-: +f dataType:FP + ;
-: + dataType:SIGNED + ;
+: +u dataType:ADDRESS pop.t + ;
+: +f dataType:FP pop.t + ;
+: + dataType:SIGNED pop.t + ;
 
-: -u dataType:ADDRESS - ;
-: -f dataType:FP - ;
-: - dataType:SIGNED - ;
+: -u dataType:ADDRESS pop.t - ;
+: -f dataType:FP pop.t - ;
+: - dataType:SIGNED pop.t - ;
 
-: /u dataType:ADDRESS / ;
-: /f dataType:FP / ;
-: / dataType:SIGNED / ;
+: /u dataType:ADDRESS pop.t / ;
+: /f dataType:FP pop.t / ;
+: / dataType:SIGNED pop.t / ;
 
-: modu dataType:ADDRESS mod ;
-: modf dataType:FP mod ;
-: mod dataType:SIGNED mod ;
+: modu dataType:ADDRESS pop.t mod ;
+: modf dataType:FP pop.t mod ;
+: mod dataType:SIGNED pop.t mod ;
 
-: >u dataType:ADDRESS > ;
-: >f dataType:FP > ;
-: > dataType:SIGNED > ;
+: >u dataType:ADDRESS pop.t > ;
+: >f dataType:FP pop.t > ;
+: > dataType:SIGNED pop.t > ;
 
-: <u dataType:ADDRESS < ;
-: <f dataType:FP < ;
-: < dataType:SIGNED < ;
+: <u dataType:ADDRESS pop.t < ;
+: <f dataType:FP pop.t < ;
+: < dataType:SIGNED pop.t < ;
 
-: ors dataType:SIGNED or ;
-: oru dataType:ADDRESS or ;
-: orf dataType:FP or ;
-: or dataType:BOOLEAN or ;
+: ors dataType:SIGNED pop.t or ;
+: oru dataType:ADDRESS pop.t or ;
+: orf dataType:FP pop.t or ;
+: or dataType:BOOLEAN pop.t or ;
 
-: ands dataType:SIGNED and ;
-: andu dataType:ADDRESS and ;
-: andf dataType:FP and ;
-: and dataType:BOOLEAN and ;
+: ands dataType:SIGNED pop.t and ;
+: andu dataType:ADDRESS pop.t and ;
+: andf dataType:FP pop.t and ;
+: and dataType:BOOLEAN pop.t and ;
 
 : abs dup 0 < if minus then ;
 : absf dup 0.0 <f if minusf then ;
@@ -174,15 +174,15 @@ cache-basic-entries : cache-basic-entries ;
 : <=f >f not ;
 : <=u >u not ;
 
-: ^s dataType:SIGNED ^ ;
-: ^u dataType:ADDRESS ^ ;
-: ^ dataType:BOOLEAN ^ ;
+: ^s dataType:SIGNED pop.t ^ ;
+: ^u dataType:ADDRESS pop.t ^ ;
+: ^ dataType:BOOLEAN pop.t ^ ;
 
-: <<u dataType:ADDRESS << ;
-: << dataType:SIGNED << ;
+: <<u dataType:ADDRESS pop.t << ;
+: << dataType:SIGNED pop.t << ;
 
-: >>u dataType:ADDRESS >> ;
-: >> dataType:SIGNED >> ;
+: >>u dataType:ADDRESS pop.t >> ;
+: >> dataType:SIGNED pop.t >> ;
 
 : nor  001f06201a091d1c# uc ;
 : noru dataType:ADDRESS pop.t nor ;

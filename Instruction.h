@@ -168,8 +168,11 @@ static_assert(static_cast<byte>(-1) >= static_cast<byte>(Operation::Count), "Too
 
 namespace Instruction {
     constexpr byte singleByteOp(Operation op) noexcept { return static_cast<byte>(op); }
+    constexpr QuarterAddress encodeTwoByte(byte a, byte b) noexcept {
+        return encodeBits<QuarterAddress, byte, 0xFF00, 8>(QuarterAddress(a), b);
+    }
     constexpr QuarterAddress encodeTwoByte(Operation first, byte second) noexcept {
-        return encodeBits<QuarterAddress, byte, 0xFF00, 8>(QuarterAddress(first), second);
+        return encodeTwoByte(byte(first), second);
     }
     constexpr QuarterAddress encodeTwoByte(Operation first, TargetRegister dest, TargetRegister src) noexcept {
         return encodeTwoByte(first, encodeRegisterPair(dest, src));
@@ -227,12 +230,12 @@ namespace Instruction {
     template<byte startOffset>
     constexpr Address encodeOperation(QuarterAddress value, Address target = 0) noexcept {
         static_assert(startOffset < 7, "Illegal quarter address start address");
-        return encodeQuarterAddress<0xFFFF << (startOffset * 8), startOffset * 8>(value, target);
+        return encodeQuarterAddress<Address(0xFFFF)<< (startOffset * 8), startOffset * 8>(value, target);
     }
     template<byte startOffset>
     constexpr Address encodeOperation(byte value, Address target = 0) noexcept {
         static_assert(startOffset < 8, "Illegal byte offset start address!");
-        return encodeByte<0xFF << (startOffset * 8), startOffset * 8>(value, target);
+        return encodeByte<Address(0xFF) << (startOffset * 8), startOffset * 8>(value, target);
     }
     template<byte offset, typename T>
     constexpr Address encodeOperation(Address curr, T first) noexcept {
@@ -272,7 +275,14 @@ namespace Instruction {
     static_assert(Address(0xFDED17) == setImmediate16_Lower(0xfded), "setImmediate16_Lower is broken!");
     static_assert(Address(0xFDED18) == setImmediate16_Higher(0xfded), "setImmediate16_Higher is broken!");
     static_assert(Address(0xFDED19) == setImmediate16_Highest(0xfded), "setImmediate16_Highest is broken!");
+    constexpr QuarterAddress popAB() noexcept {
+        return (QuarterAddress)encodeOperation(popA(), popB());
+    }
+    constexpr QuarterAddress swapAB() noexcept {
+        return swap(TargetRegister::RegisterB, TargetRegister::RegisterA);
+    }
 } // end namespace Instruction
+
 
 } // end namespace forth
 #endif // end INSTRUCTION_H__

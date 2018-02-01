@@ -105,8 +105,6 @@
 : minusf dataType:FP     pop.t minus ;
 : minus  dataType:SIGNED pop.t minus ;
 
-cache-basic-entries : cache-basic-entries ;
-
 : equ dataType:ADDRESS pop.t eq ;
 : eqf dataType:FP pop.t eq ;
 : eqb dataType:BOOLEAN pop.t eq ;

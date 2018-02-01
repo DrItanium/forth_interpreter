@@ -149,7 +149,6 @@ namespace forth {
 			void terminateExecution();
             void seeWord(const DictionaryEntry* entry);
 			void initializeBaseDictionary();
-            void cacheBasicEntries();
 			std::string readWord();
             void moveOrSwap(TargetRegister from, TargetRegister to, bool swap = false);
             void moveRegister(const Molecule& m);
@@ -164,29 +163,11 @@ namespace forth {
             std::list<DictionaryEntry*> _subroutine;
             std::list<Datum> _parameter;
 			bool _initializedBaseDictionary = false;
-            bool _cachedBasicEntries = false;
 			bool _keepExecuting = true;
 			bool _compiling = false;
 			DictionaryEntry* _compileTarget = nullptr;
 			// internal "registers"
             Register _registerA, _registerB, _registerC, _registerS, _registerX, _registerIP;
-            const DictionaryEntry* _popTA = nullptr;
-            const DictionaryEntry* _popTB = nullptr;
-            const DictionaryEntry* _popTX = nullptr;
-            const DictionaryEntry* _popA = nullptr;
-            const DictionaryEntry* _popB = nullptr;
-            const DictionaryEntry* _popC = nullptr;
-            const DictionaryEntry* _popT = nullptr;
-            const DictionaryEntry* _popS = nullptr;
-            const DictionaryEntry* _popX = nullptr;
-            const DictionaryEntry* _pushA = nullptr;
-            const DictionaryEntry* _pushB = nullptr;
-            const DictionaryEntry* _pushC = nullptr;
-            const DictionaryEntry* _pushT = nullptr;
-            const DictionaryEntry* _pushX = nullptr;
-            const DictionaryEntry* _pushS = nullptr;
-            const DictionaryEntry* _nop = nullptr;
-
 	};
 } // end namespace forth
 

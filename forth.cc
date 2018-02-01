@@ -316,9 +316,10 @@ namespace forth {
 	}
 
 	void Machine::divide(bool remainder) {
-		auto fn = [this, remainder](auto a, auto b) {
+		auto title = remainder ? "mod" : "/";
+		auto fn = [this, remainder, &title](auto a, auto b) {
 			if (b == 0) {
-				throw Problem(remainder ? "mod" : "/", "DIVIDE BY ZERO!");
+				throw Problem(title, "DIVIDE BY ZERO!");
 			} else {
 				_registerC.setValue(remainder ? a % b : a / b);
 			}
@@ -338,7 +339,7 @@ namespace forth {
 				_registerC.setValue(_registerA.getFP() / _registerB.getFP());
 				break;
 			default:
-				throw Problem(remainder ? "mod" : "/", "ILLEGAL DISCRIMINANT!");
+				throw Problem(title, "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
@@ -678,7 +679,6 @@ namespace forth {
 			addWord("begin", std::mem_fn(&Machine::beginStatement), true);
 			addWord("end", std::mem_fn(&Machine::endStatement), true);
 			addWord("uc", std::mem_fn(&Machine::dispatchInstruction));
-			addWord("cache-basic-entries", std::mem_fn(&Machine::cacheBasicEntries));
 			addWord("do", std::mem_fn(&Machine::doStatement), true);
 			addWord("continue", std::mem_fn(&Machine::continueStatement), true);
 		}
@@ -824,27 +824,6 @@ namespace forth {
 				case Operation::PushC: pushRegister(TargetRegister::RegisterC); break;
 				default: throw Problem("uc", "Unknown instruction address!");
 			}
-		}
-	}
-	void Machine::cacheBasicEntries() {
-		if (!_cachedBasicEntries) {
-			_cachedBasicEntries = true;
-			_popT = lookupWord("pop.t");
-			_popA = lookupWord("pop.a");
-			_popB = lookupWord("pop.b");
-			_popC = lookupWord("pop.c");
-			_pushT = lookupWord("push.t");
-			_pushA = lookupWord("push.a");
-			_pushB = lookupWord("push.b");
-			_pushC = lookupWord("push.c");
-			_popTA = lookupWord("pop.ta");
-			_popTB = lookupWord("pop.tb");
-			_popTX = lookupWord("pop.tx");
-			_popX = lookupWord("pop.x");
-			_popS = lookupWord("pop.s");
-			_pushS = lookupWord("push.s");
-			_pushX = lookupWord("push.x");
-			_nop = lookupWord("nop");
 		}
 	}
 	void Machine::popRegister(TargetRegister t) {

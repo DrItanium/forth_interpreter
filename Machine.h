@@ -153,6 +153,8 @@ namespace forth {
             void moveOrSwap(TargetRegister from, TargetRegister to, bool swap = false);
             void moveRegister(const Molecule& m);
             void swapRegisters(const Molecule& m);
+			void compileMicrocodeInvoke(const Molecule& m, DictionaryEntry* current);
+			void microcodeInvoke(const Molecule& m);
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;
@@ -168,6 +170,8 @@ namespace forth {
 			DictionaryEntry* _compileTarget = nullptr;
 			// internal "registers"
             Register _registerA, _registerB, _registerC, _registerS, _registerX, _registerIP;
+			const DictionaryEntry* _microcodeInvoke = nullptr;
+			const DictionaryEntry* _popS = nullptr;
 	};
 } // end namespace forth
 

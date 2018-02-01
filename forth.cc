@@ -137,8 +137,12 @@ namespace forth {
 
 		currentTarget->pushWord(_compileTarget);
 		currentTarget->pushWord(elseBlock);
-		currentTarget->addSpaceEntry(prepRegisters);
-		currentTarget->addSpaceEntry(lookupWord("uc"));
+		compileMicrocodeInvoke(prepRegisters, currentTarget);
+	}
+	void Machine::compileMicrocodeInvoke(const Molecule& m, DictionaryEntry* current) {
+		current->addSpaceEntry(m._value);
+		current->addSpaceEntry(_popS);
+		current->addSpaceEntry(_microcodeInvoke);
 	}
 	void Machine::elseCondition() {
 		if (!_compiling) {
@@ -687,6 +691,8 @@ namespace forth {
 			addWord("continue", std::mem_fn(&Machine::continueStatement), true);
 			addWord("choose.c", std::mem_fn(&Machine::chooseRegister));
 			addWord("invoke.c", std::mem_fn(&Machine::invokeCRegister));
+			_microcodeInvoke = lookupWord("uc");
+			_popS = lookupWord("pop.s");
 		}
 	}
 	void Machine::doStatement() {
@@ -696,6 +702,10 @@ namespace forth {
 		_subroutine.push_back(_compileTarget);
 		_compileTarget = new DictionaryEntry("");
 		_compileTarget->markFakeEntry();
+	}
+	void Machine::microcodeInvoke(const Molecule& m) {
+		_registerS.setValue(m._value);
+		dispatchInstruction();
 	}
 	void Machine::continueStatement() {
 		if (!_compiling) {
@@ -712,26 +722,22 @@ namespace forth {
 				static constexpr auto saveABToStack = Instruction::encodeOperation(Instruction::pushB(), Instruction::pushA());
 				static_assert(Address(0x111d1c) == performEqualityCheck, "Equality check operation failed!");
 				static_assert(Address(0x00100110) == saveABToStack, "Save AB to stack routine failed!");
-				_registerS.setValue(performEqualityCheck);
-				dispatchInstruction();
+				microcodeInvoke(performEqualityCheck);
 				if (_registerC.getTruth()) {
-				_registerS.setValue(saveABToStack); // put the values back on the stack
-				dispatchInstruction();
-				do {
-				body->operator()(m);
-				// compacted operation:
-				// popa
-				// popb
-				// eq
-				_registerS.setValue(performEqualityCheck);
-				dispatchInstruction();
-				if (_registerC.getTruth()) {
-				break;
-				} else {
-					_registerS.setValue(saveABToStack); // put the values back on the stack
-					dispatchInstruction();
-				}
-				} while (true);
+					microcodeInvoke(saveABToStack); // put the values back on the stack
+					do {
+						body->operator()(m);
+						// compacted operation:
+						// popa
+						// popb
+						// eq
+						microcodeInvoke(performEqualityCheck);
+						if (_registerC.getTruth()) {
+							break;
+						} else {
+							microcodeInvoke(saveABToStack); // put the values back on the stack
+						}
+					} while (true);
 				}
 
 		});
@@ -763,16 +769,15 @@ namespace forth {
 		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
 				static constexpr auto checkCondition = Instruction::encodeOperation( Instruction::popA(), Instruction::notOp());
 				static_assert(0x061c == checkCondition, "conditional operation failed!");
-				do {
-				body->operator()(m);
-				// pop.a
-				// not
-				_registerS.setValue(checkCondition);
-				dispatchInstruction();
-				if (_registerC.getTruth()) {
-				break;
-				}
-				} while (true);
+					do {
+						body->operator()(m);
+						// pop.a
+						// not
+						microcodeInvoke(checkCondition);
+						if (_registerC.getTruth()) {
+						break;
+						}
+					} while (true);
 				});
 		container->markFakeEntry();
 		addWord(container);

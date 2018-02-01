@@ -891,35 +891,20 @@ namespace forth {
 	void Machine::load(const Molecule& m) {
 		try {
 			// figure out which register to get the address from!
-			auto target = static_cast<TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress())));
-			if (involvesDiscriminantRegister(target)) {
+			auto args = m.getByte(_registerIP.getAddress());
+			auto dest = static_cast<TargetRegister>(getDestinationRegister(args));
+			auto src = static_cast<TargetRegister>(getSourceRegister(args));
+			if (involvesDiscriminantRegister(src)) {
 				throw Problem("", "Can't use the discriminant field of a register as an address!");
-			} else if (!legalValue(target)) {
+			} else if (!legalValue(src)) {
 				throw Problem("", "Illegal undefined register!");
 			}
-			using Type = decltype(target);
-			load(getRegister(target).getAddress());
-			switch (target) {
-				case Type::RegisterA:
-					load(_registerA.getAddress());
-					break;
-				case Type::RegisterB:
-					load(_registerB.getAddress());
-					break;
-				case Type::RegisterC:
-					load(_registerC.getAddress());
-					break;
-				case Type::RegisterIP:
-					load(_registerIP.getAddress());
-					break;
-				case Type::RegisterS:
-					load(_registerS.getAddress());
-					break;
-				case Type::RegisterX:
-					load(_registerX.getAddress());
-					break;
-				default:
-					throw Problem("", "Undefined register!");
+			Register& d = getRegister(dest);
+			Register& s = getRegister(src);
+			if (involvesDiscriminantRegister(dest)) {
+				d.setType(static_cast<Discriminant>(load(s.getAddress()).address));
+			} else {
+				d.setValue(load(s.getAddress()));
 			}
 			_registerIP.increment();
 		} catch (Problem& p) {

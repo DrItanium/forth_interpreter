@@ -88,9 +88,14 @@ namespace forth {
             static constexpr auto Immediate16Mask = static_cast<Address>(0xFFFF) << Immediate16ShiftIndex<pos>;
 
             template<Immediate16Positions pos>
-            void setImmediate16(const Molecule& m) {
+            void setImmediate16(TargetRegister reg, QuarterAddress value) {
+                Register& dest = getRegister(reg);
+                dest.setValue(encodeBits<Address, QuarterAddress, Immediate16Mask<pos>, Immediate16ShiftIndex<pos>>(dest.getAddress(), value));
+            }
+            template<Immediate16Positions pos>
+            void setImmediate16(const Molecule& m, TargetRegister target = TargetRegister::RegisterX) {
                 try {
-                    _registerX.setValue(encodeBits<Address, QuarterAddress, Immediate16Mask<pos>, Immediate16ShiftIndex<pos>>(_registerX.getAddress(), m.getQuarterAddress(_registerIP.getAddress())));
+                    setImmediate16<pos>(target, m.getQuarterAddress(_registerIP.getAddress()));
                     _registerIP.increment();
                     _registerIP.increment();
                 } catch (Problem& p) {
@@ -107,6 +112,31 @@ namespace forth {
                             break;
                         case Immediate16Positions::Highest:
                             msg = "set-immediate16-highest";
+                            break;
+                    }
+                    throw Problem(msg, p.getMessage());
+                }
+            }
+            template<Immediate16Positions pos>
+            void setImmediate16Full(const Molecule& m) {
+                try {
+                    auto dest = getDestinationRegister(m.getByte(_registerIP.getAddress()));
+                    _registerIP.increment();
+                    setImmediate16<pos>(m.getQuarterAddress(_registerIP.getAddress()), static_cast<TargetRegister>(dest));
+                } catch (Problem& p) {
+                    std::string msg("set-immediate16-full-unknown");
+                    switch (pos) {
+                        case Immediate16Positions::Lowest:
+                            msg = "set-immediate16-full-lowest";
+                            break;
+                        case Immediate16Positions::Lower:
+                            msg = "set-immediate16-full-lower";
+                            break;
+                        case Immediate16Positions::Higher:
+                            msg = "set-immediate16-full-higher";
+                            break;
+                        case Immediate16Positions::Highest:
+                            msg = "set-immediate16-full-highest";
                             break;
                     }
                     throw Problem(msg, p.getMessage());

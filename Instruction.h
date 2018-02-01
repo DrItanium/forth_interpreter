@@ -140,6 +140,8 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         case Operation::PushRegister:
         case Operation::Move:
         case Operation::Swap:
+        case Operation::Load:
+        case Operation::Store:
             return 2;
         default:
             return 1;
@@ -206,8 +208,8 @@ namespace Instruction {
     }
     constexpr byte equals() noexcept { return singleByteOp(Operation::Equals); }
     constexpr byte typeValue() noexcept { return singleByteOp(Operation::TypeValue); }
-    constexpr byte load() noexcept { return singleByteOp(Operation::Load); }
-    constexpr byte store() noexcept { return singleByteOp(Operation::Load); }
+    constexpr QuarterAddress load(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Load, dest, src); }
+    constexpr QuarterAddress store(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Store, dest, src); }
     constexpr byte pow() noexcept { return singleByteOp(Operation::Pow); }
     constexpr QuarterAddress move(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Move, dest, src); }
     constexpr QuarterAddress swap(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Swap, dest, src); }

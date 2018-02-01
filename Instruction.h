@@ -112,8 +112,53 @@ enum class Operation : byte {
     // Full versions of already existing operations
     //LoadFull, // two argument
     //StoreFull, // two argument
+    //SetImmediate32_Lower,
+    //SetImmediate32_Upper,
     Count,
 };
+
+
+constexpr bool legalOperation(Operation op) noexcept {
+    return static_cast<byte>(Operation::Count) <= static_cast<byte>(op);
+}
+constexpr byte getInstructionWidth(Operation op) noexcept {
+    if (!legalOperation(op)) {
+        return 0;
+    }
+    switch (op) {
+        case Operation::SetImmediate16_Lower:
+        case Operation::SetImmediate16_Lowest:
+        case Operation::SetImmediate16_Higher:
+        case Operation::SetImmediate16_Highest:
+            return 3;
+        case Operation::PopRegister:
+        case Operation::PushRegister:
+        case Operation::Move:
+        case Operation::Swap:
+            return 2;
+        default:
+            return 1;
+    }
+}
+constexpr byte getInstructionWidth(byte value) noexcept {
+    return getInstructionWidth(static_cast<Operation>(value));
+}
+constexpr byte getInstructionWidth(QuarterAddress value) noexcept {
+    return getInstructionWidth(byte(value & 0xFF));
+}
+constexpr byte getInstructionWidth(HalfAddress value) noexcept {
+    return getInstructionWidth(byte(value & 0xFF));
+}
+constexpr byte getDestinationRegister(byte field) noexcept { 
+    return field & 0x0F; 
+}
+constexpr byte getSourceRegister(byte field) noexcept { 
+    return (field & 0xF0) >> 4; 
+}
+constexpr Operation getOperation(byte i) noexcept {
+    return static_cast<Operation>(i);
+}
+static_assert(static_cast<byte>(-1) >= static_cast<byte>(Operation::Count), "Too many operations defined!");
 
 
 namespace Instruction {
@@ -156,6 +201,7 @@ namespace Instruction {
     constexpr byte popB() noexcept { return singleByteOp(Operation::PopB); }
     constexpr byte popT() noexcept { return singleByteOp(Operation::PopT); }
     constexpr byte pushC() noexcept { return singleByteOp(Operation::PushC); }
+
     template<Address mask, Address shift>
     constexpr Address encodeByte(byte value, Address target = 0) noexcept {
         return encodeBits<Address, byte, mask, shift>(target, value);
@@ -186,6 +232,23 @@ namespace Instruction {
                 encodeOperation<offset, T>(curr, first),
                 std::move(rest)...);
     }
+    template<byte offset, typename ... Args>
+    constexpr Address encodeOperation(Address curr, HalfAddress value, Args&& ... rest) noexcept {
+        // we will either have 3 or four bytes to look at
+        auto width = getInstructionWidth(value);
+        switch (width) {
+            case 1:
+                return encodeOperation<offset>(curr, static_cast<byte>(value), std::move(rest)...);
+            case 2:
+                return encodeOperation<offset>(curr, static_cast<QuarterAddress>(value), std::move(rest)...);
+            case 3:
+                return encodeOperation<offset>(curr, static_cast<byte>(value), QuarterAddress(value >> 8), std::move(rest)...);
+            case 4:
+                return encodeOperation<offset>(curr, static_cast<QuarterAddress>(value), static_cast<QuarterAddress>(value >> 16), std::move(rest)...);
+            default:
+                    return encodeOperation<offset>(curr, std::move(rest)...);
+        }
+    }
 
     template<typename T, typename ... Args>
     constexpr Address encodeOperation(T first, Args&& ... rest) noexcept {
@@ -193,40 +256,6 @@ namespace Instruction {
     }
     
 } // end namespace Instruction
-constexpr bool legalOperation(Operation op) noexcept {
-    return static_cast<byte>(Operation::Count) <= static_cast<byte>(op);
-}
-constexpr byte getInstructionWidth(Operation op) noexcept {
-    if (!legalOperation(op)) {
-        return 0;
-    }
-    switch (op) {
-        case Operation::SetImmediate16_Lower:
-        case Operation::SetImmediate16_Lowest:
-        case Operation::SetImmediate16_Higher:
-        case Operation::SetImmediate16_Highest:
-            return 3;
-        case Operation::PopRegister:
-        case Operation::PushRegister:
-        case Operation::Move:
-        case Operation::Swap:
-            return 2;
-        default:
-            return 1;
-    }
-}
-constexpr byte getDestinationRegister(byte field) noexcept { 
-    return field & 0x0F; 
-}
-constexpr byte getSourceRegister(byte field) noexcept { 
-    return (field & 0xF0) >> 4; 
-}
-constexpr Operation getOperation(byte i) noexcept {
-    return static_cast<Operation>(i);
-}
-static_assert(static_cast<byte>(-1) >= static_cast<byte>(Operation::Count), "Too many operations defined!");
-
-
 
 } // end namespace forth
 #endif // end INSTRUCTION_H__

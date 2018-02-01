@@ -7,7 +7,6 @@
 #include <limits>
 #include <sstream>
 #include <cmath>
-#include <set>
 #include "Types.h"
 #include "Problem.h"
 #include "Datum.h"
@@ -196,16 +195,14 @@ namespace forth {
 		_compileTarget = nullptr;
 	}
 	void Machine::listWords() {
-        _output << "words: " << std::endl;
         if (_words == nullptr) {
             return;
         }
-		std::set<std::string> entries;
 		for (const auto* entry = _words; entry != nullptr; entry = entry->getNext()) {
-            if (!entries.count(entry->getName())) {
-                _output << "\t - " << entry->getName() << std::endl;
-                entries.insert(entry->getName());
+            if (entry->isFake()) {
+                continue;
             }
+            _output << "\t - " << entry->getName() << std::endl;
 		}
 	}
 	void Machine::addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke) {

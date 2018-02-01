@@ -41,9 +41,9 @@ namespace forth {
 			void setTA(Discriminant target) noexcept { _registerA.setType(target); }
 			void setTB(Discriminant target) noexcept { _registerB.setType(target); }
 			void setB(const Datum& target) noexcept { _registerB.setValue(target); }
+		private:
             void chooseRegister();
             void invokeCRegister();
-		private:
             Register& getRegister(TargetRegister t);
             void load(const Molecule& m);
             void store(const Molecule& m);

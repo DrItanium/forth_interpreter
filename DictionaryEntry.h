@@ -20,11 +20,7 @@ namespace forth {
 					FloatingPoint,
 					Boolean,
 					DictEntry,
-                    LoadWordIntoA,
-                    LoadWordIntoB,
-                    ChooseRegisterAndStoreInC,
-                    InvokeRegisterC,
-                    //TODO: add support for embedding molecules
+					Word,
 				};
 				Discriminant _type;
 				union {
@@ -55,11 +51,7 @@ namespace forth {
 			void addSpaceEntry(bool value);
 			void addSpaceEntry(const DictionaryEntry* value);
             void addSpaceEntry(SpaceEntry::Discriminant type, const DictionaryEntry* value);
-            void addTypeDataEntry(forth::Discriminant type);
-            void addLoadWordEntryIntoA(const DictionaryEntry* value);
-            void addLoadWordEntryIntoB(const DictionaryEntry* value);
-            void addChooseOperation();
-            void addInvokeCOperation();
+			void pushWord(const DictionaryEntry* value);
 			void operator()(Machine* machine) const;
             void markCompileTimeInvoke() noexcept { _compileTimeInvoke = true; }
             bool compileTimeInvoke() const noexcept { return _compileTimeInvoke; }

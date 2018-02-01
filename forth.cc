@@ -35,6 +35,14 @@ namespace forth {
 					_output << innerTarget->getName();
 				}
 			};
+			auto outputWord = [this, entry](auto space) {
+				auto innerTarget = space->_entry;
+				if (innerTarget->isFake()) {
+					_output << "0x" << std::hex << innerTarget;
+				} else {
+					_output << innerTarget->getName();
+				}
+			};
 			for (auto x = entry->begin(); x != entry->end(); ++x) {
 				using Type = decltype(x->_type);
 				_output << "\t";
@@ -54,17 +62,8 @@ namespace forth {
 					case Type::DictEntry:
 						outputDictionaryEntry(x);
 						break;
-					case Type::LoadWordIntoA:
-						_output << "native:lw.a " << x->_entry->getName();
-						break;
-					case Type::LoadWordIntoB:
-						_output << "native:lw.b " << x->_entry->getName();
-						break;
-					case Type::ChooseRegisterAndStoreInC:
-						_output << "native:choose-and-store-into-c";
-						break;
-					case Type::InvokeRegisterC:
-						_output << "native:invoke.c";
+					case Type::Word:
+						outputWord(x);
 						break;
 					default:
 						_output << std::endl;
@@ -120,6 +119,10 @@ namespace forth {
 		}
 	}
 	void Machine::ifCondition() {
+		static constexpr auto prepRegisters = Instruction::encodeOperation(
+				Instruction::popB(), 
+				Instruction::popA(), 
+				Instruction::popC());
 		// if we're not in compilation mode then error out
 		if (!_compiling) {
 			throw Problem("if", "must be defining a word!");
@@ -131,10 +134,11 @@ namespace forth {
 		auto* elseBlock = new DictionaryEntry("");
 		elseBlock->markFakeEntry();
 		_subroutine.push_back(elseBlock);
-		currentTarget->addSpaceEntry(lookupWord("pop.c"));
-		currentTarget->addLoadWordEntryIntoA(_compileTarget);
-		currentTarget->addLoadWordEntryIntoB(elseBlock);
-		// use the normal compilation process onto the _compileTarget we built
+
+		currentTarget->pushWord(_compileTarget);
+		currentTarget->pushWord(elseBlock);
+		currentTarget->addSpaceEntry(prepRegisters);
+		currentTarget->addSpaceEntry(lookupWord("uc"));
 	}
 	void Machine::elseCondition() {
 		if (!_compiling) {
@@ -162,8 +166,8 @@ namespace forth {
 		_subroutine.pop_back();
 		addWord(_compileTarget);
 		_compileTarget = parent;
-		_compileTarget->addChooseOperation();
-		_compileTarget->addInvokeCOperation();
+		_compileTarget->addSpaceEntry(lookupWord("choose.c"));
+		_compileTarget->addSpaceEntry(lookupWord("invoke.c"));
 	}
 	std::string Machine::readWord() {
 		std::string word;
@@ -681,6 +685,8 @@ namespace forth {
 			addWord("uc", std::mem_fn(&Machine::dispatchInstruction));
 			addWord("do", std::mem_fn(&Machine::doStatement), true);
 			addWord("continue", std::mem_fn(&Machine::continueStatement), true);
+			addWord("choose.c", std::mem_fn(&Machine::chooseRegister));
+			addWord("invoke.c", std::mem_fn(&Machine::invokeCRegister));
 		}
 	}
 	void Machine::doStatement() {

@@ -4,9 +4,6 @@
 #include "Problem.h"
 #include "Machine.h"
 namespace forth {
-    void DictionaryEntry::addTypeDataEntry(forth::Discriminant type) {
-        addSpaceEntry(static_cast<Address>(type));
-    }
     void DictionaryEntry::operator()(Machine* machine) const {
         if (_code != nullptr) {
             _code(machine);
@@ -20,26 +17,16 @@ namespace forth {
             }
         }
     }
-    void DictionaryEntry::addChooseOperation() {
-        addSpaceEntry(SpaceEntry::Discriminant::ChooseRegisterAndStoreInC, nullptr);
-    }
-    void DictionaryEntry::addInvokeCOperation() {
-        addSpaceEntry(SpaceEntry::Discriminant::InvokeRegisterC, nullptr);
-    }
     void DictionaryEntry::addSpaceEntry(SpaceEntry::Discriminant type, const DictionaryEntry* value) {
         SpaceEntry se;
         se._type = type;
         se._entry = value;
         _space.emplace_back(se);
     }
-    void DictionaryEntry::addLoadWordEntryIntoA(const DictionaryEntry* value) {
-        addSpaceEntry(SpaceEntry::Discriminant::LoadWordIntoA, value);
-    }
 
-    void DictionaryEntry::addLoadWordEntryIntoB(const DictionaryEntry* value) {
-        addSpaceEntry(SpaceEntry::Discriminant::LoadWordIntoB, value);
-    }
-
+	void DictionaryEntry::pushWord(const DictionaryEntry* value) {
+		addSpaceEntry(SpaceEntry::Discriminant::Word, value);
+	}
 
     void DictionaryEntry::addSpaceEntry(Integer x) {
         SpaceEntry se;
@@ -99,20 +86,9 @@ namespace forth {
 			case Type::DictEntry:
 				_entry->operator()(machine);
 				break;
-            case Type::LoadWordIntoA:
-                machine->setTA(forth::Discriminant::Word);
-                machine->setA(_entry);
-                break;
-            case Type::LoadWordIntoB:
-                machine->setTB(forth::Discriminant::Word);
-                machine->setB(_entry);
-                break;
-            case Type::ChooseRegisterAndStoreInC:
-                machine->chooseRegister();
-                break;
-            case Type::InvokeRegisterC:
-                machine->invokeCRegister();
-                break;
+			case Type::Word:
+				machine->pushParameter(_entry);
+				break;
 			default:
                 throw Problem("unknown", "UNKNOWN ENTRY KIND!");
 		}

@@ -283,6 +283,7 @@ namespace Instruction {
     }
     constexpr QuarterAddress pushA() noexcept { return pushRegister(TargetRegister::RegisterA); }
     constexpr QuarterAddress pushB() noexcept { return pushRegister(TargetRegister::RegisterB); }
+	constexpr QuarterAddress popC() noexcept { return popRegister(TargetRegister::RegisterC); }
 } // end namespace Instruction
 
 

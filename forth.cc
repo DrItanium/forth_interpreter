@@ -695,6 +695,8 @@ namespace forth {
 			addWord("continue", std::mem_fn(&Machine::continueStatement), true);
 			addWord("choose.c", std::mem_fn(&Machine::chooseRegister));
 			addWord("invoke.c", std::mem_fn(&Machine::invokeCRegister));
+            addWord("'", std::mem_fn(&Machine::injectWord));
+            addWord("execute", std::mem_fn(&Machine::executeTop));
 			_microcodeInvoke = lookupWord("uc");
 			_popS = lookupWord("pop.s");
 		}
@@ -1001,6 +1003,24 @@ namespace forth {
 		moveOrSwap(static_cast<TargetRegister>(src), static_cast<TargetRegister>(dest), false);
 		_registerIP.increment();
 	}
+    void Machine::injectWord() {
+        // read the next word and then lookup that entry
+		auto word = readWord();
+        auto entry = lookupWord(word);
+        if (entry) {
+            // since this exists, put it onto the stack!
+            pushParameter(entry);
+        } else {
+            std::stringstream name;
+            name << word << "?";
+            auto str = name.str();
+            throw Problem("'", str);
+        }
+    }
+    void Machine::executeTop() {
+        auto top = popParameter();
+        top.entry->operator()(this);
+    }
 } // end namespace forth
 
 

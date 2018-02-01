@@ -155,6 +155,8 @@ namespace forth {
             void swapRegisters(const Molecule& m);
 			void compileMicrocodeInvoke(const Molecule& m, DictionaryEntry* current);
 			void microcodeInvoke(const Molecule& m);
+            void injectWord();
+            void executeTop();
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;

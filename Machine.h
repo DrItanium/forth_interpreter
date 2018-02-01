@@ -76,10 +76,42 @@ namespace forth {
             void endStatement();
             void doStatement();
             void continueStatement();
-            void setImmediate16Lowest(const Molecule& m);
-            void setImmediate16Lower(const Molecule& m);
-            void setImmediate16Higher(const Molecule& m);
-            void setImmediate16Highest(const Molecule& m);
+            enum class Immediate16Positions : byte {
+                Lowest,
+                Lower,
+                Higher,
+                Highest,
+            };
+            template<Immediate16Positions pos>
+            static constexpr auto Immediate16ShiftIndex = static_cast<Address>(pos) * 16;
+            template<Immediate16Positions pos>
+            static constexpr auto Immediate16Mask = static_cast<Address>(0xFFFF) << Immediate16ShiftIndex<pos>;
+
+            template<Immediate16Positions pos>
+            void setImmediate16(const Molecule& m) {
+                try {
+                    _registerX.setValue(encodeBits<Address, QuarterAddress, Immediate16Mask<pos>, Immediate16ShiftIndex<pos>>(_registerX.getAddress(), m.getQuarterAddress(_registerIP.getAddress())));
+                    _registerIP.increment();
+                    _registerIP.increment();
+                } catch (Problem& p) {
+                    std::string msg("set-immediate16-unknown");
+                    switch (pos) {
+                        case Immediate16Positions::Lowest:
+                            msg = "set-immediate16-lowest";
+                            break;
+                        case Immediate16Positions::Lower:
+                            msg = "set-immediate16-lower";
+                            break;
+                        case Immediate16Positions::Higher:
+                            msg = "set-immediate16-higher";
+                            break;
+                        case Immediate16Positions::Highest:
+                            msg = "set-immediate16-highest";
+                            break;
+                    }
+                    throw Problem(msg, p.getMessage());
+                }
+            }
             /**
              * Printout the contents of the given word!
              */

@@ -809,10 +809,10 @@ namespace forth {
                 case Operation::PushRegister: pushRegister(molecule); break;
                 case Operation::Load: load(molecule); break;
                 case Operation::Store: store(molecule); break;
-                case Operation::SetImmediate16_Lowest: setImmediate16Lowest(molecule); break;
-                case Operation::SetImmediate16_Lower: setImmediate16Lower(molecule); break;
-                case Operation::SetImmediate16_Higher: setImmediate16Higher(molecule); break;
-                case Operation::SetImmediate16_Highest: setImmediate16Highest(molecule); break;
+                case Operation::SetImmediate16_Lowest: setImmediate16<Immediate16Positions::Lowest>(molecule); break;
+                case Operation::SetImmediate16_Lower: setImmediate16<Immediate16Positions::Lower>(molecule); break;
+                case Operation::SetImmediate16_Higher: setImmediate16<Immediate16Positions::Higher>(molecule); break;
+                case Operation::SetImmediate16_Highest: setImmediate16<Immediate16Positions::Highest>(molecule); break;
                 case Operation::Move: moveRegister(molecule); break;
                 case Operation::Swap: swapRegisters(molecule); break;
                 case Operation::PopA: popRegister(TargetRegister::RegisterA); break;
@@ -1029,44 +1029,6 @@ namespace forth {
             _registerIP.increment();
         } catch (Problem& p) {
             throw Problem("load", p.getMessage());
-        }
-    }
-    void Machine::setImmediate16Lowest(const Molecule& m) {
-        try {
-            _registerX.setValue(encodeBits<Address, QuarterAddress, 0x000000000000FFFF>(_registerX.getAddress(), m.getQuarterAddress(_registerIP.getAddress())));
-            _registerIP.increment();
-            _registerIP.increment();
-        } catch (Problem& p) {
-            throw Problem("set-immediate-lowest-16", p.getMessage());
-        }
-    }
-    void Machine::setImmediate16Lower(const Molecule& m) {
-        try {
-            _registerX.setValue(encodeBits<Address, QuarterAddress, 0x00000000FFFF0000, 16>(_registerX.getAddress(), m.getQuarterAddress(_registerIP.getAddress())));
-            _registerIP.increment();
-            _registerIP.increment();
-        } catch (Problem& p) {
-            throw Problem("set-immediate-lower-16", p.getMessage());
-        }
-    }
-
-    void Machine::setImmediate16Higher(const Molecule& m) {
-        try {
-            _registerX.setValue(encodeBits<Address, QuarterAddress, 0x0000FFFF00000000, 32>(_registerX.getAddress(), m.getQuarterAddress(_registerIP.getAddress())));
-            _registerIP.increment();
-            _registerIP.increment();
-        } catch (Problem& p) {
-            throw Problem("set-immediate-higher-16", p.getMessage());
-        }
-    }
-
-    void Machine::setImmediate16Highest(const Molecule& m) {
-        try {
-            _registerX.setValue(encodeBits<Address, QuarterAddress, 0xFFFF000000000000, 48>(_registerX.getAddress(), m.getQuarterAddress(_registerIP.getAddress())));
-            _registerIP.increment();
-            _registerIP.increment();
-        } catch (Problem& p) {
-            throw Problem("set-immediate-highest-16", p.getMessage());
         }
     }
     void Machine::moveRegister(TargetRegister from, TargetRegister to) {

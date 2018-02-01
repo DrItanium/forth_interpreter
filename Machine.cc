@@ -632,9 +632,20 @@ namespace forth {
 	void Machine::controlLoop() noexcept {
 		// setup initial dictionary
 		initializeBaseDictionary();
+        bool ignoreInput = false;
 		while (_keepExecuting) {
 			try {
 				auto result = readWord();
+                if (ignoreInput) {
+                    if (result == ")") {
+                        ignoreInput = false;
+                    }
+                    continue;
+                }
+                if (result == "(") {
+                    ignoreInput = true;
+                    continue;
+                }
 				auto* entry = lookupWord(result);
 				if (_compiling) {
 					auto finishedCompiling = (result == ";");

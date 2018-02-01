@@ -1,9 +1,12 @@
+( take advantage of forth to build up a system :D )
 : uc pop.s uc ;
 
+( register positions, maximum of 16 )
 : register:a 0 ;         : register:b 1 ;        : register:c 2 ;       : register:s 3 ;
 : register:x 4 ;         : register:t 5 ;        : register:ta 6 ;      : register:tb 7 ;
 : register:tx 8 ;        : register:ip 9 ;       : register:tip a# ;
 
+( op codes :D )
 : op:STOP 0 ;            : op:ADD 1 ;            : op:SUB 2 ;           : op:MUL 3 ;
 : op:DIV 4  ;            : op:MOD 5 ;            : op:NOT 6 ;           : op:MINUS 7 ;
 : op:AND 8  ;            : op:OR 9 ;             : op:GREATER_THAN a# ; : op:LESS_THAN b# ;

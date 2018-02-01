@@ -128,7 +128,7 @@ namespace forth {
 		_subroutine.push_back(_compileTarget);
 		_compileTarget = new DictionaryEntry("");
 		_compileTarget->markFakeEntry();
-        currentTarget->addSpaceEntry(_popC);
+        currentTarget->addSpaceEntry(lookupWord("pop.c"));
         currentTarget->addLoadWordEntryIntoA(_compileTarget);
         currentTarget->addLoadWordEntryIntoB(_nop);
         // use the normal compilation process onto the _compileTarget we built
@@ -137,10 +137,12 @@ namespace forth {
 		if (!_compiling) {
 			throw Problem("else", "must be defining a word!");
 		}
+        // pop the else block off of the subroutine stack
         auto* elseBlock = new DictionaryEntry("");
         elseBlock->markFakeEntry();
         _subroutine.back()->addLoadWordEntryIntoB(elseBlock);
         // let the if block dangle off since it is referenced else where
+        addWord(_compileTarget);
         _compileTarget = elseBlock;
 	}
 
@@ -153,6 +155,7 @@ namespace forth {
 		}
         auto parent = _subroutine.back();
         _subroutine.pop_back();
+        addWord(_compileTarget);
         _compileTarget = parent;
 		_compileTarget->addChooseOperation();
 		_compileTarget->addInvokeCOperation();

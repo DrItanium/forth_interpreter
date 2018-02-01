@@ -850,42 +850,11 @@ namespace forth {
 	void Machine::popRegister(TargetRegister t) {
 		using Type = decltype(t);
 		auto top(popParameter());
-		if (involvesDiscriminantRegister(t) && !forth::legalValue(static_cast<Discriminant>(top.address))) {
-			throw Problem("pop.register", "ILLEGAL DISCRIMINANT!");
-		}
-		auto fn = [t, this, &top](Register& current) {
-			if (involvesDiscriminantRegister(t)) {
-				current.setType((Discriminant)top.address);
-			} else {
-				current.setValue(top);
-			}
-		};
-		switch (t) {
-			case Type::RegisterA:
-			case Type::RegisterTA:
-				fn(_registerA);
-				break;
-			case Type::RegisterB:
-			case Type::RegisterTB:
-				fn(_registerB);
-				break;
-			case Type::RegisterC:
-			case Type::RegisterT:
-				fn(_registerC);
-				break;
-			case Type::RegisterS:
-				fn(_registerS);
-				break;
-			case Type::RegisterX:
-			case Type::RegisterTX:
-				fn(_registerX);
-				break;
-			case Type::RegisterIP:
-			case Type::RegisterTIP:
-				fn(_registerIP);
-				break;
-			default:
-				throw Problem("pop.register", "Unknown register!");
+		Register& target = getRegister(t);
+		if (involvesDiscriminantRegister(t)) {
+			target.setType(static_cast<Discriminant>(top.address));
+		} else {
+			target.setValue(top);
 		}
 	}
 	void Machine::pushRegister(TargetRegister t) {

@@ -63,8 +63,7 @@ namespace forth {
 			void multiplyOperation();
 			void equals();
 			void powOperation();
-			void modulo();
-			void divide();
+			void divide(bool remainder = false);
 			void notOperation();
 			void minusOperation();
 			void andOperation();

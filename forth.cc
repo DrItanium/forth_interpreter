@@ -310,15 +310,18 @@ namespace forth {
 		}
 	}
 
-	void Machine::divide() {
-        auto fn = [this](auto a, auto b) {
+	void Machine::divide(bool remainder) {
+        auto fn = [this, remainder](auto a, auto b) {
             if (b == 0) {
-                throw Problem("/", "DIVIDE BY ZERO!");
+                throw Problem(remainder ? "mod" : "/", "DIVIDE BY ZERO!");
             } else {
-                _registerC.setValue(a / b);
+                _registerC.setValue(remainder ? a % b : a / b);
             }
         };
 		using Type = decltype(_registerC.getType());
+        if (remainder && (_registerC.getType() == Type::FloatingPoint)) {
+            throw Problem("mod", "FLOATING POINT MODULO makes no sense!");
+        }
 		switch(_registerC.getType()) {
 			case Type::Number:
                 fn(_registerA.getInt(), _registerB.getInt());
@@ -330,26 +333,10 @@ namespace forth {
                 _registerC.setValue(_registerA.getFP() / _registerB.getFP());
 				break;
 			default:
-				throw Problem("/", "ILLEGAL DISCRIMINANT!");
+				throw Problem(remainder ? "mod" : "/", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
-	void Machine::modulo() {
-        auto fn = [this](auto a, auto b) {
-            _registerC.setValue(a % b);
-        };
-		using Type = decltype(_registerC.getType());
-		switch(_registerC.getType()) {
-			case Type::Number:
-                fn(_registerA.getInt(), _registerB.getInt());
-				break;
-			case Type::MemoryAddress:
-                fn(_registerA.getAddress(), _registerB.getAddress());
-				break;
-			default:
-				throw Problem("mod", "ILLEGAL DISCRIMINANT!");
-		}
-	}
 	void Machine::numericCombine(bool subtract) {
         auto fn = [this, subtract](auto a, auto b) { 
             _registerC.setValue(subtract ? (a - b) : (a + b));
@@ -809,7 +796,7 @@ namespace forth {
                 case Operation::Equals: equals(); break;
                 case Operation::Pow: powOperation(); break;
                 case Operation::Divide: divide(); break;
-                case Operation::Modulo: modulo(); break;
+                case Operation::Modulo: divide(true); break;
                 case Operation::Not: notOperation(); break;
                 case Operation::Minus: minusOperation(); break;
                 case Operation::And: andOperation(); break;

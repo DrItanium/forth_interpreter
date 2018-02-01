@@ -269,6 +269,9 @@ namespace Instruction {
         return encodeOperation<0, T, Args...>(0, first, std::move(rest)...);
     }
     static_assert(Address(0xFDED16) == setImmediate16_Lowest(0xfded), "setImmediate16_Lowest is broken!");
+    static_assert(Address(0xFDED17) == setImmediate16_Lower(0xfded), "setImmediate16_Lower is broken!");
+    static_assert(Address(0xFDED18) == setImmediate16_Higher(0xfded), "setImmediate16_Higher is broken!");
+    static_assert(Address(0xFDED19) == setImmediate16_Highest(0xfded), "setImmediate16_Highest is broken!");
 } // end namespace Instruction
 
 } // end namespace forth

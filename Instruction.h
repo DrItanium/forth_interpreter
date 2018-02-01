@@ -281,6 +281,8 @@ namespace Instruction {
     constexpr QuarterAddress swapAB() noexcept {
         return swap(TargetRegister::RegisterB, TargetRegister::RegisterA);
     }
+    constexpr QuarterAddress pushA() noexcept { return pushRegister(TargetRegister::RegisterA); }
+    constexpr QuarterAddress pushB() noexcept { return pushRegister(TargetRegister::RegisterB); }
 } // end namespace Instruction
 
 

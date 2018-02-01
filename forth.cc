@@ -698,9 +698,7 @@ namespace forth {
         addWord(_compileTarget);
         auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
                 static constexpr auto performEqualityCheck = Instruction::encodeOperation(Instruction::popA(), Instruction::popB(), Instruction::equals());
-                static constexpr auto saveABToStack = Instruction::encodeOperation(
-                        Instruction::pushRegister(TargetRegister::RegisterB),
-                        Instruction::pushRegister(TargetRegister::RegisterA));
+                static constexpr auto saveABToStack = Instruction::encodeOperation(Instruction::pushB(), Instruction::pushA());
                 static_assert(Address(0x111d1c) == performEqualityCheck, "Equality check operation failed!");
                 static_assert(Address(0x00100110) == saveABToStack, "Save AB to stack routine failed!");
                 _registerS.setValue(performEqualityCheck);

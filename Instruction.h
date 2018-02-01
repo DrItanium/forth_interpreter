@@ -110,10 +110,15 @@ enum class Operation : byte {
     PopT,
     PushC,
     // Full versions of already existing operations
+    SetImmediate16_LowestFull,
+    SetImmediate16_LowerFull,
+    SetImmediate16_HigherFull,
+    SetImmediate16_HighestFull,
     //LoadFull, // two argument
     //StoreFull, // two argument
     //SetImmediate32_Lower,
     //SetImmediate32_Upper,
+    //
     Count,
 };
 
@@ -173,7 +178,7 @@ namespace Instruction {
         return encodeBits<HalfAddress, byte, 0xFF0000, 16>( encodeBits<HalfAddress, byte, 0xFF00, 8>(static_cast<HalfAddress>(first), second), third);
     }
     constexpr HalfAddress encodeThreeByte(Operation first, QuarterAddress second) noexcept {
-        return encodeBits<HalfAddress, byte, 0xFFFF00, 8>(static_cast<HalfAddress>(first), second);
+        return encodeBits<HalfAddress, QuarterAddress, 0xFFFF00, 8>(static_cast<HalfAddress>(first), second);
     }
     constexpr byte add() noexcept { return singleByteOp(Operation::Add); }
     constexpr byte sub() noexcept { return singleByteOp(Operation::Subtract); }
@@ -263,7 +268,7 @@ namespace Instruction {
     constexpr Address encodeOperation(T first, Args&& ... rest) noexcept {
         return encodeOperation<0, T, Args...>(0, first, std::move(rest)...);
     }
-    
+    static_assert(Address(0xFDED16) == setImmediate16_Lowest(0xfded), "setImmediate16_Lowest is broken!");
 } // end namespace Instruction
 
 } // end namespace forth

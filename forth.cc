@@ -128,9 +128,12 @@ namespace forth {
 		_subroutine.push_back(_compileTarget);
 		_compileTarget = new DictionaryEntry("");
 		_compileTarget->markFakeEntry();
+        auto* elseBlock = new DictionaryEntry("");
+        elseBlock->markFakeEntry();
+        _subroutine.push_back(elseBlock);
         currentTarget->addSpaceEntry(lookupWord("pop.c"));
         currentTarget->addLoadWordEntryIntoA(_compileTarget);
-        currentTarget->addLoadWordEntryIntoB(_nop);
+        currentTarget->addLoadWordEntryIntoB(elseBlock);
         // use the normal compilation process onto the _compileTarget we built
 	}
 	void Machine::elseCondition() {
@@ -138,9 +141,9 @@ namespace forth {
 			throw Problem("else", "must be defining a word!");
 		}
         // pop the else block off of the subroutine stack
-        auto* elseBlock = new DictionaryEntry("");
-        elseBlock->markFakeEntry();
-        _subroutine.back()->addLoadWordEntryIntoB(elseBlock);
+        auto* elseBlock = _subroutine.back();
+        _subroutine.pop_back();
+        _subroutine.emplace_back(new DictionaryEntry(""));
         // let the if block dangle off since it is referenced else where
         addWord(_compileTarget);
         _compileTarget = elseBlock;
@@ -153,6 +156,8 @@ namespace forth {
 		if (_subroutine.empty()) {
 			throw Problem("then", "Not in a function");
 		}
+        // there will always be a garbage entry at the top of the subroutine stack, just eliminate it
+        _subroutine.pop_back();
         auto parent = _subroutine.back();
         _subroutine.pop_back();
         addWord(_compileTarget);

@@ -782,6 +782,7 @@ loopTop:
 		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
 				static constexpr auto checkCondition = Instruction::encodeOperation( Instruction::popA(), Instruction::notOp());
 				static_assert(0x061c == checkCondition, "conditional operation failed!");
+                // super gross but far more accurately models the underlying micro architecture
 endLoopTop:
 				body->operator()(m);
 				// pop.a

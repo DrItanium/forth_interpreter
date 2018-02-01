@@ -2,10 +2,11 @@
 #ifndef MACHINE_H__
 #define MACHINE_H__
 #include "Types.h"
-#include <iostream>
-#include <memory>
 #include "DictionaryEntry.h"
 #include "Datum.h"
+#include "Instruction.h"
+#include <iostream>
+#include <memory>
 
 namespace forth {
 	class Machine {

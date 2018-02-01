@@ -739,19 +739,18 @@ namespace forth {
 				microcodeInvoke(performEqualityCheck);
 				if (_registerC.getTruth()) {
 					microcodeInvoke(saveABToStack); // put the values back on the stack
-					do {
-						body->operator()(m);
-						// compacted operation:
-						// popa
-						// popb
-						// eq
-						microcodeInvoke(performEqualityCheck);
-						if (_registerC.getTruth()) {
-							break;
-						} else {
-							microcodeInvoke(saveABToStack); // put the values back on the stack
-						}
-					} while (true);
+                    // super gross but far more accurately models the underlying micro architecture
+loopTop:
+					body->operator()(m);
+					// compacted operation:
+					// popa
+					// popb
+					// eq
+					microcodeInvoke(performEqualityCheck);
+                    if (!_registerC.getTruth()) {
+						microcodeInvoke(saveABToStack); // put the values back on the stack
+                        goto loopTop;
+                    }
 				}
 
 		});
@@ -783,15 +782,14 @@ namespace forth {
 		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
 				static constexpr auto checkCondition = Instruction::encodeOperation( Instruction::popA(), Instruction::notOp());
 				static_assert(0x061c == checkCondition, "conditional operation failed!");
-					do {
-						body->operator()(m);
-						// pop.a
-						// not
-						microcodeInvoke(checkCondition);
-						if (_registerC.getTruth()) {
-						break;
-						}
-					} while (true);
+endLoopTop:
+				body->operator()(m);
+				// pop.a
+				// not
+				microcodeInvoke(checkCondition);
+                if (!_registerC.getTruth()) {
+                    goto endLoopTop;
+                }
 				});
 		container->markFakeEntry();
 		addWord(container);

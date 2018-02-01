@@ -56,8 +56,6 @@ namespace forth {
                 _type = static_cast<decltype(_type)>(0); 
             }
             void increment() { ++_value.address; }
-            void decrement() { --_value.address; }
-
         private:
             Discriminant _type;
             Datum _value;

@@ -120,8 +120,10 @@ namespace forth {
 	}
 	void Machine::ifCondition() {
 		static constexpr auto prepRegisters = Instruction::encodeOperation(
+				Instruction::popRegister(TargetRegister::RegisterTB),
 				Instruction::popB(), 
-				Instruction::popA(), 
+				Instruction::popRegister(TargetRegister::RegisterTA),
+				Instruction::popA(),
 				Instruction::popC());
 		// if we're not in compilation mode then error out
 		if (!_compiling) {
@@ -136,7 +138,9 @@ namespace forth {
 		_subroutine.push_back(elseBlock);
 
 		currentTarget->pushWord(_compileTarget);
+		currentTarget->addSpaceEntry(static_cast<Address>(Discriminant::Word));
 		currentTarget->pushWord(elseBlock);
+		currentTarget->addSpaceEntry(static_cast<Address>(Discriminant::Word));
 		compileMicrocodeInvoke(prepRegisters, currentTarget);
 	}
 	void Machine::compileMicrocodeInvoke(const Molecule& m, DictionaryEntry* current) {

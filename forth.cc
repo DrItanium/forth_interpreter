@@ -103,13 +103,13 @@ namespace forth {
 		return nullptr;
 	}
 	void Machine::chooseRegister() {
-        _registerC = _registerC.getTruth() ? _registerA : _registerB;
+		_registerC = _registerC.getTruth() ? _registerA : _registerB;
 	}
 	void Machine::invokeCRegister() {
 		using Type = decltype(_registerC.getType());
 		switch (_registerC.getType()) {
 			case Type::Word:
-                _registerC.getWord()->operator()(this);
+				_registerC.getWord()->operator()(this);
 				break;
 			case Type::Number:
 			case Type::FloatingPoint:
@@ -124,29 +124,29 @@ namespace forth {
 		if (!_compiling) {
 			throw Problem("if", "must be defining a word!");
 		}
-        auto currentTarget = _compileTarget;
+		auto currentTarget = _compileTarget;
 		_subroutine.push_back(_compileTarget);
 		_compileTarget = new DictionaryEntry("");
 		_compileTarget->markFakeEntry();
-        auto* elseBlock = new DictionaryEntry("");
-        elseBlock->markFakeEntry();
-        _subroutine.push_back(elseBlock);
-        currentTarget->addSpaceEntry(lookupWord("pop.c"));
-        currentTarget->addLoadWordEntryIntoA(_compileTarget);
-        currentTarget->addLoadWordEntryIntoB(elseBlock);
-        // use the normal compilation process onto the _compileTarget we built
+		auto* elseBlock = new DictionaryEntry("");
+		elseBlock->markFakeEntry();
+		_subroutine.push_back(elseBlock);
+		currentTarget->addSpaceEntry(lookupWord("pop.c"));
+		currentTarget->addLoadWordEntryIntoA(_compileTarget);
+		currentTarget->addLoadWordEntryIntoB(elseBlock);
+		// use the normal compilation process onto the _compileTarget we built
 	}
 	void Machine::elseCondition() {
 		if (!_compiling) {
 			throw Problem("else", "must be defining a word!");
 		}
-        // pop the else block off of the subroutine stack
-        auto* elseBlock = _subroutine.back();
-        _subroutine.pop_back();
-        _subroutine.emplace_back(new DictionaryEntry(""));
-        // let the if block dangle off since it is referenced else where
-        addWord(_compileTarget);
-        _compileTarget = elseBlock;
+		// pop the else block off of the subroutine stack
+		auto* elseBlock = _subroutine.back();
+		_subroutine.pop_back();
+		_subroutine.emplace_back(new DictionaryEntry(""));
+		// let the if block dangle off since it is referenced else where
+		addWord(_compileTarget);
+		_compileTarget = elseBlock;
 	}
 
 	void Machine::thenStatement() {
@@ -156,12 +156,12 @@ namespace forth {
 		if (_subroutine.empty()) {
 			throw Problem("then", "Not in a function");
 		}
-        // there will always be a garbage entry at the top of the subroutine stack, just eliminate it
-        _subroutine.pop_back();
-        auto parent = _subroutine.back();
-        _subroutine.pop_back();
-        addWord(_compileTarget);
-        _compileTarget = parent;
+		// there will always be a garbage entry at the top of the subroutine stack, just eliminate it
+		_subroutine.pop_back();
+		auto parent = _subroutine.back();
+		_subroutine.pop_back();
+		addWord(_compileTarget);
+		_compileTarget = parent;
 		_compileTarget->addChooseOperation();
 		_compileTarget->addInvokeCOperation();
 	}
@@ -203,14 +203,14 @@ namespace forth {
 		_compileTarget = nullptr;
 	}
 	void Machine::listWords() {
-        if (_words == nullptr) {
-            return;
-        }
+		if (_words == nullptr) {
+			return;
+		}
 		for (const auto* entry = _words; entry != nullptr; entry = entry->getNext()) {
-            if (entry->isFake()) {
-                continue;
-            }
-            _output << "\t - " << entry->getName() << std::endl;
+			if (entry->isFake()) {
+				continue;
+			}
+			_output << "\t - " << entry->getName() << std::endl;
 		}
 	}
 	void Machine::addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke) {
@@ -225,90 +225,90 @@ namespace forth {
 	}
 	void Machine::notOperation() {
 		// invert register a
-        auto fn = [this](auto a) {
-            _registerC.setValue(~a);
-        };
+		auto fn = [this](auto a) {
+			_registerC.setValue(~a);
+		};
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-                fn(_registerA.getInt());
+				fn(_registerA.getInt());
 				break;
 			case Type::MemoryAddress:
-                fn(_registerA.getAddress());
+				fn(_registerA.getAddress());
 				break;
 			case Type::Boolean:
-                _registerC.setValue(!_registerA.getTruth());
+				_registerC.setValue(!_registerA.getTruth());
 				break;
 			default:
 				throw Problem("not", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::minusOperation() {
-        auto fn = [this](auto a) { _registerC.setValue(-a); };
+		auto fn = [this](auto a) { _registerC.setValue(-a); };
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-                fn(_registerA.getInt());
+				fn(_registerA.getInt());
 				break;
 			case Type::FloatingPoint:
-                fn(_registerA.getFP());
+				fn(_registerA.getFP());
 				break;
 			default:
 				throw Problem("minus", "ILLEGAL DISCRIMINANT!");
 		}
 	}
-    
+
 	void Machine::multiplyOperation() {
 		using Type = decltype(_registerC.getType());
-        auto fn = [this](auto a, auto b) { _registerC.setValue(a * b); };
+		auto fn = [this](auto a, auto b) { _registerC.setValue(a * b); };
 		switch(_registerC.getType()) {
 			case Type::Number:
-                fn(_registerA.getInt(), _registerB.getInt());
+				fn(_registerA.getInt(), _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-                fn(_registerA.getAddress(), _registerB.getAddress());
+				fn(_registerA.getAddress(), _registerB.getAddress());
 				break;
 			case Type::FloatingPoint:
-                fn(_registerA.getFP(), _registerB.getFP());
+				fn(_registerA.getFP(), _registerB.getFP());
 				break;
 			default:
 				throw Problem("*", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::equals() {
-        auto fn = [this](auto a, auto b) { _registerC.setValue(a == b); };
+		auto fn = [this](auto a, auto b) { _registerC.setValue(a == b); };
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-                fn(_registerA.getInt(), _registerB.getInt());
+				fn(_registerA.getInt(), _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-                fn(_registerA.getAddress(), _registerB.getAddress());
+				fn(_registerA.getAddress(), _registerB.getAddress());
 				break;
 			case Type::FloatingPoint:
-                fn(_registerA.getFP(), _registerB.getFP());
+				fn(_registerA.getFP(), _registerB.getFP());
 				break;
 			case Type::Boolean:
-                fn(_registerA.getTruth(), _registerB.getTruth());
-                break;
+				fn(_registerA.getTruth(), _registerB.getTruth());
+				break;
 			default:
 				throw Problem("==", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::powOperation() {
-        auto fn = [this](auto a, auto b) {
-            _registerC.setValue(static_cast<decltype(a)>(std::pow(a, b)));
-        };
+		auto fn = [this](auto a, auto b) {
+			_registerC.setValue(static_cast<decltype(a)>(std::pow(a, b)));
+		};
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-                fn(_registerA.getInt(), _registerB.getInt());
+				fn(_registerA.getInt(), _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-                fn(_registerA.getAddress(), _registerB.getAddress());
+				fn(_registerA.getAddress(), _registerB.getAddress());
 				break;
 			case Type::FloatingPoint:
-                fn(_registerA.getFP(), _registerB.getFP());
+				fn(_registerA.getFP(), _registerB.getFP());
 				break;
 			default:
 				throw Problem("**", "ILLEGAL DISCRIMINANT!");
@@ -316,26 +316,26 @@ namespace forth {
 	}
 
 	void Machine::divide(bool remainder) {
-        auto fn = [this, remainder](auto a, auto b) {
-            if (b == 0) {
-                throw Problem(remainder ? "mod" : "/", "DIVIDE BY ZERO!");
-            } else {
-                _registerC.setValue(remainder ? a % b : a / b);
-            }
-        };
+		auto fn = [this, remainder](auto a, auto b) {
+			if (b == 0) {
+				throw Problem(remainder ? "mod" : "/", "DIVIDE BY ZERO!");
+			} else {
+				_registerC.setValue(remainder ? a % b : a / b);
+			}
+		};
 		using Type = decltype(_registerC.getType());
-        if (remainder && (_registerC.getType() == Type::FloatingPoint)) {
-            throw Problem("mod", "FLOATING POINT MODULO makes no sense!");
-        }
+		if (remainder && (_registerC.getType() == Type::FloatingPoint)) {
+			throw Problem("mod", "FLOATING POINT MODULO makes no sense!");
+		}
 		switch(_registerC.getType()) {
 			case Type::Number:
-                fn(_registerA.getInt(), _registerB.getInt());
+				fn(_registerA.getInt(), _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-                fn(_registerA.getAddress(), _registerB.getAddress());
+				fn(_registerA.getAddress(), _registerB.getAddress());
 				break;
 			case Type::FloatingPoint:
-                _registerC.setValue(_registerA.getFP() / _registerB.getFP());
+				_registerC.setValue(_registerA.getFP() / _registerB.getFP());
 				break;
 			default:
 				throw Problem(remainder ? "mod" : "/", "ILLEGAL DISCRIMINANT!");
@@ -343,18 +343,18 @@ namespace forth {
 	}
 
 	void Machine::numericCombine(bool subtract) {
-        auto fn = [this, subtract](auto a, auto b) { 
-            _registerC.setValue(subtract ? (a - b) : (a + b));
-        };
+		auto fn = [this, subtract](auto a, auto b) { 
+			_registerC.setValue(subtract ? (a - b) : (a + b));
+		};
 		switch(_registerC.getType()) {
 			case Discriminant::Number:
-                fn(_registerA.getInt(), _registerB.getInt());
+				fn(_registerA.getInt(), _registerB.getInt());
 				break;
 			case Discriminant::MemoryAddress:
-                fn(_registerA.getAddress(), _registerB.getAddress());
+				fn(_registerA.getAddress(), _registerB.getAddress());
 				break;
 			case Discriminant::FloatingPoint:
-                fn(_registerA.getFP(), _registerB.getFP());
+				fn(_registerA.getFP(), _registerB.getFP());
 				break;
 			default:
 				throw Problem(subtract ? "-" : "+", "ILLEGAL DISCRIMINANT!");
@@ -365,13 +365,13 @@ namespace forth {
 		using Type = decltype(_registerC.getType());
 		switch (_registerC.getType()) {
 			case Type::Number:
-                _registerC.setValue(_registerA.getInt() & _registerB.getInt());
+				_registerC.setValue(_registerA.getInt() & _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-                _registerC.setValue(_registerA.getAddress() & _registerB.getAddress());
+				_registerC.setValue(_registerA.getAddress() & _registerB.getAddress());
 				break;
 			case Type::Boolean:
-                _registerC.setValue(_registerA.getTruth() && _registerB.getTruth());
+				_registerC.setValue(_registerA.getTruth() && _registerB.getTruth());
 				break;
 			default:
 				throw Problem("and", "ILLEGAL DISCRIMINANT!");
@@ -382,13 +382,13 @@ namespace forth {
 		using Type = forth::Discriminant;
 		switch (_registerC.getType()) {
 			case Type::Number:
-                _registerC.setValue(_registerA.getInt() | _registerB.getInt());
+				_registerC.setValue(_registerA.getInt() | _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-                _registerC.setValue(_registerA.getAddress() | _registerB.getAddress());
+				_registerC.setValue(_registerA.getAddress() | _registerB.getAddress());
 				break;
 			case Type::Boolean:
-                _registerC.setValue(_registerA.getTruth() || _registerB.getTruth());
+				_registerC.setValue(_registerA.getTruth() || _registerB.getTruth());
 				break;
 			default:
 				throw Problem("or", "ILLEGAL DISCRIMINANT!");
@@ -397,34 +397,34 @@ namespace forth {
 
 	void Machine::greaterThanOperation() {
 		using Type = decltype(_registerC.getType());
-        auto result = false;
+		auto result = false;
 		switch (_registerC.getType()) {
 			case Type::Number:
-                result = _registerA.getInt() > _registerB.getInt();
+				result = _registerA.getInt() > _registerB.getInt();
 				break;
 			case Type::MemoryAddress:
-                result = _registerA.getAddress() > _registerB.getAddress();
+				result = _registerA.getAddress() > _registerB.getAddress();
 				break;
 			case Type::FloatingPoint:
-                result = _registerA.getFP() > _registerB.getFP();
+				result = _registerA.getFP() > _registerB.getFP();
 				break;
 			default:
 				throw Problem(">", "ILLEGAL DISCRIMINANT!");
 		}
-        _registerC.setValue(result);
+		_registerC.setValue(result);
 	}
 
 	void Machine::lessThanOperation() {
 		using Type = decltype(_registerC.getType());
 		switch (_registerC.getType()) {
 			case Type::Number:
-                _registerC.setValue(_registerA.getInt() < _registerB.getInt());
+				_registerC.setValue(_registerA.getInt() < _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-                _registerC.setValue(_registerA.getAddress() < _registerB.getAddress());
+				_registerC.setValue(_registerA.getAddress() < _registerB.getAddress());
 				break;
 			case Type::FloatingPoint:
-                _registerC.setValue(_registerA.getFP() < _registerB.getFP());
+				_registerC.setValue(_registerA.getFP() < _registerB.getFP());
 				break;
 			default:
 				throw Problem("<", "ILLEGAL DISCRIMINANT!");
@@ -435,13 +435,13 @@ namespace forth {
 		using Type = decltype(_registerC.getType());
 		switch (_registerC.getType()) {
 			case Type::Number:
-                _registerC.setValue(_registerA.getInt() ^ _registerB.getInt());
+				_registerC.setValue(_registerA.getInt() ^ _registerB.getInt());
 				break;
 			case Type::MemoryAddress:
-                _registerC.setValue(_registerA.getAddress() ^ _registerB.getAddress());
+				_registerC.setValue(_registerA.getAddress() ^ _registerB.getAddress());
 				break;
 			case Type::Boolean:
-                _registerC.setValue(bool(_registerA.getTruth() ^ _registerB.getTruth()));
+				_registerC.setValue(bool(_registerA.getTruth() ^ _registerB.getTruth()));
 				break;
 			default:
 				throw Problem("xor", "ILLEGAL DISCRIMINANT!");
@@ -457,10 +457,10 @@ namespace forth {
 		using Type = decltype(_registerC.getType());
 		switch (_registerC.getType()) {
 			case Type::Number:
-                _registerC.setValue(shiftLeft ? (_registerA.getInt()  << _registerB.getInt()) : (_registerA.getInt() >> _registerB.getInt()));
+				_registerC.setValue(shiftLeft ? (_registerA.getInt()  << _registerB.getInt()) : (_registerA.getInt() >> _registerB.getInt()));
 				break;
 			case Type::MemoryAddress:
-                _registerC.setValue(shiftLeft ? (_registerA.getAddress()  << _registerB.getAddress()) : (_registerA.getAddress() >> _registerB.getAddress()));
+				_registerC.setValue(shiftLeft ? (_registerA.getAddress()  << _registerB.getAddress()) : (_registerA.getAddress() >> _registerB.getAddress()));
 				break;
 			default:
 				throw Problem(shiftLeft ? "<<" : ">>", "ILLEGAL DISCRIMINANT");
@@ -526,9 +526,9 @@ namespace forth {
 		}
 	}
 	bool Machine::numberRoutine(const std::string& word) noexcept {
-        if (word.empty()) { 
-            return false; 
-        }
+		if (word.empty()) { 
+			return false; 
+		}
 		// floating point
 		// integers
 		// first do some inspection first
@@ -549,19 +549,19 @@ namespace forth {
 			return true;
 		}
 		std::istringstream parseAttempt(word);
-        if (word.find('#') != std::string::npos) {
-            Address tmpAddress;
-            parseAttempt >> std::hex >> tmpAddress;
-            if (!parseAttempt.fail()) {
-                if (_compiling) {
-                    _compileTarget->addSpaceEntry(tmpAddress);
-                }  else {
-                    pushParameter(tmpAddress);
-                }
-                return true;
-            }
-            return false;
-        }
+		if (word.find('#') != std::string::npos) {
+			Address tmpAddress;
+			parseAttempt >> std::hex >> tmpAddress;
+			if (!parseAttempt.fail()) {
+				if (_compiling) {
+					_compileTarget->addSpaceEntry(tmpAddress);
+				}  else {
+					pushParameter(tmpAddress);
+				}
+				return true;
+			}
+			return false;
+		}
 		if (word.find('u') != std::string::npos) {
 			Address tmpAddress;
 			parseAttempt >> tmpAddress;
@@ -675,156 +675,156 @@ namespace forth {
 			addWord("if", std::mem_fn(&Machine::ifCondition), true);
 			addWord("else", std::mem_fn(&Machine::elseCondition), true);
 			addWord("then", std::mem_fn(&Machine::thenStatement), true);
-            addWord("begin", std::mem_fn(&Machine::beginStatement), true);
-            addWord("end", std::mem_fn(&Machine::endStatement), true);
+			addWord("begin", std::mem_fn(&Machine::beginStatement), true);
+			addWord("end", std::mem_fn(&Machine::endStatement), true);
 			addWord("uc", std::mem_fn(&Machine::dispatchInstruction));
 			addWord("cache-basic-entries", std::mem_fn(&Machine::cacheBasicEntries));
-            addWord("do", std::mem_fn(&Machine::doStatement), true);
-            addWord("continue", std::mem_fn(&Machine::continueStatement), true);
+			addWord("do", std::mem_fn(&Machine::doStatement), true);
+			addWord("continue", std::mem_fn(&Machine::continueStatement), true);
 		}
 	}
-    void Machine::doStatement() {
-        if (!_compiling) {
-            throw Problem("do", "Not compiling!");
-        }
-        _subroutine.push_back(_compileTarget);
-        _compileTarget = new DictionaryEntry("");
-        _compileTarget->markFakeEntry();
-    }
-    void Machine::continueStatement() {
-        if (!_compiling) {
-            throw Problem("continue", "not compiling!");
-        } 
-        if (_subroutine.empty()) {
-            throw Problem("continue", "subroutine stack is empty!");
-        }
-        auto parent = _subroutine.back();
-        _subroutine.pop_back();
-        addWord(_compileTarget);
-        auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
-                static constexpr auto performEqualityCheck = Instruction::encodeOperation(Instruction::popA(), Instruction::popB(), Instruction::equals());
-                static constexpr auto saveABToStack = Instruction::encodeOperation(Instruction::pushB(), Instruction::pushA());
-                static_assert(Address(0x111d1c) == performEqualityCheck, "Equality check operation failed!");
-                static_assert(Address(0x00100110) == saveABToStack, "Save AB to stack routine failed!");
-                _registerS.setValue(performEqualityCheck);
-                dispatchInstruction();
-                if (_registerC.getTruth()) {
-                    _registerS.setValue(saveABToStack); // put the values back on the stack
-                    dispatchInstruction();
-                    do {
-                        body->operator()(m);
-                        // compacted operation:
-                        // popa
-                        // popb
-                        // eq
-                        _registerS.setValue(performEqualityCheck);
-                        dispatchInstruction();
-                        if (_registerC.getTruth()) {
-                            break;
-                        } else {
-                            _registerS.setValue(saveABToStack); // put the values back on the stack
-                            dispatchInstruction();
-                        }
-                    } while (true);
-                }
-
-                });
-        container->markFakeEntry();
-        addWord(container);
-        _compileTarget = parent;
-        _compileTarget->addSpaceEntry(container);
-
-    }
-    void Machine::beginStatement() {
-        if (!_compiling) {
-            throw Problem("begin", "Must be compiling!");
-        }
+	void Machine::doStatement() {
+		if (!_compiling) {
+			throw Problem("do", "Not compiling!");
+		}
 		_subroutine.push_back(_compileTarget);
 		_compileTarget = new DictionaryEntry("");
 		_compileTarget->markFakeEntry();
-    }
-    void Machine::endStatement() {
-        if (!_compiling) {
-            throw Problem("end", "Must be compiling!");
-        }
-        if (_subroutine.empty()) {
-            throw Problem("end", "subroutine stack is empty!");
-        }
+	}
+	void Machine::continueStatement() {
+		if (!_compiling) {
+			throw Problem("continue", "not compiling!");
+		} 
+		if (_subroutine.empty()) {
+			throw Problem("continue", "subroutine stack is empty!");
+		}
+		auto parent = _subroutine.back();
+		_subroutine.pop_back();
+		addWord(_compileTarget);
+		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
+				static constexpr auto performEqualityCheck = Instruction::encodeOperation(Instruction::popA(), Instruction::popB(), Instruction::equals());
+				static constexpr auto saveABToStack = Instruction::encodeOperation(Instruction::pushB(), Instruction::pushA());
+				static_assert(Address(0x111d1c) == performEqualityCheck, "Equality check operation failed!");
+				static_assert(Address(0x00100110) == saveABToStack, "Save AB to stack routine failed!");
+				_registerS.setValue(performEqualityCheck);
+				dispatchInstruction();
+				if (_registerC.getTruth()) {
+				_registerS.setValue(saveABToStack); // put the values back on the stack
+				dispatchInstruction();
+				do {
+				body->operator()(m);
+				// compacted operation:
+				// popa
+				// popb
+				// eq
+				_registerS.setValue(performEqualityCheck);
+				dispatchInstruction();
+				if (_registerC.getTruth()) {
+				break;
+				} else {
+					_registerS.setValue(saveABToStack); // put the values back on the stack
+					dispatchInstruction();
+				}
+				} while (true);
+				}
 
-        auto parent = _subroutine.back();
-        _subroutine.pop_back();
-        addWord(_compileTarget);
-        auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
-                static constexpr auto checkCondition = Instruction::encodeOperation( Instruction::popA(), Instruction::notOp());
-                static_assert(0x061c == checkCondition, "conditional operation failed!");
-                    do {
-                        body->operator()(m);
-                        // pop.a
-                        // not
-                        _registerS.setValue(checkCondition);
-                        dispatchInstruction();
-                        if (_registerC.getTruth()) {
-                            break;
-                        }
-                    } while (true);
-                });
-        container->markFakeEntry();
-        addWord(container);
-        _compileTarget = parent;
-        _compileTarget->addSpaceEntry(container);
-        // now we have to construct a single entry for the parent which has the conditional code added as well
-    }
+		});
+		container->markFakeEntry();
+		addWord(container);
+		_compileTarget = parent;
+		_compileTarget->addSpaceEntry(container);
+
+	}
+	void Machine::beginStatement() {
+		if (!_compiling) {
+			throw Problem("begin", "Must be compiling!");
+		}
+		_subroutine.push_back(_compileTarget);
+		_compileTarget = new DictionaryEntry("");
+		_compileTarget->markFakeEntry();
+	}
+	void Machine::endStatement() {
+		if (!_compiling) {
+			throw Problem("end", "Must be compiling!");
+		}
+		if (_subroutine.empty()) {
+			throw Problem("end", "subroutine stack is empty!");
+		}
+
+		auto parent = _subroutine.back();
+		_subroutine.pop_back();
+		addWord(_compileTarget);
+		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
+				static constexpr auto checkCondition = Instruction::encodeOperation( Instruction::popA(), Instruction::notOp());
+				static_assert(0x061c == checkCondition, "conditional operation failed!");
+				do {
+				body->operator()(m);
+				// pop.a
+				// not
+				_registerS.setValue(checkCondition);
+				dispatchInstruction();
+				if (_registerC.getTruth()) {
+				break;
+				}
+				} while (true);
+				});
+		container->markFakeEntry();
+		addWord(container);
+		_compileTarget = parent;
+		_compileTarget->addSpaceEntry(container);
+		// now we have to construct a single entry for the parent which has the conditional code added as well
+	}
 	void Machine::printStack() {
 		for (const auto& element : _parameter) {
 			_output << "\t- " << element << std::endl;
 		}
 	}
 	void Machine::dispatchInstruction() {
-        _registerIP.reset();
+		_registerIP.reset();
 		// use the s register as the current instruction
 		// slice out the lowest eight bits
-        auto molecule = _registerS.getMolecule();
-        while (_registerIP.getAddress() < sizeof(Molecule)) {
-            auto pos = _registerIP.getAddress();
-            auto op = getOperation(molecule.getByte(pos));
-            _registerIP.increment();
+		auto molecule = _registerS.getMolecule();
+		while (_registerIP.getAddress() < sizeof(Molecule)) {
+			auto pos = _registerIP.getAddress();
+			auto op = getOperation(molecule.getByte(pos));
+			_registerIP.increment();
 
-            switch (op) {
-                case Operation::Stop: return; // stop executing code within this molecule
-                case Operation::Add: numericCombine(); break; // add or subtract
-                case Operation::Subtract: numericCombine(true); break; // add or subtract
-                case Operation::ShiftRight: shiftOperation(); break; // shift right 
-                case Operation::ShiftLeft: shiftOperation(true); break; // shift left
-                case Operation::Multiply: multiplyOperation(); break;
-                case Operation::Equals: equals(); break;
-                case Operation::Pow: powOperation(); break;
-                case Operation::Divide: divide(); break;
-                case Operation::Modulo: divide(true); break;
-                case Operation::Not: notOperation(); break;
-                case Operation::Minus: minusOperation(); break;
-                case Operation::And: andOperation(); break;
-                case Operation::Or: orOperation(); break;
-                case Operation::GreaterThan: greaterThanOperation(); break; // greater than
-                case Operation::LessThan: lessThanOperation(); break;
-                case Operation::Xor: xorOperation(); break;
-                case Operation::TypeValue: typeValue(); break;
-                case Operation::PopRegister: popRegister(molecule); break;
-                case Operation::PushRegister: pushRegister(molecule); break;
-                case Operation::Load: load(molecule); break;
-                case Operation::Store: store(molecule); break;
-                case Operation::SetImmediate16_Lowest: setImmediate16<Immediate16Positions::Lowest>(molecule); break;
-                case Operation::SetImmediate16_Lower: setImmediate16<Immediate16Positions::Lower>(molecule); break;
-                case Operation::SetImmediate16_Higher: setImmediate16<Immediate16Positions::Higher>(molecule); break;
-                case Operation::SetImmediate16_Highest: setImmediate16<Immediate16Positions::Highest>(molecule); break;
-                case Operation::Move: moveRegister(molecule); break;
-                case Operation::Swap: swapRegisters(molecule); break;
-                case Operation::PopA: popRegister(TargetRegister::RegisterA); break;
-                case Operation::PopB: popRegister(TargetRegister::RegisterB); break;
-                case Operation::PopT: popRegister(TargetRegister::RegisterT); break;
-                case Operation::PushC: pushRegister(TargetRegister::RegisterC); break;
-                default: throw Problem("uc", "Unknown instruction address!");
-            }
-        }
+			switch (op) {
+				case Operation::Stop: return; // stop executing code within this molecule
+				case Operation::Add: numericCombine(); break; // add or subtract
+				case Operation::Subtract: numericCombine(true); break; // add or subtract
+				case Operation::ShiftRight: shiftOperation(); break; // shift right 
+				case Operation::ShiftLeft: shiftOperation(true); break; // shift left
+				case Operation::Multiply: multiplyOperation(); break;
+				case Operation::Equals: equals(); break;
+				case Operation::Pow: powOperation(); break;
+				case Operation::Divide: divide(); break;
+				case Operation::Modulo: divide(true); break;
+				case Operation::Not: notOperation(); break;
+				case Operation::Minus: minusOperation(); break;
+				case Operation::And: andOperation(); break;
+				case Operation::Or: orOperation(); break;
+				case Operation::GreaterThan: greaterThanOperation(); break; // greater than
+				case Operation::LessThan: lessThanOperation(); break;
+				case Operation::Xor: xorOperation(); break;
+				case Operation::TypeValue: typeValue(); break;
+				case Operation::PopRegister: popRegister(molecule); break;
+				case Operation::PushRegister: pushRegister(molecule); break;
+				case Operation::Load: load(molecule); break;
+				case Operation::Store: store(molecule); break;
+				case Operation::SetImmediate16_Lowest: setImmediate16<Immediate16Positions::Lowest>(molecule); break;
+				case Operation::SetImmediate16_Lower: setImmediate16<Immediate16Positions::Lower>(molecule); break;
+				case Operation::SetImmediate16_Higher: setImmediate16<Immediate16Positions::Higher>(molecule); break;
+				case Operation::SetImmediate16_Highest: setImmediate16<Immediate16Positions::Highest>(molecule); break;
+				case Operation::Move: moveRegister(molecule); break;
+				case Operation::Swap: swapRegisters(molecule); break;
+				case Operation::PopA: popRegister(TargetRegister::RegisterA); break;
+				case Operation::PopB: popRegister(TargetRegister::RegisterB); break;
+				case Operation::PopT: popRegister(TargetRegister::RegisterT); break;
+				case Operation::PushC: pushRegister(TargetRegister::RegisterC); break;
+				default: throw Problem("uc", "Unknown instruction address!");
+			}
+		}
 	}
 	void Machine::cacheBasicEntries() {
 		if (!_cachedBasicEntries) {
@@ -853,238 +853,206 @@ namespace forth {
 		if (involvesDiscriminantRegister(t) && !forth::legalValue(static_cast<Discriminant>(top.address))) {
 			throw Problem("pop.register", "ILLEGAL DISCRIMINANT!");
 		}
-        auto fn = [t, this, &top](Register& current) {
-            if (involvesDiscriminantRegister(t)) {
-                current.setType((Discriminant)top.address);
-            } else {
-                current.setValue(top);
-            }
-        };
+		auto fn = [t, this, &top](Register& current) {
+			if (involvesDiscriminantRegister(t)) {
+				current.setType((Discriminant)top.address);
+			} else {
+				current.setValue(top);
+			}
+		};
 		switch (t) {
 			case Type::RegisterA:
-            case Type::RegisterTA:
-                fn(_registerA);
-                break;
+			case Type::RegisterTA:
+				fn(_registerA);
+				break;
 			case Type::RegisterB:
 			case Type::RegisterTB:
-                fn(_registerB);
+				fn(_registerB);
 				break;
 			case Type::RegisterC:
 			case Type::RegisterT:
-                fn(_registerC);
+				fn(_registerC);
 				break;
 			case Type::RegisterS:
-                fn(_registerS);
+				fn(_registerS);
 				break;
 			case Type::RegisterX:
 			case Type::RegisterTX:
-                fn(_registerX);
+				fn(_registerX);
 				break;
-            case Type::RegisterIP:
-            case Type::RegisterTIP:
-                fn(_registerIP);
-                break;
+			case Type::RegisterIP:
+			case Type::RegisterTIP:
+				fn(_registerIP);
+				break;
 			default:
 				throw Problem("pop.register", "Unknown register!");
 		}
 	}
 	void Machine::pushRegister(TargetRegister t) {
 		using Type = decltype(t);
-		Datum tmp;
-		switch (t) {
-			case Type::RegisterA:
-                pushParameter(_registerA.getValue());
-				break;
-			case Type::RegisterB:
-                pushParameter(_registerB.getValue());
-				break;
-			case Type::RegisterC:
-                pushParameter(_registerC.getValue());
-				break;
-			case Type::RegisterT:
-				pushParameter(static_cast<Address>(_registerC.getType()));
-				break;
-			case Type::RegisterTA:
-				pushParameter(static_cast<Address>(_registerA.getType()));
-				break;
-			case Type::RegisterTB:
-				pushParameter(static_cast<Address>(_registerB.getType()));
-				break;
-			case Type::RegisterTX:
-				pushParameter(static_cast<Address>(_registerX.getType()));
-				break;
-            case Type::RegisterTIP:
-                pushParameter(static_cast<Address>(_registerIP.getType()));
-                break;
-			case Type::RegisterS:
-                pushParameter(_registerS.getValue());
-				break;
-			case Type::RegisterX:
-                pushParameter(_registerX.getValue());
-				break;
-            case Type::RegisterIP:
-                pushParameter(_registerIP.getValue());
-                break;
-			default:
-				throw Problem("push.register", "Unknown register!");
+		Register& target = getRegister(t);
+		if (involvesDiscriminantRegister(t)) {
+			pushParameter(static_cast<Address>(target.getType()));
+		} else {
+			pushParameter(target.getValue());
 		}
 	}
-    Register::Register(const Register& r) : _type(r._type), _value(r._value) { }
-    Register::Register() : _type(static_cast<Discriminant>(0)), _value(Address(0)) { }
-    void Machine::popRegister(const Molecule& m) {
-        try {
-            // read the current field
-            // get the destination register to use as a target
-            popRegister(static_cast<TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress()))));
-            _registerIP.increment();
-        } catch (Problem& p) {
-            throw Problem("pop.register", p.getMessage());
-        }
-    }
-    void Machine::pushRegister(const Molecule& m) {
-        try {
-            // read the current field
-            // get the destination register to use as a target
-            pushRegister(static_cast<TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress()))));
-            _registerIP.increment();
-        } catch (Problem& p) {
-            throw Problem("push.register", p.getMessage());
-        }
-    }
-    void Machine::load(const Molecule& m) {
-        try {
-            // figure out which register to get the address from!
-            auto target = static_cast<TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress())));
-            if (involvesDiscriminantRegister(target)) {
-                throw Problem("", "Can't use the discriminant field of a register as an address!");
-            } else if (!legalValue(target)) {
-                throw Problem("", "Illegal undefined register!");
-            }
-            using Type = decltype(target);
-            load(getRegister(target).getAddress());
-            switch (target) {
-                case Type::RegisterA:
-                    load(_registerA.getAddress());
-                    break;
-                case Type::RegisterB:
-                    load(_registerB.getAddress());
-                    break;
-                case Type::RegisterC:
-                    load(_registerC.getAddress());
-                    break;
-                case Type::RegisterIP:
-                    load(_registerIP.getAddress());
-                    break;
-                case Type::RegisterS:
-                    load(_registerS.getAddress());
-                    break;
-                case Type::RegisterX:
-                    load(_registerX.getAddress());
-                    break;
-                default:
-                    throw Problem("", "Undefined register!");
-            }
-            _registerIP.increment();
-        } catch (Problem& p) {
-            throw Problem("load", p.getMessage());
-        }
-    }
-    Register& Machine::getRegister(TargetRegister t) {
-        using Type = decltype(t);
-        switch (t) {
-            case Type::RegisterA:
-            case Type::RegisterTA:
-                return _registerA;
-            case Type::RegisterB:
-            case Type::RegisterTB:
-                return _registerB;
-            case Type::RegisterC:
-            case Type::RegisterT:
-                return _registerC;
-            case Type::RegisterS:
-                return _registerS;
-            case Type::RegisterX:
-            case Type::RegisterTX:
-                return _registerX;
-            case Type::RegisterIP:
-            case Type::RegisterTIP:
-                return _registerIP;
-            default:
-                throw Problem("getRegister", "Undefined register!");
-        }
-    }
+	Register::Register(const Register& r) : _type(r._type), _value(r._value) { }
+	Register::Register() : _type(static_cast<Discriminant>(0)), _value(Address(0)) { }
+	void Machine::popRegister(const Molecule& m) {
+		try {
+			// read the current field
+			// get the destination register to use as a target
+			popRegister(static_cast<TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress()))));
+			_registerIP.increment();
+		} catch (Problem& p) {
+			throw Problem("pop.register", p.getMessage());
+		}
+	}
+	void Machine::pushRegister(const Molecule& m) {
+		try {
+			// read the current field
+			// get the destination register to use as a target
+			pushRegister(static_cast<TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress()))));
+			_registerIP.increment();
+		} catch (Problem& p) {
+			throw Problem("push.register", p.getMessage());
+		}
+	}
+	void Machine::load(const Molecule& m) {
+		try {
+			// figure out which register to get the address from!
+			auto target = static_cast<TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress())));
+			if (involvesDiscriminantRegister(target)) {
+				throw Problem("", "Can't use the discriminant field of a register as an address!");
+			} else if (!legalValue(target)) {
+				throw Problem("", "Illegal undefined register!");
+			}
+			using Type = decltype(target);
+			load(getRegister(target).getAddress());
+			switch (target) {
+				case Type::RegisterA:
+					load(_registerA.getAddress());
+					break;
+				case Type::RegisterB:
+					load(_registerB.getAddress());
+					break;
+				case Type::RegisterC:
+					load(_registerC.getAddress());
+					break;
+				case Type::RegisterIP:
+					load(_registerIP.getAddress());
+					break;
+				case Type::RegisterS:
+					load(_registerS.getAddress());
+					break;
+				case Type::RegisterX:
+					load(_registerX.getAddress());
+					break;
+				default:
+					throw Problem("", "Undefined register!");
+			}
+			_registerIP.increment();
+		} catch (Problem& p) {
+			throw Problem("load", p.getMessage());
+		}
+	}
+	Register& Machine::getRegister(TargetRegister t) {
+		using Type = decltype(t);
+		switch (t) {
+			case Type::RegisterA:
+			case Type::RegisterTA:
+				return _registerA;
+			case Type::RegisterB:
+			case Type::RegisterTB:
+				return _registerB;
+			case Type::RegisterC:
+			case Type::RegisterT:
+				return _registerC;
+			case Type::RegisterS:
+				return _registerS;
+			case Type::RegisterX:
+			case Type::RegisterTX:
+				return _registerX;
+			case Type::RegisterIP:
+			case Type::RegisterTIP:
+				return _registerIP;
+			default:
+				throw Problem("getRegister", "Undefined register!");
+		}
+	}
 
-    void Machine::store(const Molecule& m) {
-        try {
-            auto tb = m.getByte(_registerIP.getAddress());
-            // figure out which register to get the address from!
-            auto dest = static_cast<TargetRegister>(getDestinationRegister(tb));
-            if (!legalValue(dest)) {
-                throw Problem("", "Illegal undefined destination register!");
-            } else if (involvesDiscriminantRegister(dest)) {
-                throw Problem("", "Can't use the discriminant field of a register as an address!");
-            }
-            auto src = static_cast<TargetRegister>(getSourceRegister(tb));
-            if (!legalValue(dest)) {
-                throw Problem("", "Illegal undefined source register!");
-            }
-            store(getRegister(dest).getAddress(), getRegister(src).getInt());
-            _registerIP.increment();
-        } catch (Problem& p) {
-            throw Problem("load", p.getMessage());
-        }
-    }
-    void Machine::moveOrSwap(TargetRegister from, TargetRegister to, bool swap) {
-        if (from == to) {
-            // do nothing :)
-            return;
-        }
-        Register& src = getRegister(from);
-        Register& dest = getRegister(to);
-        if (swap) {
-            if (involvesDiscriminantRegister(to)) {
-                auto v0 = dest.getType();
-                if (involvesDiscriminantRegister(from)) {
-                    dest.setType(src.getType());
-                    src.setType(v0);
-                } else {
-                    dest.setType(static_cast<Discriminant>(src.getAddress()));
-                    src.setValue(static_cast<Address>(v0));
-                }
-            } else {
-                Datum v0(dest.getValue());
-                if (involvesDiscriminantRegister(from)) {
-                    dest.setValue(static_cast<Address>(src.getType()));
-                    src.setType(static_cast<Discriminant>(v0.address));
-                } else {
-                    dest.setValue(src.getValue());
-                    src.setValue(v0);
-                }
-            }
-        } else {
-            if (involvesDiscriminantRegister(to)) {
-                dest.setType(involvesDiscriminantRegister(from) ? src.getType() : static_cast<Discriminant>(src.getAddress()));
-            } else {
-                dest.setValue(involvesDiscriminantRegister(from) ? static_cast<Address>(src.getType()) : src.getValue());
-            }
-        }
+	void Machine::store(const Molecule& m) {
+		try {
+			auto tb = m.getByte(_registerIP.getAddress());
+			// figure out which register to get the address from!
+			auto dest = static_cast<TargetRegister>(getDestinationRegister(tb));
+			if (!legalValue(dest)) {
+				throw Problem("", "Illegal undefined destination register!");
+			} else if (involvesDiscriminantRegister(dest)) {
+				throw Problem("", "Can't use the discriminant field of a register as an address!");
+			}
+			auto src = static_cast<TargetRegister>(getSourceRegister(tb));
+			if (!legalValue(dest)) {
+				throw Problem("", "Illegal undefined source register!");
+			}
+			store(getRegister(dest).getAddress(), getRegister(src).getInt());
+			_registerIP.increment();
+		} catch (Problem& p) {
+			throw Problem("store", p.getMessage());
+		}
+	}
+	void Machine::moveOrSwap(TargetRegister from, TargetRegister to, bool swap) {
+		if (from == to) {
+			// do nothing :)
+			return;
+		}
+		Register& src = getRegister(from);
+		Register& dest = getRegister(to);
+		if (swap) {
+			if (involvesDiscriminantRegister(to)) {
+				auto v0 = dest.getType();
+				if (involvesDiscriminantRegister(from)) {
+					dest.setType(src.getType());
+					src.setType(v0);
+				} else {
+					dest.setType(static_cast<Discriminant>(src.getAddress()));
+					src.setValue(static_cast<Address>(v0));
+				}
+			} else {
+				Datum v0(dest.getValue());
+				if (involvesDiscriminantRegister(from)) {
+					dest.setValue(static_cast<Address>(src.getType()));
+					src.setType(static_cast<Discriminant>(v0.address));
+				} else {
+					dest.setValue(src.getValue());
+					src.setValue(v0);
+				}
+			}
+		} else {
+			if (involvesDiscriminantRegister(to)) {
+				dest.setType(involvesDiscriminantRegister(from) ? src.getType() : static_cast<Discriminant>(src.getAddress()));
+			} else {
+				dest.setValue(involvesDiscriminantRegister(from) ? static_cast<Address>(src.getType()) : src.getValue());
+			}
+		}
+	}
 
-    }
-    void Machine::swapRegisters(const Molecule& m) {
-        auto args = m.getByte(_registerIP.getAddress());
-        auto dest = getDestinationRegister(args);
-        auto src = getSourceRegister(args);
-        moveOrSwap(static_cast<TargetRegister>(src), static_cast<TargetRegister>(dest), true);
-        _registerIP.increment();
-    }
+	void Machine::swapRegisters(const Molecule& m) {
+		auto args = m.getByte(_registerIP.getAddress());
+		auto dest = getDestinationRegister(args);
+		auto src = getSourceRegister(args);
+		moveOrSwap(static_cast<TargetRegister>(src), static_cast<TargetRegister>(dest), true);
+		_registerIP.increment();
+	}
 
-    void Machine::moveRegister(const Molecule& m) {
-        auto args = m.getByte(_registerIP.getAddress());
-        auto dest = getDestinationRegister(args);
-        auto src = getSourceRegister(args);
-        moveOrSwap(static_cast<TargetRegister>(src), static_cast<TargetRegister>(dest), false);
-        _registerIP.increment();
-    }
+	void Machine::moveRegister(const Molecule& m) {
+		auto args = m.getByte(_registerIP.getAddress());
+		auto dest = getDestinationRegister(args);
+		auto src = getSourceRegister(args);
+		moveOrSwap(static_cast<TargetRegister>(src), static_cast<TargetRegister>(dest), false);
+		_registerIP.increment();
+	}
 } // end namespace forth
 
 

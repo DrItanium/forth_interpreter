@@ -1034,51 +1034,47 @@ namespace forth {
             throw Problem("load", p.getMessage());
         }
     }
-    void Machine::moveRegister(TargetRegister from, TargetRegister to) {
+    void Machine::moveOrSwap(TargetRegister from, TargetRegister to, bool swap) {
         if (from == to) {
             // do nothing :)
             return;
         }
         Register& src = getRegister(from);
         Register& dest = getRegister(to);
-        if (involvesDiscriminantRegister(to)) {
-            dest.setType(involvesDiscriminantRegister(from) ? src.getType() : static_cast<Discriminant>(src.getAddress()));
-        } else {
-            dest.setValue(involvesDiscriminantRegister(from) ? static_cast<Address>(src.getType()) : src.getValue());
-        }
-    }
-    void Machine::swapRegisters(TargetRegister from, TargetRegister to) {
-        if (from == to) {
-            // do nothing
-            return;
-        }
-        Register& src = getRegister(from);
-        Register& dest = getRegister(to);
-        if (involvesDiscriminantRegister(to)) {
-            auto v0 = dest.getType();
-            if (involvesDiscriminantRegister(from)) {
-                dest.setType(src.getType());
-                src.setType(v0);
+        if (swap) {
+            if (involvesDiscriminantRegister(to)) {
+                auto v0 = dest.getType();
+                if (involvesDiscriminantRegister(from)) {
+                    dest.setType(src.getType());
+                    src.setType(v0);
+                } else {
+                    dest.setType(static_cast<Discriminant>(src.getAddress()));
+                    src.setValue(static_cast<Address>(v0));
+                }
             } else {
-                dest.setType(static_cast<Discriminant>(src.getAddress()));
-                src.setValue(static_cast<Address>(v0));
+                Datum v0(dest.getValue());
+                if (involvesDiscriminantRegister(from)) {
+                    dest.setValue(static_cast<Address>(src.getType()));
+                    src.setType(static_cast<Discriminant>(v0.address));
+                } else {
+                    dest.setValue(src.getValue());
+                    src.setValue(v0);
+                }
             }
         } else {
-            Datum v0(dest.getValue());
-            if (involvesDiscriminantRegister(from)) {
-                dest.setValue(static_cast<Address>(src.getType()));
-                src.setType(static_cast<Discriminant>(v0.address));
+            if (involvesDiscriminantRegister(to)) {
+                dest.setType(involvesDiscriminantRegister(from) ? src.getType() : static_cast<Discriminant>(src.getAddress()));
             } else {
-                dest.setValue(src.getValue());
-                src.setValue(v0);
+                dest.setValue(involvesDiscriminantRegister(from) ? static_cast<Address>(src.getType()) : src.getValue());
             }
         }
+
     }
     void Machine::swapRegisters(const Molecule& m) {
         auto args = m.getByte(_registerIP.getAddress());
         auto dest = getDestinationRegister(args);
         auto src = getSourceRegister(args);
-        swapRegisters(static_cast<TargetRegister>(src), static_cast<TargetRegister>(dest));
+        moveOrSwap(static_cast<TargetRegister>(src), static_cast<TargetRegister>(dest), true);
         _registerIP.increment();
     }
 
@@ -1086,7 +1082,7 @@ namespace forth {
         auto args = m.getByte(_registerIP.getAddress());
         auto dest = getDestinationRegister(args);
         auto src = getSourceRegister(args);
-        moveRegister(static_cast<TargetRegister>(src), static_cast<TargetRegister>(dest));
+        moveOrSwap(static_cast<TargetRegister>(src), static_cast<TargetRegister>(dest), false);
         _registerIP.increment();
     }
 } // end namespace forth

@@ -151,9 +151,8 @@ namespace forth {
 			void initializeBaseDictionary();
             void cacheBasicEntries();
 			std::string readWord();
-            void moveRegister(TargetRegister from, TargetRegister to);
+            void moveOrSwap(TargetRegister from, TargetRegister to, bool swap = false);
             void moveRegister(const Molecule& m);
-            void swapRegisters(TargetRegister a, TargetRegister b);
             void swapRegisters(const Molecule& m);
 		private:
 			// define the CPU that the forth interpreter sits on top of

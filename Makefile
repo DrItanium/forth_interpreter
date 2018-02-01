@@ -3,7 +3,8 @@ include config.mk
 OBJECTS = forth.o \
 		  Datum.o \
 		  DictionaryEntry.o \
-		  Machine.o
+		  Machine.o \
+		  Problem.o 
 
 OUTPUT_BINARY = forth
 
@@ -30,6 +31,7 @@ clean:
 .PHONY: options clean all
 
 forth.o: forth.cc Problem.h Types.h Datum.h DictionaryEntry.h Datum.h Machine.h Instruction.h
-Datum.o: Datum.cc Types.h Datum.h Instruction.h
-Machine.o: Machine.cc Machine.h Types.h DictionaryEntry.h Datum.h Instruction.h
-DictionaryEntry.o: DictionaryEntry.cc DictionaryEntry.h Types.h Datum.h Problem.h Machine.h Instruction.h
+Datum.o: Datum.cc Types.h Datum.h Instruction.h 
+Machine.o: Machine.cc Machine.h Types.h DictionaryEntry.h Datum.h Instruction.h Problem.h
+DictionaryEntry.o: DictionaryEntry.cc DictionaryEntry.h Types.h Datum.h Problem.h Machine.h Instruction.h Problem.h
+Problem.o: Problem.cc Problem.h

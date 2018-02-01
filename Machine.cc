@@ -14,9 +14,6 @@
 #include "Machine.h"
 
 namespace forth {
-	Problem::Problem(const std::string& word, const std::string& message) : _word(word), _message(message) { }
-
-
 	void Machine::seeWord(const DictionaryEntry* entry) {
 		if (entry->isFake()) {
 			_output << "compiled entry: { " << std::endl;

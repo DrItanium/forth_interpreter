@@ -53,10 +53,10 @@
 : <<       000000001f0e1d1c# uc ;
 : eq       000000001f111d1c# uc ;
 : type     000000000000121c# uc ;
-: load     00000000001f131c# uc ;
-: iload    00001f13201a131c# uc ;
-: store    0000000000141d1c# uc ;
-: istore   000014201a131d1c# uc ;
+: load     000000001f00131c# uc ;
+: iload    001f13201a00131c# uc ;
+: store    0000000010141d1c# uc ;
+: istore   1014201a00131d1c# uc ;
 : pow      000000001f151d1c# uc ;
 : swap.ab  00000000101b1d1c# uc ;
 : swap.ba  swap.ab ;

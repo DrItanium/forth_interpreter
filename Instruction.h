@@ -110,12 +110,10 @@ enum class Operation : byte {
     PopT,
     PushC,
     // Full versions of already existing operations
-    SetImmediate16_LowestFull,
-    SetImmediate16_LowerFull,
-    SetImmediate16_HigherFull,
-    SetImmediate16_HighestFull,
-    //LoadFull, // two argument
-    //StoreFull, // two argument
+    //SetImmediate16_LowestFull,
+    //SetImmediate16_LowerFull,
+    //SetImmediate16_HigherFull,
+    //SetImmediate16_HighestFull,
     //SetImmediate32_Lower,
     //SetImmediate32_Upper,
     //

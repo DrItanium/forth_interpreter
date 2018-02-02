@@ -167,11 +167,17 @@ namespace forth {
             }
 
             template<auto first, auto ... rest>
-            void singleMoleculeSequence() {
-                moleculeWord<Instruction::encodeOperation(first, rest...)>();
+            void moleculeSequence() {
+                // we could encode each operation into a separate word to start with
+                moleculeWord<static_cast<Address>(first)>();
+                // there is no compaction in this method unless we turn out to 
+                // already have a packed address
+                moleculeSequence<rest...>();
             }
-
-
+            template<auto first, auto ... rest>
+            void singleMoleculeSequence() {
+                moleculeWord<Instruction::encodeOperation(first, std::move(rest)...)>();
+            }
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;

@@ -284,6 +284,14 @@ namespace Instruction {
     constexpr QuarterAddress pushA() noexcept { return pushRegister(TargetRegister::RegisterA); }
     constexpr QuarterAddress pushB() noexcept { return pushRegister(TargetRegister::RegisterB); }
 	constexpr QuarterAddress popC() noexcept { return popRegister(TargetRegister::RegisterC); }
+    constexpr size_t operationLength(byte b) noexcept { return getInstructionWidth(static_cast<Operation>(b)); }
+    constexpr size_t operationLength(QuarterAddress b) noexcept { return getInstructionWidth(byte(b & 0xFF)); }
+    constexpr size_t operationLength(HalfAddress b) noexcept { return getInstructionWidth(byte(b & 0xFF)); }
+
+    template<typename T, typename ... Rest>
+    constexpr size_t operationLength(T first, Rest ... rest) noexcept {
+        return operationLength(first) + operationLength(std::move(rest)...);
+    }
 } // end namespace Instruction
 
 

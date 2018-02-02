@@ -122,7 +122,7 @@ enum class Operation : byte {
 
 
 constexpr bool legalOperation(Operation op) noexcept {
-    return static_cast<byte>(Operation::Count) <= static_cast<byte>(op);
+    return static_cast<byte>(Operation::Count) > static_cast<byte>(op);
 }
 constexpr byte getInstructionWidth(Operation op) noexcept {
     if (!legalOperation(op)) {

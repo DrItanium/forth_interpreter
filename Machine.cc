@@ -707,6 +707,7 @@ namespace forth {
             addWord("execute", std::mem_fn(&Machine::executeTop));
             addWord("+", std::mem_fn(&Machine::singleMoleculeSequence<Instruction::popA(), Instruction::popB(), Instruction::add(), Instruction::pushC()>));
             addWord("-", std::mem_fn(&Machine::moleculeSequence<Instruction::popA(), Instruction::popB(), Instruction::sub(), Instruction::pushC()>));
+            //addWord("*", std::mem_fn(&Machine::moleculeSequence<Instruction::popA(), Instruction::popB(), Instruction::mul(), Instruction::pushC()>));
 			_microcodeInvoke = lookupWord("uc");
 			_popS = lookupWord("pop.s");
 		}

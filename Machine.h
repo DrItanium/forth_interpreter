@@ -169,17 +169,32 @@ namespace forth {
             void singleMoleculeSequence() {
                 moleculeWord<Instruction::encodeOperation(first, std::move(rest)...)>();
             }
-
             template<auto first, auto ... rest>
             void moleculeSequence() {
+                makeMoleculeSequence<0,0,first, rest...>();
+            }
+            template<byte count, auto first>
+            static constexpr bool canFitIntoInstruction() noexcept {
+                return ((8 - count) >= getInstructionWidth(first));
+            }
+            template<byte depth, Address current, auto first, auto ... rest>
+            void makeMoleculeSequence() {
                 // we could encode each operation into a separate word to start with
-                singleMoleculeSequence<first>();
-                if constexpr (sizeof...(rest) > 0) {
-                    // there is no compaction in this method unless we turn out to 
-                    // already have a packed address
-                    moleculeSequence<rest...>();
+                if constexpr (canFitIntoInstruction<depth, first>()) {
+                    static_assert(getInstructionWidth(first) != 0, "Illegal instruction found!");
+                    static constexpr byte newDepth = depth + getInstructionWidth(first);
+                    static constexpr auto newAddress = Instruction::encodeOperation<newDepth, decltype(first)>(current, first);
+                    if constexpr (sizeof...(rest) > 0) {
+                        makeMoleculeSequence<newDepth, newAddress, rest...>();
+                    } else {
+                        moleculeWord<newAddress>();
+                    }
+                } else {
+                    moleculeWord<current>();
+                    makeMoleculeSequence<0, 0u, first, rest...>();
                 }
             }
+
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;

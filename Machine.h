@@ -158,15 +158,19 @@ namespace forth {
 			void microcodeInvoke(const Molecule& m);
             void injectWord();
             void executeTop();
-            template<Address word>
-            void singleMoleculeWord() {
-                microcodeInvoke(word);
+            template<Address first, Address ... rest>
+            void moleculeWord() {
+                microcodeInvoke(first);
+                if constexpr (sizeof...(rest) > 0) {
+                    moleculeWord<rest...>();
+                }
             }
 
             template<auto first, auto ... rest>
-            void singleMoleculeWord() {
-                singleMoleculeWord<encodeOperation(first, rest...)>();
+            void singleMoleculeSequence() {
+                moleculeWord<Instruction::encodeOperation(first, rest...)>();
             }
+
 
 		private:
 			// define the CPU that the forth interpreter sits on top of

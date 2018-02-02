@@ -705,6 +705,7 @@ namespace forth {
 			addWord("invoke.c", std::mem_fn(&Machine::invokeCRegister));
             addWord("'", std::mem_fn(&Machine::injectWord));
             addWord("execute", std::mem_fn(&Machine::executeTop));
+            addWord("+", std::mem_fn(&Machine::singleMoleculeSequence<Instruction::popA(), Instruction::popB(), Instruction::add(), Instruction::pushC()>));
 			_microcodeInvoke = lookupWord("uc");
 			_popS = lookupWord("pop.s");
 		}
@@ -718,8 +719,17 @@ namespace forth {
 		_compileTarget->markFakeEntry();
 	}
 	void Machine::microcodeInvoke(const Molecule& m) {
-		_registerS.setValue(m._value);
-		dispatchInstruction();
+        if (_compiling) {
+            if (_compileTarget) {
+                compileMicrocodeInvoke(m, _compileTarget);
+            } else {
+                throw Problem("microcodeInvoke", "No compile target yet compiling!");
+            }
+        } else {
+            // otherwise do the actual action itself 
+		    _registerS.setValue(m._value);
+		    dispatchInstruction();
+        }
 	}
 	void Machine::continueStatement() {
 		if (!_compiling) {

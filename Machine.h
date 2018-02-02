@@ -163,6 +163,11 @@ namespace forth {
                 microcodeInvoke(word);
             }
 
+            template<auto first, auto ... rest>
+            void singleMoleculeWord() {
+                singleMoleculeWord<encodeOperation(first, rest...)>();
+            }
+
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;

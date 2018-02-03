@@ -224,7 +224,8 @@ namespace forth {
 			bool _compiling = false;
 			DictionaryEntry* _compileTarget = nullptr;
 			// internal "registers"
-            Register _registerA, _registerB, _registerC, _registerS, _registerX, _registerIP;
+            Register _registerA, _registerB, _registerC, _registerS, _registerX;
+            Register _registerIP, _registerSP, _registerSP2;
 			const DictionaryEntry* _microcodeInvoke = nullptr;
 			const DictionaryEntry* _popS = nullptr;
 	};

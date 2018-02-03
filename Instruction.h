@@ -43,7 +43,8 @@ enum class TargetRegister : byte {
     RegisterTB,
     RegisterTX, // misc type
     RegisterIP, // instruction pointer contents
-    RegisterTIP, // instruction pointer type
+    RegisterSP, // stack pointer (parameter)
+    RegisterSP2, // second stack pointer (subroutine)
     Error,
 };
 constexpr byte encodeDestinationRegister(byte value, TargetRegister reg) noexcept {
@@ -65,7 +66,6 @@ static constexpr bool involvesDiscriminantRegister(TargetRegister r) noexcept {
         case TargetRegister::RegisterTA:
         case TargetRegister::RegisterTB:
         case TargetRegister::RegisterTX:
-        case TargetRegister::RegisterTIP:
             return true;
         default:
             return false;

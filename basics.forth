@@ -4,7 +4,7 @@
 ( register positions, maximum of 16 )
 : register:a 0 ;         : register:b 1 ;        : register:c 2 ;       : register:s 3 ;
 : register:x 4 ;         : register:t 5 ;        : register:ta 6 ;      : register:tb 7 ;
-: register:tx 8 ;        : register:ip 9 ;       : register:tip a# ;
+: register:tx 8 ;        : register:ip 9 ;       : register:sp0 a# ;    : register:sp1 b# ;
 
 ( op codes :D )
 : op:STOP 0 ;            : op:ADD 1 ;            : op:SUB 2 ;           : op:MUL 3 ;
@@ -30,7 +30,8 @@
 : pop.tb   000000000000070f# uc ;
 : pop.tx   000000000000080f# uc ;
 : pop.ip   000000000000090f# uc ;
-: pop.tip  0000000000000a0f# uc ;
+: pop.sp0  0000000000000a0f# uc ;
+: pop.sp1  0000000000000b0f# uc ;
 : push.b   0000000000000110# uc ;
 : push.s   0000000000000310# uc ;
 : push.x   0000000000000410# uc ;
@@ -39,7 +40,8 @@
 : push.tb  0000000000000710# uc ;
 : push.tx  0000000000000810# uc ;
 : push.ip  0000000000000910# uc ;
-: push.tip 0000000000000a10# uc ;
+: push.sp0 0000000000000a10# uc ;
+: push.sp1 0000000000000b10# uc ;
 : +        000000001f011d1c# uc ;
 : -        000000001f021d1c# uc ;
 : *        000000001f031d1c# uc ;

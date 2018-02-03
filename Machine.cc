@@ -941,8 +941,11 @@ endLoopTop:
 			case Type::RegisterTX:
 				return _registerX;
 			case Type::RegisterIP:
-			case Type::RegisterTIP:
 				return _registerIP;
+			case Type::RegisterSP:
+				return _registerSP;
+			case Type::RegisterSP2:
+				return _registerSP2;
 			default:
 				throw Problem("getRegister", "Undefined register!");
 		}

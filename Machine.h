@@ -36,8 +36,12 @@ namespace forth {
              * Compile a sequence of microcode instructions into a word :D
              */
             template<auto first, auto ... rest>
-            void addMicrocodedWord(const std::string& name, bool compileTimeInvoke = false) {
+            void addMachineCodeWord(const std::string& name, bool compileTimeInvoke = false) {
                 addWord(name, std::mem_fn(&Machine::moleculeSequence<first, rest...>), compileTimeInvoke);
+            }
+            template<Address first, Address ... rest>
+            void addMoleculeSequence(const std::string& name, bool compileTimeInvoke = false) {
+                addWord(name, std::mem_fn(&Machine::moleculeWord<first, rest...>), compileTimeInvoke);
             }
 			void addition(Discriminant type);
 			void listWords();
@@ -192,11 +196,15 @@ namespace forth {
                         moleculeWord<newAddress>();
                     }
                 } else {
-                    moleculeWord<current>();
-                    static constexpr byte newDepth = getInstructionWidth(first);
-                    static constexpr auto newAddress = Instruction::encodeOperation<0, decltype(first)>(0, first);
                     if constexpr (sizeof...(rest) > 0) {
-                        makeMoleculeSequence<newDepth, newAddress, rest...>();
+                        if constexpr (Instruction::operationLength(first, std::move(rest)...) <= 8) {
+                            moleculeWord<current, Instruction::encodeOperation(first, std::move(rest)...)>();
+                        } else {
+                            moleculeWord<current>();
+                            makeMoleculeSequence<0, 0, rest...>();
+                        }
+                    } else {
+                        moleculeWord<current, Instruction::encodeOperation<0, decltype(first)>(0, first)>();
                     }
                 }
             }

@@ -3,27 +3,6 @@
 #include "Instruction.h"
 
 
-// : Constants::systemVariablesStart FE0000# ;
-// : Constants::systemVariablesEnd 1000000# ;
-// : Constants::
-    // : store-then-next = 1 + dup ;
-    // : init Constants::systemVariablesStart dup
-    //        Constants::parameterStackFull store-then-next
-    //        Constants::parameterStackEmpty store-then-next
-    //        Constants::subroutineStackEmpty store-then-next
-    //        Constants::subroutineStackFull store-then-next
-    //        Constants::dictionaryStart store-then-next
-    //        Constants::dictionary
-namespace Constants {
-    constexpr forth::Address systemVariablesStart = 0xFE0000;
-    constexpr forth::Address systemVariablesEnd = forth::Machine::largestAddress;
-    constexpr forth::Address subroutineStackEmpty = 0xFE0000;
-    constexpr forth::Address subroutineStackFull = 0xFCFFFF;
-    constexpr forth::Address parameterStackEmpty = 0xFD0000;
-    constexpr forth::Address parameterStackFull = 0xFBFFFF;
-    constexpr forth::Address dictionaryFull = 0xFC0000;
-    constexpr forth::Address dictionaryStart = 0xF00000;
-} // end namespace Constants
 namespace Instruction = forth::Instruction;
 template<typename T, typename ... Args>
 constexpr forth::Address molecule(T first, Args&& ... rest) noexcept {

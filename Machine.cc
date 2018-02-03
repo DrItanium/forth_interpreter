@@ -681,6 +681,9 @@ namespace forth {
 			}
 		}
 	}
+    void Machine::raiseError() {
+        throw Problem("raiseError", "Raised an error from within interpreter!");
+    }
 	void Machine::initializeBaseDictionary() {
 		if (!_initializedBaseDictionary) {
 			_initializedBaseDictionary = true;
@@ -705,6 +708,7 @@ namespace forth {
 			addWord("invoke.c", std::mem_fn(&Machine::invokeCRegister));
             addWord("'", std::mem_fn(&Machine::injectWord));
             addWord("execute", std::mem_fn(&Machine::executeTop));
+            addWord("raiseError", std::mem_fn(&Machine::raiseError));
 			_microcodeInvoke = lookupWord("uc");
 			_popS = lookupWord("pop.s");
 		}

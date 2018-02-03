@@ -13,6 +13,13 @@ namespace forth {
 		public:
 			static constexpr auto largestAddress = 0xFFFFFF;
 			static constexpr auto memoryCapacity = (largestAddress + 1);
+            // capacity variables for the two stacks, each one has 64k worth of data
+            static constexpr auto systemVariablesStart = 0xFE0000;
+            static constexpr auto systemVariablesEnd = largestAddress;
+            static constexpr auto subroutineStackEmpty = 0xFE0000;
+            static constexpr auto subroutineStackFull = 0xFCFFFF;
+            static constexpr auto parameterStackEmpty = 0xFD0000;
+            static constexpr auto parameterStackFull = 0xFBFFFF;
 		public:
 			Machine(std::ostream& output, std::istream& input);
 			~Machine() = default;
@@ -55,6 +62,10 @@ namespace forth {
 			void setB(const Datum& target) noexcept { _registerB.setValue(target); }
 			void initializeBaseDictionary();
 		private:
+            void raiseError();
+            bool parameterStackEmpty();
+            bool subroutineStackEmpty();
+            bool parameterStackFull();
             void chooseRegister();
             void invokeCRegister();
             Register& getRegister(TargetRegister t);
@@ -214,7 +225,6 @@ namespace forth {
 			std::ostream& _output;
 			std::istream& _input;
 			std::unique_ptr<Datum[]> _memory;
-            std::unique_ptr<Datum[]> _dynamic; // dynamic memory for stack and subroutines
 			DictionaryEntry* _words;
 			// no need for the subroutine stack
             std::list<DictionaryEntry*> _subroutine;

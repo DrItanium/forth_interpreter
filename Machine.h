@@ -18,7 +18,7 @@ namespace forth {
             static constexpr auto systemVariablesEnd = largestAddress;
             static constexpr auto subroutineStackEmpty = 0xFE0000;
             static constexpr auto subroutineStackFull = 0xFCFFFF;
-            static constexpr auto parameterStackEmpty = 0xFD0000;
+            static constexpr auto parameterStackTop = 0xFD0000;
             static constexpr auto parameterStackFull = 0xFBFFFF;
 		public:
 			Machine(std::ostream& output, std::istream& input);
@@ -63,9 +63,6 @@ namespace forth {
 			void initializeBaseDictionary();
 		private:
             void raiseError();
-            bool parameterStackEmpty();
-            bool subroutineStackEmpty();
-            bool parameterStackFull();
             void chooseRegister();
             void invokeCRegister();
             Register& getRegister(TargetRegister t);

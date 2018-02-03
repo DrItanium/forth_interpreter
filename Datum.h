@@ -13,6 +13,7 @@ namespace forth {
         Boolean,
         Word,
         Molecule,
+        DictionaryEntry,
         Count,
     };
     constexpr bool legalValue(Discriminant value) noexcept {
@@ -26,12 +27,14 @@ namespace forth {
         Datum(Floating x) : fp(x) { }
         Datum(bool x) : truth(x) { }
         Datum(const DictionaryEntry* x) : entry(x) { }
+        Datum(DictionaryEntry* x) : subroutine(x) { }
         Datum(const Datum& other);
         bool truth;
         Integer numValue;
         Address address;
         Floating fp;
         const DictionaryEntry* entry;
+        DictionaryEntry* subroutine;
         byte backingStore[sizeof(Integer)];
     };
     std::ostream& operator<<(std::ostream& out, const Datum& dt);

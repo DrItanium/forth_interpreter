@@ -224,7 +224,7 @@ namespace forth {
 			std::unique_ptr<Datum[]> _memory;
 			DictionaryEntry* _words;
 			// no need for the subroutine stack
-            std::list<DictionaryEntry*> _subroutine;
+            std::list<Datum> _subroutine;
             std::list<Datum> _parameter;
 			bool _initializedBaseDictionary = false;
 			bool _keepExecuting = true;

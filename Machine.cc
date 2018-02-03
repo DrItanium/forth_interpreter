@@ -149,8 +149,11 @@ namespace forth {
 		if (!_compiling) {
 			throw Problem("else", "must be defining a word!");
 		}
+        if (_subroutine.empty()) {
+            throw Problem("else", "subroutine stack is empty!");
+        }
 		// pop the else block off of the subroutine stack
-		auto* elseBlock = _subroutine.back();
+		auto* elseBlock = _subroutine.back().subroutine;
 		_subroutine.pop_back();
 		_subroutine.emplace_back(new DictionaryEntry(""));
 		// let the if block dangle off since it is referenced else where
@@ -170,7 +173,7 @@ namespace forth {
 		auto parent = _subroutine.back();
 		_subroutine.pop_back();
 		addWord(_compileTarget);
-		_compileTarget = parent;
+		_compileTarget = parent.subroutine;
 		_compileTarget->addSpaceEntry(lookupWord("choose.c"));
 		_compileTarget->addSpaceEntry(lookupWord("invoke.c"));
 	}
@@ -769,7 +772,7 @@ loopTop:
 		});
 		container->markFakeEntry();
 		addWord(container);
-		_compileTarget = parent;
+		_compileTarget = parent.subroutine;
 		_compileTarget->addSpaceEntry(container);
 
 	}
@@ -807,7 +810,7 @@ endLoopTop:
 				});
 		container->markFakeEntry();
 		addWord(container);
-		_compileTarget = parent;
+		_compileTarget = parent.subroutine;
 		_compileTarget->addSpaceEntry(container);
 		// now we have to construct a single entry for the parent which has the conditional code added as well
 	}

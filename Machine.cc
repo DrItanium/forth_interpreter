@@ -506,7 +506,7 @@ namespace forth {
 		_output << ' ' << std::endl;
 		_output.setf(flags);
 	}
-	Machine::Machine(std::ostream& output, std::istream& input) :  _output(output), _input(input), _memory(new Integer[memoryCapacity]), _words(nullptr) { }
+	Machine::Machine(std::ostream& output, std::istream& input) :  _output(output), _input(input), _memory(new Datum[memoryCapacity]), _dynamic(new Datum[memoryCapacity]), _words(nullptr) { }
 
 	Datum Machine::popParameter() {
 		if (_parameter.empty()) {

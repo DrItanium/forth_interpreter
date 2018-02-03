@@ -213,7 +213,8 @@ namespace forth {
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;
 			std::istream& _input;
-			std::unique_ptr<Integer[]> _memory;
+			std::unique_ptr<Datum[]> _memory;
+            std::unique_ptr<Datum[]> _dynamic; // dynamic memory for stack and subroutines
 			DictionaryEntry* _words;
 			// no need for the subroutine stack
             std::list<DictionaryEntry*> _subroutine;

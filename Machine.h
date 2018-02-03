@@ -20,6 +20,19 @@ namespace forth {
             static constexpr auto subroutineStackFull = 0xFCFFFF;
             static constexpr auto parameterStackTop = 0xFD0000;
             static constexpr auto parameterStackFull = 0xFBFFFF;
+            static constexpr auto dictionaryFull = 0xFC0000;
+            static constexpr auto dictionaryStart = 0xF00000;
+            /**
+             * Known constant addresses for setting up the machine
+             */
+            enum systemVariableLocations : decltype(systemVariablesStart) {
+                StackFull = systemVariablesStart,
+                StackEmpty,
+                SubroutineFull,
+                SubroutineEmpty,
+                DictionaryFull,
+                DictionaryStart,
+            };
 		public:
 			Machine(std::ostream& output, std::istream& input);
 			~Machine() = default;

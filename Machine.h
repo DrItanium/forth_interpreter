@@ -32,6 +32,13 @@ namespace forth {
 			void typeValue() { typeValue(_registerA.getValue()); }
 			void addWord(DictionaryEntry* entry);
 			void addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke = false);
+            /**
+             * Compile a sequence of microcode instructions into a word :D
+             */
+            template<auto first, auto ... rest>
+            void addMicrocodedWord(const std::string& name, bool compileTimeInvoke = false) {
+                addWord(name, std::mem_fn(&Machine::moleculeSequence<first, rest...>), compileTimeInvoke);
+            }
 			void addition(Discriminant type);
 			void listWords();
 			void activateCompileMode() { _compiling = true; }
@@ -42,6 +49,7 @@ namespace forth {
 			void setTA(Discriminant target) noexcept { _registerA.setType(target); }
 			void setTB(Discriminant target) noexcept { _registerB.setType(target); }
 			void setB(const Datum& target) noexcept { _registerB.setValue(target); }
+			void initializeBaseDictionary();
 		private:
             void chooseRegister();
             void invokeCRegister();
@@ -149,7 +157,6 @@ namespace forth {
             void seeWord();
 			void terminateExecution();
             void seeWord(const DictionaryEntry* entry);
-			void initializeBaseDictionary();
 			std::string readWord();
             void moveOrSwap(TargetRegister from, TargetRegister to, bool swap = false);
             void moveRegister(const Molecule& m);
@@ -166,22 +173,17 @@ namespace forth {
                 }
             }
             template<auto first, auto ... rest>
-            void singleMoleculeSequence() {
-                moleculeWord<Instruction::encodeOperation(first, std::move(rest)...)>();
-            }
-            template<auto first, auto ... rest>
             void moleculeSequence() {
-                makeMoleculeSequence<0,0,first, rest...>();
-            }
-            template<byte count, auto first>
-            static constexpr bool canFitIntoInstruction() noexcept {
-                return ((8 - count) >= getInstructionWidth(first));
+                if constexpr (Instruction::operationLength(first, std::move(rest)...) <= 8) {
+                    moleculeWord<Instruction::encodeOperation(first, std::move(rest)...)>();
+                } else {
+                    makeMoleculeSequence<getInstructionWidth(first), Instruction::encodeOperation<0, decltype(first)>(0, first), rest...>();
+                }
             }
             template<byte depth, Address current, auto first, auto ... rest>
             void makeMoleculeSequence() {
                 // we could encode each operation into a separate word to start with
-                if constexpr (canFitIntoInstruction<depth, first>()) {
-                    static_assert(getInstructionWidth(first) != 0, "Illegal instruction found!");
+                if constexpr ((7 - depth) >= getInstructionWidth(first)) {
                     static constexpr byte newDepth = depth + getInstructionWidth(first);
                     static constexpr auto newAddress = Instruction::encodeOperation<newDepth, decltype(first)>(current, first);
                     if constexpr (sizeof...(rest) > 0) {
@@ -191,7 +193,11 @@ namespace forth {
                     }
                 } else {
                     moleculeWord<current>();
-                    makeMoleculeSequence<0, 0u, first, rest...>();
+                    static constexpr byte newDepth = getInstructionWidth(first);
+                    static constexpr auto newAddress = Instruction::encodeOperation<0, decltype(first)>(0, first);
+                    if constexpr (sizeof...(rest) > 0) {
+                        makeMoleculeSequence<newDepth, newAddress, rest...>();
+                    }
                 }
             }
 

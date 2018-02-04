@@ -16,6 +16,8 @@ namespace forth {
         DictionaryEntry,
         Count,
     };
+	class Machine;
+	void addDiscriminantWords(Machine&);
     constexpr bool legalValue(Discriminant value) noexcept {
         return static_cast<Address>(value) < static_cast<Address>(Discriminant::Count); 
     }

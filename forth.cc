@@ -134,19 +134,20 @@ int main() {
 	machine.addMachineCodeWord<popA, moveAtoB, Instruction::mul(), pushC>("square");
 	machine.addMachineCodeWord<Instruction::popT()>("pop.t");
 	// register positions
-	machine.buildWord("register:a", false, static_cast<Address>(ra));
-	machine.buildWord("register:b", false, static_cast<Address>(rb));
-	machine.buildWord("register:c", false, static_cast<Address>(rc));
-	machine.buildWord("register:s", false, static_cast<Address>(forth::TargetRegister::RegisterS));
-	machine.buildWord("register:x", false, static_cast<Address>(forth::TargetRegister::RegisterX));
-	machine.buildWord("register:t", false, static_cast<Address>(forth::TargetRegister::RegisterT));
-	machine.buildWord("register:ta", false, static_cast<Address>(forth::TargetRegister::RegisterTA));
-	machine.buildWord("register:tb", false, static_cast<Address>(forth::TargetRegister::RegisterTB));
-	machine.buildWord("register:tx", false, static_cast<Address>(forth::TargetRegister::RegisterTX));
-	machine.buildWord("register:ip", false, static_cast<Address>(forth::TargetRegister::RegisterIP));
-	machine.buildWord("register:sp0", false, static_cast<Address>(forth::TargetRegister::RegisterSP));
-	machine.buildWord("register:sp1", false, static_cast<Address>(forth::TargetRegister::RegisterSP2));
+	machine.buildWord("register:a", false, ra);
+	machine.buildWord("register:b", false, rb);
+	machine.buildWord("register:c", false, rc);
+	machine.buildWord("register:s", false, forth::TargetRegister::RegisterS);
+	machine.buildWord("register:x", false, forth::TargetRegister::RegisterX);
+	machine.buildWord("register:t", false, forth::TargetRegister::RegisterT);
+	machine.buildWord("register:ta", false, forth::TargetRegister::RegisterTA);
+	machine.buildWord("register:tb", false, forth::TargetRegister::RegisterTB);
+	machine.buildWord("register:tx", false, forth::TargetRegister::RegisterTX);
+	machine.buildWord("register:ip", false, forth::TargetRegister::RegisterIP);
+	machine.buildWord("register:sp0", false, forth::TargetRegister::RegisterSP);
+	machine.buildWord("register:sp1", false, forth::TargetRegister::RegisterSP2);
 
+	addDiscriminantWords(machine);
     machine.controlLoop();
     return 0;
 }

@@ -22,8 +22,6 @@
 : swap.ab  00000000101b1d1c# uc ;
 : swap.ba  swap.ab ;
 : print.a  000000000000121c# uc ;
-: neq      001f06201b111d1c# uc ;
-: implies  001f06201a091d1c# uc ;
 
 : @        load ;
 : @@       iload ;

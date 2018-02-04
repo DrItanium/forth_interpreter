@@ -79,6 +79,13 @@ void arithmeticOperators(forth::Machine& machine) {
 	threeArgumentVersion<Instruction::div()>(machine, "3/");
 	machine.addMachineCodeWord<popA, moveAtoB, Instruction::mul(), pushC>("square");
 	machine.addMachineCodeWord<popA, moveAtoB, Instruction::mul(), moveCtoA, Instruction::mul(), pushC>("cube");
+	machine.addMachineCodeWord<
+		popA,
+		popB,
+		Instruction::equals(),  // C = top == equals 
+		moveCtoA, // A = C
+		Instruction::notOp(), // C = !A
+		pushC>("neq");
 }
 void stackOperators(forth::Machine& machine) {
 	machine.addMachineCodeWord<

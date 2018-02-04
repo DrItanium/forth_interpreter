@@ -147,7 +147,7 @@ int main() {
 	machine.buildWord("register:sp0", false, forth::TargetRegister::RegisterSP);
 	machine.buildWord("register:sp1", false, forth::TargetRegister::RegisterSP2);
 
-	addDiscriminantWords(machine);
+	forth::addDiscriminantWords(machine);
     machine.controlLoop();
     return 0;
 }

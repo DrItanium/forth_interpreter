@@ -58,11 +58,7 @@ void threeArgumentVersion(forth::Machine& machine, const std::string& name, bool
 		op,
 		pushC>(name);
 }
-
-int main() {
-    forth::Machine machine (std::cout, std::cin);
-    machine.initializeBaseDictionary();
-    // more custom words
+void arithmeticOperators(forth::Machine& machine) {
     addBinaryOperation<Instruction::add()>(machine, "+");
     addBinaryOperation<Instruction::sub()>(machine, "-");
     addBinaryOperation<Instruction::mul()>(machine, "*");
@@ -81,6 +77,9 @@ int main() {
 	threeArgumentVersion<Instruction::sub()>(machine, "3-");
 	threeArgumentVersion<Instruction::mul()>(machine, "3*");
 	threeArgumentVersion<Instruction::div()>(machine, "3/");
+	machine.addMachineCodeWord<popA, moveAtoB, Instruction::mul(), pushC>("square");
+}
+void stackOperators(forth::Machine& machine) {
 	machine.addMachineCodeWord<
 		popA,
 		pushA,
@@ -130,10 +129,8 @@ int main() {
 		pushC,
 		pushA,
 		pushB>("-rot");
-	machine.addMachineCodeWord<Instruction::stop()>("nop");
-	machine.addMachineCodeWord<popA, moveAtoB, Instruction::mul(), pushC>("square");
-	machine.addMachineCodeWord<Instruction::popT()>("pop.t");
-	// register positions
+}
+void registerDecls(forth::Machine& machine) {
 	machine.buildWord("register:a", false, ra);
 	machine.buildWord("register:b", false, rb);
 	machine.buildWord("register:c", false, rc);
@@ -147,7 +144,28 @@ int main() {
 	machine.buildWord("register:sp0", false, forth::TargetRegister::RegisterSP);
 	machine.buildWord("register:sp1", false, forth::TargetRegister::RegisterSP2);
 
-	forth::addDiscriminantWords(machine);
+}
+void addDiscriminantWords(forth::Machine& machine) {
+	machine.buildWord("dataType:SIGNED", false, forth::Discriminant::Number);
+	machine.buildWord("dataType:ADDRESS", false, forth::Discriminant::MemoryAddress);
+	machine.buildWord("dataType:FP", false, forth::Discriminant::FloatingPoint);
+	machine.buildWord("dataType:BOOLEAN", false, forth::Discriminant::Boolean);
+	machine.buildWord("dataType:WORD", false, forth::Discriminant::Word);
+	machine.buildWord("dataType:MOLECULE", false, forth::Discriminant::Molecule);
+	machine.buildWord("dataType:DICTIONARY_ENTRY", false, forth::Discriminant::DictionaryEntry);
+}
+void microarchitectureWords(forth::Machine& machine) {
+	machine.addMachineCodeWord<Instruction::stop()>("nop");
+	machine.addMachineCodeWord<Instruction::popT()>("pop.t");
+}
+int main() {
+    forth::Machine machine (std::cout, std::cin);
+    machine.initializeBaseDictionary();
+	arithmeticOperators(machine);
+	stackOperators(machine);
+	registerDecls(machine);
+	addDiscriminantWords(machine);
+	microarchitectureWords(machine);
     machine.controlLoop();
     return 0;
 }

@@ -1,11 +1,6 @@
 ( take advantage of forth to build up a system :D )
 : uc pop.s uc ;
 
-( register positions, maximum of 16 )
-: register:a 0 ;         : register:b 1 ;        : register:c 2 ;       : register:s 3 ;
-: register:x 4 ;         : register:t 5 ;        : register:ta 6 ;      : register:tb 7 ;
-: register:tx 8 ;        : register:ip 9 ;       : register:sp0 a# ;    : register:sp1 b# ;
-
 ( op codes :D )
 : op:STOP 0 ;            : op:ADD 1 ;            : op:SUB 2 ;           : op:MUL 3 ;
 : op:DIV 4  ;            : op:MOD 5 ;            : op:NOT 6 ;           : op:MINUS 7 ;
@@ -59,11 +54,6 @@
 : c->a     021a# uc ;
 : cube     1f03021a03101a1c# uc ;
 : square   0000001f03101a1c# uc ;
-
-: dataType:SIGNED 0 ;
-: dataType:ADDRESS 1 ;
-: dataType:FP 2 ;
-: dataType:BOOLEAN 3 ;
 
 : @        load ;
 : @@       iload ;

@@ -1,7 +1,6 @@
 #include <iostream>
 #include "Types.h"
 #include "Datum.h"
-#include "Machine.h"
 namespace forth {
     std::ostream& operator<<(std::ostream& out, const Datum& dt) {
         // save flags
@@ -26,13 +25,4 @@ namespace forth {
         }
     }
 
-	void addDiscriminantWords(Machine& machine) {
-		machine.buildWord("dataType:SIGNED", false, Discriminant::Number);
-		machine.buildWord("dataType:ADDRESS", false, Discriminant::MemoryAddress);
-		machine.buildWord("dataType:FP", false, Discriminant::FloatingPoint);
-		machine.buildWord("dataType:BOOLEAN", false, Discriminant::Boolean);
-        machine.buildWord("dataType:WORD", false, Discriminant::Word);
-        machine.buildWord("dataType:MOLECULE", false, Discriminant::Molecule);
-        machine.buildWord("dataType:DICTIONARY_ENTRY", false, Discriminant::DictionaryEntry);
-	}
 } // end namespace forth

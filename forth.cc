@@ -44,6 +44,18 @@ void addBinaryOperation(forth::Machine& machine, const std::string& name, bool c
         pushC>(name, compileTimeInvoke);
 }
 
+template<auto op>
+void threeArgumentVersion(forth::Machine& machine, const std::string& name, bool compileTimeInvoke = false) {
+	machine.addMachineCodeWord<
+		popA,
+		popB,
+		op,
+		moveCtoA,
+		popB,
+		op,
+		pushC>(name);
+}
+
 int main() {
     forth::Machine machine (std::cout, std::cin);
     machine.initializeBaseDictionary();
@@ -62,6 +74,10 @@ int main() {
 	addBinaryOperation<Instruction::xorOp()>(machine, "xor");
 	addBinaryOperation<Instruction::equals()>(machine, "eq");
 	addBinaryOperation<Instruction::pow()>(machine, "pow");
+	threeArgumentVersion<Instruction::add()>(machine, "3+");
+	threeArgumentVersion<Instruction::sub()>(machine, "3-");
+	threeArgumentVersion<Instruction::mul()>(machine, "3*");
+	threeArgumentVersion<Instruction::div()>(machine, "3/");
 	machine.addMachineCodeWord<
 		popA,
 		pushA,
@@ -82,30 +98,6 @@ int main() {
 		pushB,
 		pushA,
 		pushB>("over");
-    machine.addMachineCodeWord<
-        popA,
-        popB,
-        Instruction::sub(),
-        moveCtoA,
-        popB,
-        Instruction::sub(),
-        pushC>("3+");
-    machine.addMachineCodeWord<
-        popA,
-        popB,
-        Instruction::sub(),
-        moveCtoA,
-        popB,
-        Instruction::sub(),
-        pushC>("3-");
-    machine.addMachineCodeWord<
-        popA, 
-        popB,
-        Instruction::mul(),
-        moveCtoA,
-        popB,
-        Instruction::mul(),
-        pushC>("3*");
 	machine.addMachineCodeWord<
 		popA,
 		popB,

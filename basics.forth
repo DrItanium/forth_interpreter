@@ -56,7 +56,6 @@
 : implies  001f06201a091d1c# uc ;
 : tuck     swap over ;
 : 2dup     over over ;
-: 2drop    pop.ab ;
 : rot      001f01101c1d020f# uc 0000000000000010# uc ;
 : -rot     rot rot ;
 : nop      1a# uc ;

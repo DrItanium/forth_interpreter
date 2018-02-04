@@ -31,6 +31,7 @@ static constexpr auto moveXtoA = Instruction::move(ra, rx);
 static constexpr auto moveXtoB = Instruction::move(rb, rx);
 static constexpr auto popA = Instruction::popA();
 static constexpr auto popB = Instruction::popB();
+static constexpr auto popC = Instruction::popRegister(rc);
 static constexpr auto pushC = Instruction::pushC();
 static constexpr auto pushA = Instruction::pushA();
 static constexpr auto pushB = Instruction::pushB();
@@ -85,9 +86,17 @@ int main() {
 	machine.addMachineCodeWord<
 		popA,
 		popB,
+		pushB,
+		pushA,
+		pushB,
+		pushA>("2dup");
+	machine.addMachineCodeWord<
+		popA,
+		popB,
 		pushA,
 		pushB>("swap");
 	machine.addMachineCodeWord<popA>("drop");
+	machine.addMachineCodeWord<popA, popB>("2drop");
 	machine.addMachineCodeWord<
 		popA,
 		popB,
@@ -104,6 +113,21 @@ int main() {
 		pushA,
 		pushB,
 		pushA>("tuck"); // originally swap over
+
+	machine.addMachineCodeWord<
+		popC,
+		popB,
+		popA,
+		pushB,
+		pushC,
+		pushA>("rot");
+	machine.addMachineCodeWord<
+		popC,
+		popB,
+		popA,
+		pushC,
+		pushA,
+		pushB>("-rot");
 
     machine.controlLoop();
     return 0;

@@ -201,26 +201,32 @@ namespace forth {
             template<byte depth, Address current, auto first, auto ... rest>
             void makeMoleculeSequence() {
                 // we could encode each operation into a separate word to start with
-                if constexpr ((7 - depth) >= getInstructionWidth(first)) {
-                    static constexpr byte newDepth = depth + getInstructionWidth(first);
-                    static constexpr auto newAddress = Instruction::encodeOperation<newDepth, decltype(first)>(current, first);
-                    if constexpr (sizeof...(rest) > 0) {
-                        makeMoleculeSequence<newDepth, newAddress, rest...>();
-                    } else {
-                        moleculeWord<newAddress>();
-                    }
-                } else {
-                    if constexpr (sizeof...(rest) > 0) {
-                        if constexpr (Instruction::operationLength(first, std::move(rest)...) <= 8) {
-                            moleculeWord<current, Instruction::encodeOperation(first, std::move(rest)...)>();
-                        } else {
-                            moleculeWord<current>();
-                            makeMoleculeSequence<0, 0, rest...>();
-                        }
-                    } else {
-                        moleculeWord<current, Instruction::encodeOperation<0, decltype(first)>(0, first)>();
-                    }
-                }
+				static constexpr byte newDepth = depth + getInstructionWidth(first);
+				if constexpr (newDepth > 7) {
+					// we need to start a new molecule, with the current
+					// instruction added
+					moleculeWord<current>();
+					makeMoleculeSequence<0, 0, first, rest...>();
+				} else if constexpr (newDepth == 7) {
+					static constexpr auto newAddress = Instruction::encodeOperation<depth, decltype(first)>(current, first);
+					// okay, we filled up the current molecule and need to
+					// restart
+					moleculeWord<newAddress>();
+					if constexpr (sizeof...(rest) > 0) {
+						makeMoleculeSequence<0, 0, rest...>();
+					}
+				} else {
+					// known DRY because the compiler won't accept it
+					// otherwise!
+					static constexpr auto newAddress = Instruction::encodeOperation<depth, decltype(first)>(current, first);
+					// we did not fill up the current molecule either
+					if constexpr (sizeof... (rest) > 0) {
+						makeMoleculeSequence<newDepth, newAddress, rest...>();
+					} else {
+						// nothing left to do so just stop here!
+						moleculeWord<newAddress>();
+					}
+				}
             }
 
 		private:

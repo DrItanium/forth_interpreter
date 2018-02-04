@@ -146,6 +146,7 @@ int main() {
 	machine.buildWord("register:ip", false, static_cast<Address>(forth::TargetRegister::RegisterIP));
 	machine.buildWord("register:sp0", false, static_cast<Address>(forth::TargetRegister::RegisterSP));
 	machine.buildWord("register:sp1", false, static_cast<Address>(forth::TargetRegister::RegisterSP2));
+
     machine.controlLoop();
     return 0;
 }

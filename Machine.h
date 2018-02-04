@@ -108,7 +108,11 @@ namespace forth {
 			}
 			template<typename T, typename ... Rest>
 			void tryCompileWord(T word, Rest ... words) {
-				_compileTarget->addSpaceEntry(word);
+				if constexpr (std::is_enum<T>::value) {
+					_compileTarget->addSpaceEntry(static_cast<Address>(word));
+				} else {
+					_compileTarget->addSpaceEntry(word);
+				}
 				if constexpr (sizeof...(words) > 0) {
 					tryCompileWord(words...);
 				}

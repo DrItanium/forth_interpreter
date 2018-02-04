@@ -751,7 +751,7 @@ namespace forth {
 				static constexpr auto performEqualityCheck = Instruction::encodeOperation(Instruction::popA(), Instruction::popB(), Instruction::equals());
 				static constexpr auto saveABToStack = Instruction::encodeOperation(Instruction::pushB(), Instruction::pushA());
 				static_assert(Address(0x111d1c) == performEqualityCheck, "Equality check operation failed!");
-				static_assert(Address(0x00100110) == saveABToStack, "Save AB to stack routine failed!");
+				static_assert(Address(0x2122) == saveABToStack, "Save AB to stack routine failed!");
 				microcodeInvoke(performEqualityCheck);
 				if (_registerC.getTruth()) {
 					microcodeInvoke(saveABToStack); // put the values back on the stack

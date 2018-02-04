@@ -15,6 +15,7 @@
 : op:STORE 14# ;         : op:POW 15# ;          : op:SET_LOWEST 16# ;  : op:SET_LOWER 17# ;
 : op:SET_HIGHER 18# ;    : op:SET_HIGHEST 19# ;  : op:MOVE 1a# ;        : op:SWAP 1b# ;
 : op:POPA 1c# ;          : op:POPB 1d# ;         : op:POPT 1e# ;        : op:PUSHC 1f# ;
+: op:POPC 20# ;          : op:PUSHA 21# ;        : op:PUSHB 22# ;
 
 : stop     op:STOP uc ;
 : pop.a    op:POPA uc ;

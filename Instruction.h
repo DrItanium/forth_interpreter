@@ -114,14 +114,9 @@ enum class Operation : byte {
     PopB,
     PopT,
     PushC,
-    // Full versions of already existing operations
-    //SetImmediate16_LowestFull,
-    //SetImmediate16_LowerFull,
-    //SetImmediate16_HigherFull,
-    //SetImmediate16_HighestFull,
-    //SetImmediate32_Lower,
-    //SetImmediate32_Upper,
-    //
+	PopC,
+	PushA,
+	PushB,
     Count,
 };
 
@@ -312,9 +307,9 @@ namespace Instruction {
     constexpr QuarterAddress swapAB() noexcept {
         return swap(TargetRegister::RegisterB, TargetRegister::RegisterA);
     }
-    constexpr QuarterAddress pushA() noexcept { return pushRegister(TargetRegister::RegisterA); }
-    constexpr QuarterAddress pushB() noexcept { return pushRegister(TargetRegister::RegisterB); }
-	constexpr QuarterAddress popC() noexcept { return popRegister(TargetRegister::RegisterC); }
+    constexpr byte pushA() noexcept { return singleByteOp(Operation::PushA); }
+    constexpr byte pushB() noexcept { return singleByteOp(Operation::PushB); }
+    constexpr byte popC() noexcept { return singleByteOp(Operation::PopC); }
     constexpr size_t operationLength(byte b) noexcept { return getInstructionWidth(static_cast<Operation>(b)); }
     constexpr size_t operationLength(QuarterAddress b) noexcept { return getInstructionWidth(byte(b & 0xFF)); }
     constexpr size_t operationLength(HalfAddress b) noexcept { return getInstructionWidth(byte(b & 0xFF)); }

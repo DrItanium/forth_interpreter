@@ -130,30 +130,38 @@ void stackOperators(forth::Machine& machine) {
 		pushA,
 		pushB>("-rot");
 }
+#define enumWord(title, value) \
+	machine.buildWord(title, false, value)
+#define registerWord(name) \
+	enumWord ( ( "R" #name ) , forth::TargetRegister:: Register ## name )
 void registerDecls(forth::Machine& machine) {
-	machine.buildWord("register:a", false, ra);
-	machine.buildWord("register:b", false, rb);
-	machine.buildWord("register:c", false, rc);
-	machine.buildWord("register:s", false, forth::TargetRegister::RegisterS);
-	machine.buildWord("register:x", false, forth::TargetRegister::RegisterX);
-	machine.buildWord("register:t", false, forth::TargetRegister::RegisterT);
-	machine.buildWord("register:ta", false, forth::TargetRegister::RegisterTA);
-	machine.buildWord("register:tb", false, forth::TargetRegister::RegisterTB);
-	machine.buildWord("register:tx", false, forth::TargetRegister::RegisterTX);
-	machine.buildWord("register:ip", false, forth::TargetRegister::RegisterIP);
-	machine.buildWord("register:sp0", false, forth::TargetRegister::RegisterSP);
-	machine.buildWord("register:sp1", false, forth::TargetRegister::RegisterSP2);
-
+	registerWord(A);
+	registerWord(B);
+	registerWord(C);
+	registerWord(S);
+	registerWord(X);
+	registerWord(T);
+	registerWord(TA);
+	registerWord(TB);
+	registerWord(TX);
+	registerWord(IP);
+	registerWord(SP);
+	registerWord(SP2);
 }
+#undef registerWord
+#define discriminantWord(name) \
+	enumWord( "discriminant:" #name , forth::Discriminant:: name )
 void addDiscriminantWords(forth::Machine& machine) {
-	machine.buildWord("dataType:SIGNED", false, forth::Discriminant::Number);
-	machine.buildWord("dataType:ADDRESS", false, forth::Discriminant::MemoryAddress);
-	machine.buildWord("dataType:FP", false, forth::Discriminant::FloatingPoint);
-	machine.buildWord("dataType:BOOLEAN", false, forth::Discriminant::Boolean);
-	machine.buildWord("dataType:WORD", false, forth::Discriminant::Word);
-	machine.buildWord("dataType:MOLECULE", false, forth::Discriminant::Molecule);
-	machine.buildWord("dataType:DICTIONARY_ENTRY", false, forth::Discriminant::DictionaryEntry);
+	discriminantWord(Number);
+	discriminantWord(MemoryAddress);
+	discriminantWord(FloatingPoint);
+	discriminantWord(Boolean);
+	discriminantWord(Word);
+	discriminantWord(Molecule);
+	discriminantWord(DictionaryEntry);
 }
+#undef discriminantWord
+#undef enumWord
 void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<Instruction::stop()>("nop");
 	machine.addMachineCodeWord<Instruction::popT()>("pop.t");

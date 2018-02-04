@@ -55,11 +55,6 @@
 : print.a  000000000000121c# uc ;
 : neq      001f06201b111d1c# uc ;
 : implies  001f06201a091d1c# uc ;
-: tuck     swap over ;
-: 2dup     over over ;
-: rot      001f01101c1d020f# uc 0000000000000010# uc ;
-: -rot     rot rot ;
-: nop      1a# uc ;
 : a->b     101a# uc ;
 : c->a     021a# uc ;
 : cube     1f03021a03101a1c# uc ;

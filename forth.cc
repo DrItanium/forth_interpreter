@@ -3,6 +3,7 @@
 #include "Instruction.h"
 
 
+using Address = forth::Address;
 namespace Instruction = forth::Instruction;
 template<typename T, typename ... Args>
 constexpr forth::Address molecule(T first, Args&& ... rest) noexcept {
@@ -29,6 +30,7 @@ static constexpr auto rx = forth::TargetRegister::RegisterX;
 static constexpr auto moveCtoA = Instruction::move(ra, rc);
 static constexpr auto moveXtoA = Instruction::move(ra, rx);
 static constexpr auto moveXtoB = Instruction::move(rb, rx);
+static constexpr auto moveAtoB = Instruction::move(rb, ra);
 static constexpr auto popA = Instruction::popA();
 static constexpr auto popB = Instruction::popB();
 static constexpr auto popC = Instruction::popRegister(rc);
@@ -128,7 +130,22 @@ int main() {
 		pushC,
 		pushA,
 		pushB>("-rot");
-
+	machine.addMachineCodeWord<Instruction::stop()>("nop");
+	machine.addMachineCodeWord<popA, moveAtoB, Instruction::mul(), pushC>("square");
+	machine.addMachineCodeWord<Instruction::popT()>("pop.t");
+	// register positions
+	machine.buildWord("register:a", false, static_cast<Address>(ra));
+	machine.buildWord("register:b", false, static_cast<Address>(rb));
+	machine.buildWord("register:c", false, static_cast<Address>(rc));
+	machine.buildWord("register:s", false, static_cast<Address>(forth::TargetRegister::RegisterS));
+	machine.buildWord("register:x", false, static_cast<Address>(forth::TargetRegister::RegisterX));
+	machine.buildWord("register:t", false, static_cast<Address>(forth::TargetRegister::RegisterT));
+	machine.buildWord("register:ta", false, static_cast<Address>(forth::TargetRegister::RegisterTA));
+	machine.buildWord("register:tb", false, static_cast<Address>(forth::TargetRegister::RegisterTB));
+	machine.buildWord("register:tx", false, static_cast<Address>(forth::TargetRegister::RegisterTX));
+	machine.buildWord("register:ip", false, static_cast<Address>(forth::TargetRegister::RegisterIP));
+	machine.buildWord("register:sp0", false, static_cast<Address>(forth::TargetRegister::RegisterSP));
+	machine.buildWord("register:sp1", false, static_cast<Address>(forth::TargetRegister::RegisterSP2));
     machine.controlLoop();
     return 0;
 }

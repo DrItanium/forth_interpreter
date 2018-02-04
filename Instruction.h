@@ -183,6 +183,7 @@ namespace Instruction {
     constexpr HalfAddress encodeThreeByte(Operation first, QuarterAddress second) noexcept {
         return encodeBits<HalfAddress, QuarterAddress, 0xFFFF00, 8>(static_cast<HalfAddress>(first), second);
     }
+	constexpr byte stop() noexcept { return singleByteOp(Operation::Stop); }
     constexpr byte add() noexcept { return singleByteOp(Operation::Add); }
     constexpr byte sub() noexcept { return singleByteOp(Operation::Subtract); }
     constexpr byte mul() noexcept { return singleByteOp(Operation::Multiply); }

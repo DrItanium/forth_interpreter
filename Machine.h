@@ -7,6 +7,7 @@
 #include "Instruction.h"
 #include <iostream>
 #include <memory>
+#include <sstream>
 
 namespace forth {
 	class Machine {
@@ -33,6 +34,17 @@ namespace forth {
 			void typeValue() { typeValue(_registerA.getValue()); }
 			void addWord(DictionaryEntry* entry);
 			void addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke = false);
+			template<typename T, typename ... Rest>
+			void buildWord(const std::string& name, bool compileTimeInvoke, T word, Rest ... words) {
+				// compile up a series of words from c++
+				activateCompileMode();
+				_compileTarget = new DictionaryEntry(name);
+				if (compileTimeInvoke) {
+					_compileTarget->markCompileTimeInvoke();
+				}
+				tryCompileWord(word, words..., ";");
+				endDefineWord();
+			}
             /**
              * Compile a sequence of microcode instructions into a word :D
              */
@@ -68,6 +80,26 @@ namespace forth {
 			void setB(const Datum& target) noexcept { _registerB.setValue(target); }
 			void initializeBaseDictionary();
 		private:
+			template<typename ... Rest>
+			void tryCompileWord(const std::string& word, Rest ... words) {
+				auto entry = lookupWord(word);
+				if (entry) {
+					// replace with the DictionaryEntry
+					tryCompileWord(entry, words...);
+				} else {
+					std::stringstream ss;
+					ss << "unknown word to compile: " << word << "?";
+					auto str = ss.str();
+					throw Problem(_compileTarget->getName(), str);
+				}
+			}
+			template<typename T, typename ... Rest>
+			void tryCompileWord(T word, Rest ... words) {
+				_compileTarget->addSpaceEntry(word);
+				if constexpr (sizeof...(words) > 0) {
+					tryCompileWord(words...);
+				}
+			}
             void raiseError();
             void chooseRegister();
             void invokeCRegister();

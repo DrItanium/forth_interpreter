@@ -12,32 +12,6 @@
 : op:POPA 1c# ;          : op:POPB 1d# ;         : op:POPT 1e# ;        : op:PUSHC 1f# ;
 : op:POPC 20# ;          : op:PUSHA 21# ;        : op:PUSHB 22# ;
 
-: stop     op:STOP uc ;
-: pop.a    op:POPA uc ;
-: pop.b    op:POPB uc ;
-: pop.t    op:POPT uc ;
-: push.c   op:PUSHC uc ;
-: push.a   op:PUSH_REGISTER uc ;
-: pop.ab   0000000000001d1c# uc ;
-: pop.ba   0000000000001c1d# uc ;
-: pop.c    000000000000020f# uc ;
-: pop.x    000000000000040f# uc ;
-: pop.ta   000000000000060f# uc ;
-: pop.tb   000000000000070f# uc ;
-: pop.tx   000000000000080f# uc ;
-: pop.ip   000000000000090f# uc ;
-: pop.sp0  0000000000000a0f# uc ;
-: pop.sp1  0000000000000b0f# uc ;
-: push.b   0000000000000110# uc ;
-: push.s   0000000000000310# uc ;
-: push.x   0000000000000410# uc ;
-: push.t   0000000000000510# uc ;
-: push.ta  0000000000000610# uc ;
-: push.tb  0000000000000710# uc ;
-: push.tx  0000000000000810# uc ;
-: push.ip  0000000000000910# uc ;
-: push.sp0 0000000000000a10# uc ;
-: push.sp1 0000000000000b10# uc ;
 : not      00000000001f061c# uc ;
 : minus    00000000001f071c# uc ;
 : type     000000000000121c# uc ;
@@ -50,10 +24,6 @@
 : print.a  000000000000121c# uc ;
 : neq      001f06201b111d1c# uc ;
 : implies  001f06201a091d1c# uc ;
-: a->b     101a# uc ;
-: c->a     021a# uc ;
-: cube     1f03021a03101a1c# uc ;
-: square   0000001f03101a1c# uc ;
 
 : @        load ;
 : @@       iload ;

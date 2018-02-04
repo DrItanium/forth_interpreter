@@ -78,6 +78,7 @@ void arithmeticOperators(forth::Machine& machine) {
 	threeArgumentVersion<Instruction::mul()>(machine, "3*");
 	threeArgumentVersion<Instruction::div()>(machine, "3/");
 	machine.addMachineCodeWord<popA, moveAtoB, Instruction::mul(), pushC>("square");
+	machine.addMachineCodeWord<popA, moveAtoB, Instruction::mul(), moveCtoA, Instruction::mul(), pushC>("cube");
 }
 void stackOperators(forth::Machine& machine) {
 	machine.addMachineCodeWord<
@@ -165,6 +166,29 @@ void addDiscriminantWords(forth::Machine& machine) {
 void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<Instruction::stop()>("nop");
 	machine.addMachineCodeWord<Instruction::popT()>("pop.t");
+	machine.addMachineCodeWord<Instruction::pushRegister(forth::TargetRegister::RegisterT)>("push.t");
+	machine.addMachineCodeWord<popA>("pop.a");
+	machine.addMachineCodeWord<popB>("pop.b");
+	machine.addMachineCodeWord<pushC>("push.c");
+	machine.addMachineCodeWord<pushA>("push.a");
+	machine.addMachineCodeWord<pushB>("push.b");
+#define pushPopGeneric(postfix, target) \
+	machine.addMachineCodeWord<Instruction::pushRegister(forth::TargetRegister:: Register ## target)> ("push." #postfix); \
+	machine.addMachineCodeWord<Instruction::popRegister(forth::TargetRegister:: Register ## target)> ("pop." #postfix)
+	pushPopGeneric(x, X);
+	pushPopGeneric(s, S);
+	pushPopGeneric(ta, TA);
+	pushPopGeneric(tb, TB);
+	pushPopGeneric(tx, TX);
+	pushPopGeneric(ip, IP);
+	pushPopGeneric(sp, SP);
+	pushPopGeneric(sp2, SP2);
+#undef pushPopGeneric
+
+	machine.addMachineCodeWord<moveCtoA>("c->a");
+	machine.addMachineCodeWord<moveAtoB>("a->b");
+	machine.addMachineCodeWord<moveXtoA>("x->a");
+	machine.addMachineCodeWord<moveXtoB>("x->b");
 }
 int main() {
     forth::Machine machine (std::cout, std::cin);

@@ -160,6 +160,13 @@ void addDiscriminantWords(forth::Machine& machine) {
 	discriminantWord(Word);
 	discriminantWord(Molecule);
 	discriminantWord(DictionaryEntry);
+	machine.buildWord("t.signed", false, "discriminant:Number", "pop.t");
+	machine.buildWord("t.fp", false, "discriminant:FloatingPoint", "pop.t");
+	machine.buildWord("t.address", false, "discriminant:MemoryAddress", "pop.t");
+	machine.buildWord("t.boolean", false, "discriminant:Boolean", "pop.t");
+	machine.buildWord("t.word", false, "discriminant:Word", "pop.t");
+	machine.buildWord("t.molecule", false, "discriminant:Molecule", "pop.t");
+	machine.buildWord("t.dict-entry", false, "discriminant:DictionaryEntry", "pop.t");
 }
 #undef discriminantWord
 #undef enumWord
@@ -172,11 +179,11 @@ void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<pushC>("push.c");
 	machine.addMachineCodeWord<pushA>("push.a");
 	machine.addMachineCodeWord<pushB>("push.b");
+	machine.addMachineCodeWord<Instruction::pushRegister(forth::TargetRegister::RegisterS)>("push.s");
 #define pushPopGeneric(postfix, target) \
 	machine.addMachineCodeWord<Instruction::pushRegister(forth::TargetRegister:: Register ## target)> ("push." #postfix); \
 	machine.addMachineCodeWord<Instruction::popRegister(forth::TargetRegister:: Register ## target)> ("pop." #postfix)
 	pushPopGeneric(x, X);
-	pushPopGeneric(s, S);
 	pushPopGeneric(ta, TA);
 	pushPopGeneric(tb, TB);
 	pushPopGeneric(tx, TX);
@@ -189,15 +196,16 @@ void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<moveAtoB>("a->b");
 	machine.addMachineCodeWord<moveXtoA>("x->a");
 	machine.addMachineCodeWord<moveXtoB>("x->b");
+	machine.addMachineCodeWord<moveXtoA, moveXtoB>("x->a,b");
 }
 int main() {
     forth::Machine machine (std::cout, std::cin);
+	microarchitectureWords(machine);
     machine.initializeBaseDictionary();
 	arithmeticOperators(machine);
 	stackOperators(machine);
 	registerDecls(machine);
 	addDiscriminantWords(machine);
-	microarchitectureWords(machine);
     machine.controlLoop();
     return 0;
 }

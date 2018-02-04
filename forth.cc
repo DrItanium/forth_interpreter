@@ -32,6 +32,8 @@ static constexpr auto moveXtoB = Instruction::move(rb, rx);
 static constexpr auto popA = Instruction::popA();
 static constexpr auto popB = Instruction::popB();
 static constexpr auto pushC = Instruction::pushC();
+static constexpr auto pushA = Instruction::pushA();
+static constexpr auto pushB = Instruction::pushB();
 
 template<auto op>
 void addBinaryOperation(forth::Machine& machine, const std::string& name, bool compileTimeInvoke = false) {
@@ -51,6 +53,35 @@ int main() {
     addBinaryOperation<Instruction::mul()>(machine, "*");
     addBinaryOperation<Instruction::div()>(machine, "/");
     addBinaryOperation<Instruction::mod()>(machine, "mod");
+	addBinaryOperation<Instruction::shiftRight()>(machine, ">>");
+	addBinaryOperation<Instruction::shiftLeft()>(machine, "<<");
+	addBinaryOperation<Instruction::andOp()>(machine, "and");
+	addBinaryOperation<Instruction::orOp()>(machine, "or");
+	addBinaryOperation<Instruction::greaterThan()>(machine, ">");
+	addBinaryOperation<Instruction::lessThan()>(machine, "<");
+	addBinaryOperation<Instruction::xorOp()>(machine, "xor");
+	addBinaryOperation<Instruction::equals()>(machine, "eq");
+	addBinaryOperation<Instruction::pow()>(machine, "pow");
+	machine.addMachineCodeWord<
+		popA,
+		pushA,
+		pushA>("dup");
+	machine.addMachineCodeWord<
+		popA,
+		popB,
+		pushA,
+		pushB>("swap");
+	machine.addMachineCodeWord<popA>("drop");
+	machine.addMachineCodeWord<
+		popA,
+		popB,
+		pushA>("nip");
+	machine.addMachineCodeWord<
+		popA,
+		popB,
+		pushB,
+		pushA,
+		pushB>("over");
     machine.addMachineCodeWord<
         popA,
         popB,
@@ -75,6 +106,12 @@ int main() {
         popB,
         Instruction::mul(),
         pushC>("3*");
+	machine.addMachineCodeWord<
+		popA,
+		popB,
+		pushA,
+		pushB,
+		pushA>("tuck"); // originally swap over
 
     machine.controlLoop();
     return 0;

@@ -38,11 +38,23 @@ namespace forth {
              */
             template<auto first, auto ... rest>
             void addMachineCodeWord(const std::string& name, bool compileTimeInvoke = false) {
-                addWord(name, std::mem_fn(&Machine::moleculeSequence<first, rest...>), compileTimeInvoke);
+				activateCompileMode();
+				_compileTarget = new DictionaryEntry(name);
+				if (compileTimeInvoke) {
+					_compileTarget->markCompileTimeInvoke();
+				}
+				moleculeSequence<first, rest...>();
+				endDefineWord();
             }
             template<Address first, Address ... rest>
             void addMoleculeSequence(const std::string& name, bool compileTimeInvoke = false) {
-                addWord(name, std::mem_fn(&Machine::moleculeWord<first, rest...>), compileTimeInvoke);
+				activateCompileMode();
+				_compileTarget = new DictionaryEntry(name);
+				if (compileTimeInvoke) {
+					_compileTarget->markCompileTimeInvoke();
+				}
+				moleculeWord<first, rest...>();
+				endDefineWord();
             }
 			void addition(Discriminant type);
 			void listWords();

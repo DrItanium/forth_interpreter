@@ -93,6 +93,19 @@ namespace forth {
 					throw Problem(_compileTarget->getName(), str);
 				}
 			}
+			template<typename ... Rest>
+			void tryCompileWord(const char* word, Rest ... words) {
+				auto entry = lookupWord(word);
+				if (entry) {
+					// replace with the DictionaryEntry
+					tryCompileWord(entry, words...);
+				} else {
+					std::stringstream ss;
+					ss << "unknown word to compile: " << word << "?";
+					auto str = ss.str();
+					throw Problem(_compileTarget->getName(), str);
+				}
+			}
 			template<typename T, typename ... Rest>
 			void tryCompileWord(T word, Rest ... words) {
 				_compileTarget->addSpaceEntry(word);

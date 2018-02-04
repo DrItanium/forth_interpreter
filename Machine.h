@@ -35,13 +35,10 @@ namespace forth {
 			void addWord(DictionaryEntry* entry);
 			void addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke = false);
 			template<typename T, typename ... Rest>
-			void buildWord(const std::string& name, bool compileTimeInvoke, T word, Rest ... words) {
+			void buildWord(const std::string& name, T word, Rest ... words) {
 				// compile up a series of words from c++
 				activateCompileMode();
 				_compileTarget = new DictionaryEntry(name);
-				if (compileTimeInvoke) {
-					_compileTarget->markCompileTimeInvoke();
-				}
 				tryCompileWord(word, words..., ";");
 				endDefineWord();
 			}

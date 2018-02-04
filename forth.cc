@@ -132,7 +132,7 @@ void stackOperators(forth::Machine& machine) {
 		pushB>("-rot");
 }
 #define enumWord(title, value) \
-	machine.buildWord(title, false, value)
+	machine.buildWord(title, value)
 #define registerWord(name) \
 	enumWord ( ( "R" #name ) , forth::TargetRegister:: Register ## name )
 void registerDecls(forth::Machine& machine) {
@@ -160,13 +160,13 @@ void addDiscriminantWords(forth::Machine& machine) {
 	discriminantWord(Word);
 	discriminantWord(Molecule);
 	discriminantWord(DictionaryEntry);
-	machine.buildWord("t.signed", false, "discriminant:Number", "pop.t");
-	machine.buildWord("t.fp", false, "discriminant:FloatingPoint", "pop.t");
-	machine.buildWord("t.address", false, "discriminant:MemoryAddress", "pop.t");
-	machine.buildWord("t.boolean", false, "discriminant:Boolean", "pop.t");
-	machine.buildWord("t.word", false, "discriminant:Word", "pop.t");
-	machine.buildWord("t.molecule", false, "discriminant:Molecule", "pop.t");
-	machine.buildWord("t.dict-entry", false, "discriminant:DictionaryEntry", "pop.t");
+	machine.buildWord("t.signed", "discriminant:Number", "pop.t");
+	machine.buildWord("t.fp", "discriminant:FloatingPoint", "pop.t");
+	machine.buildWord("t.address", "discriminant:MemoryAddress", "pop.t");
+	machine.buildWord("t.boolean", "discriminant:Boolean", "pop.t");
+	machine.buildWord("t.word", "discriminant:Word", "pop.t");
+	machine.buildWord("t.molecule", "discriminant:Molecule", "pop.t");
+	machine.buildWord("t.dict-entry", "discriminant:DictionaryEntry", "pop.t");
 }
 #undef discriminantWord
 #undef enumWord

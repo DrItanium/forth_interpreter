@@ -351,24 +351,93 @@ namespace forth {
 				throw Problem(title, "ILLEGAL DISCRIMINANT!");
 		}
 	}
-
-	void Machine::numericCombine(bool subtract) {
-		auto fn = [this, subtract](auto a, auto b) { 
-			_registerC.setValue(subtract ? (a - b) : (a + b));
+	constexpr bool subtractOperation(Operation op) noexcept {
+		switch(op) {
+			case Operation::Subtract:
+			case Operation::SubtractFull:
+			case Operation::SubtractImmediate:
+				return true;
+			default:
+				return false;
+		}
+	}
+	constexpr bool immediateForm(Operation op) noexcept {
+		switch(op) {
+#define Immediate(x) case Operation :: x ## Immediate :
+	Immediate(Add)
+	Immediate(Subtract)
+	Immediate(Mul)
+	Immediate(Div)
+	Immediate(Modulo)
+	Immediate(And)
+	Immediate(Or)
+	Immediate(GreaterThan)
+	Immediate(LessThan)
+	Immediate(Xor)
+	Immediate(ShiftRight)
+	Immediate(ShiftLeft)
+	Immediate(Equals)
+				return true;
+			default:
+				return false;
+#undef Immediate
+		}
+	}
+	void Machine::numericCombine(bool subtract, Register& dest, const Register& src0, const Register& src1, const Register& offset) {
+		auto fn = [this, subtract](Register& dest, auto a, auto b, auto offset) { 
+			dest.setValue(subtract ? (a - b - offset) : (a + b + offset));
 		};
 		switch(_registerC.getType()) {
 			case Discriminant::Number:
-				fn(_registerA.getInt(), _registerB.getInt());
+				fn(dest, src0.getInt(), src1.getInt(), offset.getInt());
 				break;
 			case Discriminant::MemoryAddress:
-				fn(_registerA.getAddress(), _registerB.getAddress());
+				fn(dest, src0.getAddress(), src1.getAddress(), offset.getAddress());
 				break;
 			case Discriminant::FloatingPoint:
-				fn(_registerA.getFP(), _registerB.getFP());
+				// offset not used in floating point operations!
+				fn(dest, src0.getFP(), src1.getFP(), 0.0);
 				break;
 			default:
 				throw Problem(subtract ? "-" : "+", "ILLEGAL DISCRIMINANT!");
 		}
+
+	}
+	void Machine::numericCombine(bool subtract) {
+		static Register tmp;
+		numericCombine(subtract, _registerC, _registerA, _registerB, tmp);
+	}
+	void Machine::numericCombine(Operation op, const Molecule& m) {
+		bool subtract = subtractOperation(op);
+		auto destSrc = m.getByte(_registerIP.getAddress());
+		_registerIP.increment();
+		auto src1Lower4 = m.getByte(_registerIP.getAddress());
+		_registerIP.increment();
+		auto upperMost = m.getByte(_registerIP.getAddress());
+		_registerIP.increment();
+		auto idest = (TargetRegister)getDestinationRegister(destSrc);
+		auto isrc0 = (TargetRegister)getSourceRegister(destSrc);
+		Register& dest = getRegister(idest);
+		Register& src0 = getRegister(isrc0);
+		Register src1;
+		Register offset;
+		if (immediateForm(op)) {
+			if (_registerC.getType() == Discriminant::FloatingPoint) {
+				throw Problem("numericCombine", "Immediate form of floating point combine is not supported!");
+			} else {
+				Datum tmp;
+				tmp.address = Instruction::makeQuarterAddress(src1Lower4, upperMost);
+				src1.setValue(tmp);
+			}
+		} else {
+			auto isrc1= (TargetRegister)getDestinationRegister(src1Lower4);
+			auto lower4 = src1Lower4 >> 4;
+			src1.setValue(getRegister(isrc1).getValue());
+			Datum tmp;
+			tmp.address = encodeBits<QuarterAddress, byte, 0x0FF0, 4>(lower4, upperMost);
+			offset.setValue(tmp);
+		}
+		numericCombine(subtract, dest, src0, src1, offset);
 	}
 
 	void Machine::andOperation() {
@@ -883,8 +952,6 @@ endLoopTop:
 			pushParameter(target.getValue());
 		}
 	}
-	Register::Register(const Register& r) : _type(r._type), _value(r._value) { }
-	Register::Register() : _type(static_cast<Discriminant>(0)), _value(Address(0)) { }
 	void Machine::popRegister(const Molecule& m) {
 		try {
 			// read the current field

@@ -138,6 +138,9 @@ namespace forth {
 					dispatchInstructionStream<rest...>();
 				}
 			}
+			//void numericCombine(bool subtract = false);
+			void numericCombine(Operation op, const Molecule& m);
+			void numericCombine(bool subtract, Register& dest, const Register& src0, const Register& src1, const Register& offset);
 			void numericCombine(bool subtract = false);
 			void multiplyOperation();
 			void equals();

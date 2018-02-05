@@ -581,13 +581,14 @@ namespace forth {
 			Address tmpAddress;
 			parseAttempt >> tmpAddress;
 			if (!parseAttempt.fail()) {
-				microcodeInvoke(Instruction::encodeOperation(
+				microcodeStreamInvoke(
+						Instruction::encodeOperation(
 							Instruction::setImmediate64_Lowest(TargetRegister::C, tmpAddress),
-							Instruction::setImmediate64_Lower(TargetRegister::C, tmpAddress)));
-				microcodeInvoke(Instruction::encodeOperation(
+							Instruction::setImmediate64_Lower(TargetRegister::C, tmpAddress)),
+						Instruction::encodeOperation(
 							Instruction::setImmediate64_Higher(TargetRegister::C, tmpAddress),
-							Instruction::setImmediate64_Highest(TargetRegister::C, tmpAddress)));
-				microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
+							Instruction::setImmediate64_Highest(TargetRegister::C, tmpAddress)),
+						Instruction::encodeOperation(Instruction::pushC()));
 				return true;
 			}
 			return false;
@@ -598,13 +599,14 @@ namespace forth {
 			parseAttempt >> tmpFloat;
 			if (!parseAttempt.fail() && parseAttempt.eof()) {
 				Datum a(tmpFloat);
-				microcodeInvoke(Instruction::encodeOperation(
+				microcodeStreamInvoke(
+						Instruction::encodeOperation(
 							Instruction::setImmediate64_Lowest(TargetRegister::C, a.address),
-							Instruction::setImmediate64_Lower(TargetRegister::C, a.address)));
-				microcodeInvoke(Instruction::encodeOperation(
+							Instruction::setImmediate64_Lower(TargetRegister::C, a.address)),
+						Instruction::encodeOperation(
 							Instruction::setImmediate64_Higher(TargetRegister::C, a.address),
-							Instruction::setImmediate64_Highest(TargetRegister::C, a.address)));
-				microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
+							Instruction::setImmediate64_Highest(TargetRegister::C, a.address)),
+						Instruction::encodeOperation(Instruction::pushC()));
 				return true;
 			}
 			// get out of here early since we hit something that looks like
@@ -616,13 +618,14 @@ namespace forth {
 		parseAttempt >> tmpInt;
 		if (!parseAttempt.fail() && parseAttempt.eof()) {
 			Datum a(tmpInt);
-			microcodeInvoke(Instruction::encodeOperation(
+			microcodeStreamInvoke(
+					Instruction::encodeOperation(
 						Instruction::setImmediate64_Lowest(TargetRegister::C, a.address),
-						Instruction::setImmediate64_Lower(TargetRegister::C, a.address)));
-			microcodeInvoke(Instruction::encodeOperation(
+						Instruction::setImmediate64_Lower(TargetRegister::C, a.address)),
+					Instruction::encodeOperation(
 						Instruction::setImmediate64_Higher(TargetRegister::C, a.address),
-						Instruction::setImmediate64_Highest(TargetRegister::C, a.address)));
-			microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
+						Instruction::setImmediate64_Highest(TargetRegister::C, a.address)),
+					Instruction::encodeOperation(Instruction::pushC()));
 			return true;
 		}
 		return false;

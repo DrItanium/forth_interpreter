@@ -16,6 +16,7 @@ namespace forth {
 			static constexpr Address memoryCapacity = (largestAddress + 1);
 			static constexpr Address shouldKeepExecutingLocation = 0xFFFFFF;
 			static constexpr Address isCompilingLocation = 0xFFFFFE;
+			static constexpr Address ignoreInputLocation = 0xFFFFFD;
             // capacity variables for the two stacks, each one has 64k worth of data
 		public:
 			Machine(std::ostream& output, std::istream& input);
@@ -310,8 +311,6 @@ namespace forth {
             std::list<Datum> _subroutine;
             std::list<Datum> _parameter;
 			bool _initializedBaseDictionary = false;
-			//bool _keepExecuting = true;
-			//bool _compiling = false;
 			DictionaryEntry* _compileTarget = nullptr;
 			// internal "registers"
             Register _registerA, _registerB, _registerC, _registerS, _registerX;

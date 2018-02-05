@@ -567,11 +567,13 @@ namespace forth {
 			Address tmpAddress;
 			parseAttempt >> std::hex >> tmpAddress;
 			if (!parseAttempt.fail()) {
-				if (_compiling) {
-					_compileTarget->addSpaceEntry(tmpAddress);
-				}  else {
-					pushParameter(tmpAddress);
-				}
+				microcodeInvoke(Instruction::encodeOperation(
+							Instruction::setImmediate32_Lowest(TargetRegister::RegisterC, tmpAddress),
+							Instruction::setImmediate32_Lower(TargetRegister::RegisterC, tmpAddress)));
+				microcodeInvoke(Instruction::encodeOperation(
+							Instruction::setImmediate32_Higher(TargetRegister::RegisterC, tmpAddress),
+							Instruction::setImmediate32_Highest(TargetRegister::RegisterC, tmpAddress)));
+				microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
 				return true;
 			}
 			return false;

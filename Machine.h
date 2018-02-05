@@ -124,7 +124,6 @@ namespace forth {
 			void semicolonOperation();
 			void printRegisters();
             void printStack();
-			void popSRegister() { popRegister(TargetRegister::S); }
 			void pushRegister(TargetRegister t);
 			void popRegister(TargetRegister t); 
             void pushRegister(const Molecule& m);
@@ -324,7 +323,6 @@ namespace forth {
             Register _registerA, _registerB, _registerC, _registerS, _registerX;
             Register _registerIP, _registerSP, _registerSP2, _registerImmediate;
 			const DictionaryEntry* _microcodeInvoke = nullptr;
-			const DictionaryEntry* _popS = nullptr;
 	};
 } // end namespace forth
 

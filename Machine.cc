@@ -142,7 +142,6 @@ namespace forth {
 	}
 	void Machine::compileMicrocodeInvoke(const Molecule& m, DictionaryEntry* current) {
 		current->addSpaceEntry(m._value);
-		current->addSpaceEntry(_popS);
 		current->addSpaceEntry(_microcodeInvoke);
 	}
 	void Machine::elseCondition() {
@@ -823,7 +822,6 @@ namespace forth {
 			addWord("stack", std::mem_fn(&Machine::printStack));
 			addWord(":", std::mem_fn(&Machine::defineWord));
 			addWord("see", std::mem_fn<void()>(&Machine::seeWord));
-			addWord("pop.s", std::mem_fn(&Machine::popSRegister));
 			addWord("if", std::mem_fn(&Machine::ifCondition), true);
 			addWord("else", std::mem_fn(&Machine::elseCondition), true);
 			addWord("then", std::mem_fn(&Machine::thenStatement), true);
@@ -838,7 +836,6 @@ namespace forth {
             addWord("execute", std::mem_fn(&Machine::executeTop));
             addWord("raiseError", std::mem_fn(&Machine::raiseError));
 			_microcodeInvoke = lookupWord("uc");
-			_popS = lookupWord("pop.s");
 		}
 	}
 	void Machine::doStatement() {
@@ -943,11 +940,11 @@ endLoopTop:
 			_output << "\t- " << element << std::endl;
 		}
 	}
-	void Machine::dispatchInstruction() {
+	void Machine::dispatchInstruction(const Molecule& molecule) {
 		_registerIP.reset();
 		// use the s register as the current instruction
 		// slice out the lowest eight bits
-		auto molecule = _registerS.getMolecule();
+		//auto molecule = _registerS.getMolecule();
 		while (_registerIP.getAddress() < sizeof(Molecule)) {
 			auto pos = _registerIP.getAddress();
 			auto op = getOperation(molecule.getByte(pos));
@@ -1269,9 +1266,10 @@ endLoopTop:
 			loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
 			storeFalse>();
 	}
-	void Machine::dispatchInstruction(const Molecule& m) {
-		_registerS.setValue(m._value);
-		dispatchInstruction();
+	void Machine::dispatchInstruction() {
+		// just pop a molecule off of the stack and pass it to
+		// dispatchInstruction
+		dispatchInstruction(popParameter().address);
 	}
 	bool Machine::inCompilationMode() noexcept {
 		dispatchInstructionStream<

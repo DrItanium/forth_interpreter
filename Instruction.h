@@ -117,6 +117,27 @@ enum class Operation : byte {
 	PopC,
 	PushA,
 	PushB,
+	// full versions of operations
+#define FullImmediate(x) \
+	x ## Full ,  \
+	x ## Immediate , \
+	x ## Immediate16 
+	FullImmediate(Add),
+	FullImmediate(Sub),
+	FullImmediate(Mul),
+	FullImmediate(Div),
+	FullImmediate(Modulo),
+	FullImmediate(Not),
+	FullImmediate(Minus),
+	FullImmediate(And),
+	FullImmediate(Or),
+	FullImmediate(GreaterThan),
+	FullImmediate(LessThan),
+	FullImmediate(Xor),
+	FullImmediate(ShiftRight),
+	FullImmediate(ShiftLeft),
+	FullImmediate(Pow),
+#undef FullImmediate
     Count,
 };
 

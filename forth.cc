@@ -213,8 +213,10 @@ void compoundWords(forth::Machine& machine) {
 	machine.buildWord("minus", "t.signed", "minus");
 }
 void systemSetup(forth::Machine& machine) {
+	// initial system values that we need to use
 	machine.store(forth::Machine::shouldKeepExecutingLocation, true);
 	machine.store(forth::Machine::isCompilingLocation, false);
+	machine.store(forth::Machine::ignoreInputLocation, false);
 }
 int main() {
     forth::Machine machine (std::cout, std::cin);

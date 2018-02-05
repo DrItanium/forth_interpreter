@@ -567,6 +567,7 @@ namespace forth {
 			Address tmpAddress;
 			parseAttempt >> std::hex >> tmpAddress;
 			if (!parseAttempt.fail()) {
+				// TODO: do checks to compact parsing
 				microcodeInvoke(Instruction::encodeOperation(
 							Instruction::setImmediate64_Lowest(TargetRegister::RegisterC, tmpAddress),
 							Instruction::setImmediate64_Lower(TargetRegister::RegisterC, tmpAddress)));

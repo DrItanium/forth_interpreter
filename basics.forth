@@ -12,33 +12,7 @@
 : op:POPA 1c# ;          : op:POPB 1d# ;         : op:POPT 1e# ;        : op:PUSHC 1f# ;
 : op:POPC 20# ;          : op:PUSHA 21# ;        : op:PUSHB 22# ;
 
-: not      00000000001f061c# uc ;
-: minus    00000000001f071c# uc ;
-: type     000000000000121c# uc ;
-: load     000000001f00131c# uc ;
-: iload    001f13201a00131c# uc ;
-: store    0000000010141d1c# uc ;
-: istore   1014201a00131d1c# uc ;
-: swap.ab  00000000101b1d1c# uc ;
 : swap.ba  swap.ab ;
-: print.a  000000000000121c# uc ;
-
-: @        load ;
-: @@       iload ;
-: =        store ;
-: ==       istore ;
-
-: ,  dataType:SIGNED  pop.t print.a ;
-: ,f dataType:FP      pop.t print.a ;
-: ,u dataType:ADDRESS pop.t print.a ;
-: ,b dataType:BOOLEAN pop.t print.a ;
-
-: negate  dataType:SIGNED  pop.t not ;
-: negateu dataType:ADDRESS pop.t not ;
-: not     dataType:BOOLEAN pop.t not ;
-
-: minusf dataType:FP     pop.t minus ;
-: minus  dataType:SIGNED pop.t minus ;
 
 : equ dataType:ADDRESS pop.t eq ;
 : eqf dataType:FP pop.t eq ;

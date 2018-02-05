@@ -28,8 +28,6 @@ static constexpr auto rc = forth::TargetRegister::RegisterC;
 static constexpr auto rt = forth::TargetRegister::RegisterT;
 static constexpr auto rx = forth::TargetRegister::RegisterX;
 static constexpr auto moveCtoA = Instruction::move(ra, rc);
-static constexpr auto moveXtoA = Instruction::move(ra, rx);
-static constexpr auto moveXtoB = Instruction::move(rb, rx);
 static constexpr auto moveAtoB = Instruction::move(rb, ra);
 static constexpr auto popA = Instruction::popA();
 static constexpr auto popB = Instruction::popB();
@@ -86,6 +84,16 @@ void arithmeticOperators(forth::Machine& machine) {
 		moveCtoA, // A = C
 		Instruction::notOp(), // C = !A
 		pushC>("neq");
+	machine.addMachineCodeWord<popA, Instruction::notOp(), pushC>("not");
+	machine.addMachineCodeWord<popA, Instruction::minus(), pushC>("minus");
+	machine.addMachineCodeWord<popA, Instruction::load(rc, ra), pushC>("load");
+	machine.addMachineCodeWord<popA, Instruction::load(ra, ra), Instruction::load(rc, ra), pushC>("iload");
+	machine.addMachineCodeWord<popA, popB, Instruction::store(ra, rb)>("store");
+	machine.addMachineCodeWord<popA, popB, Instruction::load(ra, ra), Instruction::store(ra, rb)>("istore");
+	machine.buildWord("@", "load");
+	machine.buildWord("@@", "iload");
+	machine.buildWord("=", "store");
+	machine.buildWord("==", "istore");
 }
 void stackOperators(forth::Machine& machine) {
 	machine.addMachineCodeWord<
@@ -201,9 +209,20 @@ void microarchitectureWords(forth::Machine& machine) {
 
 	machine.addMachineCodeWord<moveCtoA>("c->a");
 	machine.addMachineCodeWord<moveAtoB>("a->b");
-	machine.addMachineCodeWord<moveXtoA>("x->a");
-	machine.addMachineCodeWord<moveXtoB>("x->b");
-	machine.addMachineCodeWord<moveXtoA, moveXtoB>("x->a,b");
+	machine.addMachineCodeWord<popA, popB>("pop.ab");
+	machine.addMachineCodeWord<popA, Instruction::typeValue()>(",");
+	machine.addMachineCodeWord<Instruction::swap(ra, rb)>("swap.ab");
+}
+void compoundWords(forth::Machine& machine) {
+	machine.buildWord(",u", "t.address", ",");
+	machine.buildWord(",f", "t.fp", ",");
+	machine.buildWord(",b", "t.boolean", ",");
+	machine.buildWord(",", "t.signed", ",");
+	machine.buildWord("negate", "t.signed", "not");
+	machine.buildWord("negateu", "t.address", "not");
+	machine.buildWord("not", "t.boolean", "not");
+	machine.buildWord("minusf", "t.fp", "minus");
+	machine.buildWord("minus", "t.signed", "minus");
 }
 int main() {
     forth::Machine machine (std::cout, std::cin);
@@ -213,6 +232,7 @@ int main() {
 	stackOperators(machine);
 	registerDecls(machine);
 	addDiscriminantWords(machine);
+	compoundWords(machine);
     machine.controlLoop();
     return 0;
 }

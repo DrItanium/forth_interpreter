@@ -387,6 +387,28 @@ namespace forth {
 #undef Immediate
 		}
 	}
+	constexpr bool fullForm(Operation op) noexcept {
+		switch(op) {
+#define Full(x) case Operation :: x ## Full :
+	Full(Add)
+	Full(Subtract)
+	Full(Mul)
+	Full(Div)
+	Full(Modulo)
+	Full(And)
+	Full(Or)
+	Full(GreaterThan)
+	Full(LessThan)
+	Full(Xor)
+	Full(ShiftRight)
+	Full(ShiftLeft)
+	Full(Equals)
+				return true;
+			default:
+				return false;
+#undef Full
+		}
+	}
 	void Machine::numericCombine(bool subtract, Register& dest, const Register& src0, const Register& src1) {
 		auto fn = [this, subtract](Register& dest, auto a, auto b) { 
 			dest.setValue(subtract ? (a - b) : (a + b ));
@@ -423,6 +445,13 @@ namespace forth {
 		_registerIP.increment();
 		auto idest = (TargetRegister)getDestinationRegister(destSrc);
 		auto isrc0 = (TargetRegister)getSourceRegister(destSrc);
+		auto& [dest, src0, src1] = extractArguments(op, m, [this](auto r, auto val) {
+					if (_registerC.getType() == Discriminant::FloatingPoint) {
+						r.setValue(static_cast<Floating>(val));
+					} else {
+						r.setValue(val);
+					}
+				});
 		Register& dest = getRegister(idest);
 		Register& src0 = getRegister(isrc0);
 		Register& src1 = _registerImmediate;
@@ -431,11 +460,6 @@ namespace forth {
 			dest = getRegister(std::get<0>(form));
 			src0 = getRegister(std::get<1>(form));
 			auto imm = std::get<2>(form);
-			if (_registerC.getType() == Discriminant::FloatingPoint) {
-				_registerImmediate.setValue(static_cast<Floating>(imm));
-			} else {
-				_registerImmediate.setValue(imm);
-			}
 		} else {
 			auto form = extractThreeRegisterForm(m);
 			dest = getRegister(std::get<0>(form));
@@ -444,27 +468,42 @@ namespace forth {
 		}
 		numericCombine(subtractOperation(op), dest, src0, src1);
 	}
-	std::tuple<
-	void Machine::andOperation(Operation op, const Molecule& m) {
-		using Type = decltype(_registerC.getType());
+	std::tuple<TargetRegister, TargetRegister, TargetRegister> Machine::extractThreeRegisterForm(const Molecule& m) {
+		auto b0 = m.getByte(_registerIP.getAddress()); _registerIP.increment();
+		auto b1 = m.getByte(_registerIP.getAddress()); _registerIP.increment();
+		// skip over the last byte
+		m.getByte(_registerIP.getAddress()); _registerIP.increment();
+		return std::make_tuple(TargetRegister(getDestinationRegister(b0)), TargetRegister(getSourceRegister(b0)), TargetRegister(getDestinationRegister(b1)));
+	}
+	std::tuple<TargetRegister, TargetRegister, Address> Machine::extractThreeRegisterImmediateForm(const Molecule& m) {
+		auto b0 = m.getByte(_registerIP.getAddress()); _registerIP.increment();
+		auto b1 = m.getByte(_registerIP.getAddress()); _registerIP.increment();
+		auto b2 = m.getByte(_registerIP.getAddress()); _registerIP.increment();
+		return std::make_tuple(TargetRegister(getDestinationRegister(b0)), TargetRegister(getSourceRegister(b0)), Instruction::makeQuarterAddress(b1, b2));
+	}
+	std::tuple<Register&, Register&, Register&> Machine::extractArguments(Operation op, const Molecule& m, std::function<void(Register&, Address)> onImmediate) {
 		Register& dest = _registerC;
 		Register& src0 = _registerA;
-		Register& src1 = _registerImmediate;
-		if (op == Operation::And) {
-			src1 = _registerB;
-		} else if (op == Operation::AndFull) {
-			auto result = extractThreeRegisterForm(m);
-			dest = getRegister(std::get<0>(result));
-			src0 = getRegister(std::get<1>(result));
-			src1 = getRegister(std::get<2>(result));
-		} else if (op == Operation::AndImmediate) {
-			auto result = extractThreeRegisterImmediateForm(m);
-			dest = getRegister(std::get<0>(result));
-			src0 = getRegister(std::get<1>(result));
-			src1.setValue(Address(std::get<2>(result)));
-		} else {
-			throw Problem("and", "UNIMPLEMENTED FORM!");
+		Register& src1 = _registerB;
+		if (immediateForm(op)) {
+			auto x = extractThreeRegisterImmediateForm(m);
+			if (onImmediate) {
+				onImmediate(std::get<2>(_registerImmediatex));
+			}
+			src1 = _registerImmediate;
+			dest = getRegister(std::get<0>(x));
+			src0 = getRegister(std::get<1>(x));
+		} else if (fullForm(op)) {
+			auto x = extractThreeRegisterForm(m);
+			dest = getRegister(std::get<0>(x));
+			src0 = getRegister(std::get<1>(x));
+			src1 = getRegister(std::get<2>(x));
 		}
+		return std::make_tuple(dest, src0, src1);
+	}
+	void Machine::andOperation(Operation op, const Molecule& m) {
+		using Type = decltype(_registerC.getType());
+		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
 		switch (_registerC.getType()) {
 			case Type::Number:
 				dest.setValue(src0.getInt() & src1.getInt());

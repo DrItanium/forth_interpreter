@@ -146,8 +146,6 @@ namespace forth {
 			void equals(Operation op, const Molecule& m);
 			void powOperation(Operation op, const Molecule& m);
 			void divide(bool remainder = false);
-			std::tuple<TargetRegister, TargetRegister, TargetRegister> extractThreeRegisterForm(const Molecule& m);
-			std::tuple<TargetRegister, TargetRegister, Address> extractThreeRegisterImmediateForm(const Molecule& m);
 			void notOperation();
 			void minusOperation();
 			void andOperation();
@@ -306,6 +304,9 @@ namespace forth {
 			bool inCompilationMode() noexcept;
 			void activateCompileMode();
 			void deactivateCompileMode();
+			std::tuple<Register&, Register&, Register&> extractArguments(Operation op, const Molecule& m, std::function<void(Register&, Address)> onImmediate = nullptr);
+			std::tuple<TargetRegister, TargetRegister, TargetRegister> extractThreeRegisterForm(const Molecule& m);
+			std::tuple<TargetRegister, TargetRegister, Address> extractThreeRegisterImmediateForm(const Molecule& m);
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;

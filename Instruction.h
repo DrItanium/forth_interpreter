@@ -118,17 +118,23 @@ enum class Operation : byte {
 	PushA,
 	PushB,
 	// full versions of operations
+	// these forms are:
+	// ?op ?dest = ?src0, ?src1, ?imm12 // full
+	// or
+	// ?op ?dest = ?src0, ?imm16 // immediate16
+	// For the the two operand forms some of the other immediate forms don't
+	// make total sense so something like the and operator will have immediate
+	// mode be an 8 bit immediate instead.
 #define FullImmediate(x) \
 	x ## Full ,  \
-	x ## Immediate , \
-	x ## Immediate16 
+	x ## Immediate
 	FullImmediate(Add),
 	FullImmediate(Sub),
 	FullImmediate(Mul),
 	FullImmediate(Div),
 	FullImmediate(Modulo),
-	FullImmediate(Not),
-	FullImmediate(Minus),
+	NotFull,
+	MinusFull,
 	FullImmediate(And),
 	FullImmediate(Or),
 	FullImmediate(GreaterThan),
@@ -136,7 +142,8 @@ enum class Operation : byte {
 	FullImmediate(Xor),
 	FullImmediate(ShiftRight),
 	FullImmediate(ShiftLeft),
-	FullImmediate(Pow),
+	FullImmediate(Equals),
+	PowFull,
 #undef FullImmediate
     Count,
 };
@@ -154,6 +161,23 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         case Operation::SetImmediate16_Lowest:
         case Operation::SetImmediate16_Higher:
         case Operation::SetImmediate16_Highest:
+#define FullImmediate(x) \
+		case Operation:: x ## Full : \
+		case Operation:: x ## Immediate : 
+		FullImmediate(Add) 
+		FullImmediate(Sub) 
+		FullImmediate(Mul) 
+		FullImmediate(Div) 
+		FullImmediate(Modulo) 
+		FullImmediate(And) 
+		FullImmediate(Or) 
+		FullImmediate(GreaterThan) 
+		FullImmediate(LessThan) 
+		FullImmediate(Xor)
+		FullImmediate(ShiftRight)
+		FullImmediate(ShiftLeft)
+		FullImmediate(Equals)
+#undef FullImmediate
             return 4;
         case Operation::PopRegister:
         case Operation::PushRegister:
@@ -161,6 +185,9 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         case Operation::Swap:
         case Operation::Load:
         case Operation::Store:
+		case Operation::NotFull:
+		case Operation::MinusFull:
+		case Operation::PowFull:
             return 2;
         default:
             return 1;
@@ -210,8 +237,30 @@ namespace Instruction {
 					encodeBits<HalfAddress, byte, 0x0000FF00, 8>(
 						static_cast<HalfAddress>(first), second), third), fourth);
     }
+	constexpr byte encodeDual4BitQuantities(byte lower, byte upper) noexcept {
+		return encodeBits<byte, byte, 0xF0, 4>( encodeBits<byte, byte, 0x0F, 0>(0, lower), upper);
+	}
+	constexpr byte encodeDual4BitQuantities(TargetRegister dest, TargetRegister src0) noexcept {
+		return encodeDual4BitQuantities(static_cast<byte>(dest), static_cast<byte>(src0));
+	}
+	constexpr byte encodeDual4BitQuantities(TargetRegister dest, byte upper) noexcept {
+		return encodeDual4BitQuantities(static_cast<byte>(dest), 0xF & upper);
+	}
+	constexpr byte encodeDual4BitQuantities(TargetRegister dest, QuarterAddress upper) noexcept {
+		return encodeDual4BitQuantities(dest, static_cast<byte>(upper));
+	}
 	constexpr HalfAddress encodeFourByte(Operation first, TargetRegister destination, QuarterAddress third) noexcept {
 		return encodeFourByte(first, static_cast<byte>(destination), static_cast<byte>(third), static_cast<byte>(third >> 8));
+	}
+	constexpr HalfAddress encodeFourByte(Operation first, TargetRegister dest, TargetRegister src0, TargetRegister src1, QuarterAddress offset = 0) noexcept {
+		return encodeFourByte(first, encodeDual4BitQuantities(dest, src0),
+				encodeDual4BitQuantities(src1, offset),
+				decodeBits<QuarterAddress, byte, 0x0FF0, 4>(offset));
+	}
+	constexpr HalfAddress encodeFourByte(Operation first, TargetRegister dest, TargetRegister src0, QuarterAddress offset = 0) noexcept {
+		return encodeFourByte(first, encodeDual4BitQuantities(dest, src0),
+				static_cast<byte>(offset),
+				decodeBits<QuarterAddress, byte, 0xFF00, 8>(offset));
 	}
 	constexpr byte stop() noexcept { return singleByteOp(Operation::Stop); }
     constexpr byte add() noexcept { return singleByteOp(Operation::Add); }
@@ -358,6 +407,36 @@ namespace Instruction {
 	constexpr QuarterAddress moveXtoC() noexcept {
 		return move(TargetRegister::C, TargetRegister::X);
 	}
+#define FullImmediate(x, name) \
+	constexpr HalfAddress name (TargetRegister dest, TargetRegister src0, TargetRegister src1, QuarterAddress offset = 0) noexcept { return encodeFourByte(Operation:: x ## Full , dest, src0, src1, offset); } \
+	constexpr HalfAddress name (TargetRegister dest, TargetRegister src0, QuarterAddress offset) noexcept { return encodeFourByte(Operation:: x ## Immediate , dest, src0, offset); }
+#define FullImmediateNoOffset(x, name) \
+	constexpr HalfAddress name (TargetRegister dest, TargetRegister src0, TargetRegister src1) noexcept { return encodeFourByte(Operation:: x ## Full , dest, src0, src1, 0); } \
+	constexpr HalfAddress name (TargetRegister dest, TargetRegister src0, QuarterAddress offset) noexcept { return encodeFourByte(Operation:: x ## Immediate , dest, src0, offset); }
+	FullImmediate(Add, add);
+	FullImmediate(Sub, sub);
+	FullImmediate(Mul, mul);
+	FullImmediate(Div, div);
+	FullImmediate(Modulo, mod);
+	constexpr QuarterAddress notOp(TargetRegister dest, TargetRegister src) noexcept {
+		return encodeTwoByte(Operation::NotFull, dest, src);
+	}
+	constexpr QuarterAddress minus(TargetRegister dest, TargetRegister src) noexcept {
+		return encodeTwoByte(Operation::MinusFull, dest, src);
+	}
+
+	FullImmediate(And, andOp);
+	FullImmediate(Or, orOp);
+	FullImmediateNoOffset(GreaterThan, greaterThan);
+	FullImmediateNoOffset(LessThan, lessThan);
+	FullImmediateNoOffset(Xor, xorOp);
+	FullImmediateNoOffset(ShiftRight, shiftRight);
+	FullImmediateNoOffset(ShiftLeft, shiftLeft);
+	FullImmediateNoOffset(Equals, equals);
+	constexpr QuarterAddress pow(TargetRegister dest, TargetRegister src0, TargetRegister src1) noexcept {
+		return encodeFourByte(Operation::PowFull, dest, src0, src1, 0);
+	}
+#undef FullImmediate
 } // end namespace Instruction
 
 

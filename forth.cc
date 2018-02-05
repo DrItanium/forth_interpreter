@@ -226,8 +226,8 @@ void compoundWords(forth::Machine& machine) {
 }
 int main() {
     forth::Machine machine (std::cout, std::cin);
-	microarchitectureWords(machine);
     machine.initializeBaseDictionary();
+	microarchitectureWords(machine);
 	arithmeticOperators(machine);
 	stackOperators(machine);
 	registerDecls(machine);

@@ -241,6 +241,14 @@ namespace forth {
             void swapRegisters(const Molecule& m);
 			void compileMicrocodeInvoke(const Molecule& m, DictionaryEntry* current);
 			void microcodeInvoke(const Molecule& m);
+			template<typename First, typename ... Rest>
+			void microcodeStreamInvoke(First addr, Rest&& ... rest) {
+				static_assert(std::is_same<typename std::remove_reference<typename std::remove_cv<First>::type>::type, Address>::value, "All arguments must be of type Address!");
+				microcodeInvoke(addr);
+				if constexpr (sizeof...(rest) > 0) {
+					microcodeStreamInvoke(std::move(rest)...);
+				}
+			}
             void injectWord();
             void executeTop();
             template<Address first, Address ... rest>

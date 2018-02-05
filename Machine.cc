@@ -565,13 +565,14 @@ namespace forth {
 			parseAttempt >> std::hex >> tmpAddress;
 			if (!parseAttempt.fail()) {
 				// TODO: do checks to compact parsing
-				microcodeInvoke(Instruction::encodeOperation(
+				microcodeStreamInvoke(
+						Instruction::encodeOperation(
 							Instruction::setImmediate64_Lowest(TargetRegister::C, tmpAddress),
-							Instruction::setImmediate64_Lower(TargetRegister::C, tmpAddress)));
-				microcodeInvoke(Instruction::encodeOperation(
+							Instruction::setImmediate64_Lower(TargetRegister::C, tmpAddress)),
+						Instruction::encodeOperation(
 							Instruction::setImmediate64_Higher(TargetRegister::C, tmpAddress),
-							Instruction::setImmediate64_Highest(TargetRegister::C, tmpAddress)));
-				microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
+							Instruction::setImmediate64_Highest(TargetRegister::C, tmpAddress)),
+						Instruction::encodeOperation(Instruction::pushC()));
 				return true;
 			}
 			return false;

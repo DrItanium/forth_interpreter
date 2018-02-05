@@ -15,7 +15,7 @@ namespace forth {
 			static constexpr Address largestAddress = 0xFFFFFF;
 			static constexpr Address memoryCapacity = (largestAddress + 1);
 			static constexpr Address shouldKeepExecutingLocation = 0xFFFFFF;
-			static constexpr Address compiling = 0xFFFFFE;
+			static constexpr Address isCompilingLocation = 0xFFFFFE;
             // capacity variables for the two stacks, each one has 64k worth of data
 		public:
 			Machine(std::ostream& output, std::istream& input);
@@ -69,8 +69,6 @@ namespace forth {
             }
 			void addition(Discriminant type);
 			void listWords();
-			void activateCompileMode() { _compiling = true; }
-			void deactivateCompileMode() { _compiling = false; }
 			void defineWord();
 			void endDefineWord();
 			void setA(const Datum& target) noexcept { _registerA.setValue(target); }
@@ -291,6 +289,9 @@ namespace forth {
 				}
             }
 			bool keepExecuting() noexcept;
+			bool inCompilationMode() noexcept;
+			void activateCompileMode();
+			void deactivateCompileMode();
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;
@@ -302,7 +303,7 @@ namespace forth {
             std::list<Datum> _parameter;
 			bool _initializedBaseDictionary = false;
 			//bool _keepExecuting = true;
-			bool _compiling = false;
+			//bool _compiling = false;
 			DictionaryEntry* _compileTarget = nullptr;
 			// internal "registers"
             Register _registerA, _registerB, _registerC, _registerS, _registerX;

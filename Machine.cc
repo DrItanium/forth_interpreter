@@ -123,7 +123,7 @@ namespace forth {
 				Instruction::popA(),
 				Instruction::popC());
 		// if we're not in compilation mode then error out
-		if (!_compiling) {
+		if (!inCompilationMode()) {
 			throw Problem("if", "must be defining a word!");
 		}
 		auto currentTarget = _compileTarget;
@@ -146,7 +146,7 @@ namespace forth {
 		current->addSpaceEntry(_microcodeInvoke);
 	}
 	void Machine::elseCondition() {
-		if (!_compiling) {
+		if (!inCompilationMode()) {
 			throw Problem("else", "must be defining a word!");
 		}
         if (_subroutine.empty()) {
@@ -162,7 +162,7 @@ namespace forth {
 	}
 
 	void Machine::thenStatement() {
-		if (!_compiling) {
+		if (!inCompilationMode()) {
 			throw Problem("then", "must be defining a word!");
 		}
 		if (_subroutine.empty()) {
@@ -199,7 +199,7 @@ namespace forth {
 		_output.setf(flags); // restore after done
 	}
 	void Machine::defineWord() {
-		if (_compiling || _compileTarget != nullptr) {
+		if (inCompilationMode() || _compileTarget != nullptr) {
 			throw Problem(":", "already compiling");
 		}
 		activateCompileMode();
@@ -207,7 +207,7 @@ namespace forth {
 		_compileTarget = new DictionaryEntry(readWord());
 	}
 	void Machine::endDefineWord() {
-		if (!_compiling || _compileTarget == nullptr) {
+		if (!inCompilationMode() || _compileTarget == nullptr) {
 			throw Problem(";", "not compiling!");
 		}
 		deactivateCompileMode();
@@ -627,19 +627,6 @@ namespace forth {
 		return false;
 	}
 
-	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
-		// clear the stacks and the input pointer
-		_parameter.clear();
-		_subroutine.clear();
-		_input.clear();
-		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		_output << word << " " << msg << std::endl;
-		if (_compileTarget != nullptr) {
-			delete _compileTarget;
-			_compileTarget = nullptr;
-		}
-		_compiling = false;
-	}
 	void Machine::controlLoop() noexcept {
 		// setup initial dictionary
 		initializeBaseDictionary();
@@ -658,7 +645,7 @@ namespace forth {
                     continue;
                 }
 				auto* entry = lookupWord(result);
-				if (_compiling) {
+				if (inCompilationMode()) {
 					auto finishedCompiling = (result == ";");
 					if (entry != nullptr) {
 						// okay we have a word, lets add it to the top word in the dictionary
@@ -725,7 +712,7 @@ namespace forth {
 		}
 	}
 	void Machine::doStatement() {
-		if (!_compiling) {
+		if (!inCompilationMode()) {
 			throw Problem("do", "Not compiling!");
 		}
 		_subroutine.push_back(_compileTarget);
@@ -733,7 +720,7 @@ namespace forth {
 		_compileTarget->markFakeEntry();
 	}
 	void Machine::microcodeInvoke(const Molecule& m) {
-        if (_compiling) {
+        if (inCompilationMode()) {
             if (_compileTarget) {
                 compileMicrocodeInvoke(m, _compileTarget);
             } else {
@@ -741,12 +728,11 @@ namespace forth {
             }
         } else {
             // otherwise do the actual action itself 
-		    _registerS.setValue(m._value);
-		    dispatchInstruction();
+			dispatchInstruction(m);
         }
 	}
 	void Machine::continueStatement() {
-		if (!_compiling) {
+		if (!inCompilationMode()) {
 			throw Problem("continue", "not compiling!");
 		} 
 		if (_subroutine.empty()) {
@@ -785,7 +771,7 @@ loopTop:
 
 	}
 	void Machine::beginStatement() {
-		if (!_compiling) {
+		if (!inCompilationMode()) {
 			throw Problem("begin", "Must be compiling!");
 		}
 		_subroutine.push_back(_compileTarget);
@@ -793,7 +779,7 @@ loopTop:
 		_compileTarget->markFakeEntry();
 	}
 	void Machine::endStatement() {
-		if (!_compiling) {
+		if (!inCompilationMode()) {
 			throw Problem("end", "Must be compiling!");
 		}
 		if (_subroutine.empty()) {
@@ -1055,35 +1041,79 @@ endLoopTop:
         auto top = popParameter();
         top.entry->operator()(this);
     }
+	constexpr Address loadAddressLowerHalf(TargetRegister reg, Address value) noexcept {
+		return Instruction::encodeOperation(
+				Instruction::setImmediate64_Lowest(reg, value),
+				Instruction::setImmediate64_Lower(reg, value));
+	}
+	constexpr Address loadAddressUpperHalf(TargetRegister reg, Address value) noexcept {
+		return Instruction::encodeOperation(
+				Instruction::setImmediate64_Higher(reg, value),
+				Instruction::setImmediate64_Highest(reg, value));
+	}
+	static constexpr Address storeFalse = Instruction::encodeOperation(
+			Instruction::move(TargetRegister::B, TargetRegister::A),
+			Instruction::xorOp(), // zero out C
+			Instruction::store(TargetRegister::X, TargetRegister::C));
 	bool Machine::keepExecuting() noexcept {
-		static constexpr auto loadVariableAddressLower = Instruction::encodeOperation(
-				Instruction::setImmediate64_Lowest(TargetRegister::X, shouldKeepExecutingLocation),
-				Instruction::setImmediate64_Lower(TargetRegister::X, shouldKeepExecutingLocation));
-		static constexpr auto loadVariableAddressUpper = Instruction::encodeOperation(
-				Instruction::setImmediate64_Higher(TargetRegister::X, shouldKeepExecutingLocation),
-				Instruction::setImmediate64_Highest(TargetRegister::X, shouldKeepExecutingLocation));
 		static constexpr auto loadValueIntoX = Instruction::encodeOperation(
 				Instruction::load(TargetRegister::X, TargetRegister::X));
-		dispatchInstructionStream<loadVariableAddressLower, loadVariableAddressUpper, loadValueIntoX>();
+		dispatchInstructionStream<loadAddressLowerHalf(TargetRegister::X, shouldKeepExecutingLocation),
+								  loadAddressUpperHalf(TargetRegister::X, shouldKeepExecutingLocation),
+								  loadValueIntoX>();
 		return _registerX.getTruth();
 	}
 	void Machine::terminateExecution() {
 		//_keepExecuting = false;
-		static constexpr Address loadVariableAddressLower = Instruction::encodeOperation(
-				Instruction::setImmediate64_Lowest(TargetRegister::X, shouldKeepExecutingLocation),
-				Instruction::setImmediate64_Lower(TargetRegister::X, shouldKeepExecutingLocation));
-		static constexpr Address loadVariableAddressUpper = Instruction::encodeOperation(
-				Instruction::setImmediate64_Higher(TargetRegister::X, shouldKeepExecutingLocation),
-				Instruction::setImmediate64_Highest(TargetRegister::X, shouldKeepExecutingLocation));
-		static constexpr Address storeFalse = Instruction::encodeOperation(
-				Instruction::move(TargetRegister::B, TargetRegister::A),
-				Instruction::xorOp(), // zero out C
-				Instruction::store(TargetRegister::X, TargetRegister::C));
-		dispatchInstructionStream<loadVariableAddressLower, loadVariableAddressUpper, storeFalse>();
+		dispatchInstructionStream<
+			loadAddressLowerHalf(TargetRegister::X, shouldKeepExecutingLocation),
+			loadAddressUpperHalf(TargetRegister::X, shouldKeepExecutingLocation),
+			storeFalse>();
+	}
+	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
+		// clear the stacks and the input pointer
+		_parameter.clear();
+		_subroutine.clear();
+		_input.clear();
+		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+		_output << word << " " << msg << std::endl;
+		if (_compileTarget != nullptr) {
+			delete _compileTarget;
+			_compileTarget = nullptr;
+		}
+		// _compiling = false;
+		dispatchInstructionStream<
+			loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
+			loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
+			storeFalse>();
 	}
 	void Machine::dispatchInstruction(const Molecule& m) {
 		_registerS.setValue(m._value);
 		dispatchInstruction();
+	}
+	bool Machine::inCompilationMode() noexcept {
+		dispatchInstructionStream<
+			loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
+			loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
+			Instruction::encodeOperation(Instruction::load(TargetRegister::X, TargetRegister::X))>();
+		return _registerX.getTruth();
+	}
+	void Machine::activateCompileMode() {
+		dispatchInstructionStream<
+			loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
+			loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
+			Instruction::encodeOperation(
+					Instruction::move(TargetRegister::B, TargetRegister::A),
+					Instruction::xorOp(),
+					Instruction::setImmediate16_Lowest(TargetRegister::C, 1)),
+			Instruction::encodeOperation(
+					Instruction::store(TargetRegister::X, TargetRegister::C))>();
+	}
+	void Machine::deactivateCompileMode() {
+		dispatchInstructionStream<
+			loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
+			loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
+			storeFalse>();
 	}
 } // end namespace forth
 

@@ -214,7 +214,7 @@ void compoundWords(forth::Machine& machine) {
 }
 void systemSetup(forth::Machine& machine) {
 	machine.store(forth::Machine::shouldKeepExecutingLocation, true);
-	machine.store(forth::Machine::compiling, false);
+	machine.store(forth::Machine::isCompilingLocation, false);
 }
 int main() {
     forth::Machine machine (std::cout, std::cin);

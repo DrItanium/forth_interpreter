@@ -145,15 +145,15 @@ namespace forth {
 			void multiplyOperation(Operation op, const Molecule& m);
 			void equals(Operation op, const Molecule& m);
 			void powOperation(Operation op, const Molecule& m);
-			void divide(bool remainder = false);
-			void notOperation();
-			void minusOperation();
-			void andOperation();
-			void orOperation();
-			void greaterThanOperation();
-			void lessThanOperation();
-			void xorOperation();
-			void shiftOperation(bool shiftLeft = false);
+			void divide(Operation op, const Molecule& m, bool remainder = false);
+			void notOperation(Operation op, const Molecule& m);
+			void minusOperation(Operation op, const Molecule& m);
+			void andOperation(Operation op, const Molecule& m);
+			void orOperation(Operation op, const Molecule& m);
+			void greaterThanOperation(Operation op, const Molecule& m);
+			void lessThanOperation(Operation op, const Molecule& m);
+			void xorOperation(Operation op, const Molecule& m);
+			void shiftOperation(Operation op, const Molecule& m, bool shiftLeft = false);
             void ifCondition();
             void elseCondition();
             void thenStatement();
@@ -305,8 +305,10 @@ namespace forth {
 			void activateCompileMode();
 			void deactivateCompileMode();
 			std::tuple<Register&, Register&, Register&> extractArguments(Operation op, const Molecule& m, std::function<void(Register&, Address)> onImmediate = nullptr);
+			std::tuple<Register&, Register&> extractArgs2(Operation op, const Molecule& m);
 			std::tuple<TargetRegister, TargetRegister, TargetRegister> extractThreeRegisterForm(const Molecule& m);
 			std::tuple<TargetRegister, TargetRegister, Address> extractThreeRegisterImmediateForm(const Molecule& m);
+			std::tuple<TargetRegister, TargetRegister> extractTwoRegisterForm(const Molecule& m);
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;

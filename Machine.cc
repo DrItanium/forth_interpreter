@@ -232,35 +232,36 @@ namespace forth {
 		}
 		addWord(entry);
 	}
-	void Machine::notOperation() {
+	void Machine::notOperation(Operation op, const Molecule& m) {
 		// invert register a
-		auto fn = [this](auto a) {
-			_registerC.setValue(~a);
-		};
+		auto [dest, src] = extractArgs2(op, m);
+		auto fn = [this, &dest](auto a) { _registerC.setValue(~a); };
+
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-				fn(_registerA.getInt());
+				fn(src.getInt());
 				break;
 			case Type::MemoryAddress:
-				fn(_registerA.getAddress());
+				fn(src.getAddress());
 				break;
 			case Type::Boolean:
-				_registerC.setValue(!_registerA.getTruth());
+				dest.setValue(!src.getTruth());
 				break;
 			default:
 				throw Problem("not", "ILLEGAL DISCRIMINANT!");
 		}
 	}
-	void Machine::minusOperation() {
+	void Machine::minusOperation(Operation op, const Molecule& m) {
+		auto [dest, src] = extractArgs2(op, m);
 		auto fn = [this](auto a) { _registerC.setValue(-a); };
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-				fn(_registerA.getInt());
+				fn(src.getInt());
 				break;
 			case Type::FloatingPoint:
-				fn(_registerA.getFP());
+				fn(src.getFP());
 				break;
 			default:
 				throw Problem("minus", "ILLEGAL DISCRIMINANT!");
@@ -269,7 +270,7 @@ namespace forth {
 
 	void Machine::multiplyOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
-		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
 		auto fn = [this, &dest](auto a, auto b) { dest.setValue(a * b); };
 		if (op == Operation::Multiply) {
 			switch(_registerC.getType()) {
@@ -290,7 +291,7 @@ namespace forth {
 		}
 	}
 	void Machine::equals(Operation op, const Molecule& m) {
-		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
 		auto fn = [this, &dest](auto a, auto b) { dest.setValue(a == b); };
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
@@ -310,27 +311,29 @@ namespace forth {
 				throw Problem("==", "ILLEGAL DISCRIMINANT!");
 		}
 	}
-	void Machine::powOperation() {
-		auto fn = [this](auto a, auto b) {
-			_registerC.setValue(static_cast<decltype(a)>(std::pow(a, b)));
+	void Machine::powOperation(Operation op, const Molecule& m) {
+		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto fn = [&dest, this](auto a, auto b) {
+			dest.setValue(static_cast<decltype(a)>(std::pow(a, b)));
 		};
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-				fn(_registerA.getInt(), _registerB.getInt());
+				fn(src0.getInt(), src1.getInt());
 				break;
 			case Type::MemoryAddress:
-				fn(_registerA.getAddress(), _registerB.getAddress());
+				fn(src0.getAddress(), src1.getAddress());
 				break;
 			case Type::FloatingPoint:
-				fn(_registerA.getFP(), _registerB.getFP());
+				fn(src0.getFP(), src1.getFP());
 				break;
 			default:
 				throw Problem("**", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
-	void Machine::divide(bool remainder) {
+	void Machine::divide(Operation op, const Molecule& m, bool remainder) {
+		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
 		auto title = remainder ? "mod" : "/";
 		auto fn = [this, remainder, &title](auto a, auto b) {
 			if (b == 0) {
@@ -372,8 +375,8 @@ namespace forth {
 #define Immediate(x) case Operation :: x ## Immediate :
 	Immediate(Add)
 	Immediate(Subtract)
-	Immediate(Mul)
-	Immediate(Div)
+	Immediate(Multiply)
+	Immediate(Divide)
 	Immediate(Modulo)
 	Immediate(And)
 	Immediate(Or)
@@ -394,8 +397,8 @@ namespace forth {
 #define Full(x) case Operation :: x ## Full :
 	Full(Add)
 	Full(Subtract)
-	Full(Mul)
-	Full(Div)
+	Full(Multiply)
+	Full(Divide)
 	Full(Modulo)
 	Full(And)
 	Full(Or)
@@ -405,6 +408,9 @@ namespace forth {
 	Full(ShiftRight)
 	Full(ShiftLeft)
 	Full(Equals)
+	Full(Pow)
+	Full(Not)
+	Full(Minus)
 				return true;
 			default:
 				return false;
@@ -423,8 +429,7 @@ namespace forth {
 				fn(dest, src0.getAddress(), src1.getAddress());
 				break;
 			case Discriminant::FloatingPoint:
-				// offset not used in floating point operations!
-				fn(dest, src0.getFP(), src1.getFP(), 0.0);
+				fn(dest, src0.getFP(), src1.getFP());
 				break;
 			default:
 				throw Problem(subtract ? "-" : "+", "ILLEGAL DISCRIMINANT!");
@@ -435,11 +440,11 @@ namespace forth {
 		numericCombine(subtract, _registerC, _registerA, _registerB);
 	}
 	void Machine::numericCombine(Operation op, const Molecule& m) {
-		if (op == Operation::Add || op == Opeation::Subtract) {
-			numericCombine(op == Opration::Subtract);
+		if (op == Operation::Add || op == Operation::Subtract) {
+			numericCombine(op == Operation::Subtract);
 			return;
 		}
-		auto& [dest, src0, src1] = extractArguments(op, m, [this](auto r, auto val) {
+		auto [dest, src0, src1] = extractArguments(op, m, [this](auto r, auto val) {
 					if (_registerC.getType() == Discriminant::FloatingPoint) {
 						r.setValue(static_cast<Floating>(val));
 					} else {
@@ -468,7 +473,9 @@ namespace forth {
 		if (immediateForm(op)) {
 			auto x = extractThreeRegisterImmediateForm(m);
 			if (onImmediate) {
-				onImmediate(std::get<2>(_registerImmediatex));
+				onImmediate(_registerImmediate, std::get<2>(x));
+			} else {
+				_registerImmediate.setValue(std::get<2>(x));
 			}
 			src1 = _registerImmediate;
 			dest = getRegister(std::get<0>(x));
@@ -479,11 +486,11 @@ namespace forth {
 			src0 = getRegister(std::get<1>(x));
 			src1 = getRegister(std::get<2>(x));
 		}
-		return std::make_tuple(dest, src0, src1);
+		return std::make_tuple(std::ref(dest), std::ref(src0), std::ref(src1));
 	}
 	void Machine::andOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
-		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
 		switch (_registerC.getType()) {
 			case Type::Number:
 				dest.setValue(src0.getInt() & src1.getInt());
@@ -501,7 +508,7 @@ namespace forth {
 
 	void Machine::orOperation(Operation op, const Molecule& m) {
 		using Type = forth::Discriminant;
-		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
 		switch (_registerC.getType()) {
 			case Type::Number:
 				dest.setValue(src0.getInt() | src1.getInt());
@@ -520,7 +527,7 @@ namespace forth {
 	void Machine::greaterThanOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
 		auto result = false;
-		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
 		switch (_registerC.getType()) {
 			case Type::Number:
 				result = src0.getInt() > src1.getInt();
@@ -540,7 +547,7 @@ namespace forth {
 	void Machine::lessThanOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
 		auto result = false;
-		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
 		switch (_registerC.getType()) {
 			case Type::Number:
 				result = src0.getInt() < src1.getInt();
@@ -560,7 +567,7 @@ namespace forth {
 
 	void Machine::xorOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
-		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
 		switch (_registerC.getType()) {
 			case Type::Number:
 				dest.setValue(src0.getInt() ^ src1.getInt());
@@ -581,9 +588,9 @@ namespace forth {
 		// counter to zero, however, with how we use iterators,
 		// this isn't necessary!
 	}
-	void Machine::shiftOperation(bool shiftLeft) {
+	void Machine::shiftOperation(Operation op, const Molecule& m, bool shiftLeft) {
 		using Type = decltype(_registerC.getType());
-		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
 		switch (_registerC.getType()) {
 			case Type::Number:
 				dest.setValue(shiftLeft ? (src0.getInt()  << src1.getInt()) : (src0.getInt() >> src1.getInt()));
@@ -960,10 +967,12 @@ endLoopTop:
 				case Operation::ShiftRight:
 				case Operation::ShiftRightFull:
 				case Operation::ShiftRightImmediate:
+					shiftOperation(op, molecule, false); 
+					break;
 				case Operation::ShiftLeft:
 				case Operation::ShiftLeftFull:
 				case Operation::ShiftLeftImmediate:
-					shiftOperation(op, molecule); 
+					shiftOperation(op, molecule, true); 
 					break;
 				case Operation::Multiply: 
 				case Operation::MultiplyFull:
@@ -1287,6 +1296,17 @@ endLoopTop:
 			loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
 			loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
 			storeFalse>();
+	}
+	std::tuple<Register&, Register&> Machine::extractArgs2(Operation op, const Molecule& m) {
+		Register& dest = _registerC;
+		Register& src = _registerA;
+		if (fullForm(op)) {
+			auto next = m.getByte(_registerIP.getAddress()); 
+			_registerIP.increment();
+			dest = getRegister(TargetRegister(getDestinationRegister(next)));
+			src = getRegister(TargetRegister(getSourceRegister(next)));
+		}
+		return std::make_tuple(std::ref(dest), std::ref(src));
 	}
 } // end namespace forth
 

@@ -130,8 +130,8 @@ enum class Operation : byte {
 	x ## Immediate
 	FullImmediate(Add),
 	FullImmediate(Subtract),
-	FullImmediate(Mul),
-	FullImmediate(Div),
+	FullImmediate(Multiply),
+	FullImmediate(Divide),
 	FullImmediate(Modulo),
 	NotFull,
 	MinusFull,
@@ -166,8 +166,8 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
 		case Operation:: x ## Immediate : 
 		FullImmediate(Add) 
 		FullImmediate(Subtract) 
-		FullImmediate(Mul) 
-		FullImmediate(Div) 
+		FullImmediate(Multiply) 
+		FullImmediate(Divide) 
 		FullImmediate(Modulo) 
 		FullImmediate(And) 
 		FullImmediate(Or) 
@@ -415,8 +415,8 @@ namespace Instruction {
 	constexpr HalfAddress name (TargetRegister dest, TargetRegister src0, QuarterAddress offset) noexcept { return encodeFourByte(Operation:: x ## Immediate , dest, src0, offset); }
 	FullImmediate(Add, add);
 	FullImmediate(Subtract, sub);
-	FullImmediate(Mul, mul);
-	FullImmediate(Div, div);
+	FullImmediate(Multiply, mul);
+	FullImmediate(Divide, div);
 	FullImmediate(Modulo, mod);
 	constexpr QuarterAddress notOp(TargetRegister dest, TargetRegister src) noexcept {
 		return encodeTwoByte(Operation::NotFull, dest, src);

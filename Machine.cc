@@ -269,17 +269,18 @@ namespace forth {
 
 	void Machine::multiplyOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
-		auto fn = [this](auto a, auto b) { _registerC.setValue(a * b); };
+		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto fn = [this, &dest](auto a, auto b) { dest.setValue(a * b); };
 		if (op == Operation::Multiply) {
 			switch(_registerC.getType()) {
 				case Type::Number:
-					fn(_registerA.getInt(), _registerB.getInt());
+					fn(src0.getInt(), src1.getInt());
 					break;
 				case Type::MemoryAddress:
-					fn(_registerA.getAddress(), _registerB.getAddress());
+					fn(src0.getAddress(), src1.getAddress());
 					break;
 				case Type::FloatingPoint:
-					fn(_registerA.getFP(), _registerB.getFP());
+					fn(src0.getFP(), src1.getFP());
 					break;
 				default:
 					throw Problem("*", "ILLEGAL DISCRIMINANT!");
@@ -288,21 +289,22 @@ namespace forth {
 			
 		}
 	}
-	void Machine::equals() {
-		auto fn = [this](auto a, auto b) { _registerC.setValue(a == b); };
+	void Machine::equals(Operation op, const Molecule& m) {
+		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto fn = [this, &dest](auto a, auto b) { dest.setValue(a == b); };
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-				fn(_registerA.getInt(), _registerB.getInt());
+				fn(src0.getInt(), src1.getInt());
 				break;
 			case Type::MemoryAddress:
-				fn(_registerA.getAddress(), _registerB.getAddress());
+				fn(src0.getAddress(), src1.getAddress());
 				break;
 			case Type::FloatingPoint:
-				fn(_registerA.getFP(), _registerB.getFP());
+				fn(src0.getFP(), src1.getFP());
 				break;
 			case Type::Boolean:
-				fn(_registerA.getTruth(), _registerB.getTruth());
+				fn(src0.getTruth(), src1.getTruth());
 				break;
 			default:
 				throw Problem("==", "ILLEGAL DISCRIMINANT!");
@@ -437,14 +439,6 @@ namespace forth {
 			numericCombine(op == Opration::Subtract);
 			return;
 		}
-		auto destSrc = m.getByte(_registerIP.getAddress());
-		_registerIP.increment();
-		auto src1Lower4 = m.getByte(_registerIP.getAddress());
-		_registerIP.increment();
-		auto upperMost = m.getByte(_registerIP.getAddress());
-		_registerIP.increment();
-		auto idest = (TargetRegister)getDestinationRegister(destSrc);
-		auto isrc0 = (TargetRegister)getSourceRegister(destSrc);
 		auto& [dest, src0, src1] = extractArguments(op, m, [this](auto r, auto val) {
 					if (_registerC.getType() == Discriminant::FloatingPoint) {
 						r.setValue(static_cast<Floating>(val));
@@ -452,20 +446,6 @@ namespace forth {
 						r.setValue(val);
 					}
 				});
-		Register& dest = getRegister(idest);
-		Register& src0 = getRegister(isrc0);
-		Register& src1 = _registerImmediate;
-		if (immediateForm(op)) {
-			auto form = extractThreeRegisterImmediateForm(m);
-			dest = getRegister(std::get<0>(form));
-			src0 = getRegister(std::get<1>(form));
-			auto imm = std::get<2>(form);
-		} else {
-			auto form = extractThreeRegisterForm(m);
-			dest = getRegister(std::get<0>(form));
-			src0 = getRegister(std::get<1>(form));
-			src1 = getRegister(std::get<2>(form));
-		}
 		numericCombine(subtractOperation(op), dest, src0, src1);
 	}
 	std::tuple<TargetRegister, TargetRegister, TargetRegister> Machine::extractThreeRegisterForm(const Molecule& m) {
@@ -519,70 +499,77 @@ namespace forth {
 		}
 	}
 
-	void Machine::orOperation() {
+	void Machine::orOperation(Operation op, const Molecule& m) {
 		using Type = forth::Discriminant;
+		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
 		switch (_registerC.getType()) {
 			case Type::Number:
-				_registerC.setValue(_registerA.getInt() | _registerB.getInt());
+				dest.setValue(src0.getInt() | src1.getInt());
 				break;
 			case Type::MemoryAddress:
-				_registerC.setValue(_registerA.getAddress() | _registerB.getAddress());
+				dest.setValue(src0.getAddress() | src1.getAddress());
 				break;
 			case Type::Boolean:
-				_registerC.setValue(_registerA.getTruth() || _registerB.getTruth());
+				dest.setValue(src0.getTruth() || src1.getTruth());
 				break;
 			default:
 				throw Problem("or", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 
-	void Machine::greaterThanOperation() {
+	void Machine::greaterThanOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
 		auto result = false;
+		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
 		switch (_registerC.getType()) {
 			case Type::Number:
-				result = _registerA.getInt() > _registerB.getInt();
+				result = src0.getInt() > src1.getInt();
 				break;
 			case Type::MemoryAddress:
-				result = _registerA.getAddress() > _registerB.getAddress();
+				result = src0.getAddress() > src1.getAddress();
 				break;
 			case Type::FloatingPoint:
-				result = _registerA.getFP() > _registerB.getFP();
+				result = src0.getFP() > src1.getFP();
 				break;
 			default:
 				throw Problem(">", "ILLEGAL DISCRIMINANT!");
 		}
-		_registerC.setValue(result);
+		dest.setValue(result);
 	}
 
-	void Machine::lessThanOperation() {
+	void Machine::lessThanOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
+		auto result = false;
+		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
 		switch (_registerC.getType()) {
 			case Type::Number:
-				_registerC.setValue(_registerA.getInt() < _registerB.getInt());
+				result = src0.getInt() < src1.getInt();
 				break;
 			case Type::MemoryAddress:
-				_registerC.setValue(_registerA.getAddress() < _registerB.getAddress());
+				result = src0.getAddress() < src1.getAddress();
 				break;
 			case Type::FloatingPoint:
-				_registerC.setValue(_registerA.getFP() < _registerB.getFP());
+				result = src0.getFP() < src1.getFP();
 				break;
 			default:
-				throw Problem("<", "ILLEGAL DISCRIMINANT!");
+				throw Problem(">", "ILLEGAL DISCRIMINANT!");
 		}
+		dest.setValue(result);
 	}
 
-	void Machine::xorOperation() {
+
+	void Machine::xorOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
+		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
 		switch (_registerC.getType()) {
 			case Type::Number:
-				_registerC.setValue(_registerA.getInt() ^ _registerB.getInt());
+				dest.setValue(src0.getInt() ^ src1.getInt());
 				break;
 			case Type::MemoryAddress:
-				_registerC.setValue(_registerA.getAddress() ^ _registerB.getAddress());
+				dest.setValue(src0.getAddress() ^ src1.getAddress());
 				break;
 			case Type::Boolean:
-				_registerC.setValue(bool(_registerA.getTruth() ^ _registerB.getTruth()));
+				dest.setValue(bool(src0.getTruth() ^ src1.getTruth()));
 				break;
 			default:
 				throw Problem("xor", "ILLEGAL DISCRIMINANT!");
@@ -596,12 +583,13 @@ namespace forth {
 	}
 	void Machine::shiftOperation(bool shiftLeft) {
 		using Type = decltype(_registerC.getType());
+		auto& [dest, src0, src1] = extractArguments(op, m, nullptr);
 		switch (_registerC.getType()) {
 			case Type::Number:
-				_registerC.setValue(shiftLeft ? (_registerA.getInt()  << _registerB.getInt()) : (_registerA.getInt() >> _registerB.getInt()));
+				dest.setValue(shiftLeft ? (src0.getInt()  << src1.getInt()) : (src0.getInt() >> src1.getInt()));
 				break;
 			case Type::MemoryAddress:
-				_registerC.setValue(shiftLeft ? (_registerA.getAddress()  << _registerB.getAddress()) : (_registerA.getAddress() >> _registerB.getAddress()));
+				dest.setValue(shiftLeft ? (src0.getAddress()  << src1.getAddress()) : (src0.getAddress() >> src1.getAddress()));
 				break;
 			default:
 				throw Problem(shiftLeft ? "<<" : ">>", "ILLEGAL DISCRIMINANT");

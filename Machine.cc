@@ -1056,8 +1056,7 @@ endLoopTop:
 				Instruction::setImmediate64_Highest(reg, value));
 	}
 	static constexpr Address storeFalse = Instruction::encodeOperation(
-			Instruction::move(TargetRegister::B, TargetRegister::A),
-			Instruction::xorOp(), // zero out C
+			Instruction::xorOp(TargetRegister::C, TargetRegister::A, TargetRegister::A),
 			Instruction::store(TargetRegister::X, TargetRegister::C));
 	bool Machine::keepExecuting() noexcept {
 		static constexpr auto loadValueIntoX = Instruction::encodeOperation(

@@ -568,11 +568,11 @@ namespace forth {
 			parseAttempt >> std::hex >> tmpAddress;
 			if (!parseAttempt.fail()) {
 				microcodeInvoke(Instruction::encodeOperation(
-							Instruction::setImmediate32_Lowest(TargetRegister::RegisterC, tmpAddress),
-							Instruction::setImmediate32_Lower(TargetRegister::RegisterC, tmpAddress)));
+							Instruction::setImmediate64_Lowest(TargetRegister::RegisterC, tmpAddress),
+							Instruction::setImmediate64_Lower(TargetRegister::RegisterC, tmpAddress)));
 				microcodeInvoke(Instruction::encodeOperation(
-							Instruction::setImmediate32_Higher(TargetRegister::RegisterC, tmpAddress),
-							Instruction::setImmediate32_Highest(TargetRegister::RegisterC, tmpAddress)));
+							Instruction::setImmediate64_Higher(TargetRegister::RegisterC, tmpAddress),
+							Instruction::setImmediate64_Highest(TargetRegister::RegisterC, tmpAddress)));
 				microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
 				return true;
 			}
@@ -583,11 +583,11 @@ namespace forth {
 			parseAttempt >> tmpAddress;
 			if (!parseAttempt.fail()) {
 				microcodeInvoke(Instruction::encodeOperation(
-							Instruction::setImmediate32_Lowest(TargetRegister::RegisterC, tmpAddress),
-							Instruction::setImmediate32_Lower(TargetRegister::RegisterC, tmpAddress)));
+							Instruction::setImmediate64_Lowest(TargetRegister::RegisterC, tmpAddress),
+							Instruction::setImmediate64_Lower(TargetRegister::RegisterC, tmpAddress)));
 				microcodeInvoke(Instruction::encodeOperation(
-							Instruction::setImmediate32_Higher(TargetRegister::RegisterC, tmpAddress),
-							Instruction::setImmediate32_Highest(TargetRegister::RegisterC, tmpAddress)));
+							Instruction::setImmediate64_Higher(TargetRegister::RegisterC, tmpAddress),
+							Instruction::setImmediate64_Highest(TargetRegister::RegisterC, tmpAddress)));
 				microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
 				return true;
 			}
@@ -600,11 +600,11 @@ namespace forth {
 			if (!parseAttempt.fail() && parseAttempt.eof()) {
 				Datum a(tmpFloat);
 				microcodeInvoke(Instruction::encodeOperation(
-							Instruction::setImmediate32_Lowest(TargetRegister::RegisterC, a.address),
-							Instruction::setImmediate32_Lower(TargetRegister::RegisterC, a.address)));
+							Instruction::setImmediate64_Lowest(TargetRegister::RegisterC, a.address),
+							Instruction::setImmediate64_Lower(TargetRegister::RegisterC, a.address)));
 				microcodeInvoke(Instruction::encodeOperation(
-							Instruction::setImmediate32_Higher(TargetRegister::RegisterC, a.address),
-							Instruction::setImmediate32_Highest(TargetRegister::RegisterC, a.address)));
+							Instruction::setImmediate64_Higher(TargetRegister::RegisterC, a.address),
+							Instruction::setImmediate64_Highest(TargetRegister::RegisterC, a.address)));
 				microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
 				return true;
 			}
@@ -618,11 +618,11 @@ namespace forth {
 		if (!parseAttempt.fail() && parseAttempt.eof()) {
 			Datum a(tmpInt);
 			microcodeInvoke(Instruction::encodeOperation(
-						Instruction::setImmediate32_Lowest(TargetRegister::RegisterC, a.address),
-						Instruction::setImmediate32_Lower(TargetRegister::RegisterC, a.address)));
+						Instruction::setImmediate64_Lowest(TargetRegister::RegisterC, a.address),
+						Instruction::setImmediate64_Lower(TargetRegister::RegisterC, a.address)));
 			microcodeInvoke(Instruction::encodeOperation(
-						Instruction::setImmediate32_Higher(TargetRegister::RegisterC, a.address),
-						Instruction::setImmediate32_Highest(TargetRegister::RegisterC, a.address)));
+						Instruction::setImmediate64_Higher(TargetRegister::RegisterC, a.address),
+						Instruction::setImmediate64_Highest(TargetRegister::RegisterC, a.address)));
 			microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
 			return true;
 		}

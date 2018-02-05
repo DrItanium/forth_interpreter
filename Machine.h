@@ -166,7 +166,7 @@ namespace forth {
                 dest.setValue(encodeBits<Address, QuarterAddress, Immediate16Mask<pos>, Immediate16ShiftIndex<pos>>(dest.getAddress(), value));
             }
             template<Immediate16Positions pos>
-            void setImmediate16(const Molecule& m, TargetRegister target = TargetRegister::RegisterX) {
+            void setImmediate16(const Molecule& m, TargetRegister target) {
                 try {
                     setImmediate16<pos>(target, m.getQuarterAddress(_registerIP.getAddress()));
                     _registerIP.increment();
@@ -190,6 +190,12 @@ namespace forth {
                     throw Problem(msg, p.getMessage());
                 }
             }
+			template<Immediate16Positions pos>
+			void setImmediate16(const Molecule& m) {
+				auto dest = static_cast<TargetRegister>(m.getByte(_registerIP.getAddress()));
+				_registerIP.increment();
+				setImmediate16<pos>(m, dest);
+			}
             template<Immediate16Positions pos>
             void setImmediate16Full(const Molecule& m) {
                 try {

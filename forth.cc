@@ -63,8 +63,12 @@ void arithmeticOperators(forth::Machine& machine) {
 	threeArgumentVersion<Instruction::sub()>(machine, "3-");
 	threeArgumentVersion<Instruction::mul()>(machine, "3*");
 	threeArgumentVersion<Instruction::div()>(machine, "3/");
-	machine.addMachineCodeWord<popA, moveAtoB, Instruction::mul(), pushC>("square");
-	machine.addMachineCodeWord<popB, Instruction::mul(rc, rb, rb), Instruction::mul(rc, rc, rb), pushC>("cube");
+	machine.addMachineCodeWord<popA, Instruction::mul(rc, ra, ra), pushC>("square");
+	machine.addMachineCodeWord<
+		popA, 
+		Instruction::mul(rb, ra, ra),
+		Instruction::mul(),
+		pushC>("cube");
 	machine.addMachineCodeWord<
 		popA,
 		popB,

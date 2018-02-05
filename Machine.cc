@@ -271,22 +271,18 @@ namespace forth {
 		using Type = decltype(_registerC.getType());
 		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
 		auto fn = [this, &dest](auto a, auto b) { dest.setValue(a * b); };
-		if (op == Operation::Multiply) {
-			switch(_registerC.getType()) {
-				case Type::Number:
-					fn(src0.getInt(), src1.getInt());
-					break;
-				case Type::MemoryAddress:
-					fn(src0.getAddress(), src1.getAddress());
-					break;
-				case Type::FloatingPoint:
-					fn(src0.getFP(), src1.getFP());
-					break;
-				default:
-					throw Problem("*", "ILLEGAL DISCRIMINANT!");
-			}
-		} else if (op == Operation::MultiplyFull) {
-			
+		switch(_registerC.getType()) {
+			case Type::Number:
+				fn(src0.getInt(), src1.getInt());
+				break;
+			case Type::MemoryAddress:
+				fn(src0.getAddress(), src1.getAddress());
+				break;
+			case Type::FloatingPoint:
+				fn(src0.getFP(), src1.getFP());
+				break;
+			default:
+				throw Problem("*", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::equals(Operation op, const Molecule& m) {

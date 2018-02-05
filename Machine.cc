@@ -582,11 +582,13 @@ namespace forth {
 			Address tmpAddress;
 			parseAttempt >> tmpAddress;
 			if (!parseAttempt.fail()) {
-				if (_compiling) {
-					_compileTarget->addSpaceEntry(tmpAddress);
-				} else {
-					pushParameter(tmpAddress);
-				}
+				microcodeInvoke(Instruction::encodeOperation(
+							Instruction::setImmediate32_Lowest(TargetRegister::RegisterC, tmpAddress),
+							Instruction::setImmediate32_Lower(TargetRegister::RegisterC, tmpAddress)));
+				microcodeInvoke(Instruction::encodeOperation(
+							Instruction::setImmediate32_Higher(TargetRegister::RegisterC, tmpAddress),
+							Instruction::setImmediate32_Highest(TargetRegister::RegisterC, tmpAddress)));
+				microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
 				return true;
 			}
 			return false;
@@ -596,11 +598,14 @@ namespace forth {
 			Floating tmpFloat;
 			parseAttempt >> tmpFloat;
 			if (!parseAttempt.fail() && parseAttempt.eof()) {
-				if (_compiling) {
-					_compileTarget->addSpaceEntry(tmpFloat);
-				} else {
-					pushParameter(tmpFloat);
-				}
+				Datum a(tmpFloat);
+				microcodeInvoke(Instruction::encodeOperation(
+							Instruction::setImmediate32_Lowest(TargetRegister::RegisterC, a.address),
+							Instruction::setImmediate32_Lower(TargetRegister::RegisterC, a.address)));
+				microcodeInvoke(Instruction::encodeOperation(
+							Instruction::setImmediate32_Higher(TargetRegister::RegisterC, a.address),
+							Instruction::setImmediate32_Highest(TargetRegister::RegisterC, a.address)));
+				microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
 				return true;
 			}
 			// get out of here early since we hit something that looks like
@@ -611,12 +616,14 @@ namespace forth {
 		parseAttempt.clear();
 		parseAttempt >> tmpInt;
 		if (!parseAttempt.fail() && parseAttempt.eof()) {
-			if (_compiling) {
-				_compileTarget->addSpaceEntry(tmpInt);
-			} else {
-				// if we hit the end of the word provided then it is an integer, otherwise it is not!
-				pushParameter(tmpInt);
-			}
+			Datum a(tmpInt);
+			microcodeInvoke(Instruction::encodeOperation(
+						Instruction::setImmediate32_Lowest(TargetRegister::RegisterC, a.address),
+						Instruction::setImmediate32_Lower(TargetRegister::RegisterC, a.address)));
+			microcodeInvoke(Instruction::encodeOperation(
+						Instruction::setImmediate32_Higher(TargetRegister::RegisterC, a.address),
+						Instruction::setImmediate32_Highest(TargetRegister::RegisterC, a.address)));
+			microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
 			return true;
 		}
 		return false;

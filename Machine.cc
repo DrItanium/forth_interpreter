@@ -539,26 +539,27 @@ namespace forth {
 		}
 	}
 	bool Machine::numberRoutine(const std::string& word) noexcept {
+		static constexpr auto loadTrueToStack = Instruction::encodeOperation(
+				Instruction::setImmediate16_Lowest(TargetRegister::RegisterC, 1),
+				Instruction::pushC());
+		static_assert(loadTrueToStack == 0x1f00010216, "Load true to stack is incorrect!");
+		static constexpr auto loadFalseToStack = Instruction::encodeOperation(
+				Instruction::setImmediate16_Lowest(TargetRegister::RegisterC, 0),
+				Instruction::pushC());
+		static_assert(loadFalseToStack == 0x1f00000216, "Load false to stack is incorrect!");
 		if (word.empty()) { 
 			return false; 
 		}
 		// floating point
 		// integers
 		// first do some inspection first
+		// We need to load into c and then push it to the stack
 		if (word == "true") {
-			if (_compiling) {
-				_compileTarget->addSpaceEntry(true);
-			} else {
-				pushParameter(true);
-			}
+			microcodeInvoke(loadTrueToStack);
 			return true;
 		}
 		if (word == "false") {
-			if (_compiling) {
-				_compileTarget->addSpaceEntry(false);
-			} else {
-				pushParameter(false);
-			}
+			microcodeInvoke(loadFalseToStack);
 			return true;
 		}
 		std::istringstream parseAttempt(word);

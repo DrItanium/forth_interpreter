@@ -133,7 +133,7 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         case Operation::SetImmediate16_Lowest:
         case Operation::SetImmediate16_Higher:
         case Operation::SetImmediate16_Highest:
-            return 3;
+            return 4;
         case Operation::PopRegister:
         case Operation::PushRegister:
         case Operation::Move:
@@ -183,6 +183,15 @@ namespace Instruction {
     constexpr HalfAddress encodeThreeByte(Operation first, QuarterAddress second) noexcept {
         return encodeBits<HalfAddress, QuarterAddress, 0xFFFF00, 8>(static_cast<HalfAddress>(first), second);
     }
+    constexpr HalfAddress encodeFourByte(Operation first, byte second, byte third, byte fourth) noexcept {
+		return encodeBits<HalfAddress, byte, 0xFF000000, 24>(
+				encodeBits<HalfAddress, byte, 0x00FF0000, 16>(
+					encodeBits<HalfAddress, byte, 0x0000FF00, 8>(
+						static_cast<HalfAddress>(first), second), third), fourth);
+    }
+	constexpr HalfAddress encodeFourByte(Operation first, TargetRegister destination, QuarterAddress third) noexcept {
+		return encodeFourByte(first, static_cast<byte>(destination), static_cast<byte>(third), static_cast<byte>(third >> 8));
+	}
 	constexpr byte stop() noexcept { return singleByteOp(Operation::Stop); }
     constexpr byte add() noexcept { return singleByteOp(Operation::Add); }
     constexpr byte sub() noexcept { return singleByteOp(Operation::Subtract); }
@@ -216,33 +225,33 @@ namespace Instruction {
     constexpr byte popB() noexcept { return singleByteOp(Operation::PopB); }
     constexpr byte popT() noexcept { return singleByteOp(Operation::PopT); }
     constexpr byte pushC() noexcept { return singleByteOp(Operation::PushC); }
-    constexpr HalfAddress setImmediate16_Lower(QuarterAddress value) noexcept { return encodeThreeByte(Operation::SetImmediate16_Lower, value);  }
-    constexpr HalfAddress setImmediate16_Lowest(QuarterAddress value) noexcept { return encodeThreeByte(Operation::SetImmediate16_Lowest, value); }
-    constexpr HalfAddress setImmediate16_Higher(QuarterAddress value) noexcept { return encodeThreeByte(Operation::SetImmediate16_Higher, value); }
-    constexpr HalfAddress setImmediate16_Highest(QuarterAddress value) noexcept { return encodeThreeByte(Operation::SetImmediate16_Highest, value); }
-    constexpr HalfAddress setImmediate16_Lowest(Address value) noexcept { 
-        return setImmediate16_Lowest(decodeBits<Address, QuarterAddress, 0x000000000000FFFF>(value)); 
+    constexpr HalfAddress setImmediate16_Lower(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Lower, dest, value);  }
+    constexpr HalfAddress setImmediate16_Lowest(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Lowest, dest, value); }
+    constexpr HalfAddress setImmediate16_Higher(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Higher, dest, value); }
+    constexpr HalfAddress setImmediate16_Highest(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Highest, dest, value); }
+    constexpr HalfAddress setImmediate64_Lowest(TargetRegister dest, Address value) noexcept { 
+        return setImmediate16_Lowest(dest, decodeBits<Address, QuarterAddress, 0x000000000000FFFF>(value)); 
     }
-    constexpr HalfAddress setImmediate16_Lower(Address value) noexcept { 
-        return setImmediate16_Lower(decodeBits<Address, QuarterAddress, 0x00000000FFFF0000, 16>(value)); 
+    constexpr HalfAddress setImmediate64_Lower(TargetRegister dest, Address value) noexcept { 
+        return setImmediate16_Lower(dest, decodeBits<Address, QuarterAddress, 0x00000000FFFF0000, 16>(value)); 
     }
-    constexpr HalfAddress setImmediate16_Higher(Address value) noexcept { 
-        return setImmediate16_Higher(decodeBits<Address, QuarterAddress, 0x0000FFFF00000000, 32>(value)); 
+    constexpr HalfAddress setImmediate64_Higher(TargetRegister dest, Address value) noexcept { 
+        return setImmediate16_Higher(dest, decodeBits<Address, QuarterAddress, 0x0000FFFF00000000, 32>(value)); 
     }
-    constexpr HalfAddress setImmediate16_Highest(Address value) noexcept { 
-        return setImmediate16_Highest(decodeBits<Address, QuarterAddress, 0xFFFF000000000000, 48>(value)); 
+    constexpr HalfAddress setImmediate64_Highest(TargetRegister dest, Address value) noexcept { 
+        return setImmediate16_Highest(dest, decodeBits<Address, QuarterAddress, 0xFFFF000000000000, 48>(value)); 
     }
-    constexpr HalfAddress setImmediate16_Lowest(HalfAddress value) noexcept { 
-        return setImmediate16_Lowest(decodeBits<HalfAddress, QuarterAddress, 0x0000FFFF>(value)); 
+    constexpr HalfAddress setImmediate32_Lowest(TargetRegister dest, HalfAddress value) noexcept { 
+        return setImmediate16_Lowest(dest, decodeBits<HalfAddress, QuarterAddress, 0x0000FFFF>(value)); 
     }
-    constexpr HalfAddress setImmediate16_Lower(HalfAddress value) noexcept { 
-        return setImmediate16_Lower(decodeBits<HalfAddress, QuarterAddress, 0xFFFF0000>(value)); 
+    constexpr HalfAddress setImmediate32_Lower(TargetRegister dest, HalfAddress value) noexcept { 
+        return setImmediate16_Lower(dest, decodeBits<HalfAddress, QuarterAddress, 0xFFFF0000>(value)); 
     }
-    constexpr HalfAddress setImmediate16_Higher(HalfAddress value) noexcept { 
-        return setImmediate16_Higher(decodeBits<HalfAddress, QuarterAddress, 0x0000FFFF>(value)); 
+    constexpr HalfAddress setImmediate32_Higher(TargetRegister dest, HalfAddress value) noexcept { 
+        return setImmediate16_Higher(dest, decodeBits<HalfAddress, QuarterAddress, 0x0000FFFF>(value)); 
     }
-    constexpr HalfAddress setImmediate16_Highest(HalfAddress value) noexcept { 
-        return setImmediate16_Highest(decodeBits<HalfAddress, QuarterAddress, 0xFFFF0000>(value)); 
+    constexpr HalfAddress setImmediate32_Highest(TargetRegister dest, HalfAddress value) noexcept { 
+        return setImmediate16_Highest(dest, decodeBits<HalfAddress, QuarterAddress, 0xFFFF0000>(value)); 
     }
 
     template<Address mask, Address shift>
@@ -253,6 +262,15 @@ namespace Instruction {
     constexpr Address encodeQuarterAddress(QuarterAddress value, Address target = 0) noexcept {
         return encodeBits<Address, QuarterAddress, mask, shift>(target, value);
     }
+	template<Address mask, Address shift>
+	constexpr Address encodeHalfAddress(HalfAddress value, Address target = 0) noexcept {
+		return encodeBits<Address, HalfAddress, mask, shift>(target, value);
+	}
+	template<byte startOffset>
+	constexpr Address encodeOperation(HalfAddress value, Address target = 0) noexcept {
+		static_assert(startOffset < 5, "Illegal half address start address");
+		return encodeHalfAddress<Address(0xFFFFFFFF) << (startOffset * 8), startOffset * 8>(value, target);
+	}
     template<byte startOffset>
     constexpr Address encodeOperation(QuarterAddress value, Address target = 0) noexcept {
         static_assert(startOffset < 7, "Illegal quarter address start address");
@@ -278,14 +296,11 @@ namespace Instruction {
     template<byte offset, typename ... Args>
     constexpr Address encodeOperation(Address curr, HalfAddress value, Args&& ... rest) noexcept {
         // we will either have 3 or four bytes to look at
-        auto width = getInstructionWidth(value);
-        switch (width) {
+        switch (getInstructionWidth(value)) {
             case 1:
                 return encodeOperation<offset>(curr, static_cast<byte>(value), std::move(rest)...);
             case 2:
                 return encodeOperation<offset>(curr, static_cast<QuarterAddress>(value), std::move(rest)...);
-            case 3:
-                return encodeOperation<offset>(curr, static_cast<byte>(value), QuarterAddress(value >> 8), std::move(rest)...);
             case 4:
                 return encodeOperation<offset>(curr, static_cast<QuarterAddress>(value), static_cast<QuarterAddress>(value >> 16), std::move(rest)...);
             default:
@@ -298,10 +313,10 @@ namespace Instruction {
         return encodeOperation<0, T, Args...>(0, first, std::move(rest)...);
     }
     static constexpr QuarterAddress imm16TestValue = 0xfded;
-    static_assert(Address(0xFDED16) == setImmediate16_Lowest(imm16TestValue), "setImmediate16_Lowest is broken!");
-    static_assert(Address(0xFDED17) == setImmediate16_Lower(imm16TestValue), "setImmediate16_Lower is broken!");
-    static_assert(Address(0xFDED18) == setImmediate16_Higher(imm16TestValue), "setImmediate16_Higher is broken!");
-    static_assert(Address(0xFDED19) == setImmediate16_Highest(imm16TestValue), "setImmediate16_Highest is broken!");
+    static_assert(Address(0xFDED0016) == setImmediate16_Lowest(TargetRegister::RegisterA, imm16TestValue), "setImmediate16_Lowest is broken!");
+    static_assert(Address(0xFDED0017) == setImmediate16_Lower(TargetRegister::RegisterA, imm16TestValue), "setImmediate16_Lower is broken!");
+    static_assert(Address(0xFDED0018) == setImmediate16_Higher(TargetRegister::RegisterA, imm16TestValue), "setImmediate16_Higher is broken!");
+    static_assert(Address(0xFDED0019) == setImmediate16_Highest(TargetRegister::RegisterA, imm16TestValue), "setImmediate16_Highest is broken!");
     constexpr QuarterAddress popAB() noexcept {
         return (QuarterAddress)encodeOperation(popA(), popB());
     }
@@ -319,6 +334,9 @@ namespace Instruction {
     constexpr size_t operationLength(T first, Rest ... rest) noexcept {
         return operationLength(first) + operationLength(std::move(rest)...);
     }
+	constexpr QuarterAddress moveXtoC() noexcept {
+		return move(TargetRegister::RegisterC, TargetRegister::RegisterX);
+	}
 } // end namespace Instruction
 
 

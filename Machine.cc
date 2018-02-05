@@ -109,7 +109,7 @@ namespace forth {
 				break;
 			case Type::Number:
 			case Type::FloatingPoint:
-				pushRegister(TargetRegister::RegisterC);
+				pushRegister(TargetRegister::C);
 				break;
 			default:
 				throw Problem("invoke.c", "incorrect discriminant!");
@@ -117,9 +117,9 @@ namespace forth {
 	}
 	void Machine::ifCondition() {
 		static constexpr auto prepRegisters = Instruction::encodeOperation(
-				Instruction::popRegister(TargetRegister::RegisterTB),
+				Instruction::popRegister(TargetRegister::TB),
 				Instruction::popB(), 
-				Instruction::popRegister(TargetRegister::RegisterTA),
+				Instruction::popRegister(TargetRegister::TA),
 				Instruction::popA(),
 				Instruction::popC());
 		// if we're not in compilation mode then error out
@@ -231,9 +231,6 @@ namespace forth {
 			entry->markCompileTimeInvoke();
 		}
 		addWord(entry);
-	}
-	void Machine::terminateExecution() {
-		_keepExecuting = false;
 	}
 	void Machine::notOperation() {
 		// invert register a
@@ -540,11 +537,11 @@ namespace forth {
 	}
 	bool Machine::numberRoutine(const std::string& word) noexcept {
 		static constexpr auto loadTrueToStack = Instruction::encodeOperation(
-				Instruction::setImmediate16_Lowest(TargetRegister::RegisterC, 1),
+				Instruction::setImmediate16_Lowest(TargetRegister::C, 1),
 				Instruction::pushC());
 		static_assert(loadTrueToStack == 0x1f00010216, "Load true to stack is incorrect!");
 		static constexpr auto loadFalseToStack = Instruction::encodeOperation(
-				Instruction::setImmediate16_Lowest(TargetRegister::RegisterC, 0),
+				Instruction::setImmediate16_Lowest(TargetRegister::C, 0),
 				Instruction::pushC());
 		static_assert(loadFalseToStack == 0x1f00000216, "Load false to stack is incorrect!");
 		if (word.empty()) { 
@@ -569,11 +566,11 @@ namespace forth {
 			if (!parseAttempt.fail()) {
 				// TODO: do checks to compact parsing
 				microcodeInvoke(Instruction::encodeOperation(
-							Instruction::setImmediate64_Lowest(TargetRegister::RegisterC, tmpAddress),
-							Instruction::setImmediate64_Lower(TargetRegister::RegisterC, tmpAddress)));
+							Instruction::setImmediate64_Lowest(TargetRegister::C, tmpAddress),
+							Instruction::setImmediate64_Lower(TargetRegister::C, tmpAddress)));
 				microcodeInvoke(Instruction::encodeOperation(
-							Instruction::setImmediate64_Higher(TargetRegister::RegisterC, tmpAddress),
-							Instruction::setImmediate64_Highest(TargetRegister::RegisterC, tmpAddress)));
+							Instruction::setImmediate64_Higher(TargetRegister::C, tmpAddress),
+							Instruction::setImmediate64_Highest(TargetRegister::C, tmpAddress)));
 				microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
 				return true;
 			}
@@ -584,11 +581,11 @@ namespace forth {
 			parseAttempt >> tmpAddress;
 			if (!parseAttempt.fail()) {
 				microcodeInvoke(Instruction::encodeOperation(
-							Instruction::setImmediate64_Lowest(TargetRegister::RegisterC, tmpAddress),
-							Instruction::setImmediate64_Lower(TargetRegister::RegisterC, tmpAddress)));
+							Instruction::setImmediate64_Lowest(TargetRegister::C, tmpAddress),
+							Instruction::setImmediate64_Lower(TargetRegister::C, tmpAddress)));
 				microcodeInvoke(Instruction::encodeOperation(
-							Instruction::setImmediate64_Higher(TargetRegister::RegisterC, tmpAddress),
-							Instruction::setImmediate64_Highest(TargetRegister::RegisterC, tmpAddress)));
+							Instruction::setImmediate64_Higher(TargetRegister::C, tmpAddress),
+							Instruction::setImmediate64_Highest(TargetRegister::C, tmpAddress)));
 				microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
 				return true;
 			}
@@ -601,11 +598,11 @@ namespace forth {
 			if (!parseAttempt.fail() && parseAttempt.eof()) {
 				Datum a(tmpFloat);
 				microcodeInvoke(Instruction::encodeOperation(
-							Instruction::setImmediate64_Lowest(TargetRegister::RegisterC, a.address),
-							Instruction::setImmediate64_Lower(TargetRegister::RegisterC, a.address)));
+							Instruction::setImmediate64_Lowest(TargetRegister::C, a.address),
+							Instruction::setImmediate64_Lower(TargetRegister::C, a.address)));
 				microcodeInvoke(Instruction::encodeOperation(
-							Instruction::setImmediate64_Higher(TargetRegister::RegisterC, a.address),
-							Instruction::setImmediate64_Highest(TargetRegister::RegisterC, a.address)));
+							Instruction::setImmediate64_Higher(TargetRegister::C, a.address),
+							Instruction::setImmediate64_Highest(TargetRegister::C, a.address)));
 				microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
 				return true;
 			}
@@ -619,11 +616,11 @@ namespace forth {
 		if (!parseAttempt.fail() && parseAttempt.eof()) {
 			Datum a(tmpInt);
 			microcodeInvoke(Instruction::encodeOperation(
-						Instruction::setImmediate64_Lowest(TargetRegister::RegisterC, a.address),
-						Instruction::setImmediate64_Lower(TargetRegister::RegisterC, a.address)));
+						Instruction::setImmediate64_Lowest(TargetRegister::C, a.address),
+						Instruction::setImmediate64_Lower(TargetRegister::C, a.address)));
 			microcodeInvoke(Instruction::encodeOperation(
-						Instruction::setImmediate64_Higher(TargetRegister::RegisterC, a.address),
-						Instruction::setImmediate64_Highest(TargetRegister::RegisterC, a.address)));
+						Instruction::setImmediate64_Higher(TargetRegister::C, a.address),
+						Instruction::setImmediate64_Highest(TargetRegister::C, a.address)));
 			microcodeInvoke(Instruction::encodeOperation(Instruction::pushC()));
 			return true;
 		}
@@ -647,7 +644,7 @@ namespace forth {
 		// setup initial dictionary
 		initializeBaseDictionary();
         bool ignoreInput = false;
-		while (_keepExecuting) {
+		while (keepExecuting()) {
 			try {
 				auto result = readWord();
                 if (ignoreInput) {
@@ -715,7 +712,7 @@ namespace forth {
 			addWord("then", std::mem_fn(&Machine::thenStatement), true);
 			addWord("begin", std::mem_fn(&Machine::beginStatement), true);
 			addWord("end", std::mem_fn(&Machine::endStatement), true);
-			addWord("uc", std::mem_fn(&Machine::dispatchInstruction));
+			addWord("uc", std::mem_fn<void()>(&Machine::dispatchInstruction));
 			addWord("do", std::mem_fn(&Machine::doStatement), true);
 			addWord("continue", std::mem_fn(&Machine::continueStatement), true);
 			addWord("choose.c", std::mem_fn(&Machine::chooseRegister));
@@ -869,10 +866,10 @@ endLoopTop:
 				case Operation::SetImmediate16_Highest: setImmediate16<Immediate16Positions::Highest>(molecule); break;
 				case Operation::Move: moveRegister(molecule); break;
 				case Operation::Swap: swapRegisters(molecule); break;
-				case Operation::PopA: popRegister(TargetRegister::RegisterA); break;
-				case Operation::PopB: popRegister(TargetRegister::RegisterB); break;
-				case Operation::PopT: popRegister(TargetRegister::RegisterT); break;
-				case Operation::PushC: pushRegister(TargetRegister::RegisterC); break;
+				case Operation::PopA: popRegister(TargetRegister::A); break;
+				case Operation::PopB: popRegister(TargetRegister::B); break;
+				case Operation::PopT: popRegister(TargetRegister::T); break;
+				case Operation::PushC: pushRegister(TargetRegister::C); break;
 				default: throw Problem("uc", "Unknown instruction address!");
 			}
 		}
@@ -944,25 +941,25 @@ endLoopTop:
 	Register& Machine::getRegister(TargetRegister t) {
 		using Type = decltype(t);
 		switch (t) {
-			case Type::RegisterA:
-			case Type::RegisterTA:
+			case Type::A:
+			case Type::TA:
 				return _registerA;
-			case Type::RegisterB:
-			case Type::RegisterTB:
+			case Type::B:
+			case Type::TB:
 				return _registerB;
-			case Type::RegisterC:
-			case Type::RegisterT:
+			case Type::C:
+			case Type::T:
 				return _registerC;
-			case Type::RegisterS:
+			case Type::S:
 				return _registerS;
-			case Type::RegisterX:
-			case Type::RegisterTX:
+			case Type::X:
+			case Type::TX:
 				return _registerX;
-			case Type::RegisterIP:
+			case Type::IP:
 				return _registerIP;
-			case Type::RegisterSP:
+			case Type::SP:
 				return _registerSP;
-			case Type::RegisterSP2:
+			case Type::SP2:
 				return _registerSP2;
 			default:
 				throw Problem("getRegister", "Undefined register!");
@@ -1058,5 +1055,35 @@ endLoopTop:
         auto top = popParameter();
         top.entry->operator()(this);
     }
+	bool Machine::keepExecuting() noexcept {
+		static constexpr auto loadVariableAddressLower = Instruction::encodeOperation(
+				Instruction::setImmediate64_Lowest(TargetRegister::X, shouldKeepExecutingLocation),
+				Instruction::setImmediate64_Lower(TargetRegister::X, shouldKeepExecutingLocation));
+		static constexpr auto loadVariableAddressUpper = Instruction::encodeOperation(
+				Instruction::setImmediate64_Higher(TargetRegister::X, shouldKeepExecutingLocation),
+				Instruction::setImmediate64_Highest(TargetRegister::X, shouldKeepExecutingLocation));
+		static constexpr auto loadValueIntoX = Instruction::encodeOperation(
+				Instruction::load(TargetRegister::X, TargetRegister::X));
+		dispatchInstructionStream<loadVariableAddressLower, loadVariableAddressUpper, loadValueIntoX>();
+		return _registerX.getTruth();
+	}
+	void Machine::terminateExecution() {
+		//_keepExecuting = false;
+		static constexpr Address loadVariableAddressLower = Instruction::encodeOperation(
+				Instruction::setImmediate64_Lowest(TargetRegister::X, shouldKeepExecutingLocation),
+				Instruction::setImmediate64_Lower(TargetRegister::X, shouldKeepExecutingLocation));
+		static constexpr Address loadVariableAddressUpper = Instruction::encodeOperation(
+				Instruction::setImmediate64_Higher(TargetRegister::X, shouldKeepExecutingLocation),
+				Instruction::setImmediate64_Highest(TargetRegister::X, shouldKeepExecutingLocation));
+		static constexpr Address storeFalse = Instruction::encodeOperation(
+				Instruction::move(TargetRegister::B, TargetRegister::A),
+				Instruction::xorOp(), // zero out C
+				Instruction::store(TargetRegister::X, TargetRegister::C));
+		dispatchInstructionStream<loadVariableAddressLower, loadVariableAddressUpper, storeFalse>();
+	}
+	void Machine::dispatchInstruction(const Molecule& m) {
+		_registerS.setValue(m._value);
+		dispatchInstruction();
+	}
 } // end namespace forth
 

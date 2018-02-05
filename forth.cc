@@ -9,24 +9,12 @@ template<typename T, typename ... Args>
 constexpr forth::Address molecule(T first, Args&& ... rest) noexcept {
     return Instruction::encodeOperation(first, std::move(rest)...);
 }
-// TODO: add support for invoking some keywords at compile time!
-#define load32BitLower(value) \
-    molecule(Instruction::setImmediate16_Lowest(value), \
-             Instruction::setImmediate16_Lower(value))
 
-#define load32BitUpper(value) \
-    molecule(Instruction::setImmediate16_Higher(value), \
-             Instruction::setImmediate16_Highest(value))
-             
-#define load64BitImmediate(value) \
-    load32BitLower(value), \
-    load32BitUpper(value)
-
-static constexpr auto ra = forth::TargetRegister::RegisterA;
-static constexpr auto rb = forth::TargetRegister::RegisterB;
-static constexpr auto rc = forth::TargetRegister::RegisterC;
-static constexpr auto rt = forth::TargetRegister::RegisterT;
-static constexpr auto rx = forth::TargetRegister::RegisterX;
+static constexpr auto ra = forth::TargetRegister::A;
+static constexpr auto rb = forth::TargetRegister::B;
+static constexpr auto rc = forth::TargetRegister::C;
+static constexpr auto rt = forth::TargetRegister::T;
+static constexpr auto rx = forth::TargetRegister::X;
 static constexpr auto moveCtoA = Instruction::move(ra, rc);
 static constexpr auto moveAtoB = Instruction::move(rb, ra);
 static constexpr auto popA = Instruction::popA();
@@ -149,7 +137,7 @@ void stackOperators(forth::Machine& machine) {
 #define enumWord(title, value) \
 	machine.buildWord(title, value)
 #define registerWord(name) \
-	enumWord ( ( "R" #name ) , forth::TargetRegister:: Register ## name )
+	enumWord ( ( "R" #name ) , forth::TargetRegister:: name )
 void registerDecls(forth::Machine& machine) {
 	registerWord(A);
 	registerWord(B);
@@ -188,16 +176,16 @@ void addDiscriminantWords(forth::Machine& machine) {
 void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<Instruction::stop()>("nop");
 	machine.addMachineCodeWord<Instruction::popT()>("pop.t");
-	machine.addMachineCodeWord<Instruction::pushRegister(forth::TargetRegister::RegisterT)>("push.t");
+	machine.addMachineCodeWord<Instruction::pushRegister(forth::TargetRegister::T)>("push.t");
 	machine.addMachineCodeWord<popA>("pop.a");
 	machine.addMachineCodeWord<popB>("pop.b");
 	machine.addMachineCodeWord<pushC>("push.c");
 	machine.addMachineCodeWord<pushA>("push.a");
 	machine.addMachineCodeWord<pushB>("push.b");
-	machine.addMachineCodeWord<Instruction::pushRegister(forth::TargetRegister::RegisterS)>("push.s");
+	machine.addMachineCodeWord<Instruction::pushRegister(forth::TargetRegister::S)>("push.s");
 #define pushPopGeneric(postfix, target) \
-	machine.addMachineCodeWord<Instruction::pushRegister(forth::TargetRegister:: Register ## target)> ("push." #postfix); \
-	machine.addMachineCodeWord<Instruction::popRegister(forth::TargetRegister:: Register ## target)> ("pop." #postfix)
+	machine.addMachineCodeWord<Instruction::pushRegister(forth::TargetRegister:: target)> ("push." #postfix); \
+	machine.addMachineCodeWord<Instruction::popRegister(forth::TargetRegister:: target)> ("pop." #postfix)
 	pushPopGeneric(x, X);
 	pushPopGeneric(ta, TA);
 	pushPopGeneric(tb, TB);
@@ -224,15 +212,21 @@ void compoundWords(forth::Machine& machine) {
 	machine.buildWord("minusf", "t.fp", "minus");
 	machine.buildWord("minus", "t.signed", "minus");
 }
+void systemSetup(forth::Machine& machine) {
+	machine.store(forth::Machine::shouldKeepExecutingLocation, true);
+	machine.store(forth::Machine::compiling, false);
+}
 int main() {
     forth::Machine machine (std::cout, std::cin);
     machine.initializeBaseDictionary();
 	microarchitectureWords(machine);
+	systemSetup(machine);
 	arithmeticOperators(machine);
 	stackOperators(machine);
 	registerDecls(machine);
 	addDiscriminantWords(machine);
 	compoundWords(machine);
     machine.controlLoop();
+
     return 0;
 }

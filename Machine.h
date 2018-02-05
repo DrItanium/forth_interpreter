@@ -14,6 +14,8 @@ namespace forth {
 		public:
 			static constexpr Address largestAddress = 0xFFFFFF;
 			static constexpr Address memoryCapacity = (largestAddress + 1);
+			static constexpr Address shouldKeepExecutingLocation = 0xFFFFFF;
+			static constexpr Address compiling = 0xFFFFFE;
             // capacity variables for the two stacks, each one has 64k worth of data
 		public:
 			Machine(std::ostream& output, std::istream& input);
@@ -123,12 +125,20 @@ namespace forth {
 			void semicolonOperation();
 			void printRegisters();
             void printStack();
-			void popSRegister() { popRegister(TargetRegister::RegisterS); }
+			void popSRegister() { popRegister(TargetRegister::S); }
 			void pushRegister(TargetRegister t);
 			void popRegister(TargetRegister t); 
             void pushRegister(const Molecule& m);
             void popRegister(const Molecule& m);
             void dispatchInstruction();
+			void dispatchInstruction(const Molecule& m);
+			template<Address first, Address ... rest>
+			void dispatchInstructionStream() noexcept {
+				dispatchInstruction(first);
+				if constexpr (sizeof...(rest) > 0) {
+					dispatchInstructionStream<rest...>();
+				}
+			}
 			void numericCombine(bool subtract = false);
 			void multiplyOperation();
 			void equals();
@@ -280,7 +290,7 @@ namespace forth {
 					}
 				}
             }
-
+			bool keepExecuting() noexcept;
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;
@@ -291,7 +301,7 @@ namespace forth {
             std::list<Datum> _subroutine;
             std::list<Datum> _parameter;
 			bool _initializedBaseDictionary = false;
-			bool _keepExecuting = true;
+			//bool _keepExecuting = true;
 			bool _compiling = false;
 			DictionaryEntry* _compileTarget = nullptr;
 			// internal "registers"

@@ -38,18 +38,18 @@ union Molecule {
     }
 };
 enum class TargetRegister : byte {
-    RegisterA,
-    RegisterB,
-    RegisterC,
-    RegisterS, // register select
-    RegisterX, // misc data
-    RegisterT,
-    RegisterTA,
-    RegisterTB,
-    RegisterTX, // misc type
-    RegisterIP, // instruction pointer contents
-    RegisterSP, // stack pointer (parameter)
-    RegisterSP2, // second stack pointer (subroutine)
+    A,
+    B,
+    C,
+    S, // register select
+    X, // misc data
+    T,
+    TA,
+    TB,
+    TX, // misc type
+    IP, // instruction pointer contents
+    SP, // stack pointer (parameter)
+    SP2, // second stack pointer (subroutine)
     Error,
 };
 constexpr byte encodeDestinationRegister(byte value, TargetRegister reg) noexcept {
@@ -67,10 +67,10 @@ constexpr byte encodeRegisterPair(TargetRegister dest, TargetRegister src) noexc
 static_assert(byte(TargetRegister::Error) <= 16, "Too many registers defined!");
 static constexpr bool involvesDiscriminantRegister(TargetRegister r) noexcept {
     switch (r) {
-        case TargetRegister::RegisterT:
-        case TargetRegister::RegisterTA:
-        case TargetRegister::RegisterTB:
-        case TargetRegister::RegisterTX:
+        case TargetRegister::T:
+        case TargetRegister::TA:
+        case TargetRegister::TB:
+        case TargetRegister::TX:
             return true;
         default:
             return false;
@@ -313,15 +313,15 @@ namespace Instruction {
         return encodeOperation<0, T, Args...>(0, first, std::move(rest)...);
     }
     static constexpr QuarterAddress imm16TestValue = 0xfded;
-    static_assert(Address(0xFDED0016) == setImmediate16_Lowest(TargetRegister::RegisterA, imm16TestValue), "setImmediate16_Lowest is broken!");
-    static_assert(Address(0xFDED0017) == setImmediate16_Lower(TargetRegister::RegisterA, imm16TestValue), "setImmediate16_Lower is broken!");
-    static_assert(Address(0xFDED0018) == setImmediate16_Higher(TargetRegister::RegisterA, imm16TestValue), "setImmediate16_Higher is broken!");
-    static_assert(Address(0xFDED0019) == setImmediate16_Highest(TargetRegister::RegisterA, imm16TestValue), "setImmediate16_Highest is broken!");
+    static_assert(Address(0xFDED0016) == setImmediate16_Lowest(TargetRegister::A, imm16TestValue), "setImmediate16_Lowest is broken!");
+    static_assert(Address(0xFDED0017) == setImmediate16_Lower(TargetRegister::A, imm16TestValue), "setImmediate16_Lower is broken!");
+    static_assert(Address(0xFDED0018) == setImmediate16_Higher(TargetRegister::A, imm16TestValue), "setImmediate16_Higher is broken!");
+    static_assert(Address(0xFDED0019) == setImmediate16_Highest(TargetRegister::A, imm16TestValue), "setImmediate16_Highest is broken!");
     constexpr QuarterAddress popAB() noexcept {
         return (QuarterAddress)encodeOperation(popA(), popB());
     }
     constexpr QuarterAddress swapAB() noexcept {
-        return swap(TargetRegister::RegisterB, TargetRegister::RegisterA);
+        return swap(TargetRegister::B, TargetRegister::A);
     }
     constexpr byte pushA() noexcept { return singleByteOp(Operation::PushA); }
     constexpr byte pushB() noexcept { return singleByteOp(Operation::PushB); }
@@ -335,7 +335,7 @@ namespace Instruction {
         return operationLength(first) + operationLength(std::move(rest)...);
     }
 	constexpr QuarterAddress moveXtoC() noexcept {
-		return move(TargetRegister::RegisterC, TargetRegister::RegisterX);
+		return move(TargetRegister::C, TargetRegister::X);
 	}
 } // end namespace Instruction
 

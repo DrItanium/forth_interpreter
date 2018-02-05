@@ -267,21 +267,25 @@ namespace forth {
 		}
 	}
 
-	void Machine::multiplyOperation() {
+	void Machine::multiplyOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
 		auto fn = [this](auto a, auto b) { _registerC.setValue(a * b); };
-		switch(_registerC.getType()) {
-			case Type::Number:
-				fn(_registerA.getInt(), _registerB.getInt());
-				break;
-			case Type::MemoryAddress:
-				fn(_registerA.getAddress(), _registerB.getAddress());
-				break;
-			case Type::FloatingPoint:
-				fn(_registerA.getFP(), _registerB.getFP());
-				break;
-			default:
-				throw Problem("*", "ILLEGAL DISCRIMINANT!");
+		if (op == Operation::Multiply) {
+			switch(_registerC.getType()) {
+				case Type::Number:
+					fn(_registerA.getInt(), _registerB.getInt());
+					break;
+				case Type::MemoryAddress:
+					fn(_registerA.getAddress(), _registerB.getAddress());
+					break;
+				case Type::FloatingPoint:
+					fn(_registerA.getFP(), _registerB.getFP());
+					break;
+				default:
+					throw Problem("*", "ILLEGAL DISCRIMINANT!");
+			}
+		} else if (op == Operation::MultiplyFull) {
+			
 		}
 	}
 	void Machine::equals() {
@@ -383,16 +387,16 @@ namespace forth {
 #undef Immediate
 		}
 	}
-	void Machine::numericCombine(bool subtract, Register& dest, const Register& src0, const Register& src1, const Register& offset) {
-		auto fn = [this, subtract](Register& dest, auto a, auto b, auto offset) { 
-			dest.setValue(subtract ? (a - b - offset) : (a + b + offset));
+	void Machine::numericCombine(bool subtract, Register& dest, const Register& src0, const Register& src1) {
+		auto fn = [this, subtract](Register& dest, auto a, auto b) { 
+			dest.setValue(subtract ? (a - b) : (a + b ));
 		};
 		switch(_registerC.getType()) {
 			case Discriminant::Number:
-				fn(dest, src0.getInt(), src1.getInt(), offset.getInt());
+				fn(dest, src0.getInt(), src1.getInt());
 				break;
 			case Discriminant::MemoryAddress:
-				fn(dest, src0.getAddress(), src1.getAddress(), offset.getAddress());
+				fn(dest, src0.getAddress(), src1.getAddress());
 				break;
 			case Discriminant::FloatingPoint:
 				// offset not used in floating point operations!
@@ -404,11 +408,13 @@ namespace forth {
 
 	}
 	void Machine::numericCombine(bool subtract) {
-		static Register tmp;
-		numericCombine(subtract, _registerC, _registerA, _registerB, tmp);
+		numericCombine(subtract, _registerC, _registerA, _registerB);
 	}
 	void Machine::numericCombine(Operation op, const Molecule& m) {
-		bool subtract = subtractOperation(op);
+		if (op == Operation::Add || op == Opeation::Subtract) {
+			numericCombine(op == Opration::Subtract);
+			return;
+		}
 		auto destSrc = m.getByte(_registerIP.getAddress());
 		_registerIP.increment();
 		auto src1Lower4 = m.getByte(_registerIP.getAddress());
@@ -419,38 +425,55 @@ namespace forth {
 		auto isrc0 = (TargetRegister)getSourceRegister(destSrc);
 		Register& dest = getRegister(idest);
 		Register& src0 = getRegister(isrc0);
-		Register src1;
-		Register offset;
+		Register& src1 = _registerImmediate;
 		if (immediateForm(op)) {
+			auto form = extractThreeRegisterImmediateForm(m);
+			dest = getRegister(std::get<0>(form));
+			src0 = getRegister(std::get<1>(form));
+			auto imm = std::get<2>(form);
 			if (_registerC.getType() == Discriminant::FloatingPoint) {
-				throw Problem("numericCombine", "Immediate form of floating point combine is not supported!");
+				_registerImmediate.setValue(static_cast<Floating>(imm));
 			} else {
-				Datum tmp;
-				tmp.address = Instruction::makeQuarterAddress(src1Lower4, upperMost);
-				src1.setValue(tmp);
+				_registerImmediate.setValue(imm);
 			}
 		} else {
-			auto isrc1= (TargetRegister)getDestinationRegister(src1Lower4);
-			auto lower4 = src1Lower4 >> 4;
-			src1.setValue(getRegister(isrc1).getValue());
-			Datum tmp;
-			tmp.address = encodeBits<QuarterAddress, byte, 0x0FF0, 4>(lower4, upperMost);
-			offset.setValue(tmp);
+			auto form = extractThreeRegisterForm(m);
+			dest = getRegister(std::get<0>(form));
+			src0 = getRegister(std::get<1>(form));
+			src1 = getRegister(std::get<2>(form));
 		}
-		numericCombine(subtract, dest, src0, src1, offset);
+		numericCombine(subtractOperation(op), dest, src0, src1);
 	}
-
-	void Machine::andOperation() {
+	std::tuple<
+	void Machine::andOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
+		Register& dest = _registerC;
+		Register& src0 = _registerA;
+		Register& src1 = _registerImmediate;
+		if (op == Operation::And) {
+			src1 = _registerB;
+		} else if (op == Operation::AndFull) {
+			auto result = extractThreeRegisterForm(m);
+			dest = getRegister(std::get<0>(result));
+			src0 = getRegister(std::get<1>(result));
+			src1 = getRegister(std::get<2>(result));
+		} else if (op == Operation::AndImmediate) {
+			auto result = extractThreeRegisterImmediateForm(m);
+			dest = getRegister(std::get<0>(result));
+			src0 = getRegister(std::get<1>(result));
+			src1.setValue(Address(std::get<2>(result)));
+		} else {
+			throw Problem("and", "UNIMPLEMENTED FORM!");
+		}
 		switch (_registerC.getType()) {
 			case Type::Number:
-				_registerC.setValue(_registerA.getInt() & _registerB.getInt());
+				dest.setValue(src0.getInt() & src1.getInt());
 				break;
 			case Type::MemoryAddress:
-				_registerC.setValue(_registerA.getAddress() & _registerB.getAddress());
+				dest.setValue(src0.getAddress() & src1.getAddress());
 				break;
 			case Type::Boolean:
-				_registerC.setValue(_registerA.getTruth() && _registerB.getTruth());
+				dest.setValue(src0.getTruth() && src1.getTruth());
 				break;
 			default:
 				throw Problem("and", "ILLEGAL DISCRIMINANT!");
@@ -897,23 +920,76 @@ endLoopTop:
 			_registerIP.increment();
 
 			switch (op) {
-				case Operation::Stop: return; // stop executing code within this molecule
-				case Operation::Add: numericCombine(); break; // add or subtract
-				case Operation::Subtract: numericCombine(true); break; // add or subtract
-				case Operation::ShiftRight: shiftOperation(); break; // shift right 
-				case Operation::ShiftLeft: shiftOperation(true); break; // shift left
-				case Operation::Multiply: multiplyOperation(); break;
-				case Operation::Equals: equals(); break;
-				case Operation::Pow: powOperation(); break;
-				case Operation::Divide: divide(); break;
-				case Operation::Modulo: divide(true); break;
-				case Operation::Not: notOperation(); break;
-				case Operation::Minus: minusOperation(); break;
-				case Operation::And: andOperation(); break;
-				case Operation::Or: orOperation(); break;
-				case Operation::GreaterThan: greaterThanOperation(); break; // greater than
-				case Operation::LessThan: lessThanOperation(); break;
-				case Operation::Xor: xorOperation(); break;
+				case Operation::Stop: 
+					return; // stop executing code within this molecule
+				case Operation::Add:
+				case Operation::AddFull:
+				case Operation::AddImmediate:
+				case Operation::Subtract:
+				case Operation::SubtractFull:
+				case Operation::SubtractImmediate:
+					numericCombine(op, molecule); 
+					break; // add or subtract with other forms as well
+				case Operation::ShiftRight:
+				case Operation::ShiftRightFull:
+				case Operation::ShiftRightImmediate:
+				case Operation::ShiftLeft:
+				case Operation::ShiftLeftFull:
+				case Operation::ShiftLeftImmediate:
+					shiftOperation(op, molecule); 
+					break;
+				case Operation::Multiply: 
+				case Operation::MultiplyFull:
+				case Operation::MultiplyImmediate:
+					multiplyOperation(op, molecule); 
+					break;
+				case Operation::Equals: 
+				case Operation::EqualsFull: 
+				case Operation::EqualsImmediate: 
+					equals(op, molecule); 
+					break;
+				case Operation::Pow: 
+				case Operation::PowFull:
+					powOperation(op, molecule); 
+					break;
+				case Operation::Divide:
+				case Operation::DivideFull:
+				case Operation::DivideImmediate:
+					divide(op, molecule);
+					break;
+				case Operation::Not:
+				case Operation::NotFull:
+					notOperation(op, molecule);
+					break;
+				case Operation::Minus:
+				case Operation::MinusFull:
+					minusOperation(op, molecule);
+					break;
+				case Operation::And: 
+				case Operation::AndFull: 
+				case Operation::AndImmediate: 
+					andOperation(op, molecule); 
+					break;
+				case Operation::Or: 
+				case Operation::OrFull: 
+				case Operation::OrImmediate: 
+					orOperation(op, molecule); 
+					break;
+				case Operation::GreaterThan: 
+				case Operation::GreaterThanFull:
+				case Operation::GreaterThanImmediate:
+					greaterThanOperation(op, molecule); 
+					break; // greater than
+				case Operation::LessThan: 
+				case Operation::LessThanFull:
+				case Operation::LessThanImmediate:
+					lessThanOperation(op, molecule); 
+					break;
+				case Operation::Xor: 
+				case Operation::XorFull: 
+				case Operation::XorImmediate: 
+					xorOperation(op, molecule); 
+					break;
 				case Operation::TypeValue: typeValue(); break;
 				case Operation::PopRegister: popRegister(molecule); break;
 				case Operation::PushRegister: pushRegister(molecule); break;

@@ -119,7 +119,7 @@ enum class Operation : byte {
 	PushB,
 	// full versions of operations
 	// these forms are:
-	// ?op ?dest = ?src0, ?src1, ?imm12 // full
+	// ?op ?dest = ?src0, ?src1   // full
 	// or
 	// ?op ?dest = ?src0, ?imm16 // immediate16
 	// For the the two operand forms some of the other immediate forms don't
@@ -411,10 +411,7 @@ namespace Instruction {
 		return move(TargetRegister::C, TargetRegister::X);
 	}
 #define FullImmediate(x, name) \
-	constexpr HalfAddress name (TargetRegister dest, TargetRegister src0, TargetRegister src1, QuarterAddress offset = 0) noexcept { return encodeFourByte(Operation:: x ## Full , dest, src0, src1, offset); } \
-	constexpr HalfAddress name (TargetRegister dest, TargetRegister src0, QuarterAddress offset) noexcept { return encodeFourByte(Operation:: x ## Immediate , dest, src0, offset); }
-#define FullImmediateNoOffset(x, name) \
-	constexpr HalfAddress name (TargetRegister dest, TargetRegister src0, TargetRegister src1) noexcept { return encodeFourByte(Operation:: x ## Full , dest, src0, src1, 0); } \
+	constexpr HalfAddress name (TargetRegister dest, TargetRegister src0, TargetRegister src1) noexcept { return encodeFourByte(Operation:: x ## Full , dest, src0, src1); } \
 	constexpr HalfAddress name (TargetRegister dest, TargetRegister src0, QuarterAddress offset) noexcept { return encodeFourByte(Operation:: x ## Immediate , dest, src0, offset); }
 	FullImmediate(Add, add);
 	FullImmediate(Subtract, sub);
@@ -430,12 +427,12 @@ namespace Instruction {
 
 	FullImmediate(And, andOp);
 	FullImmediate(Or, orOp);
-	FullImmediateNoOffset(GreaterThan, greaterThan);
-	FullImmediateNoOffset(LessThan, lessThan);
-	FullImmediateNoOffset(Xor, xorOp);
-	FullImmediateNoOffset(ShiftRight, shiftRight);
-	FullImmediateNoOffset(ShiftLeft, shiftLeft);
-	FullImmediateNoOffset(Equals, equals);
+	FullImmediate(GreaterThan, greaterThan);
+	FullImmediate(LessThan, lessThan);
+	FullImmediate(Xor, xorOp);
+	FullImmediate(ShiftRight, shiftRight);
+	FullImmediate(ShiftLeft, shiftLeft);
+	FullImmediate(Equals, equals);
 	constexpr QuarterAddress pow(TargetRegister dest, TargetRegister src0, TargetRegister src1) noexcept {
 		return encodeFourByte(Operation::PowFull, dest, src0, src1, 0);
 	}

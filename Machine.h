@@ -140,12 +140,14 @@ namespace forth {
 			}
 			//void numericCombine(bool subtract = false);
 			void numericCombine(Operation op, const Molecule& m);
-			void numericCombine(bool subtract, Register& dest, const Register& src0, const Register& src1, const Register& offset);
+			void numericCombine(bool subtract, Register& dest, const Register& src0, const Register& src1);
 			void numericCombine(bool subtract = false);
-			void multiplyOperation();
-			void equals();
-			void powOperation();
+			void multiplyOperation(Operation op, const Molecule& m);
+			void equals(Operation op, const Molecule& m);
+			void powOperation(Operation op, const Molecule& m);
 			void divide(bool remainder = false);
+			std::tuple<TargetRegister, TargetRegister, TargetRegister> extractThreeRegisterForm(const Molecule& m);
+			std::tuple<TargetRegister, TargetRegister, Address> extractThreeRegisterImmediateForm(const Molecule& m);
 			void notOperation();
 			void minusOperation();
 			void andOperation();
@@ -317,7 +319,7 @@ namespace forth {
 			DictionaryEntry* _compileTarget = nullptr;
 			// internal "registers"
             Register _registerA, _registerB, _registerC, _registerS, _registerX;
-            Register _registerIP, _registerSP, _registerSP2;
+            Register _registerIP, _registerSP, _registerSP2, _registerImmediate;
 			const DictionaryEntry* _microcodeInvoke = nullptr;
 			const DictionaryEntry* _popS = nullptr;
 	};

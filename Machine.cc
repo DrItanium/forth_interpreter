@@ -1274,7 +1274,6 @@ endLoopTop:
 		if (subroutineStackFull()) {
 			throw Problem("pushSubroutine", "SUBROUTINE STACK FULL!!!");
 		} 
-		std::cout << "push value: " << value << std::endl;
 		dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, value.address));
 		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, value.address));
 		dispatchInstruction(Instruction::encodeOperation(
@@ -1282,8 +1281,6 @@ endLoopTop:
 					Instruction::store(TargetRegister::SP2, TargetRegister::X)));
 		dispatchInstruction(Instruction::encodeOperation(
 					Instruction::load(TargetRegister::C, TargetRegister::SP2)));
-		std::cout << "top of stack: " << _registerC.getValue() << std::endl;
-		std::cout << "SP2: " << _registerSP2.getValue() << std::endl;
 	}
 	Datum Machine::popSubroutine() {
 		if (subroutineStackEmpty()) {
@@ -1292,7 +1289,6 @@ endLoopTop:
 		dispatchInstruction(Instruction::encodeOperation(
 					Instruction::load(TargetRegister::C, TargetRegister::SP2),
 					Instruction::add(TargetRegister::SP2, TargetRegister::SP2, 1)));
-		std::cout << "pop value: " << _registerC.getValue() << " from " << _registerSP2.getValue() << std::endl;
 		return _registerC.getValue();
 	}
 	bool Machine::subroutineStackEmpty() {

@@ -310,6 +310,11 @@ namespace forth {
 			std::tuple<TargetRegister, TargetRegister, TargetRegister> extractThreeRegisterForm(const Molecule& m);
 			std::tuple<TargetRegister, TargetRegister, Address> extractThreeRegisterImmediateForm(const Molecule& m);
 			std::tuple<TargetRegister, TargetRegister> extractTwoRegisterForm(const Molecule& m);
+			void pushOntoStack(TargetRegister sp, Datum value, Address fullLocation);
+			Datum popOffStack(TargetRegister sp, Address emptyLocation);
+			bool stackEmpty(TargetRegister sp, Address compareLocation);
+			bool stackFull(TargetRegister sp, Address compareLocation);
+			void clearStack(TargetRegister sp, Address emptyLocation);
 			void pushSubroutine(Datum value);
 			Datum popSubroutine();
 			bool subroutineStackEmpty();

@@ -933,6 +933,13 @@ endLoopTop:
 		// use the s register as the current instruction
 		// slice out the lowest eight bits
 		//auto molecule = _registerS.getMolecule();
+		auto throwError = [this, molecule](Operation op) {
+
+			std::stringstream msg;
+			msg << "Unknown instruction address: 0x" << std::hex << static_cast<int>(op);
+			auto str = msg.str();
+			throw Problem("uc", str);
+		};
 		while (_registerIP.getAddress() < sizeof(Molecule)) {
 			auto pos = _registerIP.getAddress();
 			auto op = getOperation(molecule.getByte(pos));
@@ -1011,22 +1018,63 @@ endLoopTop:
 				case Operation::XorImmediate: 
 					xorOperation(op, molecule); 
 					break;
-				case Operation::TypeValue: typeValue(); break;
-				case Operation::PopRegister: popRegister(molecule); break;
-				case Operation::PushRegister: pushRegister(molecule); break;
-				case Operation::Load: load(molecule); break;
-				case Operation::Store: store(molecule); break;
-				case Operation::SetImmediate16_Lowest: setImmediate16<Immediate16Positions::Lowest>(molecule); break;
-				case Operation::SetImmediate16_Lower: setImmediate16<Immediate16Positions::Lower>(molecule); break;
-				case Operation::SetImmediate16_Higher: setImmediate16<Immediate16Positions::Higher>(molecule); break;
-				case Operation::SetImmediate16_Highest: setImmediate16<Immediate16Positions::Highest>(molecule); break;
-				case Operation::Move: moveRegister(molecule); break;
-				case Operation::Swap: swapRegisters(molecule); break;
-				case Operation::PopA: popRegister(TargetRegister::A); break;
-				case Operation::PopB: popRegister(TargetRegister::B); break;
-				case Operation::PopT: popRegister(TargetRegister::T); break;
-				case Operation::PushC: pushRegister(TargetRegister::C); break;
-				default: throw Problem("uc", "Unknown instruction address!");
+				case Operation::TypeValue: 
+					typeValue(); 
+					break;
+				case Operation::PopRegister: 
+					popRegister(molecule); 
+					break;
+				case Operation::PushRegister: 
+					pushRegister(molecule); 
+					break;
+				case Operation::Load: 
+					load(molecule); 
+					break;
+				case Operation::Store: 
+					store(molecule); 
+					break;
+				case Operation::SetImmediate16_Lowest: 
+					setImmediate16<Immediate16Positions::Lowest>(molecule); 
+					break;
+				case Operation::SetImmediate16_Lower: 
+					setImmediate16<Immediate16Positions::Lower>(molecule); 
+					break;
+				case Operation::SetImmediate16_Higher: 
+					setImmediate16<Immediate16Positions::Higher>(molecule); 
+					break;
+				case Operation::SetImmediate16_Highest: 
+					setImmediate16<Immediate16Positions::Highest>(molecule); 
+					break;
+				case Operation::Move:
+					moveRegister(molecule); 
+					break;
+				case Operation::Swap: 
+					swapRegisters(molecule); 
+					break;
+				case Operation::PopA: 
+					popRegister(TargetRegister::A); 
+					break;
+				case Operation::PopB: 
+					popRegister(TargetRegister::B); 
+					break;
+				case Operation::PopT: 
+					popRegister(TargetRegister::T); 
+					break;
+				case Operation::PushC: 
+					pushRegister(TargetRegister::C); 
+					break;
+				case Operation::PopC:
+					popRegister(TargetRegister::C);
+					break;
+				case Operation::PushA:
+					pushRegister(TargetRegister::A);
+					break;
+				case Operation::PushB:
+					pushRegister(TargetRegister::B);
+					break;
+				default: 
+					throwError(op);
+					break;
 			}
 		}
 	}
@@ -1219,10 +1267,11 @@ endLoopTop:
 	}
 	void Machine::terminateExecution() {
 		//_keepExecuting = false;
-		dispatchInstructionStream<
-			Instruction::loadAddressLowerHalf(TargetRegister::X, shouldKeepExecutingLocation),
-			Instruction::loadAddressUpperHalf(TargetRegister::X, shouldKeepExecutingLocation),
-			storeFalse>();
+		static constexpr auto loadLowerKeepExeucting = Instruction::loadAddressLowerHalf(TargetRegister::X, shouldKeepExecutingLocation);
+		static constexpr auto loadUpperKeepExecuting = Instruction::loadAddressUpperHalf(TargetRegister::X, shouldKeepExecutingLocation);
+		// TODO: fix this hack
+		_registerC.setType(Discriminant::MemoryAddress);
+		dispatchInstructionStream<loadLowerKeepExeucting, loadUpperKeepExecuting, storeFalse>();
 	}
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
 		// clear the stacks and the input pointer
@@ -1270,41 +1319,61 @@ endLoopTop:
 			Instruction::loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
 			storeFalse>();
 	}
-	void Machine::pushSubroutine(Datum value) {
-		if (subroutineStackFull()) {
-			throw Problem("pushSubroutine", "SUBROUTINE STACK FULL!!!");
-		} 
+
+	bool Machine::stackEmpty(TargetRegister sp, Address location) {
+		dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, location));
+		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, location));
+		dispatchInstruction(Instruction::encodeOperation(
+					Instruction::load(TargetRegister::S, TargetRegister::X),
+					Instruction::equals(TargetRegister::C, TargetRegister::S, sp)));
+		return _registerC.getTruth();
+	}
+	bool Machine::stackFull(TargetRegister sp, Address location) {
+		dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, location));
+		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, location));
+		dispatchInstruction(Instruction::encodeOperation(
+					Instruction::load(TargetRegister::S, TargetRegister::X),
+					Instruction::equals(TargetRegister::C, TargetRegister::S, sp)));
+		return _registerC.getTruth();
+	}
+	void Machine::pushOntoStack(TargetRegister sp, Datum value, Address fullLocation) {
+		if (stackFull(sp, fullLocation)) {
+			throw Problem("pushOntoStack", "STACK FULL!!!");
+		}
 		dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, value.address));
 		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, value.address));
 		dispatchInstruction(Instruction::encodeOperation(
-					Instruction::sub(TargetRegister::SP2, TargetRegister::SP2, 1),
-					Instruction::store(TargetRegister::SP2, TargetRegister::X)));
-		dispatchInstruction(Instruction::encodeOperation(
-					Instruction::load(TargetRegister::C, TargetRegister::SP2)));
+					Instruction::sub(sp, sp, 1),
+					Instruction::store(sp, TargetRegister::X)));
 	}
-	Datum Machine::popSubroutine() {
-		if (subroutineStackEmpty()) {
-			throw Problem("popSubroutine", "SUBROUTINE STACK EMPTY!");
+	void Machine::pushSubroutine(Datum value) {
+		try {
+			pushOntoStack(TargetRegister::SP2, value, subroutineStackFullLocation);
+		} catch (Problem& p) {
+			throw Problem("pushSubroutine", p.getMessage());
+		}
+	}
+	Datum Machine::popOffStack(TargetRegister sp, Address emptyLocation) {
+		if (stackEmpty(sp, emptyLocation)) {
+			throw Problem("pop", "STACK EMPTY!");
 		}
 		dispatchInstruction(Instruction::encodeOperation(
-					Instruction::load(TargetRegister::C, TargetRegister::SP2),
-					Instruction::add(TargetRegister::SP2, TargetRegister::SP2, 1)));
+					Instruction::load(TargetRegister::C, sp),
+					Instruction::add(sp, sp, 1)));
 		return _registerC.getValue();
 	}
+	Datum Machine::popSubroutine() {
+		try {
+			return popOffStack(TargetRegister::SP2, subroutineStackEmptyLocation);
+		} catch (Problem& p) {
+			throw Problem ("popSubroutine", p.getMessage());
+		}
+	}
 	bool Machine::subroutineStackEmpty() {
-		dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, subroutineStackEmptyLocation));
-		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation));
-		dispatchInstruction(Instruction::encodeOperation(Instruction::load(TargetRegister::S, TargetRegister::X),
-					Instruction::equals(TargetRegister::C, TargetRegister::S, TargetRegister::SP2)));
-		return _registerC.getTruth();
+		return stackEmpty(TargetRegister::SP2, subroutineStackEmptyLocation);
 	}
 	bool Machine::subroutineStackFull() {
-			dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, subroutineStackFullLocation));
-			dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, subroutineStackFullLocation));
-			dispatchInstruction(Instruction::encodeOperation(
-					Instruction::load(TargetRegister::S, TargetRegister::X),
-					Instruction::equals(TargetRegister::C, TargetRegister::S, TargetRegister::SP2)));
-		return _registerC.getTruth();
+		return stackFull(TargetRegister::SP2, subroutineStackFullLocation);
 	}
 	void Machine::clearSubroutineStack() {
 		dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, subroutineStackEmptyLocation));

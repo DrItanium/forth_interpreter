@@ -236,34 +236,36 @@ namespace forth {
 	}
 	void Machine::notOperation(Operation op, const Molecule& m) {
 		// invert register a
-		auto [dest, src] = extractArgs2(op, m);
-		auto fn = [this, dest](auto a) { dest->setValue(~a); };
+		auto tup = extractArgs2(op, m);
+		auto& [dest, src] = tup;
+		auto fn = [this, &dest](auto a) { dest.setValue(~a); };
 
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-				fn(src->getInt());
+				fn(src.getInt());
 				break;
 			case Type::MemoryAddress:
-				fn(src->getAddress());
+				fn(src.getAddress());
 				break;
 			case Type::Boolean:
-				dest->setValue(!src->getTruth());
+				dest.setValue(!src.getTruth());
 				break;
 			default:
 				throw Problem("not", "ILLEGAL DISCRIMINANT!");
 		}
 	}
 	void Machine::minusOperation(Operation op, const Molecule& m) {
-		auto [dest, src] = extractArgs2(op, m);
-		auto fn = [this, dest](auto a) { dest->setValue(-a); };
+		auto tup = extractArgs2(op, m);
+		auto& [dest, src] = tup;
+		auto fn = [this, &dest](auto a) { dest.setValue(-a); };
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-				fn(src->getInt());
+				fn(src.getInt());
 				break;
 			case Type::FloatingPoint:
-				fn(src->getFP());
+				fn(src.getFP());
 				break;
 			default:
 				throw Problem("minus", "ILLEGAL DISCRIMINANT!");
@@ -274,16 +276,16 @@ namespace forth {
 		using Type = decltype(_registerC.getType());
 		auto tup = extractArguments(op, m, nullptr);
 		auto [dest, src0, src1] = tup;
-		auto fn = [this, &dest](auto a, auto b) { dest->setValue(a * b); };
+		auto fn = [this, &dest](auto a, auto b) { dest.setValue(a * b); };
 		switch(_registerC.getType()) {
 			case Type::Number:
-				fn(src0->getInt(), src1->getInt());
+				fn(src0.getInt(), src1.getInt());
 				break;
 			case Type::MemoryAddress:
-				fn(src0->getAddress(), src1->getAddress());
+				fn(src0.getAddress(), src1.getAddress());
 				break;
 			case Type::FloatingPoint:
-				fn(src0->getFP(), src1->getFP());
+				fn(src0.getFP(), src1.getFP());
 				break;
 			default:
 				throw Problem("*", "ILLEGAL DISCRIMINANT!");
@@ -291,21 +293,21 @@ namespace forth {
 	}
 	void Machine::equals(Operation op, const Molecule& m) {
 		auto tup = extractArguments(op, m, nullptr);
-		auto [dest, src0, src1] = tup;
-		auto fn = [this, dest](auto a, auto b) { dest->setValue(a == b); };
+		auto& [dest, src0, src1] = tup;
+		auto fn = [this, &dest](auto a, auto b) { dest.setValue(a == b); };
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-				fn(src0->getInt(), src1->getInt());
+				fn(src0.getInt(), src1.getInt());
 				break;
 			case Type::MemoryAddress:
-				fn(src0->getAddress(), src1->getAddress());
+				fn(src0.getAddress(), src1.getAddress());
 				break;
 			case Type::FloatingPoint:
-				fn(src0->getFP(), src1->getFP());
+				fn(src0.getFP(), src1.getFP());
 				break;
 			case Type::Boolean:
-				fn(src0->getTruth(), src1->getTruth());
+				fn(src0.getTruth(), src1.getTruth());
 				break;
 			default:
 				throw Problem("==", "ILLEGAL DISCRIMINANT!");
@@ -315,18 +317,18 @@ namespace forth {
 		auto tup = extractArguments(op, m, nullptr);
 		auto [dest, src0, src1] = tup;
 		auto fn = [&dest, this](auto a, auto b) {
-			dest->setValue(static_cast<decltype(a)>(std::pow(a, b)));
+			dest.setValue(static_cast<decltype(a)>(std::pow(a, b)));
 		};
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
 			case Type::Number:
-				fn(src0->getInt(), src1->getInt());
+				fn(src0.getInt(), src1.getInt());
 				break;
 			case Type::MemoryAddress:
-				fn(src0->getAddress(), src1->getAddress());
+				fn(src0.getAddress(), src1.getAddress());
 				break;
 			case Type::FloatingPoint:
-				fn(src0->getFP(), src1->getFP());
+				fn(src0.getFP(), src1.getFP());
 				break;
 			default:
 				throw Problem("**", "ILLEGAL DISCRIMINANT!");
@@ -419,19 +421,19 @@ namespace forth {
 #undef Full
 		}
 	}
-	void Machine::numericCombine(bool subtract, Register* dest, const Register* src0, const Register* src1) {
-		auto fn = [this, subtract](Register* dest, auto a, auto b) { 
-			dest->setValue(subtract ? (a - b) : (a + b ));
+	void Machine::numericCombine(bool subtract, Register& dest, const Register& src0, const Register& src1) {
+		auto fn = [this, subtract](Register& dest, auto a, auto b) { 
+			dest.setValue(subtract ? (a - b) : (a + b ));
 		};
 		switch(_registerC.getType()) {
 			case Discriminant::Number:
-				fn(dest, src0->getInt(), src1->getInt());
+				fn(dest, src0.getInt(), src1.getInt());
 				break;
 			case Discriminant::MemoryAddress:
-				fn(dest, src0->getAddress(), src1->getAddress());
+				fn(dest, src0.getAddress(), src1.getAddress());
 				break;
 			case Discriminant::FloatingPoint:
-				fn(dest, src0->getFP(), src1->getFP());
+				fn(dest, src0.getFP(), src1.getFP());
 				break;
 			default:
 				throw Problem(subtract ? "-" : "+", "ILLEGAL DISCRIMINANT!");
@@ -439,14 +441,14 @@ namespace forth {
 
 	}
 	void Machine::numericCombine(bool subtract) {
-		numericCombine(subtract, &_registerC, &_registerA, &_registerB);
+		numericCombine(subtract, _registerC, _registerA, _registerB);
 	}
 	void Machine::numericCombine(Operation op, const Molecule& m) {
 		if (op == Operation::Add || op == Operation::Subtract) {
 			numericCombine(op == Operation::Subtract);
 			return;
 		}
-		auto result = extractArguments(op, m, [this](auto r, auto val) {
+		auto result = extractArguments(op, m, [this](Register& r, auto val) {
 					if (_registerC.getType() == Discriminant::FloatingPoint) {
 						r.setValue(static_cast<Floating>(val));
 					} else {
@@ -469,35 +471,19 @@ namespace forth {
 		auto b2 = m.getByte(_registerIP.getAddress()); _registerIP.increment();
 		return std::make_tuple(TargetRegister(getDestinationRegister(b0)), TargetRegister(getSourceRegister(b0)), Instruction::makeQuarterAddress(b1, b2));
 	}
-	std::tuple<Register*, Register*, Register*> Machine::extractArguments(Operation op, const Molecule& m, std::function<void(Register&, Address)> onImmediate) {
-		if (immediateForm(op)) {
-			auto x = extractThreeRegisterImmediateForm(m);
-			if (onImmediate) {
-				onImmediate(_registerImmediate, std::get<2>(x));
-			} else {
-				_registerImmediate.setValue(std::get<2>(x));
-			}
-			return std::forward_as_tuple(&getRegister(std::get<0>(x)), &getRegister(std::get<1>(x)), &_registerImmediate);
-		} else if (fullForm(op)) {
-			auto x = extractThreeRegisterForm(m);
-			return std::forward_as_tuple(&getRegister(std::get<0>(x)), &getRegister(std::get<1>(x)), &getRegister(std::get<2>(x)));
-		} else {
-			return std::forward_as_tuple(&_registerC, &_registerA, &_registerB);
-		}
-	}
 	void Machine::andOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
 		auto result = extractArguments(op, m, nullptr);
-		auto [dest, src0, src1] = result;
+		auto& [dest, src0, src1] = result;
 		switch (_registerC.getType()) {
 			case Type::Number:
-				dest->setValue(src0->getInt() & src1->getInt());
+				dest.setValue(src0.getInt() & src1.getInt());
 				break;
 			case Type::MemoryAddress:
-				dest->setValue(src0->getAddress() & src1->getAddress());
+				dest.setValue(src0.getAddress() & src1.getAddress());
 				break;
 			case Type::Boolean:
-				dest->setValue(src0->getTruth() && src1->getTruth());
+				dest.setValue(src0.getTruth() && src1.getTruth());
 				break;
 			default:
 				throw Problem("and", "ILLEGAL DISCRIMINANT!");
@@ -510,13 +496,13 @@ namespace forth {
 		auto [dest, src0, src1] = result;
 		switch (_registerC.getType()) {
 			case Type::Number:
-				dest->setValue(src0->getInt() | src1->getInt());
+				dest.setValue(src0.getInt() | src1.getInt());
 				break;
 			case Type::MemoryAddress:
-				dest->setValue(src0->getAddress() | src1->getAddress());
+				dest.setValue(src0.getAddress() | src1.getAddress());
 				break;
 			case Type::Boolean:
-				dest->setValue(src0->getTruth() || src1->getTruth());
+				dest.setValue(src0.getTruth() || src1.getTruth());
 				break;
 			default:
 				throw Problem("or", "ILLEGAL DISCRIMINANT!");
@@ -530,18 +516,18 @@ namespace forth {
 		auto [dest, src0, src1] = tup;
 		switch (_registerC.getType()) {
 			case Type::Number:
-				result = src0->getInt() > src1->getInt();
+				result = src0.getInt() > src1.getInt();
 				break;
 			case Type::MemoryAddress:
-				result = src0->getAddress() > src1->getAddress();
+				result = src0.getAddress() > src1.getAddress();
 				break;
 			case Type::FloatingPoint:
-				result = src0->getFP() > src1->getFP();
+				result = src0.getFP() > src1.getFP();
 				break;
 			default:
 				throw Problem(">", "ILLEGAL DISCRIMINANT!");
 		}
-		dest->setValue(result);
+		dest.setValue(result);
 	}
 
 	void Machine::lessThanOperation(Operation op, const Molecule& m) {
@@ -551,18 +537,18 @@ namespace forth {
 		auto [dest, src0, src1] = tup;
 		switch (_registerC.getType()) {
 			case Type::Number:
-				result = src0->getInt() < src1->getInt();
+				result = src0.getInt() < src1.getInt();
 				break;
 			case Type::MemoryAddress:
-				result = src0->getAddress() < src1->getAddress();
+				result = src0.getAddress() < src1.getAddress();
 				break;
 			case Type::FloatingPoint:
-				result = src0->getFP() < src1->getFP();
+				result = src0.getFP() < src1.getFP();
 				break;
 			default:
 				throw Problem(">", "ILLEGAL DISCRIMINANT!");
 		}
-		dest->setValue(result);
+		dest.setValue(result);
 	}
 
 
@@ -572,13 +558,13 @@ namespace forth {
 		auto [dest, src0, src1] = tup;
 		switch (_registerC.getType()) {
 			case Type::Number:
-				dest->setValue(src0->getInt() ^ src1->getInt());
+				dest.setValue(src0.getInt() ^ src1.getInt());
 				break;
 			case Type::MemoryAddress:
-				dest->setValue(src0->getAddress() ^ src1->getAddress());
+				dest.setValue(src0.getAddress() ^ src1.getAddress());
 				break;
 			case Type::Boolean:
-				dest->setValue(bool(src0->getTruth() ^ src1->getTruth()));
+				dest.setValue(bool(src0.getTruth() ^ src1.getTruth()));
 				break;
 			default:
 				throw Problem("xor", "ILLEGAL DISCRIMINANT!");
@@ -593,13 +579,13 @@ namespace forth {
 	void Machine::shiftOperation(Operation op, const Molecule& m, bool shiftLeft) {
 		using Type = decltype(_registerC.getType());
 		auto tup = extractArguments(op, m, nullptr);
-		auto [dest, src0, src1] = tup;
+		auto& [dest, src0, src1] = tup;
 		switch (_registerC.getType()) {
 			case Type::Number:
-				dest->setValue(shiftLeft ? (src0->getInt()  << src1->getInt()) : (src0->getInt() >> src1->getInt()));
+				dest.setValue(shiftLeft ? (src0.getInt()  << src1.getInt()) : (src0.getInt() >> src1.getInt()));
 				break;
 			case Type::MemoryAddress:
-				dest->setValue(shiftLeft ? (src0->getAddress()  << src1->getAddress()) : (src0->getAddress() >> src1->getAddress()));
+				dest.setValue(shiftLeft ? (src0.getAddress()  << src1.getAddress()) : (src0.getAddress() >> src1.getAddress()));
 				break;
 			default:
 				throw Problem(shiftLeft ? "<<" : ">>", "ILLEGAL DISCRIMINANT");
@@ -1310,39 +1296,52 @@ endLoopTop:
 		return _registerC.getValue();
 	}
 	bool Machine::subroutineStackEmpty() {
-		dispatchInstructionStream<
-			Instruction::loadAddressLowerHalf(TargetRegister::X, subroutineStackEmptyLocation),
-			Instruction::loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation),
-			Instruction::encodeOperation(
-					Instruction::load(TargetRegister::S, TargetRegister::X),
-					Instruction::equals(TargetRegister::C, TargetRegister::S, TargetRegister::SP2))>();
+		dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, subroutineStackEmptyLocation));
+		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation));
+		dispatchInstruction(Instruction::encodeOperation(Instruction::load(TargetRegister::S, TargetRegister::X),
+					Instruction::equals(TargetRegister::C, TargetRegister::S, TargetRegister::SP2)));
 		return _registerC.getTruth();
 	}
 	bool Machine::subroutineStackFull() {
-		dispatchInstructionStream<
-			Instruction::loadAddressLowerHalf(TargetRegister::X, subroutineStackFullLocation),
-			Instruction::loadAddressUpperHalf(TargetRegister::X, subroutineStackFullLocation),
-			Instruction::encodeOperation(
+			dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, subroutineStackFullLocation));
+			dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, subroutineStackFullLocation));
+			dispatchInstruction(Instruction::encodeOperation(
 					Instruction::load(TargetRegister::S, TargetRegister::X),
-					Instruction::equals(TargetRegister::C, TargetRegister::S, TargetRegister::SP2))>();
+					Instruction::equals(TargetRegister::C, TargetRegister::S, TargetRegister::SP2)));
 		return _registerC.getTruth();
 	}
 	void Machine::clearSubroutineStack() {
-		dispatchInstructionStream<
-			Instruction::loadAddressLowerHalf(TargetRegister::X, subroutineStackEmptyLocation),
-			Instruction::loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation),
-			Instruction::encodeOperation(
-					Instruction::load(TargetRegister::SP2, TargetRegister::X))>();
+		dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, subroutineStackEmptyLocation));
+		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation));
+		dispatchInstruction(Instruction::encodeOperation(Instruction::load(TargetRegister::SP2, TargetRegister::X)));
 	}
-	std::tuple<Register*, Register*> Machine::extractArgs2(Operation op, const Molecule& m) {
+	std::tuple<Register&, Register&> Machine::extractArgs2(Operation op, const Molecule& m) {
 		Register& dest = _registerC;
 		Register& src = _registerA;
 		if (fullForm(op)) {
 			auto next = m.getByte(_registerIP.getAddress()); 
 			_registerIP.increment();
-			return std::make_tuple(&getRegister(TargetRegister(getDestinationRegister(next))), &getRegister(TargetRegister(getSourceRegister(next))));
+			return std::forward_as_tuple(getRegister(TargetRegister(getDestinationRegister(next))), getRegister(TargetRegister(getSourceRegister(next))));
 		} else {
-			return std::make_tuple(&_registerC, &_registerA);
+			return std::forward_as_tuple(_registerC, _registerA);
+		}
+	}
+	std::tuple<Register&, Register&, Register&> Machine::extractArguments(Operation op, const Molecule& m, std::function<void(Register&, Address)> onImmediate) {
+		if (immediateForm(op)) {
+			auto x = extractThreeRegisterImmediateForm(m);
+			if (onImmediate) {
+				onImmediate(_registerImmediate, std::get<2>(x));
+			} else {
+				_registerImmediate.setValue(std::get<2>(x));
+			}
+			auto tuple = std::forward_as_tuple(getRegister(std::get<0>(x)), getRegister(std::get<1>(x)), _registerImmediate);
+			return tuple;
+		} else if (fullForm(op)) {
+			auto x = extractThreeRegisterForm(m);
+			auto tup = std::forward_as_tuple(getRegister(std::get<0>(x)), getRegister(std::get<1>(x)), getRegister(std::get<2>(x)));
+			return tup;
+		} else {
+			return std::forward_as_tuple(_registerC, _registerA, _registerB);
 		}
 	}
 } // end namespace forth

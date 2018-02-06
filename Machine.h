@@ -141,7 +141,7 @@ namespace forth {
 			}
 			//void numericCombine(bool subtract = false);
 			void numericCombine(Operation op, const Molecule& m);
-			void numericCombine(bool subtract, Register* dest, const Register* src0, const Register* src1);
+			void numericCombine(bool subtract, Register& dest, const Register& src0, const Register& src1);
 			void numericCombine(bool subtract = false);
 			void multiplyOperation(Operation op, const Molecule& m);
 			void equals(Operation op, const Molecule& m);
@@ -305,8 +305,8 @@ namespace forth {
 			bool inCompilationMode() noexcept;
 			void activateCompileMode();
 			void deactivateCompileMode();
-			std::tuple<Register*, Register*, Register*> extractArguments(Operation op, const Molecule& m, std::function<void(Register&, Address)> onImmediate = nullptr);
-			std::tuple<Register*, Register*> extractArgs2(Operation op, const Molecule& m);
+			std::tuple<Register&, Register&, Register&> extractArguments(Operation op, const Molecule& m, std::function<void(Register&, Address)> onImmediate = nullptr);
+			std::tuple<Register&, Register&> extractArgs2(Operation op, const Molecule& m);
 			std::tuple<TargetRegister, TargetRegister, TargetRegister> extractThreeRegisterForm(const Molecule& m);
 			std::tuple<TargetRegister, TargetRegister, Address> extractThreeRegisterImmediateForm(const Molecule& m);
 			std::tuple<TargetRegister, TargetRegister> extractTwoRegisterForm(const Molecule& m);

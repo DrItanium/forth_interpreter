@@ -14,6 +14,9 @@
 #include "Machine.h"
 
 namespace forth {
+	static constexpr Address storeFalse = Instruction::encodeOperation(
+			Instruction::xorOp(TargetRegister::C, TargetRegister::A, TargetRegister::A),
+			Instruction::store(TargetRegister::X, TargetRegister::C));
 	void Machine::seeWord(const DictionaryEntry* entry) {
 		if (entry->isFake()) {
 			_output << "compiled entry: { " << std::endl;
@@ -127,12 +130,12 @@ namespace forth {
 			throw Problem("if", "must be defining a word!");
 		}
 		auto currentTarget = _compileTarget;
-		addToSubroutineStack(currentTarget);
+		pushSubroutine(currentTarget);
 		_compileTarget = new DictionaryEntry("");
 		_compileTarget->markFakeEntry();
 		auto* elseBlock = new DictionaryEntry("");
 		elseBlock->markFakeEntry();
-		addToSubroutineStack(elseBlock);
+		pushSubroutine(elseBlock);
 
 		currentTarget->pushWord(_compileTarget);
 		currentTarget->addSpaceEntry(static_cast<Address>(Discriminant::Word));
@@ -152,8 +155,8 @@ namespace forth {
             throw Problem("else", "subroutine stack is empty!");
         }
 		// pop the else block off of the subroutine stack
-		auto* elseBlock = popOffSubroutineStack().subroutine;
-		addToSubroutineStack(new DictionaryEntry(""));
+		auto* elseBlock = popSubroutine().subroutine;
+		pushSubroutine(new DictionaryEntry(""));
 		// let the if block dangle off since it is referenced else where
 		addWord(_compileTarget);
 		_compileTarget = elseBlock;
@@ -167,8 +170,8 @@ namespace forth {
 			throw Problem("then", "Not in a function");
 		}
 		// there will always be a garbage entry at the top of the subroutine stack, just eliminate it
-		popOffSubroutineStack();
-		auto parent = popOffSubroutineStack();
+		popSubroutine();
+		auto parent = popSubroutine();
 		addWord(_compileTarget);
 		_compileTarget = parent.subroutine;
 		_compileTarget->addSpaceEntry(lookupWord("choose.c"));
@@ -190,6 +193,8 @@ namespace forth {
 		fn("T", _registerC.getType());
 		fn("S", _registerS.getValue());
 		fn("X", _registerX.getValue());
+		fn("SP", _registerSP.getValue());
+		fn("SP2", _registerSP2.getValue());
 		fn("A.T", _registerA.getType());
 		fn("B.T", _registerB.getType());
 		fn("X.T", _registerX.getType());
@@ -267,7 +272,8 @@ namespace forth {
 
 	void Machine::multiplyOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
-		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto tup = extractArguments(op, m, nullptr);
+		auto& [dest, src0, src1] = tup;
 		auto fn = [this, &dest](auto a, auto b) { dest.setValue(a * b); };
 		switch(_registerC.getType()) {
 			case Type::Number:
@@ -284,7 +290,8 @@ namespace forth {
 		}
 	}
 	void Machine::equals(Operation op, const Molecule& m) {
-		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto tup = extractArguments(op, m, nullptr);
+		auto& [dest, src0, src1] = tup;
 		auto fn = [this, &dest](auto a, auto b) { dest.setValue(a == b); };
 		using Type = decltype(_registerC.getType());
 		switch(_registerC.getType()) {
@@ -305,7 +312,8 @@ namespace forth {
 		}
 	}
 	void Machine::powOperation(Operation op, const Molecule& m) {
-		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto tup = extractArguments(op, m, nullptr);
+		auto& [dest, src0, src1] = tup;
 		auto fn = [&dest, this](auto a, auto b) {
 			dest.setValue(static_cast<decltype(a)>(std::pow(a, b)));
 		};
@@ -326,7 +334,8 @@ namespace forth {
 	}
 
 	void Machine::divide(Operation op, const Molecule& m, bool remainder) {
-		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto tup = extractArguments(op, m, nullptr);
+		auto& [dest, src0, src1] = tup;
 		auto title = remainder ? "mod" : "/";
 		auto fn = [this, remainder, &title](auto a, auto b) {
 			if (b == 0) {
@@ -437,13 +446,14 @@ namespace forth {
 			numericCombine(op == Operation::Subtract);
 			return;
 		}
-		auto [dest, src0, src1] = extractArguments(op, m, [this](auto r, auto val) {
+		auto result = extractArguments(op, m, [this](auto r, auto val) {
 					if (_registerC.getType() == Discriminant::FloatingPoint) {
 						r.setValue(static_cast<Floating>(val));
 					} else {
 						r.setValue(val);
 					}
 				});
+		auto& [dest, src0, src1] = result;
 		numericCombine(subtractOperation(op), dest, src0, src1);
 	}
 	std::tuple<TargetRegister, TargetRegister, TargetRegister> Machine::extractThreeRegisterForm(const Molecule& m) {
@@ -460,9 +470,6 @@ namespace forth {
 		return std::make_tuple(TargetRegister(getDestinationRegister(b0)), TargetRegister(getSourceRegister(b0)), Instruction::makeQuarterAddress(b1, b2));
 	}
 	std::tuple<Register&, Register&, Register&> Machine::extractArguments(Operation op, const Molecule& m, std::function<void(Register&, Address)> onImmediate) {
-		Register& dest = _registerC;
-		Register& src0 = _registerA;
-		Register& src1 = _registerB;
 		if (immediateForm(op)) {
 			auto x = extractThreeRegisterImmediateForm(m);
 			if (onImmediate) {
@@ -470,20 +477,18 @@ namespace forth {
 			} else {
 				_registerImmediate.setValue(std::get<2>(x));
 			}
-			src1 = _registerImmediate;
-			dest = getRegister(std::get<0>(x));
-			src0 = getRegister(std::get<1>(x));
+			return std::forward_as_tuple(getRegister(std::get<0>(x)), getRegister(std::get<1>(x)), _registerImmediate);
 		} else if (fullForm(op)) {
 			auto x = extractThreeRegisterForm(m);
-			dest = getRegister(std::get<0>(x));
-			src0 = getRegister(std::get<1>(x));
-			src1 = getRegister(std::get<2>(x));
+			return std::forward_as_tuple(getRegister(std::get<0>(x)), getRegister(std::get<1>(x)), getRegister(std::get<2>(x)));
+		} else {
+			return std::forward_as_tuple(_registerC, _registerA, _registerB);
 		}
-		return std::make_tuple(std::ref(dest), std::ref(src0), std::ref(src1));
 	}
 	void Machine::andOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
-		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto result = extractArguments(op, m, nullptr);
+		auto& [dest, src0, src1] = result;
 		switch (_registerC.getType()) {
 			case Type::Number:
 				dest.setValue(src0.getInt() & src1.getInt());
@@ -501,7 +506,8 @@ namespace forth {
 
 	void Machine::orOperation(Operation op, const Molecule& m) {
 		using Type = forth::Discriminant;
-		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto result = extractArguments(op, m, nullptr);
+		auto& [dest, src0, src1] = result;
 		switch (_registerC.getType()) {
 			case Type::Number:
 				dest.setValue(src0.getInt() | src1.getInt());
@@ -520,7 +526,8 @@ namespace forth {
 	void Machine::greaterThanOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
 		auto result = false;
-		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto tup = extractArguments(op, m, nullptr);
+		auto& [dest, src0, src1] = tup;
 		switch (_registerC.getType()) {
 			case Type::Number:
 				result = src0.getInt() > src1.getInt();
@@ -540,7 +547,8 @@ namespace forth {
 	void Machine::lessThanOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
 		auto result = false;
-		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto tup = extractArguments(op, m, nullptr);
+		auto& [dest, src0, src1] = tup;
 		switch (_registerC.getType()) {
 			case Type::Number:
 				result = src0.getInt() < src1.getInt();
@@ -560,7 +568,8 @@ namespace forth {
 
 	void Machine::xorOperation(Operation op, const Molecule& m) {
 		using Type = decltype(_registerC.getType());
-		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto tup = extractArguments(op, m, nullptr);
+		auto& [dest, src0, src1] = tup;
 		switch (_registerC.getType()) {
 			case Type::Number:
 				dest.setValue(src0.getInt() ^ src1.getInt());
@@ -583,7 +592,8 @@ namespace forth {
 	}
 	void Machine::shiftOperation(Operation op, const Molecule& m, bool shiftLeft) {
 		using Type = decltype(_registerC.getType());
-		auto [dest, src0, src1] = extractArguments(op, m, nullptr);
+		auto tup = extractArguments(op, m, nullptr);
+		auto& [dest, src0, src1] = tup;
 		switch (_registerC.getType()) {
 			case Type::Number:
 				dest.setValue(shiftLeft ? (src0.getInt()  << src1.getInt()) : (src0.getInt() >> src1.getInt()));
@@ -836,7 +846,7 @@ namespace forth {
 		if (!inCompilationMode()) {
 			throw Problem("do", "Not compiling!");
 		}
-		addToSubroutineStack(_compileTarget);
+		pushSubroutine(_compileTarget);
 		_compileTarget = new DictionaryEntry("");
 		_compileTarget->markFakeEntry();
 	}
@@ -859,7 +869,7 @@ namespace forth {
 		if (subroutineStackEmpty()) {
 			throw Problem("continue", "subroutine stack is empty!");
 		}
-		auto parent = popOffSubroutineStack();
+		auto parent = popSubroutine();
 		addWord(_compileTarget);
 		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
 				static constexpr auto performEqualityCheck = Instruction::encodeOperation(Instruction::popA(), Instruction::popB(), Instruction::equals());
@@ -894,7 +904,7 @@ loopTop:
 		if (!inCompilationMode()) {
 			throw Problem("begin", "Must be compiling!");
 		}
-		addToSubroutineStack(_compileTarget);
+		pushSubroutine(_compileTarget);
 		_compileTarget = new DictionaryEntry("");
 		_compileTarget->markFakeEntry();
 	}
@@ -906,7 +916,7 @@ loopTop:
 			throw Problem("end", "subroutine stack is empty!");
 		}
 
-		auto parent = popOffSubroutineStack();
+		auto parent = popSubroutine();
 		addWord(_compileTarget);
 		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
 				static constexpr auto checkCondition = Instruction::encodeOperation( Instruction::popA(), Instruction::notOp());
@@ -1213,32 +1223,19 @@ endLoopTop:
         auto top = popParameter();
         top.entry->operator()(this);
     }
-	constexpr Address loadAddressLowerHalf(TargetRegister reg, Address value) noexcept {
-		return Instruction::encodeOperation(
-				Instruction::setImmediate64_Lowest(reg, value),
-				Instruction::setImmediate64_Lower(reg, value));
-	}
-	constexpr Address loadAddressUpperHalf(TargetRegister reg, Address value) noexcept {
-		return Instruction::encodeOperation(
-				Instruction::setImmediate64_Higher(reg, value),
-				Instruction::setImmediate64_Highest(reg, value));
-	}
-	static constexpr Address storeFalse = Instruction::encodeOperation(
-			Instruction::xorOp(TargetRegister::C, TargetRegister::A, TargetRegister::A),
-			Instruction::store(TargetRegister::X, TargetRegister::C));
 	bool Machine::keepExecuting() noexcept {
 		static constexpr auto loadValueIntoX = Instruction::encodeOperation(
 				Instruction::load(TargetRegister::X, TargetRegister::X));
-		dispatchInstructionStream<loadAddressLowerHalf(TargetRegister::X, shouldKeepExecutingLocation),
-								  loadAddressUpperHalf(TargetRegister::X, shouldKeepExecutingLocation),
+		dispatchInstructionStream<Instruction::loadAddressLowerHalf(TargetRegister::X, shouldKeepExecutingLocation),
+								  Instruction::loadAddressUpperHalf(TargetRegister::X, shouldKeepExecutingLocation),
 								  loadValueIntoX>();
 		return _registerX.getTruth();
 	}
 	void Machine::terminateExecution() {
 		//_keepExecuting = false;
 		dispatchInstructionStream<
-			loadAddressLowerHalf(TargetRegister::X, shouldKeepExecutingLocation),
-			loadAddressUpperHalf(TargetRegister::X, shouldKeepExecutingLocation),
+			Instruction::loadAddressLowerHalf(TargetRegister::X, shouldKeepExecutingLocation),
+			Instruction::loadAddressUpperHalf(TargetRegister::X, shouldKeepExecutingLocation),
 			storeFalse>();
 	}
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
@@ -1254,8 +1251,8 @@ endLoopTop:
 		}
 		// _compiling = false;
 		dispatchInstructionStream<
-			loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
-			loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
+			Instruction::loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
+			Instruction::loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
 			storeFalse>();
 	}
 	void Machine::dispatchInstruction() {
@@ -1265,15 +1262,15 @@ endLoopTop:
 	}
 	bool Machine::inCompilationMode() noexcept {
 		dispatchInstructionStream<
-			loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
-			loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
+			Instruction::loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
+			Instruction::loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
 			Instruction::encodeOperation(Instruction::load(TargetRegister::X, TargetRegister::X))>();
 		return _registerX.getTruth();
 	}
 	void Machine::activateCompileMode() {
 		dispatchInstructionStream<
-			loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
-			loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
+			Instruction::loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
+			Instruction::loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
 			Instruction::encodeOperation(
 					Instruction::move(TargetRegister::B, TargetRegister::A),
 					Instruction::xorOp(),
@@ -1283,8 +1280,8 @@ endLoopTop:
 	}
 	void Machine::deactivateCompileMode() {
 		dispatchInstructionStream<
-			loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
-			loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
+			Instruction::loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
+			Instruction::loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
 			storeFalse>();
 	}
 	std::tuple<Register&, Register&> Machine::extractArgs2(Operation op, const Molecule& m) {
@@ -1298,29 +1295,35 @@ endLoopTop:
 		}
 		return std::make_tuple(std::ref(dest), std::ref(src));
 	}
-	void Machine::addToSubroutineStack(Datum value) {
+	void Machine::pushSubroutine(Datum value) {
 		if (subroutineStackFull()) {
-			throw Problem("addToSubroutineStack", "SUBROUTINE STACK FULL!!!");
+			throw Problem("pushSubroutine", "SUBROUTINE STACK FULL!!!");
 		} 
-		dispatchInstruction(loadAddressLowerHalf(TargetRegister::X, value.address));
-		dispatchInstruction(loadAddressUpperHalf(TargetRegister::X, value.address));
+		std::cout << "push value: " << value << std::endl;
+		dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, value.address));
+		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, value.address));
 		dispatchInstruction(Instruction::encodeOperation(
 					Instruction::sub(TargetRegister::SP2, TargetRegister::SP2, 1),
 					Instruction::store(TargetRegister::SP2, TargetRegister::X)));
+		dispatchInstruction(Instruction::encodeOperation(
+					Instruction::load(TargetRegister::C, TargetRegister::SP2)));
+		std::cout << "top of stack: " << _registerC.getValue() << std::endl;
+		std::cout << "SP2: " << _registerSP2.getValue() << std::endl;
 	}
-	Datum Machine::popOffSubroutineStack() {
+	Datum Machine::popSubroutine() {
 		if (subroutineStackEmpty()) {
-			throw Problem("popOffSubroutineStack", "SUBROUTINE STACK EMPTY!");
+			throw Problem("popSubroutine", "SUBROUTINE STACK EMPTY!");
 		}
 		dispatchInstruction(Instruction::encodeOperation(
 					Instruction::load(TargetRegister::C, TargetRegister::SP2),
 					Instruction::add(TargetRegister::SP2, TargetRegister::SP2, 1)));
+		std::cout << "pop value: " << _registerC.getValue() << " from " << _registerSP2.getValue() << std::endl;
 		return _registerC.getValue();
 	}
 	bool Machine::subroutineStackEmpty() {
 		dispatchInstructionStream<
-			loadAddressLowerHalf(TargetRegister::X, subroutineStackEmptyLocation),
-			loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation),
+			Instruction::loadAddressLowerHalf(TargetRegister::X, subroutineStackEmptyLocation),
+			Instruction::loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation),
 			Instruction::encodeOperation(
 					Instruction::load(TargetRegister::S, TargetRegister::X),
 					Instruction::equals(TargetRegister::C, TargetRegister::S, TargetRegister::SP2))>();
@@ -1328,8 +1331,8 @@ endLoopTop:
 	}
 	bool Machine::subroutineStackFull() {
 		dispatchInstructionStream<
-			loadAddressLowerHalf(TargetRegister::X, subroutineStackFullLocation),
-			loadAddressUpperHalf(TargetRegister::X, subroutineStackFullLocation),
+			Instruction::loadAddressLowerHalf(TargetRegister::X, subroutineStackFullLocation),
+			Instruction::loadAddressUpperHalf(TargetRegister::X, subroutineStackFullLocation),
 			Instruction::encodeOperation(
 					Instruction::load(TargetRegister::S, TargetRegister::X),
 					Instruction::equals(TargetRegister::C, TargetRegister::S, TargetRegister::SP2))>();
@@ -1337,8 +1340,8 @@ endLoopTop:
 	}
 	void Machine::clearSubroutineStack() {
 		dispatchInstructionStream<
-			loadAddressLowerHalf(TargetRegister::X, subroutineStackEmptyLocation),
-			loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation),
+			Instruction::loadAddressLowerHalf(TargetRegister::X, subroutineStackEmptyLocation),
+			Instruction::loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation),
 			Instruction::encodeOperation(
 					Instruction::load(TargetRegister::SP2, TargetRegister::X))>();
 	}

@@ -79,6 +79,7 @@ namespace forth {
 			void setTB(Discriminant target) noexcept { _registerB.setType(target); }
 			void setB(const Datum& target) noexcept { _registerB.setValue(target); }
 			void initializeBaseDictionary();
+			void dispatchInstruction(const Molecule& m);
 		private:
 			template<typename ... Rest>
 			void tryCompileWord(const std::string& word, Rest ... words) {
@@ -131,7 +132,6 @@ namespace forth {
             void pushRegister(const Molecule& m);
             void popRegister(const Molecule& m);
             void dispatchInstruction();
-			void dispatchInstruction(const Molecule& m);
 			template<Address first, Address ... rest>
 			void dispatchInstructionStream() noexcept {
 				dispatchInstruction(first);
@@ -310,8 +310,8 @@ namespace forth {
 			std::tuple<TargetRegister, TargetRegister, TargetRegister> extractThreeRegisterForm(const Molecule& m);
 			std::tuple<TargetRegister, TargetRegister, Address> extractThreeRegisterImmediateForm(const Molecule& m);
 			std::tuple<TargetRegister, TargetRegister> extractTwoRegisterForm(const Molecule& m);
-			void addToSubroutineStack(Datum value);
-			Datum popOffSubroutineStack();
+			void pushSubroutine(Datum value);
+			Datum popSubroutine();
 			bool subroutineStackEmpty();
 			void clearSubroutineStack();
 			bool subroutineStackFull();

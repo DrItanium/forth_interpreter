@@ -437,6 +437,16 @@ namespace Instruction {
 		return encodeFourByte(Operation::PowFull, dest, src0, src1, 0);
 	}
 #undef FullImmediate
+	constexpr Address loadAddressLowerHalf(TargetRegister reg, Address value) noexcept {
+		return Instruction::encodeOperation(
+				Instruction::setImmediate64_Lowest(reg, value),
+				Instruction::setImmediate64_Lower(reg, value));
+	}
+	constexpr Address loadAddressUpperHalf(TargetRegister reg, Address value) noexcept {
+		return Instruction::encodeOperation(
+				Instruction::setImmediate64_Higher(reg, value),
+				Instruction::setImmediate64_Highest(reg, value));
+	}
 } // end namespace Instruction
 
 

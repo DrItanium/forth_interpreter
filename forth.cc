@@ -223,6 +223,9 @@ void systemSetup(forth::Machine& machine) {
 	machine.store(forth::Machine::subroutineStackEmptyLocation, Address(0xFF0000));
 	machine.store(forth::Machine::subroutineStackFullLocation, Address(0xFE0000));
 	// TODO: set SP2 to the correct register!
+	machine.dispatchInstruction(Instruction::loadAddressLowerHalf(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation));
+	machine.dispatchInstruction(Instruction::loadAddressUpperHalf(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation));
+	machine.dispatchInstruction(Instruction::encodeOperation(Instruction::load(forth::TargetRegister::SP2, forth::TargetRegister::X)));
 }
 int main() {
     forth::Machine machine (std::cout, std::cin);

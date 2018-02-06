@@ -1302,10 +1302,9 @@ endLoopTop:
 		if (subroutineStackFull()) {
 			throw Problem("addToSubroutineStack", "SUBROUTINE STACK FULL!!!");
 		} 
-		microcodeStreamInvoke(
-			loadAddressLowerHalf(TargetRegister::X, value.address),
-			loadAddressUpperHalf(TargetRegister::X, value.address),
-			Instruction::encodeOperation(
+		dispatchInstruction(loadAddressLowerHalf(TargetRegister::X, value.address));
+		dispatchInstruction(loadAddressUpperHalf(TargetRegister::X, value.address));
+		dispatchInstruction(Instruction::encodeOperation(
 					Instruction::sub(TargetRegister::SP2, TargetRegister::SP2, 1),
 					Instruction::store(TargetRegister::SP2, TargetRegister::X)));
 	}
@@ -1313,10 +1312,9 @@ endLoopTop:
 		if (subroutineStackEmpty()) {
 			throw Problem("popOffSubroutineStack", "SUBROUTINE STACK EMPTY!");
 		}
-		dispatchInstructionStream<
-			Instruction::encodeOperation(
+		dispatchInstruction(Instruction::encodeOperation(
 					Instruction::load(TargetRegister::C, TargetRegister::SP2),
-					Instruction::add(TargetRegister::SP2, TargetRegister::SP2, 1))>();
+					Instruction::add(TargetRegister::SP2, TargetRegister::SP2, 1)));
 		return _registerC.getValue();
 	}
 	bool Machine::subroutineStackEmpty() {

@@ -127,12 +127,12 @@ namespace forth {
 			throw Problem("if", "must be defining a word!");
 		}
 		auto currentTarget = _compileTarget;
-		_subroutine.push_back(_compileTarget);
+		addToSubroutineStack(currentTarget);
 		_compileTarget = new DictionaryEntry("");
 		_compileTarget->markFakeEntry();
 		auto* elseBlock = new DictionaryEntry("");
 		elseBlock->markFakeEntry();
-		_subroutine.push_back(elseBlock);
+		addToSubroutineStack(elseBlock);
 
 		currentTarget->pushWord(_compileTarget);
 		currentTarget->addSpaceEntry(static_cast<Address>(Discriminant::Word));
@@ -148,13 +148,12 @@ namespace forth {
 		if (!inCompilationMode()) {
 			throw Problem("else", "must be defining a word!");
 		}
-        if (_subroutine.empty()) {
+		if (subroutineStackEmpty()) {
             throw Problem("else", "subroutine stack is empty!");
         }
 		// pop the else block off of the subroutine stack
-		auto* elseBlock = _subroutine.back().subroutine;
-		_subroutine.pop_back();
-		_subroutine.emplace_back(new DictionaryEntry(""));
+		auto* elseBlock = popOffSubroutineStack().subroutine;
+		addToSubroutineStack(new DictionaryEntry(""));
 		// let the if block dangle off since it is referenced else where
 		addWord(_compileTarget);
 		_compileTarget = elseBlock;
@@ -164,13 +163,12 @@ namespace forth {
 		if (!inCompilationMode()) {
 			throw Problem("then", "must be defining a word!");
 		}
-		if (_subroutine.empty()) {
+		if (subroutineStackEmpty()) {
 			throw Problem("then", "Not in a function");
 		}
 		// there will always be a garbage entry at the top of the subroutine stack, just eliminate it
-		_subroutine.pop_back();
-		auto parent = _subroutine.back();
-		_subroutine.pop_back();
+		popOffSubroutineStack();
+		auto parent = popOffSubroutineStack();
 		addWord(_compileTarget);
 		_compileTarget = parent.subroutine;
 		_compileTarget->addSpaceEntry(lookupWord("choose.c"));
@@ -838,7 +836,7 @@ namespace forth {
 		if (!inCompilationMode()) {
 			throw Problem("do", "Not compiling!");
 		}
-		_subroutine.push_back(_compileTarget);
+		addToSubroutineStack(_compileTarget);
 		_compileTarget = new DictionaryEntry("");
 		_compileTarget->markFakeEntry();
 	}
@@ -858,11 +856,10 @@ namespace forth {
 		if (!inCompilationMode()) {
 			throw Problem("continue", "not compiling!");
 		} 
-		if (_subroutine.empty()) {
+		if (subroutineStackEmpty()) {
 			throw Problem("continue", "subroutine stack is empty!");
 		}
-		auto parent = _subroutine.back();
-		_subroutine.pop_back();
+		auto parent = popOffSubroutineStack();
 		addWord(_compileTarget);
 		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
 				static constexpr auto performEqualityCheck = Instruction::encodeOperation(Instruction::popA(), Instruction::popB(), Instruction::equals());
@@ -897,7 +894,7 @@ loopTop:
 		if (!inCompilationMode()) {
 			throw Problem("begin", "Must be compiling!");
 		}
-		_subroutine.push_back(_compileTarget);
+		addToSubroutineStack(_compileTarget);
 		_compileTarget = new DictionaryEntry("");
 		_compileTarget->markFakeEntry();
 	}
@@ -905,12 +902,11 @@ loopTop:
 		if (!inCompilationMode()) {
 			throw Problem("end", "Must be compiling!");
 		}
-		if (_subroutine.empty()) {
+		if (subroutineStackEmpty()) {
 			throw Problem("end", "subroutine stack is empty!");
 		}
 
-		auto parent = _subroutine.back();
-		_subroutine.pop_back();
+		auto parent = popOffSubroutineStack();
 		addWord(_compileTarget);
 		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
 				static constexpr auto checkCondition = Instruction::encodeOperation( Instruction::popA(), Instruction::notOp());
@@ -1248,7 +1244,7 @@ endLoopTop:
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
 		// clear the stacks and the input pointer
 		_parameter.clear();
-		_subroutine.clear();
+		clearSubroutineStack();
 		_input.clear();
 		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		_output << word << " " << msg << std::endl;
@@ -1301,6 +1297,52 @@ endLoopTop:
 			src = getRegister(TargetRegister(getSourceRegister(next)));
 		}
 		return std::make_tuple(std::ref(dest), std::ref(src));
+	}
+	void Machine::addToSubroutineStack(Datum value) {
+		if (subroutineStackFull()) {
+			throw Problem("addToSubroutineStack", "SUBROUTINE STACK FULL!!!");
+		} 
+		microcodeStreamInvoke(
+			loadAddressLowerHalf(TargetRegister::X, value.address),
+			loadAddressUpperHalf(TargetRegister::X, value.address),
+			Instruction::encodeOperation(
+					Instruction::sub(TargetRegister::SP2, TargetRegister::SP2, 1),
+					Instruction::store(TargetRegister::SP2, TargetRegister::X)));
+	}
+	Datum Machine::popOffSubroutineStack() {
+		if (subroutineStackEmpty()) {
+			throw Problem("popOffSubroutineStack", "SUBROUTINE STACK EMPTY!");
+		}
+		dispatchInstructionStream<
+			Instruction::encodeOperation(
+					Instruction::load(TargetRegister::C, TargetRegister::SP2),
+					Instruction::add(TargetRegister::SP2, TargetRegister::SP2, 1))>();
+		return _registerC.getValue();
+	}
+	bool Machine::subroutineStackEmpty() {
+		dispatchInstructionStream<
+			loadAddressLowerHalf(TargetRegister::X, subroutineStackEmptyLocation),
+			loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation),
+			Instruction::encodeOperation(
+					Instruction::load(TargetRegister::S, TargetRegister::X),
+					Instruction::equals(TargetRegister::C, TargetRegister::S, TargetRegister::SP2))>();
+		return _registerC.getTruth();
+	}
+	bool Machine::subroutineStackFull() {
+		dispatchInstructionStream<
+			loadAddressLowerHalf(TargetRegister::X, subroutineStackFullLocation),
+			loadAddressUpperHalf(TargetRegister::X, subroutineStackFullLocation),
+			Instruction::encodeOperation(
+					Instruction::load(TargetRegister::S, TargetRegister::X),
+					Instruction::equals(TargetRegister::C, TargetRegister::S, TargetRegister::SP2))>();
+		return _registerC.getTruth();
+	}
+	void Machine::clearSubroutineStack() {
+		dispatchInstructionStream<
+			loadAddressLowerHalf(TargetRegister::X, subroutineStackEmptyLocation),
+			loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation),
+			Instruction::encodeOperation(
+					Instruction::load(TargetRegister::SP2, TargetRegister::X))>();
 	}
 } // end namespace forth
 

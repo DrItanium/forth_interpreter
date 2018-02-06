@@ -17,6 +17,8 @@ namespace forth {
 			static constexpr Address shouldKeepExecutingLocation = 0xFFFFFF;
 			static constexpr Address isCompilingLocation = 0xFFFFFE;
 			static constexpr Address ignoreInputLocation = 0xFFFFFD;
+			static constexpr Address subroutineStackEmptyLocation = 0xFFFFFC;
+			static constexpr Address subroutineStackFullLocation = 0xFFFFFB;
             // capacity variables for the two stacks, each one has 64k worth of data
 		public:
 			Machine(std::ostream& output, std::istream& input);
@@ -308,6 +310,11 @@ namespace forth {
 			std::tuple<TargetRegister, TargetRegister, TargetRegister> extractThreeRegisterForm(const Molecule& m);
 			std::tuple<TargetRegister, TargetRegister, Address> extractThreeRegisterImmediateForm(const Molecule& m);
 			std::tuple<TargetRegister, TargetRegister> extractTwoRegisterForm(const Molecule& m);
+			void addToSubroutineStack(Datum value);
+			Datum popOffSubroutineStack();
+			bool subroutineStackEmpty();
+			void clearSubroutineStack();
+			bool subroutineStackFull();
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;
@@ -315,7 +322,7 @@ namespace forth {
 			std::unique_ptr<Datum[]> _memory;
 			DictionaryEntry* _words;
 			// no need for the subroutine stack
-            std::list<Datum> _subroutine;
+            //std::list<Datum> _subroutine;
             std::list<Datum> _parameter;
 			bool _initializedBaseDictionary = false;
 			DictionaryEntry* _compileTarget = nullptr;

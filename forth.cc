@@ -220,17 +220,20 @@ void systemSetup(forth::Machine& machine) {
 	machine.store(forth::Machine::shouldKeepExecutingLocation, true);
 	machine.store(forth::Machine::isCompilingLocation, false);
 	machine.store(forth::Machine::ignoreInputLocation, false);
+	machine.store(forth::Machine::subroutineStackEmptyLocation, Address(0xFF0000));
+	machine.store(forth::Machine::subroutineStackFullLocation, Address(0xFE0000));
+	// TODO: set SP2 to the correct register!
 }
 int main() {
     forth::Machine machine (std::cout, std::cin);
     machine.initializeBaseDictionary();
 	microarchitectureWords(machine);
-	systemSetup(machine);
 	arithmeticOperators(machine);
 	stackOperators(machine);
 	registerDecls(machine);
 	addDiscriminantWords(machine);
 	compoundWords(machine);
+	systemSetup(machine);
     machine.controlLoop();
 
     return 0;

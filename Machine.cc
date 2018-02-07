@@ -28,7 +28,7 @@ namespace forth {
 		} else {
 			auto flags = _output.flags();
 			auto outputDictionaryEntry = [this, entry](auto space) {
-				auto innerTarget = space->_entry;
+                auto innerTarget = std::get<const DictionaryEntry*>(space->_data);
 				if (innerTarget->isFake()) {
 					seeWord(innerTarget);
 				} else {
@@ -36,7 +36,7 @@ namespace forth {
 				}
 			};
 			auto outputWord = [this, entry](auto space) {
-				auto innerTarget = space->_entry;
+                auto innerTarget = std::get<const DictionaryEntry*>(space->_data);
 				if (innerTarget->isFake()) {
 					_output << "0x" << std::hex << innerTarget;
 				} else {
@@ -48,16 +48,16 @@ namespace forth {
 				_output << "\t";
 				switch (x->_type) {
 					case Type::Signed:
-						_output << std::dec << x->_int;
+						_output << std::dec << std::get<Integer>(x->_data);
 						break;
 					case Type::Unsigned:
-						_output << std::hex << "0x" << x->_addr;
+						_output << std::hex << "0x" << std::get<Address>(x->_data);
 						break;
 					case Type::FloatingPoint:
-						_output << std::dec << x->_fp;
+						_output << std::dec << std::get<Floating>(x->_data);
 						break;
 					case Type::Boolean:
-						_output << std::boolalpha << x->_truth;
+						_output << std::boolalpha << std::get<bool>(x->_data);
 						break;
 					case Type::DictEntry:
 						outputDictionaryEntry(x);
@@ -659,6 +659,7 @@ namespace forth {
 				Instruction::setImmediate16_Lowest(TargetRegister::C, 0),
 				Instruction::pushC());
 		static_assert(loadFalseToStack == 0x1f00000216, "Load false to stack is incorrect!");
+        static constexpr auto pushC = Instruction::encodeOperation(Instruction::pushC());
 		if (word.empty()) { 
 			return false; 
 		}
@@ -687,7 +688,7 @@ namespace forth {
 						Instruction::encodeOperation(
 							Instruction::setImmediate64_Higher(TargetRegister::C, tmpAddress),
 							Instruction::setImmediate64_Highest(TargetRegister::C, tmpAddress)),
-						Instruction::encodeOperation(Instruction::pushC()));
+                        pushC);
 				return true;
 			}
 			return false;
@@ -703,7 +704,7 @@ namespace forth {
 						Instruction::encodeOperation(
 							Instruction::setImmediate64_Higher(TargetRegister::C, tmpAddress),
 							Instruction::setImmediate64_Highest(TargetRegister::C, tmpAddress)),
-						Instruction::encodeOperation(Instruction::pushC()));
+                        pushC);
 				return true;
 			}
 			return false;
@@ -721,7 +722,7 @@ namespace forth {
 						Instruction::encodeOperation(
 							Instruction::setImmediate64_Higher(TargetRegister::C, a.address),
 							Instruction::setImmediate64_Highest(TargetRegister::C, a.address)),
-						Instruction::encodeOperation(Instruction::pushC()));
+                        pushC);
 				return true;
 			}
 			// get out of here early since we hit something that looks like
@@ -740,7 +741,7 @@ namespace forth {
 					Instruction::encodeOperation(
 						Instruction::setImmediate64_Higher(TargetRegister::C, a.address),
 						Instruction::setImmediate64_Highest(TargetRegister::C, a.address)),
-					Instruction::encodeOperation(Instruction::pushC()));
+                    pushC);
 			return true;
 		}
 		return false;
@@ -1260,9 +1261,9 @@ endLoopTop:
 	bool Machine::keepExecuting() noexcept {
 		static constexpr auto loadValueIntoX = Instruction::encodeOperation(
 				Instruction::load(TargetRegister::X, TargetRegister::X));
-		dispatchInstructionStream<Instruction::loadAddressLowerHalf(TargetRegister::X, shouldKeepExecutingLocation),
-								  Instruction::loadAddressUpperHalf(TargetRegister::X, shouldKeepExecutingLocation),
-								  loadValueIntoX>();
+        static constexpr auto loadLower = Instruction::loadAddressLowerHalf(TargetRegister::X, shouldKeepExecutingLocation);
+        static constexpr auto loadUpper = Instruction::loadAddressUpperHalf(TargetRegister::X, shouldKeepExecutingLocation);
+        dispatchInstructionStream<loadLower, loadUpper, loadValueIntoX>();
 		return _registerX.getTruth();
 	}
 	void Machine::terminateExecution() {

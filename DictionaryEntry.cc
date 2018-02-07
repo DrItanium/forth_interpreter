@@ -20,7 +20,7 @@ namespace forth {
     void DictionaryEntry::addSpaceEntry(SpaceEntry::Discriminant type, const DictionaryEntry* value) {
         SpaceEntry se;
         se._type = type;
-        se._entry = value;
+        se._data = value;
         _space.emplace_back(se);
     }
 
@@ -31,35 +31,35 @@ namespace forth {
     void DictionaryEntry::addSpaceEntry(Integer x) {
         SpaceEntry se;
         se._type = SpaceEntry::Discriminant::Signed;
-        se._int = x;
+        se._data = x;
         _space.emplace_back(se);
     }
 
     void DictionaryEntry::addSpaceEntry(Address x) {
         SpaceEntry se;
         se._type = SpaceEntry::Discriminant::Unsigned;
-        se._addr = x;
+        se._data = x;
         _space.emplace_back(se);
     }
 
     void DictionaryEntry::addSpaceEntry(Floating x) {
         SpaceEntry se;
         se._type = SpaceEntry::Discriminant::FloatingPoint;
-        se._fp = x;
+        se._data = x;
         _space.emplace_back(se);
     }
 
     void DictionaryEntry::addSpaceEntry(bool x) {
         SpaceEntry se;
         se._type = SpaceEntry::Discriminant::Boolean;
-        se._truth = x;
+        se._data = x;
         _space.emplace_back(se);
     }
 
     void DictionaryEntry::addSpaceEntry(const DictionaryEntry* x) {
         SpaceEntry se;
         se._type = SpaceEntry::Discriminant::DictEntry;
-        se._entry = x;
+        se._data = x;
         _space.emplace_back(se);
     }
 
@@ -72,22 +72,22 @@ namespace forth {
         using Type = DictionaryEntry::SpaceEntry::Discriminant;
 		switch (_type) {
 			case Type::Signed:
-				machine->pushParameter(_int);
+				machine->pushParameter(std::get<Integer>(_data));
 				break;
 			case Type::Unsigned:
-				machine->pushParameter(_addr);
+				machine->pushParameter(std::get<Address>(_data));
 				break;
 			case Type::FloatingPoint:
-				machine->pushParameter(_fp);
+				machine->pushParameter(std::get<Floating>(_data));
 				break;
 			case Type::Boolean:
-				machine->pushParameter(_truth);
+				machine->pushParameter(std::get<bool>(_data));
 				break;
 			case Type::DictEntry:
-				_entry->operator()(machine);
+                std::get<const DictionaryEntry*>(_data)->operator()(machine);
 				break;
 			case Type::Word:
-				machine->pushParameter(_entry);
+				machine->pushParameter(std::get<const DictionaryEntry*>(_data));
 				break;
 			default:
                 throw Problem("unknown", "UNKNOWN ENTRY KIND!");

@@ -7,6 +7,7 @@
 #include <list>
 #include <string>
 #include <functional>
+#include <variant>
 
 namespace forth {
 	class Machine;
@@ -23,13 +24,8 @@ namespace forth {
 					Word,
 				};
 				Discriminant _type;
-				union {
-					Integer _int;
-					Address _addr;
-					Floating _fp;
-					bool _truth;
-					const DictionaryEntry* _entry;
-				};
+                std::variant<Integer, Address, Floating, bool, const DictionaryEntry*> _data;
+
 				void invoke(Machine* machine) const;
                 void operator()(Machine* machine) const;
 			};

@@ -1,6 +1,7 @@
 #include <iostream>
 #include "Machine.h"
 #include "Instruction.h"
+#include <variant>
 
 
 using Address = forth::Address;
@@ -228,6 +229,9 @@ void systemSetup(forth::Machine& machine) {
 	machine.dispatchInstruction(Instruction::encodeOperation(Instruction::load(forth::TargetRegister::SP2, forth::TargetRegister::X)));
 }
 int main() {
+    std::cout << "sizeof(SpaceEntry) = " << sizeof(forth::DictionaryEntry::SpaceEntry) << std::endl;
+    std::cout << "sizeof(variant) = " << sizeof(std::variant<forth::Integer, forth::Address, forth::Floating, bool, const forth::DictionaryEntry*>) << std::endl;
+    std::cout << "sizeof(SpaceEntry::Discriminant) = " << sizeof(forth::DictionaryEntry::SpaceEntry::Discriminant) << std::endl;
     forth::Machine machine (std::cout, std::cin);
     machine.initializeBaseDictionary();
 	microarchitectureWords(machine);

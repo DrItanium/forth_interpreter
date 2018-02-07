@@ -14,7 +14,9 @@ namespace forth {
 	using NativeMachineOperation = std::function<void(Machine*)>;
 	class DictionaryEntry {
 		public:
-			struct SpaceEntry {
+			struct SpaceEntry final {
+                SpaceEntry() = default;
+                ~SpaceEntry() = default;
 				enum class Discriminant {
 					Signed,
 					Unsigned,

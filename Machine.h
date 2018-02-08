@@ -140,6 +140,9 @@ namespace forth {
 				}
 			}
 			//void numericCombine(bool subtract = false);
+            void jumpOperation(Operation op, const Molecule& m);
+            void conditionalBranch(Operation op, const Molecule& m);
+
 			void numericCombine(Operation op, const Molecule& m);
 			void numericCombine(bool subtract, Register& dest, const Register& src0, const Register& src1);
 			void numericCombine(bool subtract = false);

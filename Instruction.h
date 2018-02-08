@@ -145,6 +145,16 @@ enum class Operation : byte {
 	FullImmediate(Equals),
 	PowFull,
 #undef FullImmediate
+    Jump,
+    JumpIndirect,
+    ConditionalBranch,
+    ConditionalBranchIndirect,
+    CallSubroutine,
+    CallSubroutineIndirect,
+    ConditionalCallSubroutine,
+    ConditionalCallSubroutineIndirect,
+    ReturnSubroutine,
+    ConditionalReturnSubroutine,
     Count,
 };
 

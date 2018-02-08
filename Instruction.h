@@ -528,6 +528,9 @@ namespace Instruction {
     constexpr QuarterAddress conditionalReturnSubroutine(TargetRegister cond) noexcept {
         return encodeTwoByte(Operation::ConditionalReturnSubroutine, cond, 0);
     }
+    constexpr QuarterAddress conditionalCallSubroutineIndirect(TargetRegister dest, TargetRegister cond) noexcept {
+        return encodeTwoByte(Operation::ConditionalCallSubroutineIndirect, dest, cond);
+    }
 } // end namespace Instruction
 
 

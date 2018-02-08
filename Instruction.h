@@ -511,11 +511,22 @@ namespace Instruction {
                 decodeBits<QuarterInteger, byte, 0x00FF, 0>(offset),
                 decodeBits<QuarterInteger, byte, 0xFF00, 8>(offset));
     }
+    constexpr HalfAddress conditionalCallSubroutine(TargetRegister cond, QuarterInteger offset) noexcept {
+        return encodeFourByte(Operation::ConditionalCallSubroutine, byte(cond), 
+                decodeBits<QuarterInteger, byte, 0x00FF, 0>(offset),
+                decodeBits<QuarterInteger, byte, 0xFF00, 8>(offset));
+    }
     constexpr HalfAddress callSubroutine(QuarterInteger offset) noexcept {
         return encodeFourByte(Operation::CallSubroutine,
                 decodeBits<QuarterInteger, byte, 0x00FF, 0>(offset),
                 decodeBits<QuarterInteger, byte, 0xFF00, 8>(offset),
                 0);
+    }
+    constexpr byte returnSubroutine() noexcept {
+        return singleByteOp(Operation::ReturnSubroutine);
+    }
+    constexpr QuarterAddress conditionalReturnSubroutine(TargetRegister cond) noexcept {
+        return encodeTwoByte(Operation::ConditionalReturnSubroutine, cond, 0);
     }
 } // end namespace Instruction
 

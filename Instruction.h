@@ -419,7 +419,7 @@ namespace Instruction {
     constexpr Address encodeThreeByteOperation(Address curr, T value, Args&& ... rest) noexcept {
         static_assert(offset < 8, "Too many fields provided!");
         return encodeOperation<offset + 3, Args...>(
-                encodeThreeByteOperation<offset, T>(curr, value),
+                encodeThreeByteOperation<offset, T>(value, curr),
                 std::move(rest)...);
     }
     template<byte offset, typename ... Args>

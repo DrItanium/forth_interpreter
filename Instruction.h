@@ -173,9 +173,10 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         return 0;
     }
     switch (op) {
-        case Operation::Jump:
-        case Operation::ConditionalBranch:
         case Operation::CallSubroutine:
+        case Operation::Jump:
+            return 3;
+        case Operation::ConditionalBranch:
         case Operation::ConditionalCallSubroutine:
         case Operation::SetImmediate16_Lower:
         case Operation::SetImmediate16_Lowest:
@@ -382,6 +383,11 @@ namespace Instruction {
         static_assert(startOffset < 8, "Illegal byte offset start address!");
         return encodeByte<Address(0xFF) << (startOffset * 8), startOffset * 8>(value, target);
     }
+    template<byte startOffset>
+    constexpr Address encodeThreeByteOperation(HalfAddress value, Address target = 0) noexcept {
+        static_assert(startOffset < 6, "Illegal three byte offset start address!");
+        return encodeHalfAddress<0x00FFFFFF << (startOffset * 8), startOffset * 8>(value, target);
+    }
     template<byte offset, typename T>
     constexpr Address encodeOperation(Address curr, T first) noexcept {
         static_assert(offset < 8, "Too many fields provided!");
@@ -394,6 +400,13 @@ namespace Instruction {
                 encodeOperation<offset, T>(curr, first),
                 std::move(rest)...);
     }
+    template<byte offset, typename T, typename ... Args>
+    constexpr Address encodeThreeByteOperation(Address curr, T value, Args&& ... rest) noexcept {
+        static_assert(offset < 8, "Too many fields provided!");
+        return encodeOperation<offset + 3, Args...>(
+                encodeThreeByteOperation<offset, T>(curr, value),
+                std::move(rest)...);
+    }
     template<byte offset, typename ... Args>
     constexpr Address encodeOperation(Address curr, HalfAddress value, Args&& ... rest) noexcept {
         // we will either have 3 or four bytes to look at
@@ -402,6 +415,8 @@ namespace Instruction {
                 return encodeOperation<offset>(curr, static_cast<byte>(value), std::move(rest)...);
             case 2:
                 return encodeOperation<offset>(curr, static_cast<QuarterAddress>(value), std::move(rest)...);
+            case 3:
+                return encodeThreeByteOperation<offset>(curr, value, std::move(rest)...);
             case 4:
                 return encodeOperation<offset>(curr, static_cast<QuarterAddress>(value), static_cast<QuarterAddress>(value >> 16), std::move(rest)...);
             default:
@@ -480,6 +495,27 @@ namespace Instruction {
     }
     constexpr QuarterAddress decrement(TargetRegister reg, byte imm4) noexcept {
         return encodeTwoByte(Operation::Decrement, reg, imm4);
+    }
+    constexpr HalfAddress jump(QuarterInteger offset) noexcept {
+        return encodeFourByte(Operation::Jump,
+                decodeBits<QuarterInteger, byte, 0x00FF, 0>(offset),
+                decodeBits<QuarterInteger, byte, 0xFF00, 8>(offset),
+                0);
+    }
+    constexpr QuarterAddress jumpIndirect(TargetRegister reg) noexcept {
+        // put a zero there!
+        return encodeTwoByte(Operation::JumpIndirect, reg, TargetRegister::A);
+    }
+    constexpr HalfAddress conditionalBranch(TargetRegister cond, QuarterInteger offset) noexcept {
+        return encodeFourByte(Operation::ConditionalBranch, byte(cond), 
+                decodeBits<QuarterInteger, byte, 0x00FF, 0>(offset),
+                decodeBits<QuarterInteger, byte, 0xFF00, 8>(offset));
+    }
+    constexpr HalfAddress callSubroutine(QuarterInteger offset) noexcept {
+        return encodeFourByte(Operation::CallSubroutine,
+                decodeBits<QuarterInteger, byte, 0x00FF, 0>(offset),
+                decodeBits<QuarterInteger, byte, 0xFF00, 8>(offset),
+                0);
     }
 } // end namespace Instruction
 

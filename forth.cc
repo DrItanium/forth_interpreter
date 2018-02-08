@@ -238,6 +238,7 @@ int main() {
     std::cout << "sizeof(variant) = " << sizeof(std::variant<forth::Integer, forth::Address, forth::Floating, bool, const forth::DictionaryEntry*>) << std::endl;
     std::cout << "sizeof(SpaceEntry::Discriminant) = " << sizeof(forth::DictionaryEntry::SpaceEntry::Discriminant) << std::endl;
     std::cout << "add C = B, X : 0x" << std::hex << forth::Instruction::add(rc, rb, rx) << std::endl;
+	std::cout << "xor full op index: 0x" << std::hex << (int)forth::Operation::XorFull << std::endl;
     forth::Machine machine (std::cout, std::cin);
     machine.initializeBaseDictionary();
 	microarchitectureWords(machine);

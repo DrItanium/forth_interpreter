@@ -58,10 +58,14 @@ constexpr byte encodeDestinationRegister(byte value, TargetRegister reg) noexcep
 constexpr byte encodeDestinationRegister(TargetRegister reg) noexcept {
     return encodeDestinationRegister(0, reg);
 }
-constexpr byte encodeSourceRegister(byte value, TargetRegister reg) noexcept {
-    return encodeBits<byte, byte, 0xF0, 4>(value, (byte)reg);
+constexpr byte encodeSourceRegister(byte value, byte reg) noexcept {
+    return encodeBits<byte, byte, 0xF0, 4>(value, reg);
 }
-constexpr byte encodeRegisterPair(TargetRegister dest, TargetRegister src) noexcept {
+constexpr byte encodeSourceRegister(byte value, TargetRegister reg) noexcept {
+    return encodeSourceRegister(value, byte(reg));
+}
+template<typename T>
+constexpr byte encodeRegisterPair(TargetRegister dest, T src) noexcept {
     return encodeSourceRegister(encodeDestinationRegister(dest), src);
 }
 static_assert(byte(TargetRegister::Error) <= 16, "Too many registers defined!");
@@ -155,6 +159,8 @@ enum class Operation : byte {
     ConditionalCallSubroutineIndirect,
     ReturnSubroutine,
     ConditionalReturnSubroutine,
+    Increment,
+    Decrement,
     Count,
 };
 
@@ -167,6 +173,10 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         return 0;
     }
     switch (op) {
+        case Operation::Jump:
+        case Operation::ConditionalBranch:
+        case Operation::CallSubroutine:
+        case Operation::ConditionalCallSubroutine:
         case Operation::SetImmediate16_Lower:
         case Operation::SetImmediate16_Lowest:
         case Operation::SetImmediate16_Higher:
@@ -198,6 +208,13 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
 		case Operation::NotFull:
 		case Operation::MinusFull:
 		case Operation::PowFull:
+        case Operation::JumpIndirect:
+        case Operation::ConditionalBranchIndirect:
+        case Operation::CallSubroutineIndirect:
+        case Operation::ConditionalCallSubroutineIndirect:
+        case Operation::ConditionalReturnSubroutine:
+        case Operation::Increment:
+        case Operation::Decrement:
             return 2;
         default:
             return 1;
@@ -235,7 +252,8 @@ namespace Instruction {
     constexpr QuarterAddress encodeTwoByte(Operation first, byte second) noexcept {
         return encodeTwoByte(byte(first), second);
     }
-    constexpr QuarterAddress encodeTwoByte(Operation first, TargetRegister dest, TargetRegister src) noexcept {
+    template<typename T>
+    constexpr QuarterAddress encodeTwoByte(Operation first, TargetRegister dest, T src) noexcept {
         return encodeTwoByte(first, encodeRegisterPair(dest, src));
     }
     constexpr HalfAddress encodeThreeByte(Operation first, byte second, byte third) noexcept {
@@ -457,6 +475,12 @@ namespace Instruction {
 				Instruction::setImmediate64_Higher(reg, value),
 				Instruction::setImmediate64_Highest(reg, value));
 	}
+    constexpr QuarterAddress increment(TargetRegister reg, byte imm4) noexcept {
+        return encodeTwoByte(Operation::Increment, reg, imm4);
+    }
+    constexpr QuarterAddress decrement(TargetRegister reg, byte imm4) noexcept {
+        return encodeTwoByte(Operation::Decrement, reg, imm4);
+    }
 } // end namespace Instruction
 
 

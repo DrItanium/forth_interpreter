@@ -458,11 +458,13 @@ namespace forth {
 		auto& [dest, src0, src1] = result;
 		numericCombine(subtractOperation(op), dest, src0, src1);
 	}
-	std::tuple<TargetRegister, TargetRegister, TargetRegister> Machine::extractThreeRegisterForm(const Molecule& m) {
+	std::tuple<TargetRegister, TargetRegister, TargetRegister> Machine::extractThreeRegisterForm(const Molecule& m, bool skipOverLastByte) {
 		auto b0 = m.getByte(_registerIP.getAddress()); _registerIP.increment();
 		auto b1 = m.getByte(_registerIP.getAddress()); _registerIP.increment();
 		// skip over the last byte
-		m.getByte(_registerIP.getAddress()); _registerIP.increment();
+        if (skipOverLastByte) {
+		    m.getByte(_registerIP.getAddress()); _registerIP.increment();
+        }
 		return std::make_tuple(TargetRegister(getDestinationRegister(b0)), TargetRegister(getSourceRegister(b0)), TargetRegister(getDestinationRegister(b1)));
 	}
 	std::tuple<TargetRegister, TargetRegister, Address> Machine::extractThreeRegisterImmediateForm(const Molecule& m) {
@@ -806,7 +808,6 @@ namespace forth {
 		if (!_initializedBaseDictionary) {
 			_initializedBaseDictionary = true;
 			// add dictionary entries
-			addWord("quit", std::mem_fn(&Machine::terminateExecution));
 			addWord(";", std::mem_fn(&Machine::semicolonOperation));
 			addWord("registers", std::mem_fn(&Machine::printRegisters));
 			addWord("words", std::mem_fn(&Machine::listWords));
@@ -1266,14 +1267,7 @@ endLoopTop:
         dispatchInstructionStream<loadLower, loadUpper, loadValueIntoX>();
 		return _registerX.getTruth();
 	}
-	void Machine::terminateExecution() {
-		//_keepExecuting = false;
-		static constexpr auto loadLowerKeepExeucting = Instruction::loadAddressLowerHalf(TargetRegister::X, shouldKeepExecutingLocation);
-		static constexpr auto loadUpperKeepExecuting = Instruction::loadAddressUpperHalf(TargetRegister::X, shouldKeepExecutingLocation);
-		// TODO: fix this hack
-		_registerC.setType(Discriminant::MemoryAddress);
-		dispatchInstructionStream<loadLowerKeepExeucting, loadUpperKeepExecuting, storeFalse>();
-	}
+
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
 		// clear the stacks and the input pointer
 		_parameter.clear();

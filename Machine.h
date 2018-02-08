@@ -241,7 +241,6 @@ namespace forth {
              * Printout the contents of the given word!
              */
             void seeWord();
-			void terminateExecution();
             void seeWord(const DictionaryEntry* entry);
 			std::string readWord();
             void moveOrSwap(TargetRegister from, TargetRegister to, bool swap = false);
@@ -310,7 +309,7 @@ namespace forth {
 			void deactivateCompileMode();
 			std::tuple<Register&, Register&, Register&> extractArguments(Operation op, const Molecule& m, std::function<void(Register&, Address)> onImmediate = nullptr);
 			std::tuple<Register&, Register&> extractArgs2(Operation op, const Molecule& m);
-			std::tuple<TargetRegister, TargetRegister, TargetRegister> extractThreeRegisterForm(const Molecule& m);
+			std::tuple<TargetRegister, TargetRegister, TargetRegister> extractThreeRegisterForm(const Molecule& m, bool skipOverLastByte = false);
 			std::tuple<TargetRegister, TargetRegister, Address> extractThreeRegisterImmediateForm(const Molecule& m);
 			std::tuple<TargetRegister, TargetRegister> extractTwoRegisterForm(const Molecule& m);
 			void pushOntoStack(TargetRegister sp, Datum value, Address fullLocation);

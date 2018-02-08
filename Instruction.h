@@ -173,6 +173,22 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         return 0;
     }
     switch (op) {
+#define FullImmediate(x) \
+		case Operation:: x ## Full 
+		FullImmediate(Add):
+		FullImmediate(Subtract):
+		FullImmediate(Multiply):
+		FullImmediate(Divide): 
+		FullImmediate(Modulo): 
+		FullImmediate(And): 
+		FullImmediate(Or): 
+		FullImmediate(GreaterThan): 
+		FullImmediate(LessThan): 
+		FullImmediate(Xor):
+		FullImmediate(ShiftRight):
+		FullImmediate(ShiftLeft):
+		FullImmediate(Equals):
+#undef FullImmediate
         case Operation::CallSubroutine:
         case Operation::Jump:
             return 3;
@@ -183,21 +199,20 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         case Operation::SetImmediate16_Higher:
         case Operation::SetImmediate16_Highest:
 #define FullImmediate(x) \
-		case Operation:: x ## Full : \
-		case Operation:: x ## Immediate : 
-		FullImmediate(Add) 
-		FullImmediate(Subtract) 
-		FullImmediate(Multiply) 
-		FullImmediate(Divide) 
-		FullImmediate(Modulo) 
-		FullImmediate(And) 
-		FullImmediate(Or) 
-		FullImmediate(GreaterThan) 
-		FullImmediate(LessThan) 
-		FullImmediate(Xor)
-		FullImmediate(ShiftRight)
-		FullImmediate(ShiftLeft)
-		FullImmediate(Equals)
+		case Operation:: x ## Immediate 
+		FullImmediate(Add): 
+		FullImmediate(Subtract): 
+		FullImmediate(Multiply): 
+		FullImmediate(Divide): 
+		FullImmediate(Modulo): 
+		FullImmediate(And): 
+		FullImmediate(Or): 
+		FullImmediate(GreaterThan): 
+		FullImmediate(LessThan): 
+		FullImmediate(Xor):
+		FullImmediate(ShiftRight):
+		FullImmediate(ShiftLeft):
+		FullImmediate(Equals):
 #undef FullImmediate
             return 4;
         case Operation::PopRegister:

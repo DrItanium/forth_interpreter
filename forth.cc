@@ -204,6 +204,11 @@ void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<popA, popB>("pop.ab");
 	machine.addMachineCodeWord<popA, Instruction::typeValue()>(",");
 	machine.addMachineCodeWord<Instruction::swap(ra, rb)>("swap.ab");
+    machine.addMoleculeSequence<
+        Instruction::loadAddressLowerHalf(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+        Instruction::loadAddressUpperHalf(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+        Instruction::encodeOperation(Instruction::xorOp(rc, ra, ra),
+                Instruction::store(rx, rc))>("quit");
 }
 void compoundWords(forth::Machine& machine) {
 	machine.buildWord(",u", "t.address", ",");
@@ -232,6 +237,7 @@ int main() {
     std::cout << "sizeof(SpaceEntry) = " << sizeof(forth::DictionaryEntry::SpaceEntry) << std::endl;
     std::cout << "sizeof(variant) = " << sizeof(std::variant<forth::Integer, forth::Address, forth::Floating, bool, const forth::DictionaryEntry*>) << std::endl;
     std::cout << "sizeof(SpaceEntry::Discriminant) = " << sizeof(forth::DictionaryEntry::SpaceEntry::Discriminant) << std::endl;
+    std::cout << "add C = B, X : 0x" << std::hex << forth::Instruction::add(rc, rb, rx) << std::endl;
     forth::Machine machine (std::cout, std::cin);
     machine.initializeBaseDictionary();
 	microarchitectureWords(machine);

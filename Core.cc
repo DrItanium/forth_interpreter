@@ -91,10 +91,6 @@ Core::ThreeRegisterForm Core::extractThreeRegisterForm() {
 	return std::make_tuple(TargetRegister(getDestinationRegister(regs)), TargetRegister(getSourceRegister(regs)), TargetRegister(getDestinationRegister(regs2)));
 }
 
-Core::TwoRegisterArguments Core::extractArguments2(Operation op) {
-	auto regs = extractTwoRegisterForm();
-	return std::forward_as_tuple(getRegister(std::get<0>(regs)), getRegister(std::get<1>(regs)));
-}
 
 Core::ThreeRegisterArguments Core::extractArguments(Operation op, std::function<void(Register&, Address)> onImmediate) {
 	if (immediateForm(op)) {
@@ -254,6 +250,132 @@ void Core::equalsOperation(Operation op) {
 	auto t = extractArguments(op);
 	auto& [dest, src0, src1] = t;
 	numericOperationAndBool("eq", dest, src0, src1, [](auto a, auto b) { return a == b; });
+}
+
+void Core::push(Operation op) {
+	switch (op) {
+		case Operation::PushA:
+			push(TargetRegister::A, TargetRegister::SP);
+			break;
+		case Operation::PushB:
+			push(TargetRegister::B, TargetRegister::SP);
+			break;
+		case Operation::PushC:
+			push(TargetRegister::C, TargetRegister::SP);
+			break;
+		default: {
+					 auto args = extractTwoRegisterForm();
+					 // push sp, src
+					 push(std::get<1>(args), std::get<0>(args));
+					 break;
+				 }
+	}
+}
+
+void Core::pop(Operation op) {
+	switch (op) {
+		case Operation::PopA:
+			pop(TargetRegister::A, TargetRegister::SP);
+			break;
+		case Operation::PopB:
+			pop(TargetRegister::B, TargetRegister::SP);
+			break;
+		case Operation::PopT:
+			pop(TargetRegister::T, TargetRegister::SP);
+			break;
+		case Operation::PopC:
+			pop(TargetRegister::C, TargetRegister::SP);
+			break;
+		default: {
+					 auto args = extractTwoRegisterForm();
+					 // pop dest, sp
+					 pop(std::get<0>(args), std::get<1>(args));
+					 break;
+				 }
+	}
+}
+
+template<typename T>
+void numericBoolAndInteger(const std::string& op, Register& dest, const Register& src0, T fn) {
+	switch(dest.getType()) {
+		case Discriminant::Number:
+			dest.setValue(fn(src0.getInt()));
+			break;
+		case Discriminant::MemoryAddress:
+			dest.setValue(fn(src0.getAddress()));
+			break;
+		case Discriminant::Boolean:
+			dest.setValue(fn(src0.getTruth()));
+			break;
+		default:
+			throw Problem(op, "ILLEGAL DISCRIMINANT!");
+	}
+}
+
+template<typename T>
+void numericBoolAndInteger(const std::string& op, Register& dest, const Register& src0, const Register& src1, T fn) {
+	switch(dest.getType()) {
+		case Discriminant::Number:
+			dest.setValue(fn(src0.getInt(), src1.getInt()));
+			break;
+		case Discriminant::MemoryAddress:
+			dest.setValue(fn(src0.getAddress(), src1.getAddress()));
+			break;
+		case Discriminant::Boolean:
+			dest.setValue(fn(src0.getTruth(), src1.getTruth()));
+			break;
+		default:
+			throw Problem(op, "ILLEGAL DISCRIMINANT!");
+	}
+}
+
+void Core::notOperation(Operation op) {
+	auto tup = extractTwoRegisterForm();
+	auto& dest = getRegister(std::get<0>(tup));
+	auto& src = getRegister(std::get<1>(tup));
+	switch (dest.getType()) {
+		case Discriminant::Number:
+			dest.setValue(~src.getInt());
+			break;
+		case Discriminant::MemoryAddress:
+			dest.setValue(~src.getAddress());
+			break;
+		case Discriminant::Boolean:
+			dest.setValue(!src.getTruth());
+			break;
+		default:
+			throw Problem("not", "ILLEGAL DISCRIMINANT");
+	}
+}
+
+void Core::minusOperation(Operation op) {
+	auto tup = extractTwoRegisterForm();
+	auto& dest = getRegister(std::get<0>(tup));
+	auto& src = getRegister(std::get<1>(tup));
+	switch (dest.getType()) {
+		case Discriminant::Number:
+			dest.setValue(-src.getInt());
+			break;
+		case Discriminant::FloatingPoint:
+			dest.setValue(-src.getFP());
+			break;
+		default:
+			throw Problem("not", "ILLEGAL DISCRIMINANT");
+	}
+}
+
+void Core::booleanAlgebra(Operation op) {
+	auto tup = extractArguments(op);
+	auto& [dest, src0, src1] = tup;
+	if (andForm(op)) {
+		numericBoolAndInteger("and", dest, src0, src1, [](auto a, auto b) { if constexpr (std::is_same<decltype(a), bool>::value) { return a && b; } else { return a & b; }});
+	} else if (orForm(op)) {
+		numericBoolAndInteger("or", dest, src0, src1, [](auto a, auto b) { if constexpr (std::is_same<decltype(a), bool>::value) { return a || b; } else { return a | b; }});
+	} else if (xorForm(op)) {
+		numericBoolAndInteger("xor", dest, src0, src1, [](auto a, auto b) { if constexpr (std::is_same<decltype(a), bool>::value) { return a != b; } else { return a ^ b; }});
+	} else {
+		throw Problem("booleanAlgebra", "UNKNOWN OPERATION GROUP!");
+	}
 }
 
 

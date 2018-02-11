@@ -304,6 +304,36 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
 #undef Full
 		}
 	}
+constexpr bool andForm(Operation op) noexcept {
+	switch (op) {
+		case Operation::And:
+		case Operation::AndImmediate:
+		case Operation::AndFull:
+			return true;
+		default:
+			return false;
+	}
+}
+constexpr bool orForm(Operation op) noexcept {
+	switch (op) {
+		case Operation::Or:
+		case Operation::OrImmediate:
+		case Operation::OrFull:
+			return true;
+		default:
+			return false;
+	}
+}
+constexpr bool xorForm(Operation op) noexcept {
+	switch (op) {
+		case Operation::Xor:
+		case Operation::XorImmediate:
+		case Operation::XorFull:
+			return true;
+		default:
+			return false;
+	}
+}
 constexpr byte getInstructionWidth(byte value) noexcept {
     return getInstructionWidth(static_cast<Operation>(value));
 }

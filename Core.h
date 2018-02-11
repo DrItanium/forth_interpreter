@@ -30,20 +30,17 @@ class Core {
 		void multiplyOperation(Operation op);
 		void divideOperation(Operation op);
 		void equalsOperation(Operation op);
-		void popOperation(Operation op);
-		void pushOperation(Operation op);
+		void push(Operation op);
+		void pop(Operation op);
 		void notOperation(Operation op);
 		void minusOperation(Operation op);
-		void andOperation(Operation op);
-		void orOperation(Operation op);
+		void booleanAlgebra(Operation op);
 		void greaterThanOperation(Operation op);
 		void lessThanOperation(Operation op);
-		void xorOperation(Operation op);
 		void shiftOperation(Operation op);
 		void jumpOperation(Operation op);
 		void conditionalBranch(Operation op);
-		void push(Operation op);
-		void pop(Operation op);
+		void powOperation(Operation op);
 	private:
 		using ThreeRegisterForm = std::tuple<TargetRegister, TargetRegister, TargetRegister>;
 		using ThreeRegisterImmediateForm = std::tuple<TargetRegister, TargetRegister, QuarterAddress>;
@@ -51,7 +48,6 @@ class Core {
 		using ThreeRegisterArguments = std::tuple<Register&, Register&, Register&>;
 		using TwoRegisterArguments = std::tuple<Register&, Register&>;
 		ThreeRegisterArguments extractArguments(Operation op, std::function<void(Register&, Address)> onImmediate = nullptr);
-		TwoRegisterArguments extractArguments2(Operation op);
 		ThreeRegisterForm extractThreeRegisterForm();
 		ThreeRegisterImmediateForm extractThreeRegisterImmediateForm();
 		TwoRegisterForm extractTwoRegisterForm();

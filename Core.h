@@ -23,6 +23,7 @@ class Core {
 		Datum load(Address addr);
 		void store(Address addr, const Datum& value);
 	private:
+		void push(const Datum& d, TargetRegister sp);
 		void push(TargetRegister reg, TargetRegister sp);
 		void pop(TargetRegister dest, TargetRegister sp);
 	private:
@@ -51,6 +52,7 @@ class Core {
 		ThreeRegisterForm extractThreeRegisterForm();
 		ThreeRegisterImmediateForm extractThreeRegisterImmediateForm();
 		TwoRegisterForm extractTwoRegisterForm();
+		QuarterInteger extractQuarterIntegerFromMolecule();
 		QuarterAddress extractQuarterAddressFromMolecule();
 		byte extractByteFromMolecule();
 		Operation extractOperationFromMolecule();

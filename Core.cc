@@ -73,6 +73,11 @@ QuarterAddress Core::extractQuarterAddressFromMolecule() {
 	advanceMoleculePosition(sizeof(q));
 	return q;
 }
+QuarterInteger Core::extractQuarterIntegerFromMolecule() {
+	auto q = Molecule(_currentMolecule.getAddress()).getQuarterOffset(_moleculePosition.getAddress());
+	advanceMoleculePosition(sizeof(q));
+	return q;
+}
 
 Core::TwoRegisterForm Core::extractTwoRegisterForm() {
 	// single byte
@@ -439,6 +444,41 @@ void Core::incrDecr(Operation op) {
 			break;
 		default:
 			throw Problem("incrDecr", "Unknown increment decrement style operation!");
+	}
+}
+
+constexpr HalfAddress makeImm24(QuarterAddress lower16, byte upper8) noexcept {
+	return encodeBits<HalfAddress, QuarterAddress, 0x00FF0000, 16>(HalfAddress(lower16), static_cast<QuarterAddress>(upper8));
+}
+
+void Core::jumpOperation(Operation op) {
+	switch (op) {
+		case Operation::Jump:
+			_pc.setValue(_pc.getInt() + extractQuarterIntegerFromMolecule());
+			break;
+		case Operation::JumpAbsolute: 
+			_pc.setValue((Address)makeImm24(extractQuarterIntegerFromMolecule(), extractByteFromMolecule()));
+			break;
+		case Operation::JumpIndirect: 
+			_pc.setValue(getRegister((TargetRegister)getDestinationRegister(extractByteFromMolecule())).getValue());
+			break;
+		case Operation::CallSubroutine: {
+											auto value = _pc.getValue();
+											++value.address;
+											push(value, TargetRegister::SP2);
+											_pc.setValue((Address)makeImm24(extractQuarterIntegerFromMolecule(), extractByteFromMolecule()));
+											break;
+										}
+		case Operation::CallSubroutineIndirect: {
+													auto value = _pc.getValue();
+													++value.address;
+													push(value, TargetRegister::SP2);
+													_pc.setValue(getRegister((TargetRegister)getDestinationRegister(extractByteFromMolecule())).getValue());
+													break;
+												}
+		default:
+									  throw Problem("jumpOperation", "unknown jump operation!");
+
 	}
 }
 

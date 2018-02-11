@@ -36,6 +36,11 @@ union Molecule {
         auto upper = static_cast<QuarterAddress>(getByte(index + 1));
         return (upper << 8) | lower;
     }
+	QuarterInteger getQuarterOffset(Address index) const {
+        auto lower = static_cast<QuarterInteger>(getByte(index));
+        auto upper = static_cast<QuarterInteger>(getByte(index + 1));
+		return (upper << 8) | lower;
+	}
 };
 enum class TargetRegister : byte {
     A,
@@ -151,16 +156,18 @@ enum class Operation : byte {
 #undef FullImmediate
     Jump,
     JumpIndirect,
-    ConditionalBranch,
-    ConditionalBranchIndirect,
+	JumpAbsolute,
     CallSubroutine,
     CallSubroutineIndirect,
+    ReturnSubroutine,
+    ConditionalBranch,
+    ConditionalBranchIndirect,
     ConditionalCallSubroutine,
     ConditionalCallSubroutineIndirect,
-    ReturnSubroutine,
     ConditionalReturnSubroutine,
     Increment,
     Decrement,
+	LoadNextWordAndSkip,
     Count,
 };
 
@@ -218,6 +225,7 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         case Operation::SetImmediate16_Lowest:
         case Operation::SetImmediate16_Higher:
         case Operation::SetImmediate16_Highest:
+		case Operation::JumpAbsolute:
 #define FullImmediate(x) \
 		case Operation:: x ## Immediate 
 		FullImmediate(Add): 

@@ -35,9 +35,9 @@ class Core {
 		void notOperation(Operation op);
 		void minusOperation(Operation op);
 		void booleanAlgebra(Operation op);
+		void shiftOperation(Operation op);
 		void greaterThanOperation(Operation op);
 		void lessThanOperation(Operation op);
-		void shiftOperation(Operation op);
 		void jumpOperation(Operation op);
 		void conditionalBranch(Operation op);
 		void powOperation(Operation op);

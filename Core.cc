@@ -378,5 +378,25 @@ void Core::booleanAlgebra(Operation op) {
 	}
 }
 
+void Core::shiftOperation(Operation op) {
+	auto tup = extractArguments(op);
+	auto& [dest, src0, src1] = tup;
+	switch (op) {
+		case Operation::ShiftLeft:
+		case Operation::ShiftLeftImmediate:
+		case Operation::ShiftLeftFull:
+			numericOperationIntegerOnly("<<", dest, src0, src1, [](auto a, auto b) { return a << b; });
+			break;
+		case Operation::ShiftRight:
+		case Operation::ShiftRightImmediate:
+		case Operation::ShiftRightFull:
+			numericOperationIntegerOnly(">>", dest, src0, src1, [](auto a, auto b) { return a >> b; });
+			break;
+		default:
+			throw Problem("shiftOperation", "Unknown shift operation!");
+			
+	}
+}
+
 
 } // namespace forth

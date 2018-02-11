@@ -12,8 +12,6 @@
 namespace forth {
 	class Machine {
 		public:
-			static constexpr Address largestAddress = 0xFFFFFF;
-			static constexpr Address memoryCapacity = (largestAddress + 1);
 			static constexpr Address shouldKeepExecutingLocation = 0xFFFFFF;
 			static constexpr Address isCompilingLocation = 0xFFFFFE;
 			static constexpr Address ignoreInputLocation = 0xFFFFFD;
@@ -326,7 +324,6 @@ namespace forth {
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;
 			std::istream& _input;
-			std::unique_ptr<Datum[]> _memory;
 			DictionaryEntry* _words;
 			// no need for the subroutine stack
             //std::list<Datum> _subroutine;

@@ -4,7 +4,7 @@
 #include <string>
 
 namespace forth {
-Core::Core(LoadInterface load, StoreInterface store) : _load(load), _store(store), _systemVariables(new Datum[systemVariableSize]) { }
+Core::Core() : _memory(new Datum[memoryCapacity]), _systemVariables(new Datum[systemVariableSize]) { }
 
 Register& Core::getRegister(TargetRegister reg) {
 	using Type = decltype(t);
@@ -110,10 +110,14 @@ ThreeRegisterArguments Core::extractArguments(Operation op, std::function<void(R
 	}
 }
 
-void Core::pop(Operation op) {
 
+void Core::store(Address addr, const Datum& value) {
+	if (inSystemVariableArea(addr)) {
+		
+	} else {
+		_store(addr, value);
+	}
 }
-
 
 
 } // namespace forth

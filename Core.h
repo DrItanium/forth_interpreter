@@ -7,20 +7,20 @@
 namespace forth {
 class Core {
 	public:
-		using LoadInterface = std::function<Datum(Address)>;
-		using StoreInterface = std::function<void(Address, const Datum&)>;
+		static constexpr Address largestAddress = 0xFFFFFF;
+		static constexpr Address memoryCapacity = (largestAddress + 1);
 		// we have a 64-kiloword area for storing internal system values.
 		static constexpr Address systemVariableStart = 0xFFFFFFFFFFFF0000;
 		static constexpr Address systemVariableEnd = 0xFFFFFFFFFFFFFFFF;
 		static constexpr Address systemVariableSize = (systemVariableEnd - systemVariableStart) + 1;
 	public:
-		Core(LoadInterface load, StoreInterface store);
+		Core();
 		~Core() = default;
 		//void executionLoop();
 		void dispatchInstruction(const Molecule& m);
-	private:
 		Datum load(Address addr);
 		void store(Address addr, const Datum& value);
+	private:
 		void push(TargetRegister reg, TargetRegister sp);
 		void pop(TargetRegister dest, TargetRegister sp);
 	private:
@@ -70,10 +70,8 @@ class Core {
 		Register _pc;
 		Register _tmp0, _tmp1;
 		Register _currentMolecule, _moleculePosition;
-		LoadInterface _load;
-		StoreInterface _store;
 		// mapped to 0xFFFFFFFFFFFF0000
-		std::unique_ptr<Datum[]> _systemVariables;
+		std::unique_ptr<Datum[]> _memory, _systemVariables;
 
 };
 } // end namespace forth

@@ -26,6 +26,7 @@ class Core {
 		void push(const Datum& d, TargetRegister sp);
 		void push(TargetRegister reg, TargetRegister sp);
 		void pop(TargetRegister dest, TargetRegister sp);
+		Datum pop(TargetRegister sp);
 	private:
 		void numericCombine(Operation op);
 		void multiplyOperation(Operation op);

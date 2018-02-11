@@ -136,32 +136,39 @@ Datum Core::load(Address addr) {
 }
 
 void Core::push(TargetRegister reg, TargetRegister sp) {
+	auto& value = getRegister(reg);
+	if (involvesDiscriminantRegister(reg)) {
+		push((Address)value.getType(), sp);
+	} else {
+		push(value.getValue(), sp);
+	}
+}
+void Core::push(const Datum& d, TargetRegister sp) {
 	if (involvesDiscriminantRegister(sp)) {
 		throw Problem("push", "Can't use the discriminant field as a stack pointer!");
 	}
 	auto& stackPointer = getRegister(sp);
-	auto& value = getRegister(reg);
 	stackPointer.decrement();
-	if (involvesDiscriminantRegister(reg)) {
-		store(stackPointer.getAddress(), (Address)value.getType());
-	} else {
-		store(stackPointer.getAddress(), value.getValue());
-	}
+	store (stackPointer.getAddress(), d);
 }
 
-void Core::pop(TargetRegister reg, TargetRegister sp) {
+Datum Core::pop(TargetRegister sp) {
 	if (involvesDiscriminantRegister(sp)) {
 		throw Problem("pop", "Can't use the discriminant field as a stack pointer!");
 	}
 	auto& stackPointer = getRegister(sp);
-	auto& dest = getRegister(reg);
 	auto result = load(stackPointer.getAddress());
-	if (involvesDiscriminantRegister(sp)) {
+	stackPointer.increment();
+	return result;
+}
+void Core::pop(TargetRegister reg, TargetRegister sp) {
+	auto& dest = getRegister(reg);
+	auto result = pop(sp);
+	if (involvesDiscriminantRegister(reg)) {
 		dest.setType(static_cast<Discriminant>(result.address));
 	} else {
 		dest.setValue(result);
 	}
-	stackPointer.increment();
 }
 
 template<typename T>
@@ -476,6 +483,10 @@ void Core::jumpOperation(Operation op) {
 													_pc.setValue(getRegister((TargetRegister)getDestinationRegister(extractByteFromMolecule())).getValue());
 													break;
 												}
+		case Operation::ReturnSubroutine: {
+											  _pc.setValue(pop(TargetRegister::SP2));
+											  break;
+										  }
 		default:
 									  throw Problem("jumpOperation", "unknown jump operation!");
 

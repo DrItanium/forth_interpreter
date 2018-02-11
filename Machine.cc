@@ -364,16 +364,6 @@ namespace forth {
 				throw Problem(title, "ILLEGAL DISCRIMINANT!");
 		}
 	}
-	constexpr bool subtractOperation(Operation op) noexcept {
-		switch(op) {
-			case Operation::Subtract:
-			case Operation::SubtractFull:
-			case Operation::SubtractImmediate:
-				return true;
-			default:
-				return false;
-		}
-	}
 	void Machine::numericCombine(bool subtract, Register& dest, const Register& src0, const Register& src1) {
 		auto fn = [this, subtract](Register& dest, auto a, auto b) { 
 			dest.setValue(subtract ? (a - b) : (a + b ));
@@ -591,20 +581,6 @@ namespace forth {
 		_parameter.emplace_front(value);
 	}
 
-	Datum Machine::load(Address addr) {
-		if (addr > largestAddress) {
-			throw Problem("mload", "BAD ADDRESS!");
-		} else {
-			return Datum (_memory[addr]);
-		}
-	}
-	void Machine::store(Address addr, const Datum& value) {
-		if (addr > largestAddress) {
-			throw Problem("mstore", "BAD ADDRESS!");
-		} else {
-			_memory[addr] = value.numValue;
-		}
-	}
 	bool Machine::numberRoutine(const std::string& word) noexcept {
 		static constexpr auto loadTrueToStack = Instruction::encodeOperation(
 				Instruction::setImmediate16_Lowest(TargetRegister::C, 1),

@@ -134,7 +134,7 @@ void Core::push(TargetRegister reg, TargetRegister sp) {
 	}
 	auto& stackPointer = getRegister(sp);
 	auto& value = getRegister(reg);
-	stackPointer.increment();
+	stackPointer.decrement();
 	if (involvesDiscriminantRegister(reg)) {
 		store(stackPointer.getAddress(), (Address)value.getType());
 	} else {
@@ -154,7 +154,35 @@ void Core::pop(TargetRegister reg, TargetRegister sp) {
 	} else {
 		dest.setValue(result);
 	}
-	stackPointer.decrement();
+	stackPointer.increment();
+}
+
+void Core::numericCombine(Operation op) {
+	auto result = extractArguments(op, m, [this](Register& r, auto val) {
+				if (_c.getType() == Discriminant::FloatingPoint) {
+					r.setValue(static_cast<Floating>(val));
+				} else {
+					r.setValue(val);
+				}
+			});
+	auto subtract = subtractOperation(op);
+	auto& [dest, src0, src1] = result;
+	auto fn = [this, subtract](Register& dest, auto a, auto b) { 
+		dest.setValue(subtract ? (a - b) : (a + b ));
+	};
+	switch(_c.getType()) {
+		case Discriminant::Number:
+			fn(dest, src0.getInt(), src1.getInt());
+			break;
+		case Discriminant::MemoryAddress:
+			fn(dest, src0.getAddress(), src1.getAddress());
+			break;
+		case Discriminant::FloatingPoint:
+			fn(dest, src0.getFP(), src1.getFP());
+			break;
+		default:
+			throw Problem(subtract ? "-" : "+", "ILLEGAL DISCRIMINANT!");
+	}
 }
 
 

@@ -69,6 +69,17 @@ constexpr byte encodeRegisterPair(TargetRegister dest, T src) noexcept {
     return encodeSourceRegister(encodeDestinationRegister(dest), src);
 }
 static_assert(byte(TargetRegister::Error) <= 16, "Too many registers defined!");
+
+constexpr bool subtractOperation(Operation op) noexcept {
+	switch(op) {
+		case Operation::Subtract:
+		case Operation::SubtractFull:
+		case Operation::SubtractImmediate:
+			return true;
+		default:
+			return false;
+	}
+}
 static constexpr bool involvesDiscriminantRegister(TargetRegister r) noexcept {
     switch (r) {
         case TargetRegister::T:

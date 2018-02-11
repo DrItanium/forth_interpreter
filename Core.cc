@@ -10,28 +10,20 @@ Register& Core::getRegister(TargetRegister reg) {
 	using Type = decltype(t);
 	switch (t) {
 		case Type::A:
-		case Type::TA:
 			return _a;
 		case Type::B:
-		case Type::TB:
 			return _b;
 		case Type::C:
-		case Type::TC:
 			return _c;
 		case Type::S:
-		case Type::TS:
 			return _s;
 		case Type::X:
-		case Type::TX:
 			return _x;
 		case Type::PC:
-		case Type::TPC:
 			return _pc;
 		case Type::SP:
-		case Type::TSP:
 			return _sp;
 		case Type::SP2:
-		case Type::TSP2:
 			return _sp2;
 		default:
 			throw Problem("getRegister", "Undefined register!");
@@ -186,6 +178,17 @@ void Core::numericCombine(Operation op) {
 			break;
 		default:
 			throw Problem(subtract ? "-" : "+", "ILLEGAL DISCRIMINANT!");
+	}
+}
+
+void Core::multiplyOperation(Operation op) {
+	using Type = decltype(_c.getType());
+	auto t = extractArguments(op, m);
+	auto& [dest, src0, src1] = t;
+	auto fn = [this, &dest](auto a, auto b) { dest.setValue(a * b); }
+	switch (_c.getType()) {
+		case Type::Number:
+			fn(src0
 	}
 }
 

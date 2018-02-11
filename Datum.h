@@ -19,6 +19,7 @@ namespace forth {
     constexpr bool legalValue(Discriminant value) noexcept {
         return static_cast<Address>(value) < static_cast<Address>(Discriminant::Count); 
     }
+
     union Datum {
         Datum() = default;
         ~Datum() = default;

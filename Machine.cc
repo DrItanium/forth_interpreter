@@ -365,22 +365,6 @@ namespace forth {
 		}
 	}
 	void Machine::numericCombine(bool subtract, Register& dest, const Register& src0, const Register& src1) {
-		auto fn = [this, subtract](Register& dest, auto a, auto b) { 
-			dest.setValue(subtract ? (a - b) : (a + b ));
-		};
-		switch(_registerC.getType()) {
-			case Discriminant::Number:
-				fn(dest, src0.getInt(), src1.getInt());
-				break;
-			case Discriminant::MemoryAddress:
-				fn(dest, src0.getAddress(), src1.getAddress());
-				break;
-			case Discriminant::FloatingPoint:
-				fn(dest, src0.getFP(), src1.getFP());
-				break;
-			default:
-				throw Problem(subtract ? "-" : "+", "ILLEGAL DISCRIMINANT!");
-		}
 
 	}
 	void Machine::numericCombine(bool subtract) {

@@ -46,20 +46,23 @@ enum class TargetRegister : byte {
     SP, // stack pointer (parameter)
     SP2, // second stack pointer (subroutine)
     PC, // instruction pointer contents
-	RegisterCount = PC,
-    TA = 8,
-    TB,
-    TC,
-	TS,
-    TX, // misc type
-	TSP,
-	TSP2,
-	TPC,
-    Error,
-	T = TC,
+	Error,
 };
-static_assert(byte(TargetRegister::RegisterCount) <= 8, "Too many primary registers defined!");
+enum class TypeFieldEntry : byte {
+	Integer,
+	Address,
+	Floating,
+	Bool,
+	Count,
+};
 static_assert(byte(TargetRegister::Error) <= 16, "Too many registers defined!");
+static_assert(byte(TypeFieldEntry::Count) <= 16, "Too many type field entries defined!");
+constexpr bool legalValue(TypeFieldEntry t) noexcept {
+	return static_cast<byte>(TypeFieldEntry::Count) > static_cast<byte>(t);
+}
+constexpr TypeFieldEntry getTypeField(byte value) noexcept {
+	return decodeBits<byte, TypeFieldEntry, 0x0F, 0>(value);
+}
 constexpr byte encodeDestinationRegister(byte value, TargetRegister reg) noexcept {
     return encodeBits<byte, byte, 0x0F, 0>(value, (byte)reg);
 }
@@ -78,15 +81,7 @@ constexpr byte encodeRegisterPair(TargetRegister dest, T src) noexcept {
 }
 
 static constexpr bool involvesDiscriminantRegister(TargetRegister r) noexcept {
-    switch (r) {
-        case TargetRegister::T:
-        case TargetRegister::TA:
-        case TargetRegister::TB:
-        case TargetRegister::TX:
-            return true;
-        default:
-            return false;
-    }
+	return static_cast<byte>(r) >= 8;
 }
 static constexpr bool legalValue(TargetRegister r) noexcept {
     return static_cast<byte>(r) < static_cast<byte>(TargetRegister::Error);
@@ -94,7 +89,7 @@ static constexpr bool legalValue(TargetRegister r) noexcept {
 
 enum class Operation : byte {
     Stop,
-    Add,
+    Add, 
     Subtract,
     Multiply,
     Divide,
@@ -122,13 +117,6 @@ enum class Operation : byte {
     Move,
     Swap,
     // common operations
-    PopA,
-    PopB,
-    PopT,
-    PushC,
-	PopC,
-	PushA,
-	PushB,
 	// full versions of operations
 	// these forms are:
 	// ?op ?dest = ?src0, ?src1   // full
@@ -172,7 +160,7 @@ enum class Operation : byte {
     Count,
 };
 
-
+constexpr byte getTypeField
 constexpr bool legalOperation(Operation op) noexcept {
     return static_cast<byte>(Operation::Count) > static_cast<byte>(op);
 }

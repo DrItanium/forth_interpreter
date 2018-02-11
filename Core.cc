@@ -7,7 +7,7 @@ namespace forth {
 Core::Core() : _memory(new Datum[memoryCapacity]), _systemVariables(new Datum[systemVariableSize]) { }
 
 Register& Core::getRegister(TargetRegister reg) {
-	using Type = decltype(t);
+	using Type = decltype(reg);
 	switch (t) {
 		case Type::A:
 		case Type::TA:
@@ -160,7 +160,26 @@ void Core::pop(TargetRegister reg, TargetRegister sp) {
 	}
 	stackPointer.increment();
 }
-
+template<typename T>
+void performOperation(Register& dest, T src0, T src1, std::function<T(T, T)> fn) {
+	dest.setValue(fn(src0, src1));
+}
+template<typename T>
+void numericOperation(const std::string& op, Register& dest, const Register& src0, const Register& src1, T fn) {
+	switch(dest.getType()) {
+		case Discriminant::Number:
+			performOperation(dest, src0.getInt(), src1.getInt(), fn);
+			break;
+		case Discriminant::MemoryAddress:
+			performOperation(dest, src0.getAddress(), src1.getAddress(), fn);
+			break;
+		case Discriminant::FloatingPoint:
+			performOperation(dest, src0.getFP(), src1.getFP());
+			break;
+		default:
+			throw Problem(op, "ILLEGAL DISCRIMINANT!");
+	}
+}
 void Core::numericCombine(Operation op) {
 	auto result = extractArguments(op, m, [this](Register& r, auto val) {
 				if (_c.getType() == Discriminant::FloatingPoint) {
@@ -171,33 +190,18 @@ void Core::numericCombine(Operation op) {
 			});
 	auto subtract = subtractOperation(op);
 	auto& [dest, src0, src1] = result;
-	auto fn = [this, subtract](Register& dest, auto a, auto b) { 
-		dest.setValue(subtract ? (a - b) : (a + b ));
+	auto fn = [this, subtract](auto a, auto b) { 
+		return subtract ? (a - b) : (a + b );
 	};
-	switch(_c.getType()) {
-		case Discriminant::Number:
-			fn(dest, src0.getInt(), src1.getInt());
-			break;
-		case Discriminant::MemoryAddress:
-			fn(dest, src0.getAddress(), src1.getAddress());
-			break;
-		case Discriminant::FloatingPoint:
-			fn(dest, src0.getFP(), src1.getFP());
-			break;
-		default:
-			throw Problem(subtract ? "-" : "+", "ILLEGAL DISCRIMINANT!");
-	}
+	numericOperation(subtract ? "-" : "+", dest, src0, src1, fn);
 }
 
 void Core::multiplyOperation(Operation op) {
 	using Type = decltype(_c.getType());
-	auto t = extractArguments(op, m);
+	auto t = extractArguments(op, m, nullptr);
 	auto& [dest, src0, src1] = t;
-	auto fn = [this, &dest](auto a, auto b) { dest.setValue(a * b); }
-	switch (_c.getType()) {
-		case Type::Number:
-			fn(src0
-	}
+	auto fn = [this](auto a, auto b) { return a * b; };
+	numericOperation("*", dest, src0, src1, fn);
 }
 
 

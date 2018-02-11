@@ -3,6 +3,7 @@
 #include "Types.h"
 #include "Datum.h"
 #include <functional>
+#include <tuple>
 #include "Instruction.h"
 namespace forth {
 class Core {

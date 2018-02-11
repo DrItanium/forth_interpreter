@@ -178,6 +178,40 @@ void numericOperation(const std::string& op, Register& dest, const Register& src
 			throw Problem(op, "ILLEGAL DISCRIMINANT!");
 	}
 }
+
+template<typename T>
+void numericOperationAndBool(const std::string& op, Register& dest, const Register& src0, const Register& src1, T fn) {
+	switch(dest.getType()) {
+		case Discriminant::Number:
+			dest.setValue(fn(src0.getInt(), src1.getInt()));
+			break;
+		case Discriminant::MemoryAddress:
+			dest.setValue(fn(src0.getAddress(), src1.getAddress()));
+			break;
+		case Discriminant::FloatingPoint:
+			dest.setValue(fn(src0.getFP(), src1.getFP()));
+			break;
+		case Discriminant::Boolean:
+			dest.setValue(fn(src0.getTruth(), src1.getTruth()));
+			break;
+		default:
+			throw Problem(op, "ILLEGAL DISCRIMINANT!");
+	}
+}
+
+template<typename T>
+void numericOperationIntegerOnly(const std::string& op, Register& dest, const Register& src0, const Register& src1, T fn) {
+	switch(dest.getType()) {
+		case Discriminant::Number:
+			dest.setValue(fn(src0.getInt(), src1.getInt()));
+			break;
+		case Discriminant::MemoryAddress:
+			dest.setValue(fn(src0.getAddress(), src1.getAddress()));
+			break;
+		default:
+			throw Problem(op, "ILLEGAL DISCRIMINANT!");
+	}
+}
 void Core::numericCombine(Operation op) {
 	auto result = extractArguments(op, [this](Register& r, auto val) {
 				if (_c.getType() == Discriminant::FloatingPoint) {
@@ -195,11 +229,25 @@ void Core::numericCombine(Operation op) {
 }
 
 void Core::multiplyOperation(Operation op) {
-	using Type = decltype(_c.getType());
 	auto t = extractArguments(op, nullptr);
 	auto& [dest, src0, src1] = t;
 	auto fn = [this](auto a, auto b) { return a * b; };
 	numericOperation("*", dest, src0, src1, fn);
+}
+
+void Core::divideOperation(Operation op) {
+
+	auto t = extractArguments(op);
+	auto& [dest, src0, src1] = t;
+	auto isModulo = isModuloOperation(op);
+	if (src1.getAddress() == 0) {
+		throw Problem(isModulo ? "mod" : "/", "DIVIDE BY ZERO!");
+	}
+	if (isModulo) {
+		numericOperationIntegerOnly("mod", dest, src0, src1, [](auto a, auto b) { return a % b; });
+	} else {
+		numericOperation("/", dest, src0, src1, [](auto a, auto b) { return a / b; });
+	}
 }
 
 

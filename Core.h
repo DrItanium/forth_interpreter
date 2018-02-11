@@ -28,6 +28,7 @@ class Core {
 	private:
 		void numericCombine(Operation op);
 		void multiplyOperation(Operation op);
+		void divideOperation(Operation op);
 		void equalsOperation(Operation op);
 		void popOperation(Operation op);
 		void pushOperation(Operation op);

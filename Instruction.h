@@ -178,6 +178,16 @@ constexpr bool subtractOperation(Operation op) noexcept {
 			return false;
 	}
 }
+constexpr bool isModuloOperation(Operation op) noexcept {
+	switch (op) {
+		case Operation::Modulo:
+		case Operation::ModuloImmediate:
+		case Operation::ModuloFull:
+			return true;
+		default:
+			return false;
+	}
+}
 constexpr byte getInstructionWidth(Operation op) noexcept {
     if (!legalOperation(op)) {
         return 0;

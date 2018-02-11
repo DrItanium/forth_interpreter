@@ -17,6 +17,26 @@ constexpr R decodeBits(T value) noexcept {
     return static_cast<R>((value & mask) >> shift);
 }
 
+
+union Molecule {
+    Molecule(Address v) : _value(v) { };
+    Molecule(const Molecule& other) : _value(other._value) { };
+    Address _value;
+    byte backingStore[sizeof(Address)];
+
+    byte getByte(Address index) const {
+        if (index >= sizeof(Address)) {
+            throw Problem("getByte", "INSTRUCTION MISALIGNED");
+        } else {
+            return backingStore[index];
+        }
+    }
+    QuarterAddress getQuarterAddress(Address index) const {
+        auto lower = static_cast<QuarterAddress>(getByte(index));
+        auto upper = static_cast<QuarterAddress>(getByte(index + 1));
+        return (upper << 8) | lower;
+    }
+};
 enum class TargetRegister : byte {
     A,
     B,
@@ -25,47 +45,21 @@ enum class TargetRegister : byte {
     X, // misc data
     SP, // stack pointer (parameter)
     SP2, // second stack pointer (subroutine)
-	PC,
-	RegisterCount,
-
-    TA = 16,
+    PC, // instruction pointer contents
+	RegisterCount = PC,
+    TA = 8,
     TB,
     TC,
-    TX, // misc type
 	TS,
+    TX, // misc type
 	TSP,
 	TSP2,
+	TPC,
     Error,
+	T = TC,
 };
-static_assert(TargetRegister::RegisterCount <= 16, "Too many registers defined!");
-
-constexpr TargetRegister decodeTargetRegister(byte index) noexcept {
-	return decodeBits<byte, TargetRegister, 0b00011111, 5>(index);
-}
-
-union Molecule {
-    Molecule(Address v) : _value(v) { };
-    Molecule(const Molecule& other) : _value(other._value) { };
-    Address _value;
-    byte backingStore[sizeof(Address)];
-
-	byte getOperation() const {
-		return backingStore[0];
-	}
-	Address getImm56() const {
-		return decodeBits<Address, Address, 0xFFFFFFFFFFFFFF00, 8>(_value);
-	}
-	Address getImm32() const {
-		return decodeBits<Address, Address, 0xFFFFFFFF00000000, 32>(_value);
-	}
-	Address getImm28() const {
-		return decodeBits<Address, Address, 0xFFFFFFF000000000, 36>(_value);
-	}
-	TargetRegister getRegister0() const;
-	TargetRegister getRegister1() const;
-	TargetRegister getRegister2() const;
-	TargetRegister getRegister3() const;
-};
+static_assert(byte(TargetRegister::RegisterCount) <= 8, "Too many primary registers defined!");
+static_assert(byte(TargetRegister::Error) <= 16, "Too many registers defined!");
 constexpr byte encodeDestinationRegister(byte value, TargetRegister reg) noexcept {
     return encodeBits<byte, byte, 0x0F, 0>(value, (byte)reg);
 }
@@ -82,18 +76,7 @@ template<typename T>
 constexpr byte encodeRegisterPair(TargetRegister dest, T src) noexcept {
     return encodeSourceRegister(encodeDestinationRegister(dest), src);
 }
-static_assert(byte(TargetRegister::Error) <= 32, "Too many registers defined!");
 
-constexpr bool subtractOperation(Operation op) noexcept {
-	switch(op) {
-		case Operation::Subtract:
-		case Operation::SubtractFull:
-		case Operation::SubtractImmediate:
-			return true;
-		default:
-			return false;
-	}
-}
 static constexpr bool involvesDiscriminantRegister(TargetRegister r) noexcept {
     switch (r) {
         case TargetRegister::T:
@@ -192,6 +175,16 @@ enum class Operation : byte {
 
 constexpr bool legalOperation(Operation op) noexcept {
     return static_cast<byte>(Operation::Count) > static_cast<byte>(op);
+}
+constexpr bool subtractOperation(Operation op) noexcept {
+	switch(op) {
+		case Operation::Subtract:
+		case Operation::SubtractFull:
+		case Operation::SubtractImmediate:
+			return true;
+		default:
+			return false;
+	}
 }
 constexpr byte getInstructionWidth(Operation op) noexcept {
     if (!legalOperation(op)) {

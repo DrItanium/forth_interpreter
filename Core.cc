@@ -16,18 +16,22 @@ Register& Core::getRegister(TargetRegister reg) {
 		case Type::TB:
 			return _b;
 		case Type::C:
-		case Type::T:
+		case Type::TC:
 			return _c;
 		case Type::S:
+		case Type::TS:
 			return _s;
 		case Type::X:
 		case Type::TX:
 			return _x;
-		case Type::IP:
-			return _ip;
+		case Type::PC:
+		case Type::TPC:
+			return _pc;
 		case Type::SP:
+		case Type::TSP:
 			return _sp;
 		case Type::SP2:
+		case Type::TSP2:
 			return _sp2;
 		default:
 			throw Problem("getRegister", "Undefined register!");

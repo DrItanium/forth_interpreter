@@ -57,6 +57,12 @@ class Core {
 		byte extractByteFromMolecule();
 		Operation extractOperationFromMolecule();
 		void setCurrentMolecule(const Molecule& m);
+		void advanceMoleculePosition(Address amount = 1);
+	private:
+		constexpr bool inSystemVariableArea(Address value) noexcept {
+			return (systemVariableStart <= value) && (systemVariableEnd >= value);
+		}
+		Datum& getSystemVariable(Address index);
 	private:
 		Register _a, _b, _c, _s, _x;
 		Register _ip, _sp, _sp2, _imm;

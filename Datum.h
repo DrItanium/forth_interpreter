@@ -58,7 +58,7 @@ namespace forth {
                 _value.address = 0; 
                 _type = static_cast<decltype(_type)>(0); 
             }
-            void increment() { ++_value.address; }
+            void increment(Address amount = 1) { _value.address += amount; }
         private:
             Discriminant _type;
             Datum _value;

@@ -112,11 +112,49 @@ ThreeRegisterArguments Core::extractArguments(Operation op, std::function<void(R
 
 
 void Core::store(Address addr, const Datum& value) {
-	if (inSystemVariableArea(addr)) {
-		
+	if (addr <= largestAddress) {
+		_memory[addr] = value.numValue;
 	} else {
-		_store(addr, value);
+		// see if we're in the system variable area instead!
+		getSystemVariable(addr).address = value.address;
 	}
+}
+
+Datum Core::load(Address addr) {
+	if (addr <= largestAddress) {
+		return _memory[addr];
+	} else {
+		return getSystemVariable(addr);
+	}
+}
+
+void Core::push(TargetRegister reg, TargetRegister sp) {
+	if (involvesDiscriminantRegister(sp)) {
+		throw Problem("push", "Can't use the discriminant field as a stack pointer!");
+	}
+	auto& stackPointer = getRegister(sp);
+	auto& value = getRegister(reg);
+	stackPointer.increment();
+	if (involvesDiscriminantRegister(reg)) {
+		store(stackPointer.getAddress(), (Address)value.getType());
+	} else {
+		store(stackPointer.getAddress(), value.getValue());
+	}
+}
+
+void Core::pop(TargetRegister reg, TargetRegister sp) {
+	if (involvesDiscriminantRegister(sp)) {
+		throw Problem("pop", "Can't use the discriminant field as a stack pointer!");
+	}
+	auto& stackPointer = getRegister(sp);
+	auto& dest = getRegister(reg);
+	auto result = load(stackPointer.getAddress());
+	if (involvesDiscriminantRegister(sp)) {
+		dest.setType(static_cast<Discriminant>(result.address));
+	} else {
+		dest.setValue(result);
+	}
+	stackPointer.decrement();
 }
 
 

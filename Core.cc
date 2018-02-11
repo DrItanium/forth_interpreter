@@ -459,6 +459,11 @@ constexpr HalfAddress makeImm24(QuarterAddress lower16, byte upper8) noexcept {
 }
 
 void Core::jumpOperation(Operation op) {
+	auto saveNextToSubroutineStack = [this]() {
+		auto value = _pc.getValue();
+		++value.address;
+		push(value, TargetRegister::SP2);
+	};
 	switch (op) {
 		case Operation::Jump:
 			_pc.setValue(_pc.getInt() + extractQuarterIntegerFromMolecule());
@@ -469,26 +474,19 @@ void Core::jumpOperation(Operation op) {
 		case Operation::JumpIndirect: 
 			_pc.setValue(getRegister((TargetRegister)getDestinationRegister(extractByteFromMolecule())).getValue());
 			break;
-		case Operation::CallSubroutine: {
-											auto value = _pc.getValue();
-											++value.address;
-											push(value, TargetRegister::SP2);
-											_pc.setValue((Address)makeImm24(extractQuarterIntegerFromMolecule(), extractByteFromMolecule()));
-											break;
-										}
-		case Operation::CallSubroutineIndirect: {
-													auto value = _pc.getValue();
-													++value.address;
-													push(value, TargetRegister::SP2);
-													_pc.setValue(getRegister((TargetRegister)getDestinationRegister(extractByteFromMolecule())).getValue());
-													break;
-												}
-		case Operation::ReturnSubroutine: {
-											  _pc.setValue(pop(TargetRegister::SP2));
-											  break;
-										  }
+		case Operation::CallSubroutine: 
+			saveNextToSubroutineStack();
+			_pc.setValue((Address)makeImm24(extractQuarterIntegerFromMolecule(), extractByteFromMolecule()));
+			break;
+		case Operation::CallSubroutineIndirect: 
+			saveNextToSubroutineStack();
+			_pc.setValue(getRegister((TargetRegister)getDestinationRegister(extractByteFromMolecule())).getValue());
+			break;
+		case Operation::ReturnSubroutine: 
+			_pc.setValue(pop(TargetRegister::SP2));
+			break;
 		default:
-									  throw Problem("jumpOperation", "unknown jump operation!");
+			throw Problem("jumpOperation", "unknown jump operation!");
 
 	}
 }

@@ -250,5 +250,11 @@ void Core::divideOperation(Operation op) {
 	}
 }
 
+void Core::equalsOperation(Operation op) {
+	auto t = extractArguments(op);
+	auto& [dest, src0, src1] = t;
+	numericOperationAndBool("eq", dest, src0, src1, [](auto a, auto b) { return a == b; });
+}
+
 
 } // namespace forth

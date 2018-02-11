@@ -36,11 +36,11 @@ class Core {
 		void minusOperation(Operation op);
 		void booleanAlgebra(Operation op);
 		void shiftOperation(Operation op);
+		void powOperation(Operation op);
 		void greaterThanOperation(Operation op);
 		void lessThanOperation(Operation op);
 		void jumpOperation(Operation op);
 		void conditionalBranch(Operation op);
-		void powOperation(Operation op);
 	private:
 		using ThreeRegisterForm = std::tuple<TargetRegister, TargetRegister, TargetRegister>;
 		using ThreeRegisterImmediateForm = std::tuple<TargetRegister, TargetRegister, QuarterAddress>;

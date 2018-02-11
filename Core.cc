@@ -2,6 +2,7 @@
 #include "Problem.h"
 #include <sstream>
 #include <string>
+#include <cmath>
 
 namespace forth {
 Core::Core() : _memory(new Datum[memoryCapacity]), _systemVariables(new Datum[systemVariableSize]) { }
@@ -396,6 +397,12 @@ void Core::shiftOperation(Operation op) {
 			throw Problem("shiftOperation", "Unknown shift operation!");
 			
 	}
+}
+
+void Core::powOperation(Operation op) {
+	auto tup = extractArguments(op);
+	auto& [dest, src0, src1] = tup;
+	numericOperation("pow", dest, src0, src1, [](auto a, auto b) { return static_cast<decltype(a)>(std::pow(Floating(a), Floating(b))); });
 }
 
 

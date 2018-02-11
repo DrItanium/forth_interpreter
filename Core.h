@@ -47,9 +47,8 @@ class Core {
 		using TwoRegisterForm = std::tuple<TargetRegister, TargetRegister>;
 		using ThreeRegisterArguments = std::tuple<Register&, Register&, Register&>;
 		using TwoRegisterArguments = std::tuple<Register&, Register&>;
-		ThreeRegisterArguments extractArguments(Operation op, ThreeRegisterForm regs, std::function<void(Register&, Address)> onImmediate = nullptr);
-		ThreeRegisterArguments extractArguments(Operation op, ThreeRegisterImmediateForm regs, std::function<void(Register&, Address)> onImmediate = nullptr);
-		TwoRegisterArguments extractArguments(Operation op, TwoRegisterForm regs);
+		ThreeRegisterArguments extractArguments(Operation op, std::function<void(Register&, Address)> onImmediate = nullptr);
+		TwoRegisterArguments extractArguments2(Operation op);
 		ThreeRegisterForm extractThreeRegisterForm();
 		ThreeRegisterImmediateForm extractThreeRegisterImmediateForm();
 		TwoRegisterForm extractTwoRegisterForm();
@@ -63,6 +62,8 @@ class Core {
 			return (systemVariableStart <= value) && (systemVariableEnd >= value);
 		}
 		Datum& getSystemVariable(Address index);
+	private:
+		Register& getRegister(TargetRegister reg);
 	private:
 		Register _a, _b, _c, _s, _x;
 		Register _ip, _sp, _sp2, _imm;

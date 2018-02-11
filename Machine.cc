@@ -374,53 +374,6 @@ namespace forth {
 				return false;
 		}
 	}
-	constexpr bool immediateForm(Operation op) noexcept {
-		switch(op) {
-#define Immediate(x) case Operation :: x ## Immediate :
-	Immediate(Add)
-	Immediate(Subtract)
-	Immediate(Multiply)
-	Immediate(Divide)
-	Immediate(Modulo)
-	Immediate(And)
-	Immediate(Or)
-	Immediate(GreaterThan)
-	Immediate(LessThan)
-	Immediate(Xor)
-	Immediate(ShiftRight)
-	Immediate(ShiftLeft)
-	Immediate(Equals)
-				return true;
-			default:
-				return false;
-#undef Immediate
-		}
-	}
-	constexpr bool fullForm(Operation op) noexcept {
-		switch(op) {
-#define Full(x) case Operation :: x ## Full :
-	Full(Add)
-	Full(Subtract)
-	Full(Multiply)
-	Full(Divide)
-	Full(Modulo)
-	Full(And)
-	Full(Or)
-	Full(GreaterThan)
-	Full(LessThan)
-	Full(Xor)
-	Full(ShiftRight)
-	Full(ShiftLeft)
-	Full(Equals)
-	Full(Pow)
-	Full(Not)
-	Full(Minus)
-				return true;
-			default:
-				return false;
-#undef Full
-		}
-	}
 	void Machine::numericCombine(bool subtract, Register& dest, const Register& src0, const Register& src1) {
 		auto fn = [this, subtract](Register& dest, auto a, auto b) { 
 			dest.setValue(subtract ? (a - b) : (a + b ));
@@ -1140,33 +1093,6 @@ endLoopTop:
 			_registerIP.increment();
 		} catch (Problem& p) {
 			throw Problem("load", p.getMessage());
-		}
-	}
-	Register& Machine::getRegister(TargetRegister t) {
-		using Type = decltype(t);
-		switch (t) {
-			case Type::A:
-			case Type::TA:
-				return _registerA;
-			case Type::B:
-			case Type::TB:
-				return _registerB;
-			case Type::C:
-			case Type::T:
-				return _registerC;
-			case Type::S:
-				return _registerS;
-			case Type::X:
-			case Type::TX:
-				return _registerX;
-			case Type::IP:
-				return _registerIP;
-			case Type::SP:
-				return _registerSP;
-			case Type::SP2:
-				return _registerSP2;
-			default:
-				throw Problem("getRegister", "Undefined register!");
 		}
 	}
 

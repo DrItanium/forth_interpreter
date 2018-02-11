@@ -5,6 +5,7 @@
 #include <functional>
 #include <tuple>
 #include "Instruction.h"
+#include <memory>
 namespace forth {
 class Core {
 	public:

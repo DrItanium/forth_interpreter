@@ -8,7 +8,7 @@ Core::Core() : _memory(new Datum[memoryCapacity]), _systemVariables(new Datum[sy
 
 Register& Core::getRegister(TargetRegister reg) {
 	using Type = decltype(reg);
-	switch (t) {
+	switch (reg) {
 		case Type::A:
 		case Type::TA:
 			return _a;
@@ -62,47 +62,48 @@ Operation Core::extractOperationFromMolecule() {
 }
 
 byte Core::extractByteFromMolecule() {
-	auto b = Molecule(_currentMolecule.getValue()._address).getByte(_moleculePosition.getValue()._address);
+	auto b = Molecule(_currentMolecule.getAddress()).getByte(_moleculePosition.getAddress());
 	advanceMoleculePosition();
 	return b;
 }
 
 QuarterAddress Core::extractQuarterAddressFromMolecule() {
-	auto q = Molecule(_currentMolecule.getValue()._address).getQuarterAddress(_moleculePosition.getValue()._address);
+	auto q = Molecule(_currentMolecule.getAddress()).getQuarterAddress(_moleculePosition.getAddress());
 	advanceMoleculePosition(sizeof(q));
 	return q;
 }
 
-TwoRegisterForm Core::extractTwoRegisterForm() {
+Core::TwoRegisterForm Core::extractTwoRegisterForm() {
 	// single byte
 	auto data = extractByteFromMolecule();
 	return std::make_tuple(TargetRegister(getDestinationRegister(data)), TargetRegister(getSourceRegister(data)));
 }
 
-ThreeRegisterImmediateForm Core::extractThreeRegisterImmediateForm() {
+Core::ThreeRegisterImmediateForm Core::extractThreeRegisterImmediateForm() {
 	auto regs = extractByteFromMolecule();
 	auto imm = extractQuarterAddressFromMolecule();
-	return std::make_tuple(TargetRegister(getDestinationRegister(regs)), TargetRegister(getSourceRegister(data)), imm);
+	return std::make_tuple(TargetRegister(getDestinationRegister(regs)), TargetRegister(getSourceRegister(regs)), imm);
 }
 
-ThreeRegisterForm Core::extractThreeRegisterForm() {
+Core::ThreeRegisterForm Core::extractThreeRegisterForm() {
 	auto regs = extractByteFromMolecule();
 	auto regs2 = extractByteFromMolecule();
 	return std::make_tuple(TargetRegister(getDestinationRegister(regs)), TargetRegister(getSourceRegister(regs)), TargetRegister(getDestinationRegister(regs2)));
 }
 
-TwoRegisterArguments Core::extractArguments2(Operation op) {
+Core::TwoRegisterArguments Core::extractArguments2(Operation op) {
 	auto regs = extractTwoRegisterForm();
 	return std::forward_as_tuple(getRegister(std::get<0>(regs)), getRegister(std::get<1>(regs)));
 }
 
-ThreeRegisterArguments Core::extractArguments(Operation op, std::function<void(Register&, Address)> onImmediate) {
+Core::ThreeRegisterArguments Core::extractArguments(Operation op, std::function<void(Register&, Address)> onImmediate) {
 	if (immediateForm(op)) {
 		auto x = extractThreeRegisterImmediateForm();
+		Address immediate = std::get<2>(x);
 		if (onImmediate) {
-			onImmediate(_tmp0, std::get<2>(x));
+			onImmediate(_tmp0, immediate);
 		} else {
-			_tmp0.setValue(std::get<2>(x));
+			_tmp0.setValue(immediate);
 		}
 		auto tuple = std::forward_as_tuple(getRegister(std::get<0>(x)), getRegister(std::get<1>(x)), _tmp0);
 		return tuple;
@@ -160,28 +161,25 @@ void Core::pop(TargetRegister reg, TargetRegister sp) {
 	}
 	stackPointer.increment();
 }
-template<typename T>
-void performOperation(Register& dest, T src0, T src1, std::function<T(T, T)> fn) {
-	dest.setValue(fn(src0, src1));
-}
+
 template<typename T>
 void numericOperation(const std::string& op, Register& dest, const Register& src0, const Register& src1, T fn) {
 	switch(dest.getType()) {
 		case Discriminant::Number:
-			performOperation(dest, src0.getInt(), src1.getInt(), fn);
+			dest.setValue(fn(src0.getInt(), src1.getInt()));
 			break;
 		case Discriminant::MemoryAddress:
-			performOperation(dest, src0.getAddress(), src1.getAddress(), fn);
+			dest.setValue(fn(src0.getAddress(), src1.getAddress()));
 			break;
 		case Discriminant::FloatingPoint:
-			performOperation(dest, src0.getFP(), src1.getFP());
+			dest.setValue(fn(src0.getFP(), src1.getFP()));
 			break;
 		default:
 			throw Problem(op, "ILLEGAL DISCRIMINANT!");
 	}
 }
 void Core::numericCombine(Operation op) {
-	auto result = extractArguments(op, m, [this](Register& r, auto val) {
+	auto result = extractArguments(op, [this](Register& r, auto val) {
 				if (_c.getType() == Discriminant::FloatingPoint) {
 					r.setValue(static_cast<Floating>(val));
 				} else {
@@ -190,7 +188,7 @@ void Core::numericCombine(Operation op) {
 			});
 	auto subtract = subtractOperation(op);
 	auto& [dest, src0, src1] = result;
-	auto fn = [this, subtract](auto a, auto b) { 
+	auto fn = [subtract](auto a, auto b) { 
 		return subtract ? (a - b) : (a + b );
 	};
 	numericOperation(subtract ? "-" : "+", dest, src0, src1, fn);
@@ -198,7 +196,7 @@ void Core::numericCombine(Operation op) {
 
 void Core::multiplyOperation(Operation op) {
 	using Type = decltype(_c.getType());
-	auto t = extractArguments(op, m, nullptr);
+	auto t = extractArguments(op, nullptr);
 	auto& [dest, src0, src1] = t;
 	auto fn = [this](auto a, auto b) { return a * b; };
 	numericOperation("*", dest, src0, src1, fn);

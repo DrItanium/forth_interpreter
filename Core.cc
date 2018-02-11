@@ -424,5 +424,22 @@ void Core::rangeChecks(Operation op) {
 	}
 }
 
+void Core::incrDecr(Operation op) {
+	auto tmp = extractByteFromMolecule();
+	auto d = static_cast<TargetRegister>(getDestinationRegister(tmp));
+	auto imm4 = getSourceRegister(tmp);
+	_tmp1.setValue(Address(imm4));
+	auto& dest = getRegister(d);
+	switch (op) {
+		case Operation::Increment:
+			numericOperation("increment", dest, dest, _tmp1, [](auto a, auto b) { return a + b; });
+			break;
+		case Operation::Decrement:
+			numericOperation("decrement", dest, dest, _tmp1, [](auto a, auto b) { return a - b; });
+			break;
+		default:
+			throw Problem("incrDecr", "Unknown increment decrement style operation!");
+	}
+}
 
 } // namespace forth

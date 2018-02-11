@@ -161,6 +161,7 @@ enum class Operation : byte {
     CallSubroutineIndirect,
     ReturnSubroutine,
     ConditionalBranch,
+    ConditionalBranchAbsolute,
     ConditionalBranchIndirect,
     ConditionalCallSubroutine,
     ConditionalCallSubroutineIndirect,
@@ -243,6 +244,7 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
 		FullImmediate(Equals):
 #undef FullImmediate
             return 4;
+		case Operation::TypeValue:
         case Operation::PopRegister:
         case Operation::PushRegister:
         case Operation::Move:

@@ -457,13 +457,13 @@ void Core::incrDecr(Operation op) {
 constexpr HalfAddress makeImm24(QuarterAddress lower16, byte upper8) noexcept {
 	return encodeBits<HalfAddress, QuarterAddress, 0x00FF0000, 16>(HalfAddress(lower16), static_cast<QuarterAddress>(upper8));
 }
-
+void Core::savePositionToSubroutineStack() {
+	auto value = _moleculePosition.getValue();
+	++value.address;
+	push(_pc.getValue(), TargetRegister::SP2);
+	push(value, TargetRegister::SP2);
+}
 void Core::jumpOperation(Operation op) {
-	auto saveNextToSubroutineStack = [this]() {
-		auto value = _pc.getValue();
-		++value.address;
-		push(value, TargetRegister::SP2);
-	};
 	switch (op) {
 		case Operation::Jump:
 			_pc.setValue(_pc.getInt() + extractQuarterIntegerFromMolecule());
@@ -475,19 +475,63 @@ void Core::jumpOperation(Operation op) {
 			_pc.setValue(getRegister((TargetRegister)getDestinationRegister(extractByteFromMolecule())).getValue());
 			break;
 		case Operation::CallSubroutine: 
-			saveNextToSubroutineStack();
+			savePositionToSubroutineStack();
 			_pc.setValue((Address)makeImm24(extractQuarterIntegerFromMolecule(), extractByteFromMolecule()));
 			break;
 		case Operation::CallSubroutineIndirect: 
-			saveNextToSubroutineStack();
+			savePositionToSubroutineStack();
 			_pc.setValue(getRegister((TargetRegister)getDestinationRegister(extractByteFromMolecule())).getValue());
 			break;
 		case Operation::ReturnSubroutine: 
+			_moleculePosition.setValue(pop(TargetRegister::SP2));
 			_pc.setValue(pop(TargetRegister::SP2));
 			break;
 		default:
 			throw Problem("jumpOperation", "unknown jump operation!");
-
+	}
+}
+void Core::conditionalBranch(Operation op) {
+	auto k = extractByteFromMolecule();
+	if (getRegister(TargetRegister(getDestinationRegister(k))).getTruth()) {
+		switch (op) {
+			case Operation::ConditionalBranch:
+				jumpOperation(Operation::Jump);
+				break;
+			case Operation::ConditionalBranchAbsolute:
+				jumpOperation(Operation::JumpAbsolute);
+				break;
+			case Operation::ConditionalBranchIndirect:
+				_pc.setValue(getRegister((TargetRegister)getSourceRegister(k)).getValue());
+				break;
+			case Operation::ConditionalCallSubroutine:
+				savePositionToSubroutineStack();
+				_pc.setValue(_pc.getInt() + extractQuarterIntegerFromMolecule());
+				break;
+			case Operation::ConditionalCallSubroutineIndirect:
+				savePositionToSubroutineStack();
+				_pc.setValue(getRegister((TargetRegister)getSourceRegister(k)).getAddress());
+				break;
+			case Operation::ConditionalReturnSubroutine:
+				_moleculePosition.setValue(pop(TargetRegister::SP2));
+				_pc.setValue(pop(TargetRegister::SP2));
+				break;
+			default:
+				throw Problem("conditionalBranch", "unknown conditional branch operation!");
+		}
+	} else {
+		switch (op) {
+			case Operation::ConditionalBranch:
+			case Operation::ConditionalBranchAbsolute:
+			case Operation::ConditionalCallSubroutine:
+				_moleculePosition.increment(2);
+				break;
+			case Operation::ConditionalBranchIndirect:
+			case Operation::ConditionalReturnSubroutine:
+			case Operation::ConditionalCallSubroutineIndirect:
+				break;
+			default:
+				throw Problem("conditionalBranch", "unknown conditional branch operation!");
+		}
 	}
 }
 

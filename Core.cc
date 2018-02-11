@@ -4,53 +4,6 @@
 #include <string>
 
 namespace forth {
-	constexpr bool immediateForm(Operation op) noexcept {
-		switch(op) {
-#define Immediate(x) case Operation :: x ## Immediate :
-	Immediate(Add)
-	Immediate(Subtract)
-	Immediate(Multiply)
-	Immediate(Divide)
-	Immediate(Modulo)
-	Immediate(And)
-	Immediate(Or)
-	Immediate(GreaterThan)
-	Immediate(LessThan)
-	Immediate(Xor)
-	Immediate(ShiftRight)
-	Immediate(ShiftLeft)
-	Immediate(Equals)
-				return true;
-			default:
-				return false;
-#undef Immediate
-		}
-	}
-	constexpr bool fullForm(Operation op) noexcept {
-		switch(op) {
-#define Full(x) case Operation :: x ## Full :
-	Full(Add)
-	Full(Subtract)
-	Full(Multiply)
-	Full(Divide)
-	Full(Modulo)
-	Full(And)
-	Full(Or)
-	Full(GreaterThan)
-	Full(LessThan)
-	Full(Xor)
-	Full(ShiftRight)
-	Full(ShiftLeft)
-	Full(Equals)
-	Full(Pow)
-	Full(Not)
-	Full(Minus)
-				return true;
-			default:
-				return false;
-#undef Full
-		}
-	}
 Core::Core(LoadInterface load, StoreInterface store) : _load(load), _store(store), _systemVariables(new Datum[systemVariableSize]) { }
 
 Register& Core::getRegister(TargetRegister reg) {
@@ -139,7 +92,7 @@ TwoRegisterArguments Core::extractArguments2(Operation op) {
 	return std::forward_as_tuple(getRegister(std::get<0>(regs)), getRegister(std::get<1>(regs)));
 }
 
-ThreeRegisterArguments extractArguments(Operation op, std::function<void(Register&, Address)> onImmediate) {
+ThreeRegisterArguments Core::extractArguments(Operation op, std::function<void(Register&, Address)> onImmediate) {
 	if (immediateForm(op)) {
 		auto x = extractThreeRegisterImmediateForm();
 		if (onImmediate) {
@@ -151,14 +104,15 @@ ThreeRegisterArguments extractArguments(Operation op, std::function<void(Registe
 		return tuple;
 	} else if (fullForm(op)) {
 		auto x = extractThreeRegisterForm();
-		auto tup = std::forward_as_tuple(getRegister(std::get<0>(x)), getRegister(std::get<1>(x)), getRegister(std::get<2>(x)));
-		return tup;
+		return std::forward_as_tuple(getRegister(std::get<0>(x)), getRegister(std::get<1>(x)), getRegister(std::get<2>(x)));
 	} else {
 		return std::forward_as_tuple(_c, _a, _b);
 	}
 }
 
+void Core::pop(Operation op) {
 
+}
 
 
 

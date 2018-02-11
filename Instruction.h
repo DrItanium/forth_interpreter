@@ -236,6 +236,54 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
             return 1;
     }
 }
+
+	constexpr bool immediateForm(Operation op) noexcept {
+		switch(op) {
+#define Immediate(x) case Operation :: x ## Immediate :
+	Immediate(Add)
+	Immediate(Subtract)
+	Immediate(Multiply)
+	Immediate(Divide)
+	Immediate(Modulo)
+	Immediate(And)
+	Immediate(Or)
+	Immediate(GreaterThan)
+	Immediate(LessThan)
+	Immediate(Xor)
+	Immediate(ShiftRight)
+	Immediate(ShiftLeft)
+	Immediate(Equals)
+				return true;
+			default:
+				return false;
+#undef Immediate
+		}
+	}
+	constexpr bool fullForm(Operation op) noexcept {
+		switch(op) {
+#define Full(x) case Operation :: x ## Full :
+	Full(Add)
+	Full(Subtract)
+	Full(Multiply)
+	Full(Divide)
+	Full(Modulo)
+	Full(And)
+	Full(Or)
+	Full(GreaterThan)
+	Full(LessThan)
+	Full(Xor)
+	Full(ShiftRight)
+	Full(ShiftLeft)
+	Full(Equals)
+	Full(Pow)
+	Full(Not)
+	Full(Minus)
+				return true;
+			default:
+				return false;
+#undef Full
+		}
+	}
 constexpr byte getInstructionWidth(byte value) noexcept {
     return getInstructionWidth(static_cast<Operation>(value));
 }

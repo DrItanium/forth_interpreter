@@ -405,5 +405,24 @@ void Core::powOperation(Operation op) {
 	numericOperation("pow", dest, src0, src1, [](auto a, auto b) { return static_cast<decltype(a)>(std::pow(Floating(a), Floating(b))); });
 }
 
+void Core::rangeChecks(Operation op) {
+	auto tup = extractArguments(op);
+	auto& [dest, src0, src1] = tup;
+	switch (op) {
+		case Operation::GreaterThan:
+		case Operation::GreaterThanImmediate:
+		case Operation::GreaterThanFull:
+			numericOperation(">", dest, src0, src1, [](auto a, auto b) { return a > b; });
+			break;
+		case Operation::LessThan:
+		case Operation::LessThanImmediate:
+		case Operation::LessThanFull:
+			numericOperation("<", dest, src0, src1, [](auto a, auto b) { return a < b; });
+			break;
+		default:
+			throw Problem("rangeChecks", "Unknown range check operation!");
+	}
+}
+
 
 } // namespace forth

@@ -43,7 +43,7 @@ class Core {
 		void pop(Operation op);
 	private:
 		using ThreeRegisterForm = std::tuple<TargetRegister, TargetRegister, TargetRegister>;
-		using ThreeRegisterImmediateForm = std::tuple<TargetRegister, TargetRegister, Address>;
+		using ThreeRegisterImmediateForm = std::tuple<TargetRegister, TargetRegister, QuarterAddress>;
 		using TwoRegisterForm = std::tuple<TargetRegister, TargetRegister>;
 		using ThreeRegisterArguments = std::tuple<Register&, Register&, Register&>;
 		using TwoRegisterArguments = std::tuple<Register&, Register&>;

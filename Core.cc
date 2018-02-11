@@ -42,5 +42,23 @@ QuarterAddress Core::extractQuarterAddressFromMolecule() {
 	return q;
 }
 
+TwoRegisterForm Core::extractTwoRegisterForm() {
+	// single byte
+	auto data = extractByteFromMolecule();
+	return std::make_tuple(TargetRegister(getDestinationRegister(data)), TargetRegister(getSourceRegister(data)));
+}
+
+ThreeRegisterImmediateForm Core::extractThreeRegisterImmediateForm() {
+	auto regs = extractByteFromMolecule();
+	auto imm = extractQuarterAddressFromMolecule();
+	return std::make_tuple(TargetRegister(getDestinationRegister(regs)), TargetRegister(getSourceRegister(data)), imm);
+}
+
+ThreeRegisterForm Core::extractThreeRegisterForm() {
+	auto regs = extractByteFromMolecule();
+	auto regs2 = extractByteFromMolecule();
+	return std::make_tuple(TargetRegister(getDestinationRegister(regs)), TargetRegister(getSourceRegister(regs)), TargetRegister(getDestinationRegister(regs2)));
+}
+
 
 } // namespace forth

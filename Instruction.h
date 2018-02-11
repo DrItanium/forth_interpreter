@@ -114,6 +114,13 @@ enum class Operation : byte {
     Move,
     Swap,
     // common operations
+    PopA,
+    PopB,
+    PopT,
+    PushC,
+	PopC,
+	PushA,
+	PushB,
 	// full versions of operations
 	// these forms are:
 	// ?op ?dest = ?src0, ?src1   // full

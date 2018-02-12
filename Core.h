@@ -76,7 +76,7 @@ class Core {
 		void setCurrentMolecule(const Molecule& m);
 		void advanceMoleculePosition(Address amount = 1);
 	private:
-		constexpr bool inSystemVariableArea(Address value) noexcept {
+		static constexpr bool inSystemVariableArea(Address value) noexcept {
 			return (systemVariableStart <= value) && (systemVariableEnd >= value);
 		}
 		Datum& getSystemVariable(Address index);

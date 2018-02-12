@@ -594,11 +594,14 @@ void Core::dispatchInstruction(const Molecule& m) {
 		if (op == Operation::Stop) {
 			return;
 		} else {
-			throwError(op);
+			if (auto result = dispatchTable.find(op); result == dispatchTable.end()) {
+				throwError(op);
+			} else {
+				result->second(this, op);
+			}
 		}
 	}
 }
-
 
 
 } // namespace forth

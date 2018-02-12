@@ -698,6 +698,47 @@ void Core::typeValue(Operation op) {
 void Core::setOutputFunction(Core::OutputFunction output) {
 	_output = output;
 }
+enum class Immediate16Positions : byte {
+	Lowest,
+	Lower,
+	Higher,
+	Highest,
+};
+template<Immediate16Positions pos>
+constexpr auto Immediate16ShiftIndex = static_cast<Address>(pos) * 16;
+template<Immediate16Positions pos>
+constexpr auto Immediate16Mask = static_cast<Address>(0xFFFF) << Immediate16ShiftIndex<pos>;
+
+template<Immediate16Positions pos>
+constexpr Address computeImmediate16(Address base, QuarterAddress value) noexcept {
+	return encodeBits<Address, QuarterAddress, Immediate16Mask<pos>, Immediate16ShiftIndex<pos>>(base, value);
+}
+
+void Core::setImm16(Operation op) {
+	auto k = extractByteFromMolecule();
+	auto tr = getDestinationRegister(k);
+	if (auto tr = TargetRegister(getDestinationRegister(k)); involvesDiscriminantRegister(tr)) {
+		throw Problem("setImm16", "Type field cannot be target of set Imm16!");
+	} else {
+		auto& dest = getRegister(tr);
+		switch (op) {
+			case Operation::SetImmediate16_Lowest:
+				dest.setValue(computeImmediate16<Immediate16Positions::Lowest>(dest.getAddress(), extractQuarterAddressFromMolecule()));
+				break;
+			case Operation::SetImmediate16_Lower:
+				dest.setValue(computeImmediate16<Immediate16Positions::Lower>(dest.getAddress(), extractQuarterAddressFromMolecule()));
+				break;
+			case Operation::SetImmediate16_Higher:
+				dest.setValue(computeImmediate16<Immediate16Positions::Higher>(dest.getAddress(), extractQuarterAddressFromMolecule()));
+				break;
+			case Operation::SetImmediate16_Highest:
+				dest.setValue(computeImmediate16<Immediate16Positions::Highest>(dest.getAddress(), extractQuarterAddressFromMolecule()));
+				break;
+			default:
+				throw Problem("setImm16", "unknown set imm16 operation!");
+		}
+	}
+}
 
 
 } // namespace forth

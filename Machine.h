@@ -228,12 +228,9 @@ namespace forth {
 			std::istream& _input;
 			DictionaryEntry* _words;
 			// no need for the subroutine stack
-            //std::list<Datum> _subroutine;
-            //std::list<Datum> _parameter;
 			bool _initializedBaseDictionary = false;
 			DictionaryEntry* _compileTarget = nullptr;
 			Core _core;
-			// internal "registers"
 			const DictionaryEntry* _microcodeInvoke = nullptr;
 	};
 } // end namespace forth

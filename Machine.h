@@ -122,7 +122,6 @@ namespace forth {
             void raiseError();
             void chooseRegister();
             void invokeCRegister();
-            Register& getRegister(TargetRegister t);
 			void semicolonOperation();
 			void printRegisters();
             void printStack();
@@ -230,7 +229,7 @@ namespace forth {
 			DictionaryEntry* _words;
 			// no need for the subroutine stack
             //std::list<Datum> _subroutine;
-            std::list<Datum> _parameter;
+            //std::list<Datum> _parameter;
 			bool _initializedBaseDictionary = false;
 			DictionaryEntry* _compileTarget = nullptr;
 			Core _core;

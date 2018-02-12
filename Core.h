@@ -32,13 +32,12 @@ class Core {
 		Datum load(Address addr);
 		void store(Address addr, const Datum& value);
 		Register& getRegister(TargetRegister reg);
-	private:
 		void push(const Datum& d, TargetRegister sp);
+		Datum pop(TargetRegister sp);
+	private:
 		void push(TargetRegister reg, TargetRegister sp);
 		void pop(TargetRegister dest, TargetRegister sp);
-		Datum pop(TargetRegister sp);
 		void savePositionToSubroutineStack();
-	private:
 		void numericCombine(Operation op);
 		void multiplyOperation(Operation op);
 		void divideOperation(Operation op);

@@ -281,16 +281,11 @@ namespace forth {
 	}
 
 	Datum Machine::popParameter() {
-		if (_parameter.empty()) {
-			throw Problem("", "STACK EMPTY!");
-		}
-		auto top(_parameter.front());
-		_parameter.pop_front();
-		return top;
+		return _core.pop(TargetRegister::SP);
 	}
 
 	void Machine::pushParameter(Datum value) {
-		_parameter.emplace_front(value);
+		_core.push(value, TargetRegister::SP);
 	}
 
 	bool Machine::numberRoutine(const std::string& word) noexcept {
@@ -567,7 +562,9 @@ endLoopTop:
 		// now we have to construct a single entry for the parent which has the conditional code added as well
 	}
 	void Machine::printStack() {
-		for (const auto& element : _parameter) {
+		auto bottom = load(parameterStackEmptyLocation).address;
+		for (auto curr = _core.getRegister(TargetRegister::SP).getAddress(); curr < bottom; ++curr) {
+			auto element = load(curr);
 			_output << "\t- " << element << std::endl;
 		}
 	}
@@ -622,7 +619,9 @@ endLoopTop:
 
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
 		// clear the stacks and the input pointer
-		_parameter.clear();
+		static constexpr auto loadLower = Instruction::loadAddressLowerHalf(TargetRegister::X, parameterStackEmptyLocation);
+		static constexpr auto loadUpper = Instruction::loadAddressLowerHalf(TargetRegister::X, parameterStackEmptyLocation);
+		dispatchInstructionStream<loadLower, loadUpper, Instruction::encodeOperation(Instruction::load(TargetRegister::SP, TargetRegister::X))>();
 		clearSubroutineStack();
 		_input.clear();
 		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');

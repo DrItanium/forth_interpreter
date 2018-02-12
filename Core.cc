@@ -607,16 +607,44 @@ void Core::loadStore(Operation op) {
 	if (op == Operation::Load) {
 		 // get the destination
 		 auto k = extractByteFromMolecule();
-		 auto& dest = getRegister(TargetRegister(getDestinationRegister(k)));
-		 auto& src = getRegister(TargetRegister(getSourceRegister(k)));
-		 dest.setValue(load(src.getAddress()));
+		 auto trd = TargetRegister(getDestinationRegister(k));
+		 auto trs = TargetRegister(getSourceRegister(k));
+		 if (involvesDiscriminantRegister(trs)) {
+			 throw Problem("load", "Can't use the source type field as an address");
+		 }
+		 auto& dest = getRegister(trd);
+		 auto& src = getRegister(trs);
+		 if (auto result = load(src.getAddress()); involvesDiscriminantRegister(trd)) {
+			dest.setType((Discriminant)result.address);
+		 } else {
+			dest.setValue(result.address);
+		 }
 	} else if (op == Operation::Store) {
 		 auto k = extractByteFromMolecule();
-		 auto& dest = getRegister(TargetRegister(getDestinationRegister(k)));
-		 auto& src = getRegister(TargetRegister(getSourceRegister(k)));
-		 store(dest.getAddress(), src.getValue());
+		 auto trd = TargetRegister(getDestinationRegister(k));
+		 auto trs = TargetRegister(getSourceRegister(k));
+		 if (involvesDiscriminantRegister(trd)) {
+			 throw Problem("store", "Can't use the destination type field as an address!");
+		 }
+
+		 auto& dest = getRegister(trd);
+		 auto& src = getRegister(trs);
+		 if (involvesDiscriminantRegister(trs)) {
+			 store(dest.getAddress(), (Address)src.getType());
+		 } else {
+		 	store(dest.getAddress(), src.getValue());
+		 }
 	} else {
 		throw Problem("loadStore", "Unknown load/store operation!");
+	}
+}
+
+void Core::moveOrSwap(Operation op) {
+	if (op == Operation::Move) {
+		auto k = extractByteFromMolecule();
+		auto& dest = getRegister(TargetRegister(getDestinationRegister(k)));
+		auto& src = getRegister(TargetRegister(getSourceRegister(k)));
+		dest.setValue(src.getValue());
 	}
 }
 

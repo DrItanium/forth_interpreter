@@ -8,6 +8,7 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include "Core.h"
 
 namespace forth {
 	class Machine {
@@ -137,25 +138,6 @@ namespace forth {
 					dispatchInstructionStream<rest...>();
 				}
 			}
-			//void numericCombine(bool subtract = false);
-            void jumpOperation(Operation op, const Molecule& m);
-            void conditionalBranch(Operation op, const Molecule& m);
-
-			void numericCombine(Operation op, const Molecule& m);
-			void numericCombine(bool subtract, Register& dest, const Register& src0, const Register& src1);
-			void numericCombine(bool subtract = false);
-			void multiplyOperation(Operation op, const Molecule& m);
-			void equals(Operation op, const Molecule& m);
-			void powOperation(Operation op, const Molecule& m);
-			void divide(Operation op, const Molecule& m, bool remainder = false);
-			void notOperation(Operation op, const Molecule& m);
-			void minusOperation(Operation op, const Molecule& m);
-			void andOperation(Operation op, const Molecule& m);
-			void orOperation(Operation op, const Molecule& m);
-			void greaterThanOperation(Operation op, const Molecule& m);
-			void lessThanOperation(Operation op, const Molecule& m);
-			void xorOperation(Operation op, const Molecule& m);
-			void shiftOperation(Operation op, const Molecule& m, bool shiftLeft = false);
             void ifCondition();
             void elseCondition();
             void thenStatement();
@@ -305,11 +287,6 @@ namespace forth {
 			bool inCompilationMode() noexcept;
 			void activateCompileMode();
 			void deactivateCompileMode();
-			std::tuple<Register&, Register&, Register&> extractArguments(Operation op, const Molecule& m, std::function<void(Register&, Address)> onImmediate = nullptr);
-			std::tuple<Register&, Register&> extractArgs2(Operation op, const Molecule& m);
-			std::tuple<TargetRegister, TargetRegister, TargetRegister> extractThreeRegisterForm(const Molecule& m, bool skipOverLastByte = false);
-			std::tuple<TargetRegister, TargetRegister, Address> extractThreeRegisterImmediateForm(const Molecule& m);
-			std::tuple<TargetRegister, TargetRegister> extractTwoRegisterForm(const Molecule& m);
 			void pushOntoStack(TargetRegister sp, Datum value, Address fullLocation);
 			Datum popOffStack(TargetRegister sp, Address emptyLocation);
 			bool stackEmpty(TargetRegister sp, Address compareLocation);
@@ -330,9 +307,8 @@ namespace forth {
             std::list<Datum> _parameter;
 			bool _initializedBaseDictionary = false;
 			DictionaryEntry* _compileTarget = nullptr;
+			Core _core;
 			// internal "registers"
-            Register _registerA, _registerB, _registerC, _registerS, _registerX;
-            Register _registerIP, _registerSP, _registerSP2, _registerImmediate;
 			const DictionaryEntry* _microcodeInvoke = nullptr;
 	};
 } // end namespace forth

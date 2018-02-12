@@ -152,7 +152,6 @@ void registerDecls(forth::Machine& machine) {
 	registerWord(TA);
 	registerWord(TB);
 	registerWord(TX);
-	registerWord(IP);
 	registerWord(SP);
 	registerWord(SP2);
 }
@@ -194,7 +193,6 @@ void microarchitectureWords(forth::Machine& machine) {
 	pushPopGeneric(ta, TA);
 	pushPopGeneric(tb, TB);
 	pushPopGeneric(tx, TX);
-	pushPopGeneric(ip, IP);
 	pushPopGeneric(sp, SP);
 	pushPopGeneric(sp2, SP2);
 #undef pushPopGeneric

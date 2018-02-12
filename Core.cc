@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 #include <cmath>
+#include <map>
 
 namespace forth {
 Core::Core() : _memory(new Datum[memoryCapacity]), _systemVariables(new Datum[systemVariableSize]) { }
@@ -543,6 +544,59 @@ Address Core::extractImm48() {
 
 void Core::loadImm48(Operation op) {
 	getRegister((TargetRegister)(getDestinationRegister(extractByteFromMolecule()))).setValue(extractImm48());
+}
+
+void Core::dispatchInstruction(const Molecule& m) {
+	static std::map<Operation, decltype(std::mem_fn(&Core::numericCombine))> dispatchTable = {
+#define DefEntry(t, fn) { Operation :: t , std::mem_fn<void(Operation)>(&Core:: fn ) }
+		DefEntry(Add,numericCombine), DefEntry(AddFull, numericCombine), DefEntry(AddImmediate, numericCombine),
+		DefEntry(Subtract,numericCombine), DefEntry(SubtractFull, numericCombine), DefEntry(SubtractImmediate, numericCombine),
+		DefEntry(Multiply, multiplyOperation), DefEntry(MultiplyFull, multiplyOperation), DefEntry(MultiplyImmediate, multiplyOperation),
+		DefEntry(Divide, divideOperation), DefEntry(DivideFull, divideOperation), DefEntry(DivideImmediate, divideOperation),
+		DefEntry(Modulo, divideOperation), DefEntry(ModuloFull, divideOperation), DefEntry(ModuloImmediate, divideOperation),
+		DefEntry(Not, notOperation), DefEntry(NotFull, notOperation),
+		DefEntry(Minus, minusOperation), DefEntry(MinusFull, minusOperation),
+		DefEntry(ShiftRight, shiftOperation), DefEntry(ShiftRightFull, shiftOperation), DefEntry(ShiftRightImmediate, shiftOperation),
+		DefEntry(ShiftLeft, shiftOperation), DefEntry(ShiftLeftFull, shiftOperation), DefEntry(ShiftLeftImmediate, shiftOperation),
+		DefEntry(Pow, powOperation), DefEntry(PowFull, powOperation),
+		DefEntry(And, booleanAlgebra), DefEntry(AndFull, booleanAlgebra), DefEntry(AndImmediate, booleanAlgebra),
+		DefEntry(Or, booleanAlgebra), DefEntry(OrFull, booleanAlgebra), DefEntry(OrImmediate, booleanAlgebra),
+		DefEntry(Xor, booleanAlgebra), DefEntry(XorFull, booleanAlgebra), DefEntry(XorImmediate, booleanAlgebra),
+		DefEntry(GreaterThan, rangeChecks), DefEntry(GreaterThanFull, rangeChecks), DefEntry(GreaterThanImmediate, rangeChecks),
+		DefEntry(LessThan, rangeChecks), DefEntry(LessThanFull, rangeChecks), DefEntry(LessThanImmediate, rangeChecks),
+		DefEntry(Equals, equalsOperation), DefEntry(EqualsFull, equalsOperation), DefEntry(EqualsImmediate, equalsOperation),
+		DefEntry(LoadImmediateLower48, loadImm48),
+		DefEntry(Increment, incrDecr), DefEntry(Decrement, incrDecr),
+		DefEntry(PopRegister, pop), DefEntry(PopA, pop), DefEntry(PopB, pop), DefEntry(PopT, pop), DefEntry(PopC, pop),
+		DefEntry(PushRegister, push), DefEntry(PushC, push), DefEntry(PushA, push), DefEntry(PushB, push),
+		DefEntry(Load, loadStore), DefEntry(Store, loadStore),
+		DefEntry(Move, moveOrSwap), DefEntry(Swap, moveOrSwap),
+		DefEntry(TypeValue, typeValue),
+		DefEntry(SetImmediate16_Lowest, setImm16), DefEntry(SetImmediate16_Lower, setImm16), 
+		DefEntry(SetImmediate16_Higher, setImm16), DefEntry(SetImmediate16_Highest, setImm16),
+		DefEntry(Jump, jumpOperation), DefEntry(JumpIndirect, jumpOperation), 
+		DefEntry(JumpAbsolute, jumpOperation), DefEntry(CallSubroutine, jumpOperation), 
+		DefEntry(CallSubroutineIndirect, jumpOperation), DefEntry(ReturnSubroutine, jumpOperation),
+		DefEntry(ConditionalBranch, conditionalBranch), DefEntry(ConditionalBranchAbsolute, conditionalBranch),
+		DefEntry(ConditionalBranchIndirect, conditionalBranch), DefEntry(ConditionalCallSubroutine, conditionalBranch),
+		DefEntry(ConditionalCallSubroutineIndirect, conditionalBranch), DefEntry(ConditionalReturnSubroutine, conditionalBranch),
+#undef DefEntry
+	};
+	auto throwError = [](Operation op) {
+		std::stringstream msg;
+		msg << "Unknown instruction address: 0x" << std::hex << static_cast<int>(op);
+		auto str = msg.str();
+		throw Problem("dispatchInstruction", str);
+	};
+	setCurrentMolecule(m);
+	while (_moleculePosition.getAddress() < sizeof(Molecule)) {
+		auto op = static_cast<Operation>(extractByteFromMolecule());
+		if (op == Operation::Stop) {
+			return;
+		} else {
+			throwError(op);
+		}
+	}
 }
 
 

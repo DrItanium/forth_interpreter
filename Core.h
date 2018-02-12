@@ -27,6 +27,7 @@ class Core {
 		void push(TargetRegister reg, TargetRegister sp);
 		void pop(TargetRegister dest, TargetRegister sp);
 		Datum pop(TargetRegister sp);
+		void savePositionToSubroutineStack();
 	private:
 		void numericCombine(Operation op);
 		void multiplyOperation(Operation op);
@@ -43,9 +44,11 @@ class Core {
 		void incrDecr(Operation op);
 		void jumpOperation(Operation op);
 		void conditionalBranch(Operation op);
-		void typeValue(Operation op);
-		void savePositionToSubroutineStack();
 		void loadImm48(Operation op);
+		void moveOrSwap(Operation op);
+		void typeValue(Operation op);
+		void loadStore(Operation op);
+		void setImm16(Operation op);
 	private:
 		using ThreeRegisterForm = std::tuple<TargetRegister, TargetRegister, TargetRegister>;
 		using ThreeRegisterImmediateForm = std::tuple<TargetRegister, TargetRegister, QuarterAddress>;

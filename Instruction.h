@@ -271,6 +271,8 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         case Operation::Increment:
         case Operation::Decrement:
             return 2;
+		case Operation::LoadImmediateLower48:
+			return 8;
         default:
             return 1;
     }
@@ -668,6 +670,14 @@ namespace Instruction {
     constexpr QuarterAddress conditionalCallSubroutineIndirect(TargetRegister dest, TargetRegister cond) noexcept {
         return encodeTwoByte(Operation::ConditionalCallSubroutineIndirect, dest, cond);
     }
+	constexpr Address loadLowerImmediate48(TargetRegister dest, Address value) noexcept {
+		return encodeBits<Address, Address, 0xFFFFFFFFFFFF0000, 16>(
+				encodeBits<Address, byte, 0x000000000000FF00, 8>(
+					encodeBits<Address, byte, 0x00000000000000FF, 0>(0,
+						static_cast<byte>(Operation::LoadImmediateLower48)),
+					encodeDestinationRegister(dest)),
+				value);
+	}
 	static_assert(Address(0x1214011237) == encodeOperation(Instruction::xorOp(TargetRegister::C, TargetRegister::B, TargetRegister::B), 
 				Instruction::store(TargetRegister::C, TargetRegister::B)), "encodeOperation did not yield a correct value");
 } // end namespace Instruction

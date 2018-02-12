@@ -535,4 +535,10 @@ void Core::conditionalBranch(Operation op) {
 	}
 }
 
+void Core::loadImm48(Operation op) {
+	auto k = extractByteFromMolecule();
+}
+
+
+
 } // namespace forth

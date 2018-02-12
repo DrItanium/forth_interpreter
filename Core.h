@@ -45,6 +45,7 @@ class Core {
 		void conditionalBranch(Operation op);
 		void typeValue(Operation op);
 		void savePositionToSubroutineStack();
+		void loadImm48(Operation op);
 	private:
 		using ThreeRegisterForm = std::tuple<TargetRegister, TargetRegister, TargetRegister>;
 		using ThreeRegisterImmediateForm = std::tuple<TargetRegister, TargetRegister, QuarterAddress>;

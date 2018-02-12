@@ -41,6 +41,15 @@ union Molecule {
         auto upper = static_cast<QuarterInteger>(getByte(index + 1));
 		return (upper << 8) | lower;
 	}
+	Address getImm48(Address index) const {
+		auto b0 = static_cast<Address>(getByte(index));
+		auto b1 = static_cast<Address>(getByte(index + 1));
+		auto b2 = static_cast<Address>(getByte(index + 2));
+		auto b3 = static_cast<Address>(getByte(index + 3));
+		auto b4 = static_cast<Address>(getByte(index + 4));
+		auto b5 = static_cast<Address>(getByte(index + 5));
+		return ((b5 << 40) | (b4 << 32) | (b3 << 24) | (b2 << 16) | (b1 << 8) | b0) & 0x00FFFFFFFFFFFFFF;
+	}
 };
 enum class TargetRegister : byte {
     A,
@@ -168,7 +177,7 @@ enum class Operation : byte {
     ConditionalReturnSubroutine,
     Increment,
     Decrement,
-	LoadNextWordAndSkip,
+	LoadImmediateLower48,
     Count,
 };
 

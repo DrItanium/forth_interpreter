@@ -603,5 +603,21 @@ void Core::dispatchInstruction(const Molecule& m) {
 	}
 }
 
+void Core::loadStore(Operation op) {
+	if (op == Operation::Load) {
+		 // get the destination
+		 auto k = extractByteFromMolecule();
+		 auto& dest = getRegister(TargetRegister(getDestinationRegister(k)));
+		 auto& src = getRegister(TargetRegister(getSourceRegister(k)));
+		 dest.setValue(load(src.getAddress()));
+	} else if (op == Operation::Store) {
+		 auto k = extractByteFromMolecule();
+		 auto& dest = getRegister(TargetRegister(getDestinationRegister(k)));
+		 auto& src = getRegister(TargetRegister(getSourceRegister(k)));
+		 store(dest.getAddress(), src.getValue());
+	} else {
+		throw Problem("loadStore", "Unknown load/store operation!");
+	}
+}
 
 } // namespace forth

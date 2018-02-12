@@ -59,6 +59,7 @@ class Core {
 		QuarterInteger extractQuarterIntegerFromMolecule();
 		QuarterAddress extractQuarterAddressFromMolecule();
 		byte extractByteFromMolecule();
+		Address extractImm48();
 		Operation extractOperationFromMolecule();
 		void setCurrentMolecule(const Molecule& m);
 		void advanceMoleculePosition(Address amount = 1);

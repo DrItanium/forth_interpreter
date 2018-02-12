@@ -535,8 +535,14 @@ void Core::conditionalBranch(Operation op) {
 	}
 }
 
+Address Core::extractImm48() {
+	auto b = Molecule(_currentMolecule.getAddress()).getImm48(_moleculePosition.getAddress());
+	advanceMoleculePosition(6);
+	return b;
+}
+
 void Core::loadImm48(Operation op) {
-	auto k = extractByteFromMolecule();
+	getRegister((TargetRegister)(getDestinationRegister(extractByteFromMolecule()))).setValue(extractImm48());
 }
 
 

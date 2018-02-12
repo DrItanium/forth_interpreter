@@ -298,6 +298,16 @@ namespace forth {
 				Instruction::pushC());
 		static_assert(loadFalseToStack == 0x1f00000216, "Load false to stack is incorrect!");
         static constexpr auto pushC = Instruction::encodeOperation(Instruction::pushC());
+        auto saveToStack = [this](Address value) {
+            microcodeStreamInvoke(
+                    Instruction::encodeOperation(
+                        Instruction::setImmediate64_Lowest(TargetRegister::C, value),
+                        Instruction::setImmediate64_Lower(TargetRegister::C, value)),
+                    Instruction::encodeOperation(
+                        Instruction::setImmediate64_Higher(TargetRegister::C, value),
+                        Instruction::setImmediate64_Highest(TargetRegister::C, value)),
+                    pushC);
+        };
 		if (word.empty()) { 
 			return false; 
 		}
@@ -319,14 +329,7 @@ namespace forth {
 			parseAttempt >> std::hex >> tmpAddress;
 			if (!parseAttempt.fail()) {
 				// TODO: do checks to compact parsing
-				microcodeStreamInvoke(
-						Instruction::encodeOperation(
-							Instruction::setImmediate64_Lowest(TargetRegister::C, tmpAddress),
-							Instruction::setImmediate64_Lower(TargetRegister::C, tmpAddress)),
-						Instruction::encodeOperation(
-							Instruction::setImmediate64_Higher(TargetRegister::C, tmpAddress),
-							Instruction::setImmediate64_Highest(TargetRegister::C, tmpAddress)),
-                        pushC);
+                saveToStack(tmpAddress);
 				return true;
 			}
 			return false;
@@ -335,14 +338,7 @@ namespace forth {
 			Address tmpAddress;
 			parseAttempt >> tmpAddress;
 			if (!parseAttempt.fail()) {
-				microcodeStreamInvoke(
-						Instruction::encodeOperation(
-							Instruction::setImmediate64_Lowest(TargetRegister::C, tmpAddress),
-							Instruction::setImmediate64_Lower(TargetRegister::C, tmpAddress)),
-						Instruction::encodeOperation(
-							Instruction::setImmediate64_Higher(TargetRegister::C, tmpAddress),
-							Instruction::setImmediate64_Highest(TargetRegister::C, tmpAddress)),
-                        pushC);
+                saveToStack(tmpAddress);
 				return true;
 			}
 			return false;
@@ -353,14 +349,7 @@ namespace forth {
 			parseAttempt >> tmpFloat;
 			if (!parseAttempt.fail() && parseAttempt.eof()) {
 				Datum a(tmpFloat);
-				microcodeStreamInvoke(
-						Instruction::encodeOperation(
-							Instruction::setImmediate64_Lowest(TargetRegister::C, a.address),
-							Instruction::setImmediate64_Lower(TargetRegister::C, a.address)),
-						Instruction::encodeOperation(
-							Instruction::setImmediate64_Higher(TargetRegister::C, a.address),
-							Instruction::setImmediate64_Highest(TargetRegister::C, a.address)),
-                        pushC);
+                saveToStack(a.address);
 				return true;
 			}
 			// get out of here early since we hit something that looks like
@@ -372,14 +361,7 @@ namespace forth {
 		parseAttempt >> tmpInt;
 		if (!parseAttempt.fail() && parseAttempt.eof()) {
 			Datum a(tmpInt);
-			microcodeStreamInvoke(
-					Instruction::encodeOperation(
-						Instruction::setImmediate64_Lowest(TargetRegister::C, a.address),
-						Instruction::setImmediate64_Lower(TargetRegister::C, a.address)),
-					Instruction::encodeOperation(
-						Instruction::setImmediate64_Higher(TargetRegister::C, a.address),
-						Instruction::setImmediate64_Highest(TargetRegister::C, a.address)),
-                    pushC);
+            saveToStack(a.address);
 			return true;
 		}
 		return false;

@@ -14,6 +14,13 @@ class Core {
 		// we have a 64-kiloword area for storing internal system values.
 		static constexpr Address systemVariableStart = 0xFFFFFFFFFFFF0000;
 		static constexpr Address systemVariableEnd = 0xFFFFFFFFFFFFFFFF;
+		static constexpr Address terminateExecutionVariable = systemVariableEnd;
+		static constexpr Address sp2StackEmpty = systemVariableEnd - 1;
+		static constexpr Address sp2StackFull = systemVariableEnd - 2;
+		static constexpr Address spStackEmpty = systemVariableEnd - 3;
+		static constexpr Address spStackFull = systemVariableEnd - 4;
+		static constexpr Address userVariableEnd = 0xFFFFFFFFFFFF7FFF;
+		static constexpr Address userVariableStart = systemVariableStart;
 		static constexpr Address systemVariableSize = (systemVariableEnd - systemVariableStart) + 1;
 		using OutputFunction = std::function<void(TargetRegister, const Register&)>;
 	public:

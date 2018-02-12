@@ -149,6 +149,17 @@ void Core::push(const Datum& d, TargetRegister sp) {
 		throw Problem("push", "Can't use the discriminant field as a stack pointer!");
 	}
 	auto& stackPointer = getRegister(sp);
+	if (sp == TargetRegister::SP) {
+		// do a check and see if we have a full stack!
+		if (auto maxAddress = getSystemVariable(spStackFull).address; stackPointer.getAddress() == maxAddress) {
+			throw Problem("push_sp", "Parameter Stack Full!");
+		}
+	} else if (sp == TargetRegister::SP2) {
+		// do a check and see if we have a full stack!
+		if (auto maxAddress = getSystemVariable(sp2StackFull).address; stackPointer.getAddress() == maxAddress) {
+			throw Problem("push_sp2", "Subroutine Stack Full!");
+		}
+	}
 	stackPointer.decrement();
 	store (stackPointer.getAddress(), d);
 }
@@ -158,6 +169,17 @@ Datum Core::pop(TargetRegister sp) {
 		throw Problem("pop", "Can't use the discriminant field as a stack pointer!");
 	}
 	auto& stackPointer = getRegister(sp);
+	if (sp == TargetRegister::SP) {
+		// do a check and see if we have a full stack!
+		if (auto minAddress = getSystemVariable(spStackEmpty).address; stackPointer.getAddress() == minAddress) {
+			throw Problem("push_sp", "Parameter Stack Empty!");
+		}
+	} else if (sp == TargetRegister::SP2) {
+		// do a check and see if we have a full stack!
+		if (auto minAddress = getSystemVariable(sp2StackEmpty).address; stackPointer.getAddress() == minAddress) {
+			throw Problem("push_sp2", "Subroutine Stack Empty!");
+		}
+	}
 	auto result = load(stackPointer.getAddress());
 	stackPointer.increment();
 	return result;

@@ -13,11 +13,13 @@
 namespace forth {
 	class Machine {
 		public:
-			static constexpr Address shouldKeepExecutingLocation = 0xFFFFFF;
-			static constexpr Address isCompilingLocation = 0xFFFFFE;
-			static constexpr Address ignoreInputLocation = 0xFFFFFD;
-			static constexpr Address subroutineStackEmptyLocation = 0xFFFFFC;
-			static constexpr Address subroutineStackFullLocation = 0xFFFFFB;
+			static constexpr Address shouldKeepExecutingLocation = Core::userVariableStart;
+			static constexpr Address isCompilingLocation = Core::userVariableStart + 1;
+			static constexpr Address ignoreInputLocation = Core::userVariableStart + 2;
+			static constexpr Address subroutineStackEmptyLocation = Core::sp2StackEmpty;
+			static constexpr Address subroutineStackFullLocation = Core::sp2StackFull;
+			static constexpr Address parameterStackEmptyLocation = Core::spStackEmpty;
+			static constexpr Address parameterStackFullLocation = Core::spStackFull;
             // capacity variables for the two stacks, each one has 64k worth of data
 		public:
 			Machine(std::ostream& output, std::istream& input);
@@ -121,15 +123,11 @@ namespace forth {
             void chooseRegister();
             void invokeCRegister();
             Register& getRegister(TargetRegister t);
-            void load(const Molecule& m);
-            void store(const Molecule& m);
 			void semicolonOperation();
 			void printRegisters();
             void printStack();
 			void pushRegister(TargetRegister t);
 			void popRegister(TargetRegister t); 
-            void pushRegister(const Molecule& m);
-            void popRegister(const Molecule& m);
             void dispatchInstruction();
 			template<Address first, Address ... rest>
 			void dispatchInstructionStream() noexcept {
@@ -145,80 +143,6 @@ namespace forth {
             void endStatement();
             void doStatement();
             void continueStatement();
-			/*
-            enum class Immediate16Positions : byte {
-                Lowest,
-                Lower,
-                Higher,
-                Highest,
-            };
-            template<Immediate16Positions pos>
-            static constexpr auto Immediate16ShiftIndex = static_cast<Address>(pos) * 16;
-            template<Immediate16Positions pos>
-            static constexpr auto Immediate16Mask = static_cast<Address>(0xFFFF) << Immediate16ShiftIndex<pos>;
-
-            template<Immediate16Positions pos>
-            void setImmediate16(TargetRegister reg, QuarterAddress value) {
-                Register& dest = getRegister(reg);
-                dest.setValue(encodeBits<Address, QuarterAddress, Immediate16Mask<pos>, Immediate16ShiftIndex<pos>>(dest.getAddress(), value));
-            }
-            template<Immediate16Positions pos>
-            void setImmediate16(const Molecule& m, TargetRegister target) {
-                try {
-                    setImmediate16<pos>(target, m.getQuarterAddress(_registerIP.getAddress()));
-                    _registerIP.increment();
-                    _registerIP.increment();
-                } catch (Problem& p) {
-                    std::string msg("set-immediate16-unknown");
-                    switch (pos) {
-                        case Immediate16Positions::Lowest:
-                            msg = "set-immediate16-lowest";
-                            break;
-                        case Immediate16Positions::Lower:
-                            msg = "set-immediate16-lower";
-                            break;
-                        case Immediate16Positions::Higher:
-                            msg = "set-immediate16-higher";
-                            break;
-                        case Immediate16Positions::Highest:
-                            msg = "set-immediate16-highest";
-                            break;
-                    }
-                    throw Problem(msg, p.getMessage());
-                }
-            }
-			template<Immediate16Positions pos>
-			void setImmediate16(const Molecule& m) {
-				auto dest = static_cast<TargetRegister>(m.getByte(_registerIP.getAddress()));
-				_registerIP.increment();
-				setImmediate16<pos>(m, dest);
-			}
-            template<Immediate16Positions pos>
-            void setImmediate16Full(const Molecule& m) {
-                try {
-                    auto dest = getDestinationRegister(m.getByte(_registerIP.getAddress()));
-                    _registerIP.increment();
-                    setImmediate16<pos>(m.getQuarterAddress(_registerIP.getAddress()), static_cast<TargetRegister>(dest));
-                } catch (Problem& p) {
-                    std::string msg("set-immediate16-full-unknown");
-                    switch (pos) {
-                        case Immediate16Positions::Lowest:
-                            msg = "set-immediate16-full-lowest";
-                            break;
-                        case Immediate16Positions::Lower:
-                            msg = "set-immediate16-full-lower";
-                            break;
-                        case Immediate16Positions::Higher:
-                            msg = "set-immediate16-full-higher";
-                            break;
-                        case Immediate16Positions::Highest:
-                            msg = "set-immediate16-full-highest";
-                            break;
-                    }
-                    throw Problem(msg, p.getMessage());
-                }
-            }
-			*/
             /**
              * Printout the contents of the given word!
              */

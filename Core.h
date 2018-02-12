@@ -15,10 +15,12 @@ class Core {
 		static constexpr Address systemVariableStart = 0xFFFFFFFFFFFF0000;
 		static constexpr Address systemVariableEnd = 0xFFFFFFFFFFFFFFFF;
 		static constexpr Address systemVariableSize = (systemVariableEnd - systemVariableStart) + 1;
+		using OutputFunction = std::function<void(TargetRegister, const Register&)>;
 	public:
-		Core();
+		Core(OutputFunction output);
 		~Core() = default;
 		//void executionLoop();
+		void setOutputFunction(OutputFunction output);
 		void dispatchInstruction(const Molecule& m);
 		Datum load(Address addr);
 		void store(Address addr, const Datum& value);
@@ -78,6 +80,7 @@ class Core {
 		Register _sp, _sp2, _imm, _pc;
 		Register _tmp0, _tmp1;
 		Register _currentMolecule, _moleculePosition;
+		OutputFunction _output;
 		// mapped to 0xFFFFFFFFFFFF0000
 		std::unique_ptr<Datum[]> _memory, _systemVariables;
 

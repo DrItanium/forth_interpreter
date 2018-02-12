@@ -270,7 +270,15 @@ namespace forth {
 		_output << ' ' << std::endl;
 		_output.setf(flags);
 	}
-	Machine::Machine(std::ostream& output, std::istream& input) :  _output(output), _input(input), _words(nullptr) { }
+	Machine::Machine(std::ostream& output, std::istream& input) :  _output(output), _input(input), _words(nullptr), _core(nullptr) {
+		_core.setOutputFunction([this](TargetRegister tr, const Register& reg) {
+					if (involvesDiscriminantRegister(tr)) {
+						_output << reg.getType();
+					} else {
+						_output << reg.getValue();
+					}
+				});
+	}
 
 	Datum Machine::popParameter() {
 		if (_parameter.empty()) {

@@ -6,7 +6,7 @@
 #include <map>
 
 namespace forth {
-Core::Core() : _memory(new Datum[memoryCapacity]), _systemVariables(new Datum[systemVariableSize]) { }
+Core::Core(Core::OutputFunction output) : _output(output), _memory(new Datum[memoryCapacity]), _systemVariables(new Datum[systemVariableSize]) { }
 
 Register& Core::getRegister(TargetRegister reg) {
 	using Type = decltype(reg);
@@ -642,10 +642,62 @@ void Core::loadStore(Operation op) {
 void Core::moveOrSwap(Operation op) {
 	if (op == Operation::Move) {
 		auto k = extractByteFromMolecule();
-		auto& dest = getRegister(TargetRegister(getDestinationRegister(k)));
-		auto& src = getRegister(TargetRegister(getSourceRegister(k)));
-		dest.setValue(src.getValue());
+		auto trd = TargetRegister(getDestinationRegister(k));
+		auto trs = TargetRegister(getSourceRegister(k));
+		if (trd == trs) {
+			return;
+		}
+		auto& dest = getRegister(trd);
+		auto& src = getRegister(trs);
+		if (auto result = involvesDiscriminantRegister(trs) ? (Address) src.getType() : src.getAddress() ; involvesDiscriminantRegister(trd)) {
+			dest.setType((Discriminant)result);
+		} else {
+			dest.setValue(result);
+		}
+	} else if (op == Operation::Swap) {
+		auto k = extractByteFromMolecule();
+		auto trd = TargetRegister(getDestinationRegister(k));
+		auto trs = TargetRegister(getSourceRegister(k));
+		if (trd == trs) {
+			return;
+		}
+		auto& dest = getRegister(trd);
+		auto& src = getRegister(trs);
+		// now we have to do some shenanigans to extract the correct values
+		if (involvesDiscriminantRegister(trd) && involvesDiscriminantRegister(trs)) {
+			_tmp0.setType(dest.getType());
+			dest.setType(src.getType());
+			src.setType(_tmp0.getType());
+		} else if (involvesDiscriminantRegister(trd) && !involvesDiscriminantRegister(trs)) {
+			_tmp0.setType(dest.getType());
+			dest.setType((Discriminant)src.getAddress());
+			src.setValue(Address(_tmp0.getType()));
+		} else if (!involvesDiscriminantRegister(trd) && involvesDiscriminantRegister(trs)) {
+			_tmp0.setType(src.getType());
+			src.setType(Discriminant(dest.getAddress()));
+			dest.setValue(Address(_tmp0.getType()));
+		} else {
+			_tmp0.setValue(src.getValue());
+			src.setValue(dest.getValue());
+			dest.setValue(_tmp0.getValue());
+		}
+	} else {
+		throw Problem("moveOrSwap", "Unknown move/swap operation!");
 	}
 }
+
+void Core::typeValue(Operation op) {
+	auto tr = TargetRegister(getDestinationRegister(extractByteFromMolecule()));
+	if (_output) {
+		_output(tr, getRegister(tr));
+	} else {
+		throw Problem("typeValue", "no output function defined!");
+				
+	}
+}
+void Core::setOutputFunction(Core::OutputFunction output) {
+	_output = output;
+}
+
 
 } // namespace forth

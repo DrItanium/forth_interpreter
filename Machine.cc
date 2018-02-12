@@ -102,13 +102,13 @@ namespace forth {
 		return nullptr;
 	}
 	void Machine::chooseRegister() {
-		_registerC = _registerC.getTruth() ? _registerA : _registerB;
+		_core.getRegister(TargetRegister::C) = _core.getRegister(TargetRegister::C).getTruth() ? _core.getRegister(TargetRegister::A) : _core.getRegister(TargetRegister::B);
 	}
 	void Machine::invokeCRegister() {
-		using Type = decltype(_registerC.getType());
-		switch (_registerC.getType()) {
+		using Type = decltype(_core.getRegister(TargetRegister::C).getType());
+		switch (_core.getRegister(TargetRegister::C).getType()) {
 			case Type::Word:
-				_registerC.getWord()->operator()(this);
+				_core.getRegister(TargetRegister::C).getWord()->operator()(this);
 				break;
 			case Type::Number:
 			case Type::FloatingPoint:
@@ -187,17 +187,17 @@ namespace forth {
 		auto fn = [this](const std::string& title, auto value) noexcept {
 			_output << title << ": " << value << std::endl;
 		};
-		fn("A", _registerA.getValue());
-		fn("B", _registerB.getValue());
-		fn("C", _registerC.getValue());
-		fn("T", _registerC.getType());
-		fn("S", _registerS.getValue());
-		fn("X", _registerX.getValue());
-		fn("SP", _registerSP.getValue());
-		fn("SP2", _registerSP2.getValue());
-		fn("A.T", _registerA.getType());
-		fn("B.T", _registerB.getType());
-		fn("X.T", _registerX.getType());
+		fn("A", _core.getRegister(TargetRegister::A).getValue());
+		fn("B", _core.getRegister(TargetRegister::B).getValue());
+		fn("C", _core.getRegister(TargetRegister::C).getValue());
+		fn("T", _core.getRegister(TargetRegister::C).getType());
+		fn("S", _core.getRegister(TargetRegister::S).getValue());
+		fn("X", _core.getRegister(TargetRegister::X).getValue());
+		fn("SP", _core.getRegister(TargetRegister::SP).getValue());
+		fn("SP2", _core.getRegister(TargetRegister::SP2).getValue());
+		fn("A.T", _core.getRegister(TargetRegister::A).getType());
+		fn("B.T", _core.getRegister(TargetRegister::B).getType());
+		fn("X.T", _core.getRegister(TargetRegister::X).getType());
 		_output.setf(flags); // restore after done
 	}
 	void Machine::defineWord() {
@@ -270,7 +270,7 @@ namespace forth {
 		_output << ' ' << std::endl;
 		_output.setf(flags);
 	}
-	Machine::Machine(std::ostream& output, std::istream& input) :  _output(output), _input(input), _memory(new Datum[memoryCapacity]), _words(nullptr) { }
+	Machine::Machine(std::ostream& output, std::istream& input) :  _output(output), _input(input), _words(nullptr) { }
 
 	Datum Machine::popParameter() {
 		if (_parameter.empty()) {
@@ -498,7 +498,7 @@ namespace forth {
 				static_assert(Address(0x111d1c) == performEqualityCheck, "Equality check operation failed!");
 				static_assert(Address(0x2122) == saveABToStack, "Save AB to stack routine failed!");
 				microcodeInvoke(performEqualityCheck);
-				if (_registerC.getTruth()) {
+				if (_core.getRegister(TargetRegister::C).getTruth()) {
 					microcodeInvoke(saveABToStack); // put the values back on the stack
                     // super gross but far more accurately models the underlying micro architecture
 loopTop:
@@ -508,7 +508,7 @@ loopTop:
 					// popb
 					// eq
 					microcodeInvoke(performEqualityCheck);
-                    if (!_registerC.getTruth()) {
+                    if (!_core.getRegister(TargetRegister::C).getTruth()) {
 						microcodeInvoke(saveABToStack); // put the values back on the stack
                         goto loopTop;
                     }
@@ -548,7 +548,7 @@ endLoopTop:
 				// pop.a
 				// not
 				microcodeInvoke(checkCondition);
-                if (!_registerC.getTruth()) {
+                if (!_core.getRegister(TargetRegister::C).getTruth()) {
                     goto endLoopTop;
                 }
 				});
@@ -564,159 +564,12 @@ endLoopTop:
 		}
 	}
 	void Machine::dispatchInstruction(const Molecule& molecule) {
-		_registerIP.reset();
-		// use the s register as the current instruction
-		// slice out the lowest eight bits
-		//auto molecule = _registerS.getMolecule();
-		auto throwError = [this, molecule](Operation op) {
-
-			std::stringstream msg;
-			msg << "Unknown instruction address: 0x" << std::hex << static_cast<int>(op);
-			auto str = msg.str();
-			throw Problem("uc", str);
-		};
-		while (_registerIP.getAddress() < sizeof(Molecule)) {
-			auto pos = _registerIP.getAddress();
-			auto op = getOperation(molecule.getByte(pos));
-			_registerIP.increment();
-
-			switch (op) {
-				case Operation::Stop: 
-					return; // stop executing code within this molecule
-				case Operation::Add:
-				case Operation::AddFull:
-				case Operation::AddImmediate:
-				case Operation::Subtract:
-				case Operation::SubtractFull:
-				case Operation::SubtractImmediate:
-					numericCombine(op, molecule); 
-					break; // add or subtract with other forms as well
-				case Operation::ShiftRight:
-				case Operation::ShiftRightFull:
-				case Operation::ShiftRightImmediate:
-					shiftOperation(op, molecule, false); 
-					break;
-				case Operation::ShiftLeft:
-				case Operation::ShiftLeftFull:
-				case Operation::ShiftLeftImmediate:
-					shiftOperation(op, molecule, true); 
-					break;
-				case Operation::Multiply: 
-				case Operation::MultiplyFull:
-				case Operation::MultiplyImmediate:
-					multiplyOperation(op, molecule); 
-					break;
-				case Operation::Equals: 
-				case Operation::EqualsFull: 
-				case Operation::EqualsImmediate: 
-					equals(op, molecule); 
-					break;
-				case Operation::Pow: 
-				case Operation::PowFull:
-					powOperation(op, molecule); 
-					break;
-				case Operation::Divide:
-				case Operation::DivideFull:
-				case Operation::DivideImmediate:
-					divide(op, molecule);
-					break;
-				case Operation::Not:
-				case Operation::NotFull:
-					notOperation(op, molecule);
-					break;
-				case Operation::Minus:
-				case Operation::MinusFull:
-					minusOperation(op, molecule);
-					break;
-				case Operation::And: 
-				case Operation::AndFull: 
-				case Operation::AndImmediate: 
-					andOperation(op, molecule); 
-					break;
-				case Operation::Or: 
-				case Operation::OrFull: 
-				case Operation::OrImmediate: 
-					orOperation(op, molecule); 
-					break;
-				case Operation::GreaterThan: 
-				case Operation::GreaterThanFull:
-				case Operation::GreaterThanImmediate:
-					greaterThanOperation(op, molecule); 
-					break; // greater than
-				case Operation::LessThan: 
-				case Operation::LessThanFull:
-				case Operation::LessThanImmediate:
-					lessThanOperation(op, molecule); 
-					break;
-				case Operation::Xor: 
-				case Operation::XorFull: 
-				case Operation::XorImmediate: 
-					xorOperation(op, molecule); 
-					break;
-				case Operation::TypeValue: 
-					typeValue(); 
-					break;
-				case Operation::PopRegister: 
-					popRegister(molecule); 
-					break;
-				case Operation::PushRegister: 
-					pushRegister(molecule); 
-					break;
-				case Operation::Load: 
-					load(molecule); 
-					break;
-				case Operation::Store: 
-					store(molecule); 
-					break;
-				case Operation::SetImmediate16_Lowest: 
-					setImmediate16<Immediate16Positions::Lowest>(molecule); 
-					break;
-				case Operation::SetImmediate16_Lower: 
-					setImmediate16<Immediate16Positions::Lower>(molecule); 
-					break;
-				case Operation::SetImmediate16_Higher: 
-					setImmediate16<Immediate16Positions::Higher>(molecule); 
-					break;
-				case Operation::SetImmediate16_Highest: 
-					setImmediate16<Immediate16Positions::Highest>(molecule); 
-					break;
-				case Operation::Move:
-					moveRegister(molecule); 
-					break;
-				case Operation::Swap: 
-					swapRegisters(molecule); 
-					break;
-				case Operation::PopA: 
-					popRegister(TargetRegister::A); 
-					break;
-				case Operation::PopB: 
-					popRegister(TargetRegister::B); 
-					break;
-				case Operation::PopT: 
-					popRegister(TargetRegister::T); 
-					break;
-				case Operation::PushC: 
-					pushRegister(TargetRegister::C); 
-					break;
-				case Operation::PopC:
-					popRegister(TargetRegister::C);
-					break;
-				case Operation::PushA:
-					pushRegister(TargetRegister::A);
-					break;
-				case Operation::PushB:
-					pushRegister(TargetRegister::B);
-					break;
-				default: 
-					throwError(op);
-					break;
-			}
-		}
+		_core.dispatchInstruction(molecule);
 	}
 	void Machine::popRegister(TargetRegister t) {
 		using Type = decltype(t);
 		auto top(popParameter());
-		Register& target = getRegister(t);
+		Register& target = _core.getRegister(t);
 		if (involvesDiscriminantRegister(t)) {
 			target.setType(static_cast<Discriminant>(top.address));
 		} else {
@@ -725,33 +578,14 @@ endLoopTop:
 	}
 	void Machine::pushRegister(TargetRegister t) {
 		using Type = decltype(t);
-		Register& target = getRegister(t);
+		Register& target = _core.getRegister(t);
 		if (involvesDiscriminantRegister(t)) {
 			pushParameter(static_cast<Address>(target.getType()));
 		} else {
 			pushParameter(target.getValue());
 		}
 	}
-	void Machine::popRegister(const Molecule& m) {
-		try {
-			// read the current field
-			// get the destination register to use as a target
-			popRegister(static_cast<TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress()))));
-			_registerIP.increment();
-		} catch (Problem& p) {
-			throw Problem("pop.register", p.getMessage());
-		}
-	}
-	void Machine::pushRegister(const Molecule& m) {
-		try {
-			// read the current field
-			// get the destination register to use as a target
-			pushRegister(static_cast<TargetRegister>(getDestinationRegister(m.getByte(_registerIP.getAddress()))));
-			_registerIP.increment();
-		} catch (Problem& p) {
-			throw Problem("push.register", p.getMessage());
-		}
-	}
+	/*
 	void Machine::load(const Molecule& m) {
 		try {
 			// figure out which register to get the address from!
@@ -847,6 +681,7 @@ endLoopTop:
 		moveOrSwap(static_cast<TargetRegister>(src), static_cast<TargetRegister>(dest), false);
 		_registerIP.increment();
 	}
+	*/
     void Machine::injectWord() {
         // read the next word and then lookup that entry
 		auto word = readWord();
@@ -871,7 +706,7 @@ endLoopTop:
         static constexpr auto loadLower = Instruction::loadAddressLowerHalf(TargetRegister::X, shouldKeepExecutingLocation);
         static constexpr auto loadUpper = Instruction::loadAddressUpperHalf(TargetRegister::X, shouldKeepExecutingLocation);
         dispatchInstructionStream<loadLower, loadUpper, loadValueIntoX>();
-		return _registerX.getTruth();
+		return _core.getRegister(TargetRegister::X).getTruth();
 	}
 
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
@@ -901,7 +736,7 @@ endLoopTop:
 			Instruction::loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
 			Instruction::loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
 			Instruction::encodeOperation(Instruction::load(TargetRegister::X, TargetRegister::X))>();
-		return _registerX.getTruth();
+		return _core.getRegister(TargetRegister::X).getTruth();
 	}
 	void Machine::activateCompileMode() {
 		dispatchInstructionStream<
@@ -927,7 +762,7 @@ endLoopTop:
 		dispatchInstruction(Instruction::encodeOperation(
 					Instruction::load(TargetRegister::S, TargetRegister::X),
 					Instruction::equals(TargetRegister::C, TargetRegister::S, sp)));
-		return _registerC.getTruth();
+		return _core.getRegister(TargetRegister::C).getTruth();
 	}
 	bool Machine::stackFull(TargetRegister sp, Address location) {
 		dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, location));
@@ -935,7 +770,7 @@ endLoopTop:
 		dispatchInstruction(Instruction::encodeOperation(
 					Instruction::load(TargetRegister::S, TargetRegister::X),
 					Instruction::equals(TargetRegister::C, TargetRegister::S, sp)));
-		return _registerC.getTruth();
+		return _core.getRegister(TargetRegister::C).getTruth();
 	}
 	void Machine::pushOntoStack(TargetRegister sp, Datum value, Address fullLocation) {
 		if (stackFull(sp, fullLocation)) {
@@ -961,7 +796,7 @@ endLoopTop:
 		dispatchInstruction(Instruction::encodeOperation(
 					Instruction::load(TargetRegister::C, sp),
 					Instruction::add(sp, sp, 1)));
-		return _registerC.getValue();
+		return _core.getRegister(TargetRegister::C).getValue();
 	}
 	Datum Machine::popSubroutine() {
 		try {
@@ -981,34 +816,28 @@ endLoopTop:
 		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation));
 		dispatchInstruction(Instruction::encodeOperation(Instruction::load(TargetRegister::SP2, TargetRegister::X)));
 	}
-	std::tuple<Register&, Register&> Machine::extractArgs2(Operation op, const Molecule& m) {
-		Register& dest = _registerC;
-		Register& src = _registerA;
-		if (fullForm(op)) {
-			auto next = m.getByte(_registerIP.getAddress()); 
-			_registerIP.increment();
-			return std::forward_as_tuple(getRegister(TargetRegister(getDestinationRegister(next))), getRegister(TargetRegister(getSourceRegister(next))));
-		} else {
-			return std::forward_as_tuple(_registerC, _registerA);
-		}
+	void Machine::setA(const Datum& target) noexcept { _core.getRegister(TargetRegister::A).setValue(target); }
+	void Machine::setB(const Datum& target) noexcept { _core.getRegister(TargetRegister::B).setValue(target); }
+	void Machine::setTA(Discriminant target) noexcept { _core.getRegister(TargetRegister::TA).setType(target); }
+	void Machine::setTB(Discriminant target) noexcept { _core.getRegister(TargetRegister::TB).setType(target); }
+
+	Datum Machine::load(Address addr) {
+		return _core.load(addr);
 	}
-	std::tuple<Register&, Register&, Register&> Machine::extractArguments(Operation op, const Molecule& m, std::function<void(Register&, Address)> onImmediate) {
-		if (immediateForm(op)) {
-			auto x = extractThreeRegisterImmediateForm(m);
-			if (onImmediate) {
-				onImmediate(_registerImmediate, std::get<2>(x));
-			} else {
-				_registerImmediate.setValue(std::get<2>(x));
-			}
-			auto tuple = std::forward_as_tuple(getRegister(std::get<0>(x)), getRegister(std::get<1>(x)), _registerImmediate);
-			return tuple;
-		} else if (fullForm(op)) {
-			auto x = extractThreeRegisterForm(m);
-			auto tup = std::forward_as_tuple(getRegister(std::get<0>(x)), getRegister(std::get<1>(x)), getRegister(std::get<2>(x)));
-			return tup;
-		} else {
-			return std::forward_as_tuple(_registerC, _registerA, _registerB);
-		}
+	void Machine::store(Address addr, const Datum& value) {
+		_core.store(addr, value);
+	}
+	void Machine::load() {
+		_core.getRegister(TargetRegister::C).setValue(load(_core.getRegister(TargetRegister::A).getAddress()));
+	}
+	void Machine::store() {
+		store(_core.getRegister(TargetRegister::A).getAddress(), _core.getRegister(TargetRegister::B).getValue());
+	}
+	void Machine::typeValue(const Datum& value) {
+		typeValue(_core.getRegister(TargetRegister::C).getType(), value);
+	}
+	void Machine::typeValue() {
+		typeValue(_core.getRegister(TargetRegister::A).getValue());
 	}
 } // end namespace forth
 

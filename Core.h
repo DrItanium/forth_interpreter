@@ -22,6 +22,7 @@ class Core {
 		void dispatchInstruction(const Molecule& m);
 		Datum load(Address addr);
 		void store(Address addr, const Datum& value);
+		Register& getRegister(TargetRegister reg);
 	private:
 		void push(const Datum& d, TargetRegister sp);
 		void push(TargetRegister reg, TargetRegister sp);
@@ -72,7 +73,6 @@ class Core {
 		}
 		Datum& getSystemVariable(Address index);
 	private:
-		Register& getRegister(TargetRegister reg);
 	private:
 		Register _a, _b, _c, _s, _x;
 		Register _sp, _sp2, _imm, _pc;

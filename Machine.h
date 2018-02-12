@@ -26,16 +26,16 @@ namespace forth {
 			void controlLoop() noexcept;
 			void handleError(const std::string& word, const std::string& msg) noexcept;
 			Datum load(Address addr);
-			void load() { _registerC.setValue(load(_registerA.getAddress())); }
+			void load();
 			void store(Address addr, const Datum& value);
-			void store() { store(_registerA.getAddress(), _registerB.getValue()); }
+			void store();
             void pushWord(DictionaryEntry* entry);
 			void pushParameter(Datum value);
 			Datum popParameter();
 			bool numberRoutine(const std::string& word) noexcept;
 			void typeValue(Discriminant discriminant, const Datum& value);
-			void typeValue(const Datum& value) { typeValue(_registerC.getType(), value); }
-			void typeValue() { typeValue(_registerA.getValue()); }
+			void typeValue(const Datum& value);
+			void typeValue();
 			void addWord(DictionaryEntry* entry);
 			void addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke = false);
 			template<typename T, typename ... Rest>
@@ -73,10 +73,10 @@ namespace forth {
 			void listWords();
 			void defineWord();
 			void endDefineWord();
-			void setA(const Datum& target) noexcept { _registerA.setValue(target); }
-			void setTA(Discriminant target) noexcept { _registerA.setType(target); }
-			void setTB(Discriminant target) noexcept { _registerB.setType(target); }
-			void setB(const Datum& target) noexcept { _registerB.setValue(target); }
+			void setA(const Datum& target) noexcept;
+			void setB(const Datum& target) noexcept;
+			void setTA(Discriminant target) noexcept;
+			void setTB(Discriminant target) noexcept;
 			void initializeBaseDictionary();
 			void dispatchInstruction(const Molecule& m);
 		private:
@@ -145,6 +145,7 @@ namespace forth {
             void endStatement();
             void doStatement();
             void continueStatement();
+			/*
             enum class Immediate16Positions : byte {
                 Lowest,
                 Lower,
@@ -217,6 +218,7 @@ namespace forth {
                     throw Problem(msg, p.getMessage());
                 }
             }
+			*/
             /**
              * Printout the contents of the given word!
              */

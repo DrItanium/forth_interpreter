@@ -744,9 +744,16 @@ endLoopTop:
                 Instruction::xorOp(TargetRegister::A, TargetRegister::A, TargetRegister::A),
                 Instruction::move(TargetRegister::B, TargetRegister::SP));
 
+
         dispatchInstruction(loadParameterStackAddressLower);
         dispatchInstruction(loadParameterStackAddressUpper);
         dispatchInstruction(setupRegisters);
+        // make sure we terminate early if empty
+        dispatchInstruction(Instruction::encodeOperation(Instruction::equals(TargetRegister::C, TargetRegister::X, TargetRegister::B)));
+        if (_core.getRegister(TargetRegister::C).getTruth()) {
+            return;
+        }
+        
         // Once again, this is just to make rewriting easier later on
 loopRestart:
         // now load the current address from B

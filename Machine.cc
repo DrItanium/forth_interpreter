@@ -112,7 +112,7 @@ namespace forth {
 				break;
 			case Type::Number:
 			case Type::FloatingPoint:
-				pushRegister(TargetRegister::C);
+                dispatchInstruction(Instruction::encodeOperation(Instruction::pushC()));
 				break;
 			default:
 				throw Problem("invoke.c", "incorrect discriminant!");
@@ -545,25 +545,6 @@ endLoopTop:
 	}
 	void Machine::dispatchInstruction(const Molecule& molecule) {
 		_core.dispatchInstruction(molecule);
-	}
-	void Machine::popRegister(TargetRegister t) {
-		using Type = decltype(t);
-		auto top(popParameter());
-		Register& target = _core.getRegister(t);
-		if (involvesDiscriminantRegister(t)) {
-			target.setType(static_cast<Discriminant>(top.address));
-		} else {
-			target.setValue(top);
-		}
-	}
-	void Machine::pushRegister(TargetRegister t) {
-		using Type = decltype(t);
-		Register& target = _core.getRegister(t);
-		if (involvesDiscriminantRegister(t)) {
-			pushParameter(static_cast<Address>(target.getType()));
-		} else {
-			pushParameter(target.getValue());
-		}
 	}
     void Machine::injectWord() {
         // read the next word and then lookup that entry

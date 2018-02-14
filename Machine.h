@@ -125,8 +125,6 @@ namespace forth {
 			void semicolonOperation();
 			void printRegisters();
             void printStack();
-			void pushRegister(TargetRegister t);
-			void popRegister(TargetRegister t); 
             void dispatchInstruction();
 			template<Address first, Address ... rest>
 			void dispatchInstructionStream() noexcept {

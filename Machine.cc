@@ -747,10 +747,13 @@ endLoopTop:
         dispatchInstruction(loadParameterStackAddressLower);
         dispatchInstruction(loadParameterStackAddressUpper);
         dispatchInstruction(setupRegisters);
-        do {
-            // now load the current address from B
-            dispatchInstruction(executionBodyContents);
-            _output << "\t- " << _core.getRegister(TargetRegister::A).getValue() << std::endl;
-        } while (!_core.getRegister(TargetRegister::C).getTruth());
+        // Once again, this is just to make rewriting easier later on
+loopRestart:
+        // now load the current address from B
+        dispatchInstruction(executionBodyContents);
+        _output << "\t- " << _core.getRegister(TargetRegister::A).getValue() << std::endl;
+        if (!_core.getRegister(TargetRegister::C).getTruth()) {
+            goto loopRestart;
+        }
 	}
 } // end namespace forth

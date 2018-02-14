@@ -34,6 +34,7 @@ class Core {
 		Register& getRegister(TargetRegister reg);
 		void push(const Datum& d, TargetRegister sp);
 		Datum pop(TargetRegister sp);
+        void executionCycle(Address startAddress = 0);
 	private:
 		void push(TargetRegister reg, TargetRegister sp);
 		void pop(TargetRegister dest, TargetRegister sp);
@@ -89,6 +90,7 @@ class Core {
 		OutputFunction _output;
 		// mapped to 0xFFFFFFFFFFFF0000
 		std::unique_ptr<Datum[]> _memory, _systemVariables;
+        bool _advancePC = false;
 
 };
 } // end namespace forth

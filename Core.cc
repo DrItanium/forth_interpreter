@@ -1,5 +1,6 @@
 #include "Core.h"
 #include "Problem.h"
+#include "Datum.h"
 #include <sstream>
 #include <string>
 #include <cmath>
@@ -503,29 +504,40 @@ constexpr HalfAddress makeImm24(QuarterAddress lower16, byte upper8) noexcept {
 void Core::savePositionToSubroutineStack() {
 	auto value = _moleculePosition.getValue();
 	++value.address;
-	push(_pc.getValue(), TargetRegister::SP2);
-	push(value, TargetRegister::SP2);
+    if (value.address >= 8) {
+        push(_pc.getAddress() + 1, TargetRegister::SP2);
+        push(Address(0), TargetRegister::SP2);
+    } else {
+        push(_pc.getValue(), TargetRegister::SP2);
+        push(value, TargetRegister::SP2);
+    }
 }
 void Core::jumpOperation(Operation op) {
 	switch (op) {
 		case Operation::Jump:
+            _advancePC = false;
 			_pc.setValue(_pc.getInt() + extractQuarterIntegerFromMolecule());
 			break;
 		case Operation::JumpAbsolute: 
+            _advancePC = false;
 			_pc.setValue((Address)makeImm24(extractQuarterIntegerFromMolecule(), extractByteFromMolecule()));
 			break;
 		case Operation::JumpIndirect: 
+            _advancePC = false;
 			_pc.setValue(getRegister((TargetRegister)getDestinationRegister(extractByteFromMolecule())).getValue());
 			break;
 		case Operation::CallSubroutine: 
+            _advancePC = false;
 			savePositionToSubroutineStack();
 			_pc.setValue((Address)makeImm24(extractQuarterIntegerFromMolecule(), extractByteFromMolecule()));
 			break;
 		case Operation::CallSubroutineIndirect: 
+            _advancePC = false;
 			savePositionToSubroutineStack();
 			_pc.setValue(getRegister((TargetRegister)getDestinationRegister(extractByteFromMolecule())).getValue());
 			break;
 		case Operation::ReturnSubroutine: 
+            _advancePC = false;
 			_moleculePosition.setValue(pop(TargetRegister::SP2));
 			_pc.setValue(pop(TargetRegister::SP2));
 			break;
@@ -536,6 +548,7 @@ void Core::jumpOperation(Operation op) {
 void Core::conditionalBranch(Operation op) {
 	auto k = extractByteFromMolecule();
 	if (getRegister(TargetRegister(getDestinationRegister(k))).getTruth()) {
+        _advancePC = false;
 		switch (op) {
 			case Operation::ConditionalBranch:
 				jumpOperation(Operation::Jump);
@@ -780,6 +793,23 @@ void Core::setImm16(Operation op) {
 				throw Problem("setImm16", "unknown set imm16 operation!");
 		}
 	}
+}
+
+void Core::executionCycle(Address startAddress) {
+    auto& value = getSystemVariable(Core::terminateExecutionVariable);
+    value.address = 0;
+    _pc.setValue(startAddress);
+    while(value.address == 0) {
+        // load the current address
+        auto value = load(_pc.getAddress());
+        dispatchInstruction(value.address);
+        if (_advancePC) {
+            _pc.increment();
+        }
+        _pc.setValue(_pc.getAddress() & Core::largestAddress);
+        _advancePC = true;
+    }
+    // we've halted at this point
 }
 
 

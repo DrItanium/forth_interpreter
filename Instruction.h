@@ -444,11 +444,11 @@ namespace Instruction {
     constexpr byte shiftRight() noexcept { return singleByteOp(Operation::ShiftRight); }
     constexpr byte shiftLeft() noexcept { return singleByteOp(Operation::ShiftLeft); }
 
-    constexpr QuarterAddress popRegister(TargetRegister destination) noexcept {
-        return encodeTwoByte(Operation::PopRegister, encodeDestinationRegister(destination));
+    constexpr QuarterAddress popRegister(TargetRegister destination, TargetRegister sp = TargetRegister::SP) noexcept {
+        return encodeTwoByte(Operation::PopRegister, encodeRegisterPair(destination, sp));
     }
-    constexpr QuarterAddress pushRegister(TargetRegister destination) noexcept {
-        return encodeTwoByte(Operation::PushRegister, encodeDestinationRegister(destination));
+    constexpr QuarterAddress pushRegister(TargetRegister destination, TargetRegister sp = TargetRegister::SP) noexcept {
+        return encodeTwoByte(Operation::PushRegister, encodeRegisterPair(destination, sp));
     }
     constexpr byte equals() noexcept { return singleByteOp(Operation::Equals); }
     constexpr byte typeValue() noexcept { return singleByteOp(Operation::TypeValue); }

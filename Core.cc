@@ -721,7 +721,7 @@ void Core::setOutputFunction(Core::OutputFunction output) {
 	_output = output;
 }
 enum class Immediate16Positions : byte {
-	Lowest,
+	Lowest = 0,
 	Lower,
 	Higher,
 	Highest,

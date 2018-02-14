@@ -747,7 +747,7 @@ endLoopTop:
                     Instruction::encodeOperation(
                         Instruction::load(TargetRegister::A, TargetRegister::B),
                         Instruction::increment(TargetRegister::B, 0), // advance by one, the core internally increments by one automatically
-                        Instruction::equals(TargetRegister::C, TargetRegister::SP, TargetRegister::B)));
+                        Instruction::equals(TargetRegister::C, TargetRegister::X, TargetRegister::B)));
             _output << "\t- " << _core.getRegister(TargetRegister::A).getValue() << std::endl;
         } while (!_core.getRegister(TargetRegister::C).getTruth());
 	}

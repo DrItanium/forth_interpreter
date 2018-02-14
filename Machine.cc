@@ -586,7 +586,8 @@ endLoopTop:
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
 		// clear the stacks and the input pointer
 		static constexpr auto loadLower = Instruction::loadAddressLowerHalf(TargetRegister::X, parameterStackEmptyLocation);
-		static constexpr auto loadUpper = Instruction::loadAddressLowerHalf(TargetRegister::X, parameterStackEmptyLocation);
+		static constexpr auto loadUpper = Instruction::loadAddressUpperHalf(TargetRegister::X, parameterStackEmptyLocation);
+        static_assert(loadLower != loadUpper, "Make sure that these two operations are different!");
 		dispatchInstructionStream<loadLower, loadUpper, Instruction::encodeOperation(Instruction::load(TargetRegister::SP, TargetRegister::X))>();
 		clearSubroutineStack();
 		_input.clear();

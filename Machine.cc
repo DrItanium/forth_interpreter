@@ -735,19 +735,21 @@ endLoopTop:
 		//}
         static constexpr auto loadParameterStackAddressLower = Instruction::loadAddressLowerHalf(TargetRegister::X, parameterStackEmptyLocation);
         static constexpr auto loadParameterStackAddressUpper = Instruction::loadAddressUpperHalf(TargetRegister::X, parameterStackEmptyLocation);
+        static constexpr auto executionBodyContents = Instruction::encodeOperation(
+                Instruction::load(TargetRegister::A, TargetRegister::B),
+                Instruction::increment(TargetRegister::B, 0), // advance by one, the core internally increments by one automatically
+                Instruction::equals(TargetRegister::C, TargetRegister::X, TargetRegister::B));
+        static constexpr auto setupRegisters = Instruction::encodeOperation(
+                Instruction::load(TargetRegister::X, TargetRegister::X),
+                Instruction::xorOp(TargetRegister::A, TargetRegister::A, TargetRegister::A),
+                Instruction::move(TargetRegister::B, TargetRegister::SP));
+
         dispatchInstruction(loadParameterStackAddressLower);
         dispatchInstruction(loadParameterStackAddressUpper);
-        dispatchInstruction(Instruction::encodeOperation(
-                    Instruction::load(TargetRegister::X, TargetRegister::X),
-                    Instruction::xorOp(TargetRegister::A, TargetRegister::A, TargetRegister::A),
-                    Instruction::move(TargetRegister::B, TargetRegister::SP)));
+        dispatchInstruction(setupRegisters);
         do {
             // now load the current address from B
-            dispatchInstruction(
-                    Instruction::encodeOperation(
-                        Instruction::load(TargetRegister::A, TargetRegister::B),
-                        Instruction::increment(TargetRegister::B, 0), // advance by one, the core internally increments by one automatically
-                        Instruction::equals(TargetRegister::C, TargetRegister::X, TargetRegister::B)));
+            dispatchInstruction(executionBodyContents);
             _output << "\t- " << _core.getRegister(TargetRegister::A).getValue() << std::endl;
         } while (!_core.getRegister(TargetRegister::C).getTruth());
 	}

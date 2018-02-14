@@ -27,9 +27,6 @@ Register& Core::getRegister(TargetRegister reg) {
 		case Type::X:
 		case Type::TX:
 			return _x;
-		case Type::PC:
-		case Type::TPC:
-			return _pc;
 		case Type::SP:
 		case Type::TSP:
 			return _sp;

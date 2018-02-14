@@ -59,8 +59,7 @@ enum class TargetRegister : byte {
     X, // misc data
     SP, // stack pointer (parameter)
     SP2, // second stack pointer (subroutine)
-    PC, // instruction pointer contents
-	RegisterCount = PC,
+	RegisterCount = SP2,
     TA = 8,
     TB,
     TC,
@@ -68,7 +67,6 @@ enum class TargetRegister : byte {
     TX, // misc type
 	TSP,
 	TSP2,
-	TPC,
     Error,
 	T = TC,
 };

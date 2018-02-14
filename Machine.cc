@@ -102,13 +102,23 @@ namespace forth {
 		return nullptr;
 	}
 	void Machine::chooseRegister() {
-		_core.getRegister(TargetRegister::C) = _core.getRegister(TargetRegister::C).getTruth() ? _core.getRegister(TargetRegister::A) : _core.getRegister(TargetRegister::B);
+        auto& dest = _core.getRegister(TargetRegister::C);
+        auto& onTrue = _core.getRegister(TargetRegister::A);
+        auto& onFalse = _core.getRegister(TargetRegister::B);
+        if (dest.getTruth()) {
+            dest.setType(onTrue.getType());
+            dest.setValue(onTrue.getValue());
+        } else {
+            dest.setType(onFalse.getType());
+            dest.setValue(onFalse.getValue());
+        }
 	}
 	void Machine::invokeCRegister() {
-		using Type = decltype(_core.getRegister(TargetRegister::C).getType());
-		switch (_core.getRegister(TargetRegister::C).getType()) {
+        auto& dest = _core.getRegister(TargetRegister::C);
+		using Type = decltype(dest.getType());
+        switch (dest.getType()) {
 			case Type::Word:
-				_core.getRegister(TargetRegister::C).getWord()->operator()(this);
+                dest.getWord()->operator()(this);
 				break;
 			case Type::Number:
 			case Type::FloatingPoint:

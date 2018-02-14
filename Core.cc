@@ -366,7 +366,17 @@ void numericBoolAndInteger(const std::string& op, Register& dest, const Register
 }
 
 void Core::notOperation(Operation op) {
-	auto tup = extractTwoRegisterForm();
+    std::tuple<TargetRegister, TargetRegister> tup;
+    switch (op) {
+        case Operation::Not:
+            tup = std::make_tuple(TargetRegister::C, TargetRegister::A);
+            break;
+        case Operation::NotFull:
+            tup = extractTwoRegisterForm();
+            break;
+        default:
+            throw Problem("not", "ILLEGAL OPERATION!");
+    }
 	auto& dest = getRegister(std::get<0>(tup));
 	auto& src = getRegister(std::get<1>(tup));
 	switch (dest.getType()) {
@@ -385,7 +395,17 @@ void Core::notOperation(Operation op) {
 }
 
 void Core::minusOperation(Operation op) {
-	auto tup = extractTwoRegisterForm();
+    std::tuple<TargetRegister, TargetRegister> tup;
+    switch (op) {
+        case Operation::Minus:
+            tup = std::make_tuple(TargetRegister::C, TargetRegister::A);
+            break;
+        case Operation::MinusFull:
+            tup = extractTwoRegisterForm();
+            break;
+        default:
+            throw Problem("minus", "ILLEGAL OPERATION!");
+    }
 	auto& dest = getRegister(std::get<0>(tup));
 	auto& src = getRegister(std::get<1>(tup));
 	switch (dest.getType()) {
@@ -396,7 +416,7 @@ void Core::minusOperation(Operation op) {
 			dest.setValue(-src.getFP());
 			break;
 		default:
-			throw Problem("not", "ILLEGAL DISCRIMINANT");
+			throw Problem("minus", "ILLEGAL DISCRIMINANT");
 	}
 }
 

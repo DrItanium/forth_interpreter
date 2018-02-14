@@ -462,7 +462,7 @@ void Core::rangeChecks(Operation op) {
 void Core::incrDecr(Operation op) {
 	auto tmp = extractByteFromMolecule();
 	auto d = static_cast<TargetRegister>(getDestinationRegister(tmp));
-	auto imm4 = getSourceRegister(tmp);
+	auto imm4 = getSourceRegister(tmp) + 1; // always increment by one since increment and decrementing by zero makes no sense
 	_tmp1.setValue(Address(imm4));
 	auto& dest = getRegister(d);
 	switch (op) {

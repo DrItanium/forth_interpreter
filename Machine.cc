@@ -543,13 +543,6 @@ endLoopTop:
 		_compileTarget->addSpaceEntry(container);
 		// now we have to construct a single entry for the parent which has the conditional code added as well
 	}
-	void Machine::printStack() {
-		auto bottom = load(parameterStackEmptyLocation).address;
-		for (auto curr = _core.getRegister(TargetRegister::SP).getAddress(); curr < bottom; ++curr) {
-			auto element = load(curr);
-			_output << "\t- " << element << std::endl;
-		}
-	}
 	void Machine::dispatchInstruction(const Molecule& molecule) {
 		_core.dispatchInstruction(molecule);
 	}
@@ -713,6 +706,7 @@ endLoopTop:
 	void Machine::setTA(Discriminant target) noexcept { _core.getRegister(TargetRegister::TA).setType(target); }
 	void Machine::setTB(Discriminant target) noexcept { _core.getRegister(TargetRegister::TB).setType(target); }
 
+
 	Datum Machine::load(Address addr) {
 		return _core.load(addr);
 	}
@@ -731,5 +725,30 @@ endLoopTop:
 	void Machine::typeValue() {
 		typeValue(_core.getRegister(TargetRegister::A).getValue());
 	}
+	void Machine::printStack() {
+        // load the bottom of the stack
+        
+		//auto bottom = load(parameterStackEmptyLocation).address;
+		//for (auto curr = _core.getRegister(TargetRegister::SP).getAddress(); curr < bottom; ++curr) {
+		//	auto element = load(curr);
+		//	_output << "\t- " << element << std::endl;
+		//}
+        static constexpr auto loadParameterStackAddressLower = Instruction::loadAddressLowerHalf(TargetRegister::X, parameterStackEmptyLocation);
+        static constexpr auto loadParameterStackAddressUpper = Instruction::loadAddressUpperHalf(TargetRegister::X, parameterStackEmptyLocation);
+        dispatchInstruction(loadParameterStackAddressLower);
+        dispatchInstruction(loadParameterStackAddressUpper);
+        dispatchInstruction(Instruction::encodeOperation(
+                    Instruction::load(TargetRegister::X, TargetRegister::X),
+                    Instruction::xorOp(TargetRegister::A, TargetRegister::A, TargetRegister::A),
+                    Instruction::move(TargetRegister::B, TargetRegister::SP)));
+        do {
+            // now load the current address from B
+            dispatchInstruction(
+                    Instruction::encodeOperation(
+                        Instruction::load(TargetRegister::A, TargetRegister::B),
+                        Instruction::increment(TargetRegister::B, 0), // advance by one, the core internally increments by one automatically
+                        Instruction::equals(TargetRegister::C, TargetRegister::SP, TargetRegister::B)));
+            _output << "\t- " << _core.getRegister(TargetRegister::A).getValue() << std::endl;
+        } while (!_core.getRegister(TargetRegister::C).getTruth());
+	}
 } // end namespace forth
-

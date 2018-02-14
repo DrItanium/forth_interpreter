@@ -45,8 +45,6 @@ namespace forth {
         public:
             Register();
             Register(const Register& other);
-            void setType(Discriminant type) noexcept { _type = type; }
-            Discriminant getType() const noexcept { return _type; }
             const Datum& getValue() const noexcept { return _value; }
             void setValue(Datum d) noexcept { _value = d; }
             bool getTruth() const noexcept { return _value.truth; }
@@ -62,7 +60,6 @@ namespace forth {
             void increment(Address amount = 1) { _value.address += amount; }
 			void decrement(Address amount = 1) { _value.address -= amount; }
         private:
-            Discriminant _type;
             Datum _value;
     };
 } // end namespace forth

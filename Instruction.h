@@ -59,19 +59,12 @@ enum class TargetRegister : byte {
     X, // misc data
     SP, // stack pointer (parameter)
     SP2, // second stack pointer (subroutine)
-	RegisterCount = SP2,
-    TA = 8,
-    TB,
-    TC,
-	TS,
-    TX, // misc type
-	TSP,
-	TSP2,
-    Error,
-	T = TC,
+    DP, // Dictionary Pointer 
+    Index, // Index Pointer
+    Temporary, // used to store temporary data we requested
+    Count,
 };
-static_assert(byte(TargetRegister::RegisterCount) <= 8, "Too many primary registers defined!");
-static_assert(byte(TargetRegister::Error) <= 16, "Too many registers defined!");
+static_assert(byte(TargetRegister::Count) <= 16, "Too many registers defined!");
 constexpr byte encodeDestinationRegister(byte value, TargetRegister reg) noexcept {
     return encodeBits<byte, byte, 0x0F, 0>(value, (byte)reg);
 }
@@ -176,8 +169,14 @@ enum class Operation : byte {
     Increment,
     Decrement,
 	LoadImmediateLower48,
+    // type field manipulation
+    MoveTypeFromRegister,
+    MoveTypeToRegister,
+    SwapRegisterTypes,
     Count,
 };
+
+static_assert(Operation::Count <= 256, "Too many operations defined!");
 
 
 constexpr bool legalOperation(Operation op) noexcept {

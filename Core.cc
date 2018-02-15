@@ -192,9 +192,9 @@ void Core::pop(TargetRegister reg, TargetRegister sp) {
 	}
 }
 
-template<typename T>
+template<typename T, Discriminant type>
 void numericOperation(const std::string& op, Register& dest, const Register& src0, const Register& src1, T fn) {
-	switch(dest.getType()) {
+	switch(type) {
 		case Discriminant::Number:
 			dest.setValue(fn(src0.getInt(), src1.getInt()));
 			break;
@@ -209,9 +209,9 @@ void numericOperation(const std::string& op, Register& dest, const Register& src
 	}
 }
 
-template<typename T>
+template<typename T, Discriminant type>
 void numericOperationAndBool(const std::string& op, Register& dest, const Register& src0, const Register& src1, T fn) {
-	switch(dest.getType()) {
+	switch(type) {
 		case Discriminant::Number:
 			dest.setValue(fn(src0.getInt(), src1.getInt()));
 			break;
@@ -229,9 +229,9 @@ void numericOperationAndBool(const std::string& op, Register& dest, const Regist
 	}
 }
 
-template<typename T>
+template<typename T, Discriminant type>
 void numericOperationIntegerOnly(const std::string& op, Register& dest, const Register& src0, const Register& src1, T fn) {
-	switch(dest.getType()) {
+    switch(type) {
 		case Discriminant::Number:
 			dest.setValue(fn(src0.getInt(), src1.getInt()));
 			break;
@@ -243,7 +243,7 @@ void numericOperationIntegerOnly(const std::string& op, Register& dest, const Re
 	}
 }
 void Core::numericCombine(Operation op) {
-	auto result = extractArguments(op, [this](Register& r, auto val) {
+	auto result = extractArguments(op, [op, this](Register& r, auto val) {
 				if (_c.getType() == Discriminant::FloatingPoint) {
 					r.setValue(static_cast<Floating>(val));
 				} else {

@@ -3,6 +3,7 @@
 #define INSTRUCTION_H__
 #include "Types.h"
 #include "Problem.h"
+#include "Datum.h"
 #include <iostream>
 #include <list>
 namespace forth {
@@ -83,7 +84,7 @@ constexpr byte encodeRegisterPair(TargetRegister dest, T src) noexcept {
 }
 
 static constexpr bool involvesDiscriminantRegister(TargetRegister r) noexcept {
-	return static_cast<byte>(r) >= 8;
+    return false;
 }
 static constexpr bool legalValue(TargetRegister r) noexcept {
     return static_cast<byte>(r) < static_cast<byte>(TargetRegister::Error);
@@ -126,6 +127,29 @@ enum class Operation : byte {
 	PopC,
 	PushA,
 	PushB,
+#define FVersion(x) FloatingPoint ## x 
+#define UVersion(x) Unsigned ## x
+#define BVersion(x) Boolean ## x
+#define FUVersion(x) FVersion(x) , UVersion(x)
+#define BUVersion(x) BVersion(x) , UVersion(x)
+#define FUBVersion(x) FVersion(x), UVersion(x), BVersion(x)
+    FUVersion(Add),
+    FUVersion(Subtract),
+    FUVersion(Multiply),
+    FUVersion(Divide),
+    FUVersion(Modulo),
+    BUVersion(Not),
+    FUVersion(Minus),
+    BUVersion(And),
+    BUVersion(Or),
+    FUVersion(GreaterThan),
+    FUVersion(LessThan),
+    BUVersion(Xor),
+    UVersion(ShiftRight),
+    UVersion(ShiftLeft),
+    FUBVersion(Equals),
+    FUVersion(Pow),
+
 	// full versions of operations
 	// these forms are:
 	// ?op ?dest = ?src0, ?src1   // full
@@ -170,11 +194,52 @@ enum class Operation : byte {
     Decrement,
 	LoadImmediateLower48,
     // type field manipulation
+#define FullImmediate(x) FVersion(x ## Full) , FVersion(x ## Full) 
+	FullImmediate(Add),
+	FullImmediate(Subtract),
+	FullImmediate(Multiply),
+	FullImmediate(Divide),
+	FullImmediate(Modulo),
+	FloatingPointMinusFull,
+	FullImmediate(And),
+	FullImmediate(Or),
+	FullImmediate(GreaterThan),
+	FullImmediate(LessThan),
+	FullImmediate(Xor),
+	FullImmediate(ShiftRight),
+	FullImmediate(ShiftLeft),
+	FullImmediate(Equals),
+    FloatingPointPowFull,
+#undef FullImmediate
+#define FullImmediate(x) UVersion(x ## Full) , UVersion(x ## Immediate)
+	FullImmediate(Add),
+	FullImmediate(Subtract),
+	FullImmediate(Multiply),
+	FullImmediate(Divide),
+	FullImmediate(Modulo),
+	UnsignedNotFull,
+	UnsignedMinusFull,
+	FullImmediate(And),
+	FullImmediate(Or),
+	FullImmediate(GreaterThan),
+	FullImmediate(LessThan),
+	FullImmediate(Xor),
+	FullImmediate(ShiftRight),
+	FullImmediate(ShiftLeft),
+	FullImmediate(Equals),
+	UnsignedPowFull,
+#undef FullImmediate
     MoveTypeFromRegister,
     MoveTypeToRegister,
     SwapRegisterTypes,
     Count,
 };
+#undef FUBVersion
+#undef BUVersion
+#undef FUVersion
+#undef FVersion
+#undef UVersion
+#undef BVersion
 
 static_assert(Operation::Count <= 256, "Too many operations defined!");
 
@@ -208,7 +273,9 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
     }
     switch (op) {
 #define FullImmediate(x) \
-		case Operation:: x ## Full 
+        case Operation:: x ## Full: \
+        case Operation:: FloatingPoint ## x ## Full : \
+        case Operation:: Unsigned ## x ## Full
 		FullImmediate(Add):
 		FullImmediate(Subtract):
 		FullImmediate(Multiply):
@@ -234,7 +301,9 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         case Operation::SetImmediate16_Highest:
 		case Operation::JumpAbsolute:
 #define FullImmediate(x) \
-		case Operation:: x ## Immediate 
+        case Operation:: x ## Immediate: \
+        case Operation:: FloatingPoint ## x ## Immediate: \
+        case Operation:: Unsigned ## x ## Immediate
 		FullImmediate(Add): 
 		FullImmediate(Subtract): 
 		FullImmediate(Multiply): 
@@ -322,6 +391,11 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
 #undef Full
 		}
 	}
+constexpr bool involvesUnsigned(Operation op) noexcept {
+    switch (op) {
+        case Operation::
+    }
+}
 constexpr bool andForm(Operation op) noexcept {
 	switch (op) {
 		case Operation::And:

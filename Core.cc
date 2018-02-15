@@ -421,11 +421,17 @@ void Core::shiftOperation(Operation op) {
 		case Operation::ShiftLeft:
 		case Operation::ShiftLeftImmediate:
 		case Operation::ShiftLeftFull:
+		case Operation::UnsignedShiftLeft:
+		case Operation::UnsignedShiftLeftImmediate:
+		case Operation::UnsignedShiftLeftFull:
 			numericOperationIntegerOnly(op, "<<", dest, src0, src1, [](auto a, auto b) { return a << b; });
 			break;
 		case Operation::ShiftRight:
 		case Operation::ShiftRightImmediate:
 		case Operation::ShiftRightFull:
+		case Operation::UnsignedShiftRight:
+		case Operation::UnsignedShiftRightImmediate:
+		case Operation::UnsignedShiftRightFull:
 			numericOperationIntegerOnly(op, ">>", dest, src0, src1, [](auto a, auto b) { return a >> b; });
 			break;
 		default:

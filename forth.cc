@@ -5,6 +5,7 @@
 
 
 using Address = forth::Address;
+using Operation = forth::Operation;
 namespace Instruction = forth::Instruction;
 template<typename T, typename ... Args>
 constexpr forth::Address molecule(T first, Args&& ... rest) noexcept {
@@ -45,13 +46,27 @@ void threeArgumentVersion(forth::Machine& machine, const std::string& name, bool
 		pushC>(name);
 }
 void arithmeticOperators(forth::Machine& machine) {
-    addBinaryOperation<Instruction::add()>(machine, "+");
+#define DefBinaryOp(fn, e, str) addBinaryOperation<Instruction:: fn( Operation:: e )>(machine, str )
+#define DefBinaryOpU(fn, e, str) DefBinaryOp(fn, Unsigned ## e , str "u")
+#define DefBinaryOpF(fn, e, str) DefBinaryOp(fn, FloatingPoint ## e , str "f")
+    DefBinaryOp(add, Add, "+");
+    DefBinaryOpU(add, Add, "+");
+    addBinaryOperation<Instruction::add(forth::Operation::FloatingPointAdd)>(machine, "+f");
     addBinaryOperation<Instruction::sub()>(machine, "-");
+    addBinaryOperation<Instruction::sub(forth::Operation::FloatingPointSubtract)>(machine, "-f");
+    addBinaryOperation<Instruction::sub(forth::Operation::UnsignedSubtract)>(machine, "-u");
     addBinaryOperation<Instruction::mul()>(machine, "*");
+    addBinaryOperation<Instruction::mul(Operation::FloatingPointMultiply)>(machine, "*f");
+    addBinaryOperation<Instruction::mul(Operation::UnsignedMultiply)>(machine, "*u");
     addBinaryOperation<Instruction::div()>(machine, "/");
+    addBinaryOperation<Instruction::div(Operation::FloatingPointDivide)>(machine, "/f");
+    addBinaryOperation<Instruction::div(Operation::UnsignedDivide)>(machine, "/u");
     addBinaryOperation<Instruction::mod()>(machine, "mod");
+    addBinaryOperation<Instruction::mod(Operation::UnsignedModulo)>(machine, "modu");
 	addBinaryOperation<Instruction::shiftRight()>(machine, ">>");
+	addBinaryOperation<Instruction::shiftRight(Operation::UnsignedShiftRight)>(machine, ">>u");
 	addBinaryOperation<Instruction::shiftLeft()>(machine, "<<");
+	addBinaryOperation<Instruction::shiftLeft(Operation::UnsignedShiftLeft)>(machine, "<<u");
 	addBinaryOperation<Instruction::andOp()>(machine, "and");
 	addBinaryOperation<Instruction::orOp()>(machine, "or");
 	addBinaryOperation<Instruction::greaterThan()>(machine, ">");

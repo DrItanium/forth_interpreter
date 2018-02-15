@@ -405,6 +405,11 @@ constexpr bool andForm(Operation op) noexcept {
 		case Operation::And:
 		case Operation::AndImmediate:
 		case Operation::AndFull:
+		case Operation::UnsignedAnd:
+		case Operation::UnsignedAndImmediate:
+		case Operation::UnsignedAndFull:
+		case Operation::BooleanAnd:
+		case Operation::BooleanAndFull:
 			return true;
 		default:
 			return false;
@@ -415,6 +420,11 @@ constexpr bool orForm(Operation op) noexcept {
 		case Operation::Or:
 		case Operation::OrImmediate:
 		case Operation::OrFull:
+		case Operation::UnsignedOr:
+		case Operation::UnsignedOrImmediate:
+		case Operation::UnsignedOrFull:
+		case Operation::BooleanOr:
+		case Operation::BooleanOrFull:
 			return true;
 		default:
 			return false;
@@ -425,6 +435,11 @@ constexpr bool xorForm(Operation op) noexcept {
 		case Operation::Xor:
 		case Operation::XorImmediate:
 		case Operation::XorFull:
+		case Operation::UnsignedXor:
+		case Operation::UnsignedXorImmediate:
+		case Operation::UnsignedXorFull:
+		case Operation::BooleanXor:
+		case Operation::BooleanXorFull:
 			return true;
 		default:
 			return false;

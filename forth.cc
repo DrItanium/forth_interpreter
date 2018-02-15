@@ -79,6 +79,7 @@ void arithmeticOperators(forth::Machine& machine) {
 	//	Instruction::mul(rb, ra, ra),
 	//	Instruction::mul(),
 	//	pushC>("cube");
+    /// @todo: the not op needs to be the boolean kind
 	machine.addMachineCodeWord<
 		popA,
 		popB,
@@ -229,9 +230,10 @@ void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<popA, Instruction::typeValue()>(",");
 	machine.addMachineCodeWord<Instruction::swap(ra, rb)>("swap.ab");
     machine.addMoleculeSequence<
-        Instruction::loadAddressLowerHalf(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-        Instruction::loadAddressUpperHalf(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-        Instruction::encodeOperation(Instruction::xorOp(rc, ra, ra),
+        Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+        Instruction::encodeOperation(
+                Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+                Instruction::xorOp(rc, ra, ra),
                 Instruction::store(rx, rc))>("quit");
 }
 void compoundWords(forth::Machine& machine) {

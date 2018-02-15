@@ -665,6 +665,8 @@ namespace Instruction {
 			return target;
 		}
 	}
+
+
     template<byte startOffset>
     constexpr Address encodeOperation(QuarterAddress value, Address target = 0) noexcept {
         static_assert(startOffset < 7, "Illegal quarter address start address");

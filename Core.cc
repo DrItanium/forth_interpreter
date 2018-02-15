@@ -26,6 +26,12 @@ Register& Core::getRegister(TargetRegister reg) {
 			return _sp;
 		case Type::SP2:
 			return _sp2;
+        case Type::Temporary:
+            return _tmp0;
+        case Type::DP:
+            return _dp;
+        case Type::Index:
+            return _index;
 		default:
 			throw Problem("getRegister", "Undefined register!");
 	}
@@ -95,11 +101,11 @@ Core::ThreeRegisterArguments Core::extractArguments(Operation op, std::function<
 		auto x = extractThreeRegisterImmediateForm();
 		Address immediate = std::get<2>(x);
 		if (onImmediate) {
-			onImmediate(_tmp0, immediate);
+			onImmediate(_tmp1, immediate);
 		} else {
-			_tmp0.setValue(immediate);
+			_tmp1.setValue(immediate);
 		}
-		auto tuple = std::forward_as_tuple(getRegister(std::get<0>(x)), getRegister(std::get<1>(x)), _tmp0);
+		auto tuple = std::forward_as_tuple(getRegister(std::get<0>(x)), getRegister(std::get<1>(x)), _tmp1);
 		return tuple;
 	} else if (fullForm(op)) {
 		auto x = extractThreeRegisterForm();
@@ -682,9 +688,9 @@ void Core::moveOrSwap(Operation op) {
 		auto& dest = getRegister(trd);
 		auto& src = getRegister(trs);
 		// now we have to do some shenanigans to extract the correct values
-        _tmp0.setValue(src.getValue());
+        _tmp1.setValue(src.getValue());
         src.setValue(dest.getValue());
-        dest.setValue(_tmp0.getValue());
+        dest.setValue(_tmp1.getValue());
 	} else {
 		throw Problem("moveOrSwap", "Unknown move/swap operation!");
 	}

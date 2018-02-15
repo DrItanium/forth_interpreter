@@ -229,13 +229,11 @@ void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<popA, popB>("pop.ab");
 	machine.addMachineCodeWord<popA, Instruction::typeValue()>(",");
 	machine.addMachineCodeWord<Instruction::swap(ra, rb)>("swap.ab");
-    machine.addMoleculeSequence<
+    machine.addMachineCodeWord<
         Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-        Instruction::encodeOperation(
-                Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-                Instruction::xorOp(rc, ra, ra)),
-        Instruction::encodeOperation(
-                Instruction::store(rx, rc))>("quit");
+        Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+        Instruction::xorOp(rc, ra, ra),
+        Instruction::store(rx, rc)>("quit");
 }
 void compoundWords(forth::Machine& machine) {
 	//machine.buildWord(",u", "t.address", ",");

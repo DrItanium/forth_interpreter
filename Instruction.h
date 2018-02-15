@@ -453,6 +453,9 @@ constexpr byte getInstructionWidth(QuarterAddress value) noexcept {
 constexpr byte getInstructionWidth(HalfAddress value) noexcept {
     return getInstructionWidth(byte(value & 0xFF));
 }
+constexpr byte getInstructionWidth(Address value) noexcept {
+    return getInstructionWidth(byte(value & 0xFF));
+}
 constexpr byte getDestinationRegister(byte field) noexcept { 
     return field & 0x0F; 
 }
@@ -720,10 +723,15 @@ namespace Instruction {
     constexpr size_t operationLength(byte b) noexcept { return getInstructionWidth(static_cast<Operation>(b)); }
     constexpr size_t operationLength(QuarterAddress b) noexcept { return getInstructionWidth(byte(b & 0xFF)); }
     constexpr size_t operationLength(HalfAddress b) noexcept { return getInstructionWidth(byte(b & 0xFF)); }
+    constexpr size_t operationLength(Address b) noexcept { return getInstructionWidth(byte(b & 0xFF)); }
 
     template<typename T, typename ... Rest>
     constexpr size_t operationLength(T first, Rest ... rest) noexcept {
-        return operationLength(first) + operationLength(std::move(rest)...);
+        if constexpr (sizeof...(rest) > 0) {
+            return operationLength(first) + operationLength(std::move(rest)...);
+        } else {
+            return operationLength(first);
+        }
     }
 	constexpr QuarterAddress moveXtoC() noexcept {
 		return move(TargetRegister::C, TargetRegister::X);

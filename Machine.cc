@@ -548,11 +548,10 @@ endLoopTop:
         top.entry->operator()(this);
     }
 	bool Machine::keepExecuting() noexcept {
-		static constexpr auto loadValueIntoX = Instruction::encodeOperation(
-				Instruction::load(TargetRegister::X, TargetRegister::X));
-        static constexpr auto loadLower = Instruction::loadAddressLowerHalf(TargetRegister::X, shouldKeepExecutingLocation);
-        static constexpr auto loadUpper = Instruction::loadAddressUpperHalf(TargetRegister::X, shouldKeepExecutingLocation);
-        dispatchInstructionStream<loadLower, loadUpper, loadValueIntoX>();
+        static constexpr auto loadLower48 = Instruction::loadLowerImmediate48(TargetRegister::X, shouldKeepExecutingLocation);
+        static constexpr auto loadUpper16AndLoad = Instruction::encodeOperation(Instruction::setImmediate64_Highest(TargetRegister::X, shouldKeepExecutingLocation),
+                                                                         Instruction::load(TargetRegister::X, TargetRegister::X));
+        dispatchInstructionStream<loadLower48, loadUpper16AndLoad>();
 		return _core.getRegister(TargetRegister::X).getTruth();
 	}
 

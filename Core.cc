@@ -171,9 +171,9 @@ void Core::pop(TargetRegister reg, TargetRegister sp) {
     dest.setValue(result);
 }
 
-template<typename T, Discriminant type>
-void numericOperation(const std::string& op, Register& dest, const Register& src0, const Register& src1, T fn) {
-	switch(type) {
+template<typename T>
+void numericOperation(Operation op, const std::string& name, Register& dest, const Register& src0, const Register& src1, T fn) {
+	switch(involvesDiscriminantType(op)) {
 		case Discriminant::Number:
 			dest.setValue(fn(src0.getInt(), src1.getInt()));
 			break;
@@ -184,13 +184,13 @@ void numericOperation(const std::string& op, Register& dest, const Register& src
 			dest.setValue(fn(src0.getFP(), src1.getFP()));
 			break;
 		default:
-			throw Problem(op, "ILLEGAL DISCRIMINANT!");
+			throw Problem(name, "ILLEGAL DISCRIMINANT!");
 	}
 }
 
-template<typename T, Discriminant type>
-void numericOperationAndBool(const std::string& op, Register& dest, const Register& src0, const Register& src1, T fn) {
-	switch(type) {
+template<typename T>
+void numericOperationAndBool(Operation op, const std::string& name, Register& dest, const Register& src0, const Register& src1, T fn) {
+	switch(involvesDiscriminantType(op)) {
 		case Discriminant::Number:
 			dest.setValue(fn(src0.getInt(), src1.getInt()));
 			break;
@@ -204,13 +204,13 @@ void numericOperationAndBool(const std::string& op, Register& dest, const Regist
 			dest.setValue(fn(src0.getTruth(), src1.getTruth()));
 			break;
 		default:
-			throw Problem(op, "ILLEGAL DISCRIMINANT!");
+			throw Problem(name, "ILLEGAL DISCRIMINANT!");
 	}
 }
 
-template<typename T, Discriminant type>
-void numericOperationIntegerOnly(const std::string& op, Register& dest, const Register& src0, const Register& src1, T fn) {
-    switch(type) {
+template<typename T>
+void numericOperationIntegerOnly(Operation op, const std::string& name, Register& dest, const Register& src0, const Register& src1, T fn) {
+	switch(involvesDiscriminantType(op)) {
 		case Discriminant::Number:
 			dest.setValue(fn(src0.getInt(), src1.getInt()));
 			break;
@@ -218,12 +218,12 @@ void numericOperationIntegerOnly(const std::string& op, Register& dest, const Re
 			dest.setValue(fn(src0.getAddress(), src1.getAddress()));
 			break;
 		default:
-			throw Problem(op, "ILLEGAL DISCRIMINANT!");
+			throw Problem(name, "ILLEGAL DISCRIMINANT!");
 	}
 }
 void Core::numericCombine(Operation op) {
 	auto result = extractArguments(op, [op, this](Register& r, auto val) {
-				if (_c.getType() == Discriminant::FloatingPoint) {
+				if (involvesDiscriminantType(op) == Discriminant::FloatingPoint) {
 					r.setValue(static_cast<Floating>(val));
 				} else {
 					r.setValue(val);
@@ -234,14 +234,14 @@ void Core::numericCombine(Operation op) {
 	auto fn = [subtract](auto a, auto b) { 
 		return subtract ? (a - b) : (a + b );
 	};
-	numericOperation(subtract ? "-" : "+", dest, src0, src1, fn);
+	numericOperation(op, subtract ? "-" : "+", dest, src0, src1, fn);
 }
 
 void Core::multiplyOperation(Operation op) {
 	auto t = extractArguments(op, nullptr);
 	auto& [dest, src0, src1] = t;
 	auto fn = [this](auto a, auto b) { return a * b; };
-	numericOperation("*", dest, src0, src1, fn);
+	numericOperation(op, "*", dest, src0, src1, fn);
 }
 
 void Core::divideOperation(Operation op) {
@@ -253,16 +253,16 @@ void Core::divideOperation(Operation op) {
 		throw Problem(isModulo ? "mod" : "/", "DIVIDE BY ZERO!");
 	}
 	if (isModulo) {
-		numericOperationIntegerOnly("mod", dest, src0, src1, [](auto a, auto b) { return a % b; });
+		numericOperationIntegerOnly(op, "mod", dest, src0, src1, [](auto a, auto b) { return a % b; });
 	} else {
-		numericOperation("/", dest, src0, src1, [](auto a, auto b) { return a / b; });
+		numericOperation(op, "/", dest, src0, src1, [](auto a, auto b) { return a / b; });
 	}
 }
 
 void Core::equalsOperation(Operation op) {
 	auto t = extractArguments(op);
 	auto& [dest, src0, src1] = t;
-	numericOperationAndBool("eq", dest, src0, src1, [](auto a, auto b) { return a == b; });
+	numericOperationAndBool(op, "eq", dest, src0, src1, [](auto a, auto b) { return a == b; });
 }
 
 void Core::push(Operation op) {
@@ -293,9 +293,6 @@ void Core::pop(Operation op) {
 		case Operation::PopB:
 			pop(TargetRegister::B, TargetRegister::SP);
 			break;
-		case Operation::PopT:
-			pop(TargetRegister::T, TargetRegister::SP);
-			break;
 		case Operation::PopC:
 			pop(TargetRegister::C, TargetRegister::SP);
 			break;
@@ -309,8 +306,8 @@ void Core::pop(Operation op) {
 }
 
 template<typename T>
-void numericBoolAndInteger(const std::string& op, Register& dest, const Register& src0, T fn) {
-	switch(dest.getType()) {
+void numericBoolAndInteger(Operation op, const std::string& name, Register& dest, const Register& src0, T fn) {
+	switch(involvesDiscriminantType(op)) {
 		case Discriminant::Number:
 			dest.setValue(fn(src0.getInt()));
 			break;
@@ -321,13 +318,13 @@ void numericBoolAndInteger(const std::string& op, Register& dest, const Register
 			dest.setValue(fn(src0.getTruth()));
 			break;
 		default:
-			throw Problem(op, "ILLEGAL DISCRIMINANT!");
+			throw Problem(name, "ILLEGAL DISCRIMINANT!");
 	}
 }
 
 template<typename T>
-void numericBoolAndInteger(const std::string& op, Register& dest, const Register& src0, const Register& src1, T fn) {
-	switch(dest.getType()) {
+void numericBoolAndInteger(Operation op, const std::string& name, Register& dest, const Register& src0, const Register& src1, T fn) {
+	switch(involvesDiscriminantType(op)) {
 		case Discriminant::Number:
 			dest.setValue(fn(src0.getInt(), src1.getInt()));
 			break;
@@ -338,7 +335,7 @@ void numericBoolAndInteger(const std::string& op, Register& dest, const Register
 			dest.setValue(fn(src0.getTruth(), src1.getTruth()));
 			break;
 		default:
-			throw Problem(op, "ILLEGAL DISCRIMINANT!");
+			throw Problem(name, "ILLEGAL DISCRIMINANT!");
 	}
 }
 
@@ -356,7 +353,7 @@ void Core::notOperation(Operation op) {
     }
 	auto& dest = getRegister(std::get<0>(tup));
 	auto& src = getRegister(std::get<1>(tup));
-	switch (dest.getType()) {
+	switch (involvesDiscriminantType(op)) {
 		case Discriminant::Number:
 			dest.setValue(~src.getInt());
 			break;
@@ -385,7 +382,7 @@ void Core::minusOperation(Operation op) {
     }
 	auto& dest = getRegister(std::get<0>(tup));
 	auto& src = getRegister(std::get<1>(tup));
-	switch (dest.getType()) {
+	switch (involvesDiscriminantType(op)) {
 		case Discriminant::Number:
 			dest.setValue(-src.getInt());
 			break;
@@ -401,11 +398,11 @@ void Core::booleanAlgebra(Operation op) {
 	auto tup = extractArguments(op);
 	auto& [dest, src0, src1] = tup;
 	if (andForm(op)) {
-		numericBoolAndInteger("and", dest, src0, src1, [](auto a, auto b) { if constexpr (std::is_same<decltype(a), bool>::value) { return a && b; } else { return a & b; }});
+		numericBoolAndInteger(op, "and", dest, src0, src1, [](auto a, auto b) { if constexpr (std::is_same<decltype(a), bool>::value) { return a && b; } else { return a & b; }});
 	} else if (orForm(op)) {
-		numericBoolAndInteger("or", dest, src0, src1, [](auto a, auto b) { if constexpr (std::is_same<decltype(a), bool>::value) { return a || b; } else { return a | b; }});
+		numericBoolAndInteger(op, "or", dest, src0, src1, [](auto a, auto b) { if constexpr (std::is_same<decltype(a), bool>::value) { return a || b; } else { return a | b; }});
 	} else if (xorForm(op)) {
-		numericBoolAndInteger("xor", dest, src0, src1, [](auto a, auto b) { if constexpr (std::is_same<decltype(a), bool>::value) { return a != b; } else { return a ^ b; }});
+		numericBoolAndInteger(op, "xor", dest, src0, src1, [](auto a, auto b) { if constexpr (std::is_same<decltype(a), bool>::value) { return a != b; } else { return a ^ b; }});
 	} else {
 		throw Problem("booleanAlgebra", "UNKNOWN OPERATION GROUP!");
 	}
@@ -418,12 +415,12 @@ void Core::shiftOperation(Operation op) {
 		case Operation::ShiftLeft:
 		case Operation::ShiftLeftImmediate:
 		case Operation::ShiftLeftFull:
-			numericOperationIntegerOnly("<<", dest, src0, src1, [](auto a, auto b) { return a << b; });
+			numericOperationIntegerOnly(op, "<<", dest, src0, src1, [](auto a, auto b) { return a << b; });
 			break;
 		case Operation::ShiftRight:
 		case Operation::ShiftRightImmediate:
 		case Operation::ShiftRightFull:
-			numericOperationIntegerOnly(">>", dest, src0, src1, [](auto a, auto b) { return a >> b; });
+			numericOperationIntegerOnly(op, ">>", dest, src0, src1, [](auto a, auto b) { return a >> b; });
 			break;
 		default:
 			throw Problem("shiftOperation", "Unknown shift operation!");
@@ -434,7 +431,7 @@ void Core::shiftOperation(Operation op) {
 void Core::powOperation(Operation op) {
 	auto tup = extractArguments(op);
 	auto& [dest, src0, src1] = tup;
-	numericOperation("pow", dest, src0, src1, [](auto a, auto b) { return static_cast<decltype(a)>(std::pow(Floating(a), Floating(b))); });
+	numericOperation(op, "pow", dest, src0, src1, [](auto a, auto b) { return static_cast<decltype(a)>(std::pow(Floating(a), Floating(b))); });
 }
 
 void Core::rangeChecks(Operation op) {
@@ -444,12 +441,12 @@ void Core::rangeChecks(Operation op) {
 		case Operation::GreaterThan:
 		case Operation::GreaterThanImmediate:
 		case Operation::GreaterThanFull:
-			numericOperation(">", dest, src0, src1, [](auto a, auto b) { return a > b; });
+			numericOperation(op, ">", dest, src0, src1, [](auto a, auto b) { return a > b; });
 			break;
 		case Operation::LessThan:
 		case Operation::LessThanImmediate:
 		case Operation::LessThanFull:
-			numericOperation("<", dest, src0, src1, [](auto a, auto b) { return a < b; });
+			numericOperation(op, "<", dest, src0, src1, [](auto a, auto b) { return a < b; });
 			break;
 		default:
 			throw Problem("rangeChecks", "Unknown range check operation!");
@@ -464,10 +461,10 @@ void Core::incrDecr(Operation op) {
 	auto& dest = getRegister(d);
 	switch (op) {
 		case Operation::Increment:
-			numericOperation("increment", dest, dest, _tmp1, [](auto a, auto b) { return a + b; });
+			numericOperation(op, "increment", dest, dest, _tmp1, [](auto a, auto b) { return a + b; });
 			break;
 		case Operation::Decrement:
-			numericOperation("decrement", dest, dest, _tmp1, [](auto a, auto b) { return a - b; });
+			numericOperation(op, "decrement", dest, dest, _tmp1, [](auto a, auto b) { return a - b; });
 			break;
 		default:
 			throw Problem("incrDecr", "Unknown increment decrement style operation!");
@@ -581,6 +578,7 @@ void Core::dispatchInstruction(const Molecule& m) {
 	static std::map<Operation, decltype(std::mem_fn(&Core::numericCombine))> dispatchTable = {
 #define DefEntry(t, fn) { Operation :: t , std::mem_fn<void(Operation)>(&Core:: fn ) }
 		DefEntry(Add,numericCombine), DefEntry(AddFull, numericCombine), DefEntry(AddImmediate, numericCombine),
+		DefEntry(UnsignedAdd,numericCombine), DefEntry(UnsignedAddFull, numericCombine), DefEntry(UnsignedAddImmediate, numericCombine),
 		DefEntry(Subtract,numericCombine), DefEntry(SubtractFull, numericCombine), DefEntry(SubtractImmediate, numericCombine),
 		DefEntry(Multiply, multiplyOperation), DefEntry(MultiplyFull, multiplyOperation), DefEntry(MultiplyImmediate, multiplyOperation),
 		DefEntry(Divide, divideOperation), DefEntry(DivideFull, divideOperation), DefEntry(DivideImmediate, divideOperation),
@@ -598,7 +596,9 @@ void Core::dispatchInstruction(const Molecule& m) {
 		DefEntry(Equals, equalsOperation), DefEntry(EqualsFull, equalsOperation), DefEntry(EqualsImmediate, equalsOperation),
 		DefEntry(LoadImmediateLower48, loadImm48),
 		DefEntry(Increment, incrDecr), DefEntry(Decrement, incrDecr),
-		DefEntry(PopRegister, pop), DefEntry(PopA, pop), DefEntry(PopB, pop), DefEntry(PopT, pop), DefEntry(PopC, pop),
+		DefEntry(FloatingPointIncrement, incrDecr), DefEntry(FloatingPointDecrement, incrDecr),
+		DefEntry(UnsignedIncrement, incrDecr), DefEntry(UnsignedDecrement, incrDecr),
+		DefEntry(PopRegister, pop), DefEntry(PopA, pop), DefEntry(PopB, pop), DefEntry(PopC, pop),
 		DefEntry(PushRegister, push), DefEntry(PushC, push), DefEntry(PushA, push), DefEntry(PushB, push),
 		DefEntry(Load, loadStore), DefEntry(Store, loadStore),
 		DefEntry(Move, moveOrSwap), DefEntry(Swap, moveOrSwap),
@@ -642,7 +642,7 @@ void Core::loadStore(Operation op) {
 		 auto trs = TargetRegister(getSourceRegister(k));
 		 auto& dest = getRegister(trd);
 		 auto& src = getRegister(trs);
-         dest.setValue(result.address);
+         dest.setValue(src.getAddress());
 	} else if (op == Operation::Store) {
 		 auto k = extractByteFromMolecule();
 		 auto trd = TargetRegister(getDestinationRegister(k));
@@ -666,7 +666,7 @@ void Core::moveOrSwap(Operation op) {
 		}
 		auto& dest = getRegister(trd);
 		auto& src = getRegister(trs);
-        dest.setValue(getAddress());
+        dest.setValue(src.getAddress());
 	} else if (op == Operation::Swap) {
 		auto k = extractByteFromMolecule();
 		auto trd = TargetRegister(getDestinationRegister(k));
@@ -715,7 +715,7 @@ constexpr Address computeImmediate16(Address base, QuarterAddress value) noexcep
 
 void Core::setImm16(Operation op) {
 	auto k = extractByteFromMolecule();
-	auto tr = getDestinationRegister(k);
+	auto tr = static_cast<TargetRegister>(getDestinationRegister(k));
     auto& dest = getRegister(tr);
     switch (op) {
         case Operation::SetImmediate16_Lowest:

@@ -59,6 +59,8 @@ namespace forth {
             case FullImmediate(Equals):
 #undef FullImmediate
             case Operation:: UVersion(TypeValue):
+            case Operation::UnsignedIncrement:
+            case Operation::UnsignedDecrement:
                 return Discriminant::MemoryAddress;
             case Operation:: FloatingPointPowFull:
             case Operation:: FloatingPointMinusFull:
@@ -81,6 +83,8 @@ namespace forth {
             case FullImmediate(LessThan):
             case FullImmediate(Equals):
 #undef FullImmediate
+        case Operation::FloatingPointIncrement:
+        case Operation::FloatingPointDecrement:
                 return Discriminant::FloatingPoint;
             case Operation:: BVersion(Not):
             case Operation:: BVersion(And):
@@ -121,6 +125,8 @@ namespace forth {
             case Operation::Equals:
             case Operation::TypeValue:
             case Operation::Pow:
+            case Operation::Increment:
+            case Operation::Decrement:
                 return Discriminant::Number;
             default:
                 return Discriminant::Count;

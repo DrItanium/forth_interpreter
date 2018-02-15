@@ -121,7 +121,6 @@ enum class Operation : byte {
     // common operations
     PopA,
     PopB,
-    PopT,
     PushC,
 	PopC,
 	PushA,
@@ -191,7 +190,9 @@ enum class Operation : byte {
     ConditionalCallSubroutineIndirect,
     ConditionalReturnSubroutine,
     Increment,
+    FUVersion(Increment),
     Decrement,
+    FUVersion(Decrement),
 	LoadImmediateLower48,
     // type field manipulation
 #define FullImmediate(x) FVersion(x ## Full) 
@@ -331,7 +332,11 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         case Operation::ConditionalCallSubroutineIndirect:
         case Operation::ConditionalReturnSubroutine:
         case Operation::Increment:
+        case Operation::FloatingPointIncrement:
+        case Operation::UnsignedIncrement:
         case Operation::Decrement:
+        case Operation::FloatingPointDecrement:
+        case Operation::UnsignedDecrement:
             return 2;
 		case Operation::LoadImmediateLower48:
 			return 8;
@@ -524,7 +529,6 @@ namespace Instruction {
     constexpr QuarterAddress swap(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Swap, dest, src); }
     constexpr byte popA() noexcept { return singleByteOp(Operation::PopA); }
     constexpr byte popB() noexcept { return singleByteOp(Operation::PopB); }
-    constexpr byte popT() noexcept { return singleByteOp(Operation::PopT); }
     constexpr byte pushC() noexcept { return singleByteOp(Operation::PushC); }
     constexpr HalfAddress setImmediate16_Lower(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Lower, dest, value);  }
     constexpr HalfAddress setImmediate16_Lowest(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Lowest, dest, value); }

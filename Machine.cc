@@ -627,11 +627,10 @@ endLoopTop:
 		if (stackFull(sp, fullLocation)) {
 			throw Problem("pushOntoStack", "STACK FULL!!!");
 		}
-		dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, value.address));
-		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, value.address));
-		dispatchInstruction(Instruction::encodeOperation(
-					Instruction::sub(sp, sp, 1),
-					Instruction::store(sp, TargetRegister::X)));
+        dispatchInstruction(Instruction::loadLowerImmediate48(TargetRegister::X, value.address));
+        dispatchInstruction(Instruction::encodeOperation(
+                    Instruction::setImmediate64_Highest(TargetRegister::X, value.address),
+                    Instruction::pushRegister(TargetRegister::X, sp)));
 	}
 	void Machine::pushSubroutine(Datum value) {
 		try {
@@ -644,9 +643,7 @@ endLoopTop:
 		if (stackEmpty(sp, emptyLocation)) {
 			throw Problem("pop", "STACK EMPTY!");
 		}
-		dispatchInstruction(Instruction::encodeOperation(
-					Instruction::load(TargetRegister::C, sp),
-					Instruction::add(sp, sp, 1)));
+        dispatchInstruction(Instruction::encodeOperation(Instruction::popRegister(TargetRegister::C, sp)));
 		return _core.getRegister(TargetRegister::C).getValue();
 	}
 	Datum Machine::popSubroutine() {

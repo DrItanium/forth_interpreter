@@ -594,8 +594,8 @@ namespace Instruction {
     constexpr QuarterAddress popRegister(TargetRegister destination, TargetRegister sp = TargetRegister::SP) noexcept {
         return encodeTwoByte(Operation::PopRegister, encodeRegisterPair(destination, sp));
     }
-    constexpr QuarterAddress pushRegister(TargetRegister destination, TargetRegister sp = TargetRegister::SP) noexcept {
-        return encodeTwoByte(Operation::PushRegister, encodeRegisterPair(destination, sp));
+    constexpr QuarterAddress pushRegister(TargetRegister value, TargetRegister sp = TargetRegister::SP) noexcept {
+        return encodeTwoByte(Operation::PushRegister, encodeRegisterPair(sp, value));
     }
     constexpr QuarterAddress load(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Load, dest, src); }
     constexpr QuarterAddress store(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Store, dest, src); }

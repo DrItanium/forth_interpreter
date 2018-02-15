@@ -49,24 +49,19 @@ void arithmeticOperators(forth::Machine& machine) {
 #define DefBinaryOp(fn, e, str) addBinaryOperation<Instruction:: fn( Operation:: e )>(machine, str )
 #define DefBinaryOpU(fn, e, str) DefBinaryOp(fn, Unsigned ## e , str "u")
 #define DefBinaryOpF(fn, e, str) DefBinaryOp(fn, FloatingPoint ## e , str "f")
-    DefBinaryOp(add, Add, "+");
-    DefBinaryOpU(add, Add, "+");
-    addBinaryOperation<Instruction::add(forth::Operation::FloatingPointAdd)>(machine, "+f");
-    addBinaryOperation<Instruction::sub()>(machine, "-");
-    addBinaryOperation<Instruction::sub(forth::Operation::FloatingPointSubtract)>(machine, "-f");
-    addBinaryOperation<Instruction::sub(forth::Operation::UnsignedSubtract)>(machine, "-u");
-    addBinaryOperation<Instruction::mul()>(machine, "*");
-    addBinaryOperation<Instruction::mul(Operation::FloatingPointMultiply)>(machine, "*f");
-    addBinaryOperation<Instruction::mul(Operation::UnsignedMultiply)>(machine, "*u");
-    addBinaryOperation<Instruction::div()>(machine, "/");
-    addBinaryOperation<Instruction::div(Operation::FloatingPointDivide)>(machine, "/f");
-    addBinaryOperation<Instruction::div(Operation::UnsignedDivide)>(machine, "/u");
-    addBinaryOperation<Instruction::mod()>(machine, "mod");
-    addBinaryOperation<Instruction::mod(Operation::UnsignedModulo)>(machine, "modu");
-	addBinaryOperation<Instruction::shiftRight()>(machine, ">>");
-	addBinaryOperation<Instruction::shiftRight(Operation::UnsignedShiftRight)>(machine, ">>u");
-	addBinaryOperation<Instruction::shiftLeft()>(machine, "<<");
-	addBinaryOperation<Instruction::shiftLeft(Operation::UnsignedShiftLeft)>(machine, "<<u");
+#define DefBinaryOpB(fn, e, str) DefBinaryOp(fn, Boolean ## e, str "b")
+#define DefBinaryOpS(fn, e, str) DefBinaryOp(fn, e, str)
+#define DefBinaryOpSU(fn, e, str) DefBinaryOpS(fn, e, str); DefBinaryOpU(fn, e, str)
+#define DefBinaryOpSUB(fn, e, str) DefBinaryOpSU(fn, e, str); DefBinaryOpB(fn, e, str)
+#define DefBinaryOpSUF(fn, e, str) DefBinaryOpSU(fn, e, str); DefBinaryOpF(fn, e, str)
+#define DefBinaryOpSUFB(fn, e, str) DefBinaryOpSUF(fn, e, str); DefBinaryOpB(fn, e, str)
+    DefBinaryOpSUF(add, Add, "+");
+    DefBinaryOpSUF(sub, Subtract, "-");
+    DefBinaryOpSUF(mul, Multiply, "*");
+    DefBinaryOpSUF(div, Divide, "/");
+    DefBinaryOpSU(mod, Modulo, "mod");
+    DefBinaryOpSU(shiftRight, ShiftRight, ">>");
+    DefBinaryOpSU(shiftLeft, ShiftLeft, "<<");
 	addBinaryOperation<Instruction::andOp()>(machine, "and");
 	addBinaryOperation<Instruction::orOp()>(machine, "or");
 	addBinaryOperation<Instruction::greaterThan()>(machine, ">");

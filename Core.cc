@@ -646,21 +646,14 @@ void Core::dispatchInstruction(const Molecule& m) {
 }
 
 void Core::loadStore(Operation op) {
+    auto k = extractByteFromMolecule();
+    auto trd = TargetRegister(getDestinationRegister(k));
+    auto trs = TargetRegister(getSourceRegister(k));
+    auto& dest = getRegister(trd);
+    auto& src = getRegister(trs);
 	if (op == Operation::Load) {
-		 // get the destination
-		 auto k = extractByteFromMolecule();
-		 auto trd = TargetRegister(getDestinationRegister(k));
-		 auto trs = TargetRegister(getSourceRegister(k));
-		 auto& dest = getRegister(trd);
-		 auto& src = getRegister(trs);
          dest.setValue(load(src.getAddress()));
 	} else if (op == Operation::Store) {
-		 auto k = extractByteFromMolecule();
-		 auto trd = TargetRegister(getDestinationRegister(k));
-		 auto trs = TargetRegister(getSourceRegister(k));
-
-		 auto& dest = getRegister(trd);
-		 auto& src = getRegister(trs);
          store(dest.getAddress(), src.getValue());
 	} else {
 		throw Problem("loadStore", "Unknown load/store operation!");
@@ -668,26 +661,17 @@ void Core::loadStore(Operation op) {
 }
 
 void Core::moveOrSwap(Operation op) {
+    auto k = extractByteFromMolecule();
+    auto trd = TargetRegister(getDestinationRegister(k));
+    auto trs = TargetRegister(getSourceRegister(k));
+    if (trd == trs) {
+        return;
+    }
+    auto& dest = getRegister(trd);
+    auto& src = getRegister(trs);
 	if (op == Operation::Move) {
-		auto k = extractByteFromMolecule();
-		auto trd = TargetRegister(getDestinationRegister(k));
-		auto trs = TargetRegister(getSourceRegister(k));
-		if (trd == trs) {
-			return;
-		}
-		auto& dest = getRegister(trd);
-		auto& src = getRegister(trs);
         dest.setValue(src.getAddress());
 	} else if (op == Operation::Swap) {
-		auto k = extractByteFromMolecule();
-		auto trd = TargetRegister(getDestinationRegister(k));
-		auto trs = TargetRegister(getSourceRegister(k));
-		if (trd == trs) {
-			return;
-		}
-		auto& dest = getRegister(trd);
-		auto& src = getRegister(trs);
-		// now we have to do some shenanigans to extract the correct values
         _tmp1.setValue(src.getValue());
         src.setValue(dest.getValue());
         dest.setValue(_tmp1.getValue());

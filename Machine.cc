@@ -557,10 +557,10 @@ endLoopTop:
 
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
 		// clear the stacks and the input pointer
-		static constexpr auto loadLower = Instruction::loadAddressLowerHalf(TargetRegister::X, parameterStackEmptyLocation);
-		static constexpr auto loadUpper = Instruction::loadAddressUpperHalf(TargetRegister::X, parameterStackEmptyLocation);
-        static_assert(loadLower != loadUpper, "Make sure that these two operations are different!");
-		dispatchInstructionStream<loadLower, loadUpper, Instruction::encodeOperation(Instruction::load(TargetRegister::SP, TargetRegister::X))>();
+        dispatchInstructionStream<
+            Instruction::loadLowerImmediate48(TargetRegister::X, parameterStackEmptyLocation),
+            Instruction::encodeOperation(Instruction::setImmediate64_Highest(TargetRegister::X, parameterStackEmptyLocation),
+                                         Instruction::load(TargetRegister::SP, TargetRegister::X))>();
 		clearSubroutineStack();
 		_input.clear();
 		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -582,27 +582,29 @@ endLoopTop:
 	}
 	bool Machine::inCompilationMode() noexcept {
 		dispatchInstructionStream<
-			Instruction::loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
-			Instruction::loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
-			Instruction::encodeOperation(Instruction::load(TargetRegister::X, TargetRegister::X))>();
+            Instruction::loadLowerImmediate48(TargetRegister::X, isCompilingLocation),
+            Instruction::encodeOperation(Instruction::setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
+                                         Instruction::load(TargetRegister::X, TargetRegister::X))>();
 		return _core.getRegister(TargetRegister::X).getTruth();
 	}
 	void Machine::activateCompileMode() {
 		dispatchInstructionStream<
-			Instruction::loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
-			Instruction::loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
-			Instruction::encodeOperation(
-					Instruction::move(TargetRegister::B, TargetRegister::A),
-					Instruction::xorOp(),
-					Instruction::setImmediate16_Lowest(TargetRegister::C, 1)),
-			Instruction::encodeOperation(
-					Instruction::store(TargetRegister::X, TargetRegister::C))>();
+            Instruction::loadLowerImmediate48(TargetRegister::X, isCompilingLocation),
+            Instruction::encodeOperation(
+                    Instruction::setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
+                    Instruction::xorOp(TargetRegister::C, TargetRegister::C, TargetRegister::C)),
+            Instruction::encodeOperation(
+                    Instruction::setImmediate16_Lowest(TargetRegister::C, 1),
+                    Instruction::store(TargetRegister::X, TargetRegister::C))>();
 	}
 	void Machine::deactivateCompileMode() {
 		dispatchInstructionStream<
-			Instruction::loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
-			Instruction::loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
-			storeFalse>();
+            Instruction::loadLowerImmediate48(TargetRegister::X, isCompilingLocation),
+            Instruction::encodeOperation(
+                    Instruction::setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
+                    Instruction::xorOp(TargetRegister::C, TargetRegister::C, TargetRegister::C)),
+            Instruction::encodeOperation(
+                    Instruction::store(TargetRegister::X, TargetRegister::C))>();
 	}
 
 	bool Machine::stackEmpty(TargetRegister sp, Address location) {

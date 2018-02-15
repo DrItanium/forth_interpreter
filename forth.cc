@@ -62,29 +62,48 @@ void arithmeticOperators(forth::Machine& machine) {
     DefBinaryOpSU(mod, Modulo, "mod");
     DefBinaryOpSU(shiftRight, ShiftRight, ">>");
     DefBinaryOpSU(shiftLeft, ShiftLeft, "<<");
-	addBinaryOperation<Instruction::andOp()>(machine, "and");
-	addBinaryOperation<Instruction::orOp()>(machine, "or");
-	addBinaryOperation<Instruction::greaterThan()>(machine, ">");
-	addBinaryOperation<Instruction::lessThan()>(machine, "<");
-	addBinaryOperation<Instruction::xorOp()>(machine, "xor");
-	addBinaryOperation<Instruction::equals()>(machine, "eq");
-	addBinaryOperation<Instruction::pow()>(machine, "pow");
-	threeArgumentVersion<Instruction::add()>(machine, "3+");
-	threeArgumentVersion<Instruction::sub()>(machine, "3-");
-	threeArgumentVersion<Instruction::mul()>(machine, "3*");
-	threeArgumentVersion<Instruction::div()>(machine, "3/");
-	machine.addMachineCodeWord<popA, Instruction::mul(rc, ra, ra), pushC>("square");
-	machine.addMachineCodeWord<
-		popA, 
-		Instruction::mul(rb, ra, ra),
-		Instruction::mul(),
-		pushC>("cube");
+    DefBinaryOpSUB(andOp, And, "and");
+    DefBinaryOpSUB(orOp, Or, "or");
+    DefBinaryOpSUB(xorOp, Xor, "xor");
+    DefBinaryOpSUF(greaterThan, GreaterThan, ">");
+    DefBinaryOpSUF(lessThan, LessThan, "<");
+    DefBinaryOpSUFB(equals, Equals, "eq");
+    DefBinaryOpSUF(pow, Pow, "pow");
+	//threeArgumentVersion<Instruction::add()>(machine, "3+");
+	//threeArgumentVersion<Instruction::sub()>(machine, "3-");
+	//threeArgumentVersion<Instruction::mul()>(machine, "3*");
+	//threeArgumentVersion<Instruction::div()>(machine, "3/");
+	//machine.addMachineCodeWord<popA, Instruction::mul(rc, ra, ra), pushC>("square");
+	//machine.addMachineCodeWord<
+	//	popA, 
+	//	Instruction::mul(rb, ra, ra),
+	//	Instruction::mul(),
+	//	pushC>("cube");
 	machine.addMachineCodeWord<
 		popA,
 		popB,
 		Instruction::equals(),  // C = top == equals 
 		Instruction::notOp(rc, rc), 
 		pushC>("neq");
+    machine.addMachineCodeWord<
+        popA, 
+        popB, 
+        Instruction::equals(Operation::FloatingPointEquals),
+        Instruction::notOp(rc, rc),
+        pushC>("neqf");
+    machine.addMachineCodeWord<
+        popA, 
+        popB, 
+        Instruction::equals(Operation::UnsignedEquals),
+        Instruction::notOp(rc, rc),
+        pushC>("nequ");
+    machine.addMachineCodeWord<
+        popA, 
+        popB, 
+        Instruction::equals(Operation::BooleanEquals),
+        Instruction::notOp(rc, rc),
+        pushC>("neqb");
+
 	machine.addMachineCodeWord<popA, Instruction::notOp(), pushC>("not");
 	machine.addMachineCodeWord<popA, Instruction::minus(), pushC>("minus");
 	machine.addMachineCodeWord<popA, Instruction::load(rc, ra), pushC>("load");

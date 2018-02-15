@@ -702,8 +702,6 @@ template<Immediate16Positions pos>
 constexpr auto Immediate16ShiftIndex = static_cast<Address>(pos) * 16;
 template<Immediate16Positions pos>
 constexpr auto Immediate16Mask = static_cast<Address>(0xFFFF) << Immediate16ShiftIndex<pos>;
-template<>
-constexpr auto Immediate16Mask<Immediate16Positions::Lowest> = static_cast<Address>(0xFFFF);
 
 template<Immediate16Positions pos>
 constexpr Address computeImmediate16(Address base, QuarterAddress value) noexcept {

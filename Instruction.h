@@ -642,6 +642,10 @@ namespace Instruction {
 	constexpr Address encodeHalfAddress(HalfAddress value, Address target = 0) noexcept {
 		return encodeBits<Address, HalfAddress, mask, shift>(target, value);
 	}
+	template<Address mask, Address shift>
+	constexpr Address encodeAddress(Address value, Address target = 0) noexcept {
+		return encodeBits<Address, Address, mask, shift>(target, value);
+	}
 	template<byte startOffset>
 	constexpr Address encodeThreeByteAddress(HalfAddress value, Address target = 0) noexcept {
 		static_assert(startOffset < 6, "Illegal three byte address!");
@@ -651,6 +655,26 @@ namespace Instruction {
 	constexpr Address encodeFourByteAddress(HalfAddress value, Address target = 0) noexcept {
 		static_assert(startOffset < 5, "Illegal half address start address");
 		return encodeHalfAddress<Address(0xFFFFFFFF) << (startOffset * 8), startOffset * 8>(value, target);
+	}
+	template<byte startOffset>
+	constexpr Address encodeFiveByteAddress(Address value, Address target = 0) noexcept {
+		static_assert(startOffset < 4, "Illegal address start address");
+		return encodeAddress<Address(0xFFFFFFFFFF) << (startOffset * 8), startOffset * 8>(value, target);
+	}
+	template<byte startOffset>
+	constexpr Address encodeSixByteAddress(Address value, Address target = 0) noexcept {
+		static_assert(startOffset < 3, "Illegal address start address");
+		return encodeAddress<Address(0xFFFFFFFFFFFF) << (startOffset * 8), startOffset * 8>(value, target);
+	}
+	template<byte startOffset>
+	constexpr Address encodeSevenByteAddress(Address value, Address target = 0) noexcept {
+		static_assert(startOffset < 2, "Illegal address start address");
+		return encodeAddress<Address(0xFFFFFFFFFFFFFF) << (startOffset * 8), startOffset * 8>(value, target);
+	}
+	template<byte startOffset>
+	constexpr Address encodeEightByteAddress(Address value, Address target = 0) noexcept {
+		static_assert(startOffset < 1, "Illegal address start address");
+		return encodeAddress<Address(0xFFFFFFFFFFFFFFFF) << (startOffset * 8), startOffset * 8>(value, target);
 	}
 
 	template<byte startOffset>
@@ -668,6 +692,24 @@ namespace Instruction {
 			return target;
 		}
 	}
+
+    template<byte startOffset>
+    constexpr Address encodeOperation(Address value, Address target = 0) noexcept {
+        if (auto width = getInstructionWidth(value); width < 5) {
+            return encodeOperation<startOffset>(HalfAddress(value), target);
+        } else if (width == 5) {
+            return encodeFiveByteAddress<startOffset>(value, target);
+        } else if (width == 6) {
+            return encodeSixByteAddress<startOffset>(value, target);
+        } else if (width == 7) {
+            return encodeSevenByteAddress<startOffset>(value, target);
+        } else if (width == 8) {
+            return encodeEightByteAddress<startOffset>(value, target);
+        } else {
+            // skip
+            return target;
+        }
+    }
 
 
     template<byte startOffset>
@@ -698,6 +740,20 @@ namespace Instruction {
 				default:
 					return encodeOperation<offset, Args...>(curr, std::move(rest)...);
 			}
+        } else if constexpr (std::is_same<T, Address>::value) {
+			switch (getInstructionWidth(first)) {
+				case 1: return encodeOperation<offset + 1, Args...>(encoded, std::move(rest)...);
+				case 2: return encodeOperation<offset + 2, Args...>(encoded, std::move(rest)...);
+				case 3: return encodeOperation<offset + 3, Args...>(encoded, std::move(rest)...);
+				case 4: return encodeOperation<offset + 4, Args...>(encoded, std::move(rest)...);
+				case 5: return encodeOperation<offset + 5, Args...>(encoded, std::move(rest)...);
+				case 6: return encodeOperation<offset + 6, Args...>(encoded, std::move(rest)...);
+				case 7: return encodeOperation<offset + 7, Args...>(encoded, std::move(rest)...);
+				case 8: return encodeOperation<offset + 8, Args...>(encoded, std::move(rest)...);
+				default:
+					return encodeOperation<offset, Args...>(curr, std::move(rest)...);
+			}
+
 		} else {
         	return encodeOperation<offset + sizeof(T), Args...>( 
         	        encodeOperation<offset, T>(curr, first),

@@ -453,11 +453,21 @@ void Core::rangeChecks(Operation op) {
 		case Operation::GreaterThan:
 		case Operation::GreaterThanImmediate:
 		case Operation::GreaterThanFull:
+		case Operation::FloatingPointGreaterThan:
+		case Operation::FloatingPointGreaterThanFull:
+		case Operation::UnsignedGreaterThan:
+		case Operation::UnsignedGreaterThanImmediate:
+		case Operation::UnsignedGreaterThanFull:
 			numericOperation(op, ">", dest, src0, src1, [](auto a, auto b) { return a > b; });
 			break;
 		case Operation::LessThan:
 		case Operation::LessThanImmediate:
 		case Operation::LessThanFull:
+		case Operation::FloatingPointLessThan:
+		case Operation::FloatingPointLessThanFull:
+		case Operation::UnsignedLessThan:
+		case Operation::UnsignedLessThanImmediate:
+		case Operation::UnsignedLessThanFull:
 			numericOperation(op, "<", dest, src0, src1, [](auto a, auto b) { return a < b; });
 			break;
 		default:
@@ -489,7 +499,6 @@ constexpr HalfAddress makeImm24(QuarterAddress lower16, byte upper8) noexcept {
 }
 void Core::savePositionToSubroutineStack() {
 	auto value = _moleculePosition.getValue();
-	++value.address;
     if (value.address >= 8) {
         push(_pc.getAddress() + 1, TargetRegister::SP2);
         push(Address(0), TargetRegister::SP2);
@@ -499,6 +508,19 @@ void Core::savePositionToSubroutineStack() {
     }
 }
 void Core::jumpOperation(Operation op) {
+    auto callSubroutine = [this]() {
+        _advancePC = false;
+        auto lower16 = extractQuarterIntegerFromMolecule();
+        auto upper8 = extractByteFromMolecule();
+        savePositionToSubroutineStack();
+        _pc.setValue(Address(makeImm24(lower16, upper8)));
+    };
+    auto callSubroutineIndirect = [this]() {
+        _advancePC = false;
+        auto b = extractByteFromMolecule();
+        savePositionToSubroutineStack();
+        _pc.setValue(getRegister((TargetRegister)getDestinationRegister(b)).getValue());
+    };
 	switch (op) {
 		case Operation::Jump:
             _advancePC = false;
@@ -513,14 +535,10 @@ void Core::jumpOperation(Operation op) {
 			_pc.setValue(getRegister((TargetRegister)getDestinationRegister(extractByteFromMolecule())).getValue());
 			break;
 		case Operation::CallSubroutine: 
-            _advancePC = false;
-			savePositionToSubroutineStack();
-			_pc.setValue((Address)makeImm24(extractQuarterIntegerFromMolecule(), extractByteFromMolecule()));
-			break;
+            callSubroutine();
+            break;
 		case Operation::CallSubroutineIndirect: 
-            _advancePC = false;
-			savePositionToSubroutineStack();
-			_pc.setValue(getRegister((TargetRegister)getDestinationRegister(extractByteFromMolecule())).getValue());
+            callSubroutineIndirect();
 			break;
 		case Operation::ReturnSubroutine: 
             _advancePC = false;
@@ -538,9 +556,6 @@ void Core::conditionalBranch(Operation op) {
 		switch (op) {
 			case Operation::ConditionalBranch:
 				jumpOperation(Operation::Jump);
-				break;
-			case Operation::ConditionalBranchAbsolute:
-				jumpOperation(Operation::JumpAbsolute);
 				break;
 			case Operation::ConditionalBranchIndirect:
 				_pc.setValue(getRegister((TargetRegister)getSourceRegister(k)).getValue());
@@ -563,7 +578,6 @@ void Core::conditionalBranch(Operation op) {
 	} else {
 		switch (op) {
 			case Operation::ConditionalBranch:
-			case Operation::ConditionalBranchAbsolute:
 			case Operation::ConditionalCallSubroutine:
 				_moleculePosition.increment(2);
 				break;
@@ -626,8 +640,8 @@ void Core::dispatchInstruction(const Molecule& m) {
 		DefEntry(Jump, jumpOperation), DefEntry(JumpIndirect, jumpOperation), 
 		DefEntry(JumpAbsolute, jumpOperation), DefEntry(CallSubroutine, jumpOperation), 
 		DefEntry(CallSubroutineIndirect, jumpOperation), DefEntry(ReturnSubroutine, jumpOperation),
-		DefEntry(ConditionalBranch, conditionalBranch), DefEntry(ConditionalBranchAbsolute, conditionalBranch),
-		DefEntry(ConditionalBranchIndirect, conditionalBranch), DefEntry(ConditionalCallSubroutine, conditionalBranch),
+		DefEntry(ConditionalBranch, conditionalBranch), 
+        DefEntry(ConditionalBranchIndirect, conditionalBranch), DefEntry(ConditionalCallSubroutine, conditionalBranch),
 		DefEntry(ConditionalCallSubroutineIndirect, conditionalBranch), DefEntry(ConditionalReturnSubroutine, conditionalBranch),
 #undef DefEntry
 	};

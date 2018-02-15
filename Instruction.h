@@ -184,7 +184,6 @@ enum class Operation : byte {
     CallSubroutineIndirect,
     ReturnSubroutine,
     ConditionalBranch,
-    ConditionalBranchAbsolute,
     ConditionalBranchIndirect,
     ConditionalCallSubroutine,
     ConditionalCallSubroutineIndirect,

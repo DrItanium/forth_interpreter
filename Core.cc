@@ -577,11 +577,16 @@ void Core::loadImm48(Operation op) {
 void Core::dispatchInstruction(const Molecule& m) {
 	static std::map<Operation, decltype(std::mem_fn(&Core::numericCombine))> dispatchTable = {
 #define DefEntry(t, fn) { Operation :: t , std::mem_fn<void(Operation)>(&Core:: fn ) }
-		DefEntry(Add,numericCombine), DefEntry(AddFull, numericCombine), DefEntry(AddImmediate, numericCombine),
-		DefEntry(UnsignedAdd,numericCombine), DefEntry(UnsignedAddFull, numericCombine), DefEntry(UnsignedAddImmediate, numericCombine),
-		DefEntry(Subtract,numericCombine), DefEntry(SubtractFull, numericCombine), DefEntry(SubtractImmediate, numericCombine),
-		DefEntry(Multiply, multiplyOperation), DefEntry(MultiplyFull, multiplyOperation), DefEntry(MultiplyImmediate, multiplyOperation),
-		DefEntry(Divide, divideOperation), DefEntry(DivideFull, divideOperation), DefEntry(DivideImmediate, divideOperation),
+#define DefEntryS(t, fn) DefEntry(t, fn)
+#define DefEntryU(t, fn) DefEntry( Unsigned ## t , fn )
+#define DefEntryF(t, fn) DefEntry( FloatingPoint ## t , fn )
+#define DefEntryB(t, fn) DefEntry( Boolean ## t , fn )
+#define DefEntrySUF(t, fn) DefEntryS(t, fn) , DefEntryU(t, fn), DefEntryF(t, fn)
+#define DefEntrySU(t, fn) DefEntryS(t, fn) , DefEntryU(t, fn) 
+		DefEntrySUF(Add,numericCombine),          DefEntrySUF(AddFull, numericCombine),         DefEntrySU(AddImmediate, numericCombine),
+		DefEntrySUF(Subtract,numericCombine),     DefEntrySUF(SubtractFull, numericCombine),    DefEntrySU(SubtractImmediate, numericCombine),
+		DefEntrySUF(Multiply, multiplyOperation), DefEntrySUF(MultiplyFull, multiplyOperation), DefEntrySU(MultiplyImmediate, multiplyOperation),
+		DefEntrySUF(Divide, divideOperation),     DefEntrySUF(DivideFull, divideOperation),     DefEntrySU(DivideImmediate, divideOperation),
 		DefEntry(Modulo, divideOperation), DefEntry(ModuloFull, divideOperation), DefEntry(ModuloImmediate, divideOperation),
 		DefEntry(Not, notOperation), DefEntry(NotFull, notOperation),
 		DefEntry(Minus, minusOperation), DefEntry(MinusFull, minusOperation),

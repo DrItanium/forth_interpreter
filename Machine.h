@@ -36,8 +36,6 @@ namespace forth {
 			Datum popParameter();
 			bool numberRoutine(const std::string& word) noexcept;
 			void typeValue(Discriminant discriminant, const Datum& value);
-			void typeValue(const Datum& value);
-			void typeValue();
 			void addWord(DictionaryEntry* entry);
 			void addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke = false);
 			template<typename T, typename ... Rest>

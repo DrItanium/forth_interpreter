@@ -22,7 +22,7 @@ class Core {
 		static constexpr Address userVariableEnd = 0xFFFF'FFFF'FFFF'7FFF;
 		static constexpr Address userVariableStart = systemVariableStart;
 		static constexpr Address systemVariableSize = (systemVariableEnd - systemVariableStart) + 1;
-		using OutputFunction = std::function<void(TargetRegister, const Register&)>;
+		using OutputFunction = std::function<void(Discriminant, TargetRegister, const Register&)>;
 	public:
 		Core(OutputFunction output);
 		~Core() = default;

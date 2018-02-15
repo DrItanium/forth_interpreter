@@ -14,7 +14,6 @@ constexpr forth::Address molecule(T first, Args&& ... rest) noexcept {
 static constexpr auto ra = forth::TargetRegister::A;
 static constexpr auto rb = forth::TargetRegister::B;
 static constexpr auto rc = forth::TargetRegister::C;
-static constexpr auto rt = forth::TargetRegister::T;
 static constexpr auto rx = forth::TargetRegister::X;
 static constexpr auto moveCtoA = Instruction::move(ra, rc);
 static constexpr auto moveAtoB = Instruction::move(rb, ra);
@@ -148,10 +147,10 @@ void registerDecls(forth::Machine& machine) {
 	registerWord(C);
 	registerWord(S);
 	registerWord(X);
-	registerWord(T);
-	registerWord(TA);
-	registerWord(TB);
-	registerWord(TX);
+	//registerWord(T);
+	//registerWord(TA);
+	//registerWord(TB);
+	//registerWord(TX);
 	registerWord(SP);
 	registerWord(SP2);
 }
@@ -159,27 +158,25 @@ void registerDecls(forth::Machine& machine) {
 #define discriminantWord(name) \
 	enumWord( "discriminant:" #name , forth::Discriminant:: name )
 void addDiscriminantWords(forth::Machine& machine) {
-	discriminantWord(Number);
-	discriminantWord(MemoryAddress);
-	discriminantWord(FloatingPoint);
-	discriminantWord(Boolean);
-	discriminantWord(Word);
-	discriminantWord(Molecule);
-	discriminantWord(DictionaryEntry);
-	machine.buildWord("t.signed", "discriminant:Number", "pop.t");
-	machine.buildWord("t.fp", "discriminant:FloatingPoint", "pop.t");
-	machine.buildWord("t.address", "discriminant:MemoryAddress", "pop.t");
-	machine.buildWord("t.boolean", "discriminant:Boolean", "pop.t");
-	machine.buildWord("t.word", "discriminant:Word", "pop.t");
-	machine.buildWord("t.molecule", "discriminant:Molecule", "pop.t");
-	machine.buildWord("t.dict-entry", "discriminant:DictionaryEntry", "pop.t");
+	//discriminantWord(Number);
+	//discriminantWord(MemoryAddress);
+	//discriminantWord(FloatingPoint);
+	//discriminantWord(Boolean);
+	//discriminantWord(Word);
+	//discriminantWord(Molecule);
+	//discriminantWord(DictionaryEntry);
+	//machine.buildWord("t.signed", "discriminant:Number", "pop.t");
+	//machine.buildWord("t.fp", "discriminant:FloatingPoint", "pop.t");
+	//machine.buildWord("t.address", "discriminant:MemoryAddress", "pop.t");
+	//machine.buildWord("t.boolean", "discriminant:Boolean", "pop.t");
+	//machine.buildWord("t.word", "discriminant:Word", "pop.t");
+	//machine.buildWord("t.molecule", "discriminant:Molecule", "pop.t");
+	//machine.buildWord("t.dict-entry", "discriminant:DictionaryEntry", "pop.t");
 }
 #undef discriminantWord
 #undef enumWord
 void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<Instruction::stop()>("nop");
-	machine.addMachineCodeWord<Instruction::popT()>("pop.t");
-	machine.addMachineCodeWord<Instruction::pushRegister(forth::TargetRegister::T)>("push.t");
 	machine.addMachineCodeWord<popA>("pop.a");
 	machine.addMachineCodeWord<popB>("pop.b");
 	machine.addMachineCodeWord<pushC>("push.c");
@@ -190,9 +187,9 @@ void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<Instruction::pushRegister(forth::TargetRegister:: target)> ("push." #postfix); \
 	machine.addMachineCodeWord<Instruction::popRegister(forth::TargetRegister:: target)> ("pop." #postfix)
 	pushPopGeneric(x, X);
-	pushPopGeneric(ta, TA);
-	pushPopGeneric(tb, TB);
-	pushPopGeneric(tx, TX);
+	//pushPopGeneric(ta, TA);
+	//pushPopGeneric(tb, TB);
+	//pushPopGeneric(tx, TX);
 	pushPopGeneric(sp, SP);
 	pushPopGeneric(sp2, SP2);
 #undef pushPopGeneric
@@ -209,15 +206,15 @@ void microarchitectureWords(forth::Machine& machine) {
                 Instruction::store(rx, rc))>("quit");
 }
 void compoundWords(forth::Machine& machine) {
-	machine.buildWord(",u", "t.address", ",");
-	machine.buildWord(",f", "t.fp", ",");
-	machine.buildWord(",b", "t.boolean", ",");
-	machine.buildWord(",", "t.signed", ",");
-	machine.buildWord("negate", "t.signed", "not");
-	machine.buildWord("negateu", "t.address", "not");
-	machine.buildWord("not", "t.boolean", "not");
-	machine.buildWord("minusf", "t.fp", "minus");
-	machine.buildWord("minus", "t.signed", "minus");
+	//machine.buildWord(",u", "t.address", ",");
+	//machine.buildWord(",f", "t.fp", ",");
+	//machine.buildWord(",b", "t.boolean", ",");
+	//machine.buildWord(",", "t.signed", ",");
+	//machine.buildWord("negate", "t.signed", "not");
+	//machine.buildWord("negateu", "t.address", "not");
+	//machine.buildWord("not", "t.boolean", "not");
+	//machine.buildWord("minusf", "t.fp", "minus");
+	//machine.buildWord("minus", "t.signed", "minus");
 }
 void systemSetup(forth::Machine& machine) {
 	// initial system values that we need to use

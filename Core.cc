@@ -699,7 +699,7 @@ void Core::moveOrSwap(Operation op) {
 void Core::typeValue(Operation op) {
 	auto tr = TargetRegister(getDestinationRegister(extractByteFromMolecule()));
 	if (_output) {
-		_output(tr, getRegister(tr));
+		_output(involvesDiscriminantType(op), tr, getRegister(tr));
 	} else {
 		throw Problem("typeValue", "no output function defined!");
 				

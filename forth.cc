@@ -7,10 +7,6 @@
 using Address = forth::Address;
 using Operation = forth::Operation;
 namespace Instruction = forth::Instruction;
-template<typename T, typename ... Args>
-constexpr forth::Address molecule(T first, Args&& ... rest) noexcept {
-    return Instruction::encodeOperation(first, std::move(rest)...);
-}
 
 static constexpr auto ra = forth::TargetRegister::A;
 static constexpr auto rb = forth::TargetRegister::B;
@@ -217,9 +213,6 @@ void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<Instruction::pushRegister(forth::TargetRegister:: target)> ("push." #postfix); \
 	machine.addMachineCodeWord<Instruction::popRegister(forth::TargetRegister:: target)> ("pop." #postfix)
 	pushPopGeneric(x, X);
-	//pushPopGeneric(ta, TA);
-	//pushPopGeneric(tb, TB);
-	//pushPopGeneric(tx, TX);
 	pushPopGeneric(sp, SP);
 	pushPopGeneric(sp2, SP2);
 #undef pushPopGeneric

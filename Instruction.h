@@ -229,9 +229,6 @@ enum class Operation : byte {
 	FullImmediate(Equals),
 	UnsignedPowFull,
 #undef FullImmediate
-    MoveTypeFromRegister,
-    MoveTypeToRegister,
-    SwapRegisterTypes,
     Count,
 };
 #undef FUBVersion

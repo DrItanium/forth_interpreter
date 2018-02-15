@@ -13,25 +13,18 @@ Register& Core::getRegister(TargetRegister reg) {
 	using Type = decltype(reg);
 	switch (reg) {
 		case Type::A:
-		case Type::TA:
 			return _a;
 		case Type::B:
-		case Type::TB:
 			return _b;
 		case Type::C:
-		case Type::TC:
 			return _c;
 		case Type::S:
-		case Type::TS:
 			return _s;
 		case Type::X:
-		case Type::TX:
 			return _x;
 		case Type::SP:
-		case Type::TSP:
 			return _sp;
 		case Type::SP2:
-		case Type::TSP2:
 			return _sp2;
 		default:
 			throw Problem("getRegister", "Undefined register!");
@@ -136,16 +129,9 @@ Datum Core::load(Address addr) {
 
 void Core::push(TargetRegister reg, TargetRegister sp) {
 	auto& value = getRegister(reg);
-	if (involvesDiscriminantRegister(reg)) {
-		push((Address)value.getType(), sp);
-	} else {
-		push(value.getValue(), sp);
-	}
+    push(value.getValue(), sp);
 }
 void Core::push(const Datum& d, TargetRegister sp) {
-	if (involvesDiscriminantRegister(sp)) {
-		throw Problem("push", "Can't use the discriminant field as a stack pointer!");
-	}
 	auto& stackPointer = getRegister(sp);
 	if (sp == TargetRegister::SP) {
 		// do a check and see if we have a full stack!
@@ -163,9 +149,6 @@ void Core::push(const Datum& d, TargetRegister sp) {
 }
 
 Datum Core::pop(TargetRegister sp) {
-	if (involvesDiscriminantRegister(sp)) {
-		throw Problem("pop", "Can't use the discriminant field as a stack pointer!");
-	}
 	auto& stackPointer = getRegister(sp);
 	if (sp == TargetRegister::SP) {
 		// do a check and see if we have a full stack!
@@ -185,11 +168,7 @@ Datum Core::pop(TargetRegister sp) {
 void Core::pop(TargetRegister reg, TargetRegister sp) {
 	auto& dest = getRegister(reg);
 	auto result = pop(sp);
-	if (involvesDiscriminantRegister(reg)) {
-		dest.setType(static_cast<Discriminant>(result.address));
-	} else {
-		dest.setValue(result);
-	}
+    dest.setValue(result);
 }
 
 template<typename T, Discriminant type>
@@ -661,31 +640,17 @@ void Core::loadStore(Operation op) {
 		 auto k = extractByteFromMolecule();
 		 auto trd = TargetRegister(getDestinationRegister(k));
 		 auto trs = TargetRegister(getSourceRegister(k));
-		 if (involvesDiscriminantRegister(trs)) {
-			 throw Problem("load", "Can't use the source type field as an address");
-		 }
 		 auto& dest = getRegister(trd);
 		 auto& src = getRegister(trs);
-		 if (auto result = load(src.getAddress()); involvesDiscriminantRegister(trd)) {
-			dest.setType((Discriminant)result.address);
-		 } else {
-			dest.setValue(result.address);
-		 }
+         dest.setValue(result.address);
 	} else if (op == Operation::Store) {
 		 auto k = extractByteFromMolecule();
 		 auto trd = TargetRegister(getDestinationRegister(k));
 		 auto trs = TargetRegister(getSourceRegister(k));
-		 if (involvesDiscriminantRegister(trd)) {
-			 throw Problem("store", "Can't use the destination type field as an address!");
-		 }
 
 		 auto& dest = getRegister(trd);
 		 auto& src = getRegister(trs);
-		 if (involvesDiscriminantRegister(trs)) {
-			 store(dest.getAddress(), (Address)src.getType());
-		 } else {
-		 	store(dest.getAddress(), src.getValue());
-		 }
+         store(dest.getAddress(), src.getValue());
 	} else {
 		throw Problem("loadStore", "Unknown load/store operation!");
 	}
@@ -701,11 +666,7 @@ void Core::moveOrSwap(Operation op) {
 		}
 		auto& dest = getRegister(trd);
 		auto& src = getRegister(trs);
-		if (auto result = involvesDiscriminantRegister(trs) ? (Address) src.getType() : src.getAddress() ; involvesDiscriminantRegister(trd)) {
-			dest.setType((Discriminant)result);
-		} else {
-			dest.setValue(result);
-		}
+        dest.setValue(getAddress());
 	} else if (op == Operation::Swap) {
 		auto k = extractByteFromMolecule();
 		auto trd = TargetRegister(getDestinationRegister(k));
@@ -716,23 +677,9 @@ void Core::moveOrSwap(Operation op) {
 		auto& dest = getRegister(trd);
 		auto& src = getRegister(trs);
 		// now we have to do some shenanigans to extract the correct values
-		if (involvesDiscriminantRegister(trd) && involvesDiscriminantRegister(trs)) {
-			_tmp0.setType(dest.getType());
-			dest.setType(src.getType());
-			src.setType(_tmp0.getType());
-		} else if (involvesDiscriminantRegister(trd) && !involvesDiscriminantRegister(trs)) {
-			_tmp0.setType(dest.getType());
-			dest.setType((Discriminant)src.getAddress());
-			src.setValue(Address(_tmp0.getType()));
-		} else if (!involvesDiscriminantRegister(trd) && involvesDiscriminantRegister(trs)) {
-			_tmp0.setType(src.getType());
-			src.setType(Discriminant(dest.getAddress()));
-			dest.setValue(Address(_tmp0.getType()));
-		} else {
-			_tmp0.setValue(src.getValue());
-			src.setValue(dest.getValue());
-			dest.setValue(_tmp0.getValue());
-		}
+        _tmp0.setValue(src.getValue());
+        src.setValue(dest.getValue());
+        dest.setValue(_tmp0.getValue());
 	} else {
 		throw Problem("moveOrSwap", "Unknown move/swap operation!");
 	}
@@ -769,27 +716,23 @@ constexpr Address computeImmediate16(Address base, QuarterAddress value) noexcep
 void Core::setImm16(Operation op) {
 	auto k = extractByteFromMolecule();
 	auto tr = getDestinationRegister(k);
-	if (auto tr = TargetRegister(getDestinationRegister(k)); involvesDiscriminantRegister(tr)) {
-		throw Problem("setImm16", "Type field cannot be target of set Imm16!");
-	} else {
-		auto& dest = getRegister(tr);
-		switch (op) {
-			case Operation::SetImmediate16_Lowest:
-				dest.setValue(computeImmediate16<Immediate16Positions::Lowest>(dest.getAddress(), extractQuarterAddressFromMolecule()));
-				break;
-			case Operation::SetImmediate16_Lower:
-				dest.setValue(computeImmediate16<Immediate16Positions::Lower>(dest.getAddress(), extractQuarterAddressFromMolecule()));
-				break;
-			case Operation::SetImmediate16_Higher:
-				dest.setValue(computeImmediate16<Immediate16Positions::Higher>(dest.getAddress(), extractQuarterAddressFromMolecule()));
-				break;
-			case Operation::SetImmediate16_Highest:
-				dest.setValue(computeImmediate16<Immediate16Positions::Highest>(dest.getAddress(), extractQuarterAddressFromMolecule()));
-				break;
-			default:
-				throw Problem("setImm16", "unknown set imm16 operation!");
-		}
-	}
+    auto& dest = getRegister(tr);
+    switch (op) {
+        case Operation::SetImmediate16_Lowest:
+            dest.setValue(computeImmediate16<Immediate16Positions::Lowest>(dest.getAddress(), extractQuarterAddressFromMolecule()));
+            break;
+        case Operation::SetImmediate16_Lower:
+            dest.setValue(computeImmediate16<Immediate16Positions::Lower>(dest.getAddress(), extractQuarterAddressFromMolecule()));
+            break;
+        case Operation::SetImmediate16_Higher:
+            dest.setValue(computeImmediate16<Immediate16Positions::Higher>(dest.getAddress(), extractQuarterAddressFromMolecule()));
+            break;
+        case Operation::SetImmediate16_Highest:
+            dest.setValue(computeImmediate16<Immediate16Positions::Highest>(dest.getAddress(), extractQuarterAddressFromMolecule()));
+            break;
+        default:
+            throw Problem("setImm16", "unknown set imm16 operation!");
+    }
 }
 
 void Core::executionCycle(Address startAddress) {

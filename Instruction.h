@@ -504,6 +504,11 @@ namespace Instruction {
 				decodeBits<QuarterAddress, byte, 0xFF00, 8>(offset));
 	}
 	constexpr byte stop() noexcept { return singleByteOp(Operation::Stop); }
+#define DefTypeDispatchCase(x) case forth::Operation :: x :
+#define DefTypeDispatchCaseU(x) DefTypeDispatchCase( Unsigned ## x )
+#define DefTypeDispatchCaseF(x) DefTypeDispatchCase( FloatingPoint ## x )
+#define DefTypeDispatchCaseB(x) DefTypeDispatchCase( Boolean ## x )
+
 #define BeginDefTypeDispatchSingleByteOp(name, def) \
     constexpr byte name ( Operation op  = forth::Operation::  def) noexcept { \
         switch (op) {  \
@@ -515,10 +520,6 @@ namespace Instruction {
                      return stop(); \
         } \
     }
-#define DefTypeDispatchCase(x) case forth::Operation :: x :
-#define DefTypeDispatchCaseU(x) DefTypeDispatchCase( Unsigned ## x )
-#define DefTypeDispatchCaseF(x) DefTypeDispatchCase( FloatingPoint ## x )
-#define DefTypeDispatchCaseB(x) DefTypeDispatchCase( Boolean ## x )
 
 #define DefTypeDispatchSingleByteOpSU(name, base) \
     BeginDefTypeDispatchSingleByteOp(name, base) \
@@ -536,6 +537,12 @@ namespace Instruction {
     DefTypeDispatchCaseB(base) \
     EndDefTypeDispatchSingleByteOp(name, base)
 
+#define DefTypeDispatchSingleByteOpSUB(name, base) \
+    BeginDefTypeDispatchSingleByteOp(name, base) \
+    DefTypeDispatchCaseU(base) \
+    DefTypeDispatchCaseB(base) \
+    EndDefTypeDispatchSingleByteOp(name, base)
+
     DefTypeDispatchSingleByteOpSUF(add, Add)
     DefTypeDispatchSingleByteOpSUF(sub, Subtract)
     DefTypeDispatchSingleByteOpSUF(mul, Multiply)
@@ -548,11 +555,18 @@ namespace Instruction {
     DefTypeDispatchSingleByteOpSUFB(equals, Equals);
     DefTypeDispatchSingleByteOpSUFB(typeValue, TypeValue);
     DefTypeDispatchSingleByteOpSUF(pow, Pow);
-    constexpr byte notOp() noexcept { return singleByteOp(Operation::Not); }
-    constexpr byte minus() noexcept { return singleByteOp(Operation::Minus); }
-    constexpr byte andOp() noexcept { return singleByteOp(Operation::And); }
-    constexpr byte orOp() noexcept { return singleByteOp(Operation::Or); }
-    constexpr byte xorOp() noexcept { return singleByteOp(Operation::Xor); }
+    BeginDefTypeDispatchSingleByteOp(notOp, Not)
+        DefTypeDispatchCaseU(Not)
+        DefTypeDispatchCaseB(Not)
+    EndDefTypeDispatchSingleByteOp(notOp, Not);
+    BeginDefTypeDispatchSingleByteOp(minus, Minus)
+        DefTypeDispatchCaseF(Minus)
+        DefTypeDispatchCaseU(Minus)
+    EndDefTypeDispatchSingleByteOp(minus, Minus);
+    DefTypeDispatchSingleByteOpSUB(andOp, And);
+    DefTypeDispatchSingleByteOpSUB(orOp, Or);
+    DefTypeDispatchSingleByteOpSUB(xorOp, Xor);
+
     constexpr byte popA() noexcept { return singleByteOp(Operation::PopA); }
     constexpr byte popB() noexcept { return singleByteOp(Operation::PopB); }
     constexpr byte pushC() noexcept { return singleByteOp(Operation::PushC); }

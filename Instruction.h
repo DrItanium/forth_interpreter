@@ -3,7 +3,6 @@
 #define INSTRUCTION_H__
 #include "Types.h"
 #include "Problem.h"
-#include "Datum.h"
 #include <iostream>
 #include <list>
 namespace forth {
@@ -87,7 +86,7 @@ static constexpr bool involvesDiscriminantRegister(TargetRegister r) noexcept {
     return false;
 }
 static constexpr bool legalValue(TargetRegister r) noexcept {
-    return static_cast<byte>(r) < static_cast<byte>(TargetRegister::Error);
+    return static_cast<byte>(r) < static_cast<byte>(TargetRegister::Count);
 }
 
 enum class Operation : byte {
@@ -194,20 +193,14 @@ enum class Operation : byte {
     Decrement,
 	LoadImmediateLower48,
     // type field manipulation
-#define FullImmediate(x) FVersion(x ## Full) , FVersion(x ## Full) 
+#define FullImmediate(x) FVersion(x ## Full) 
 	FullImmediate(Add),
 	FullImmediate(Subtract),
 	FullImmediate(Multiply),
 	FullImmediate(Divide),
-	FullImmediate(Modulo),
 	FloatingPointMinusFull,
-	FullImmediate(And),
-	FullImmediate(Or),
 	FullImmediate(GreaterThan),
 	FullImmediate(LessThan),
-	FullImmediate(Xor),
-	FullImmediate(ShiftRight),
-	FullImmediate(ShiftLeft),
 	FullImmediate(Equals),
     FloatingPointPowFull,
 #undef FullImmediate
@@ -234,11 +227,8 @@ enum class Operation : byte {
 #undef FUBVersion
 #undef BUVersion
 #undef FUVersion
-#undef FVersion
-#undef UVersion
-#undef BVersion
 
-static_assert(Operation::Count <= 256, "Too many operations defined!");
+static_assert(QuarterAddress(Operation::Count) <= 256, "Too many operations defined!");
 
 
 constexpr bool legalOperation(Operation op) noexcept {
@@ -299,7 +289,6 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
 		case Operation::JumpAbsolute:
 #define FullImmediate(x) \
         case Operation:: x ## Immediate: \
-        case Operation:: FloatingPoint ## x ## Immediate: \
         case Operation:: Unsigned ## x ## Immediate
 		FullImmediate(Add): 
 		FullImmediate(Subtract): 
@@ -340,6 +329,9 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
             return 1;
     }
 }
+#undef FVersion
+#undef UVersion
+#undef BVersion
 
 	constexpr bool immediateForm(Operation op) noexcept {
 		switch(op) {

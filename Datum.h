@@ -19,6 +19,76 @@ namespace forth {
     constexpr bool legalValue(Discriminant value) noexcept {
         return static_cast<Address>(value) < static_cast<Address>(Discriminant::Count); 
     }
+    constexpr forth::Discriminant involvesDiscriminantType(Operation op) noexcept {
+#define FVersion(x) FloatingPoint ## x 
+#define UVersion(x) Unsigned ## x
+#define BVersion(x) Boolean ## x
+        switch (op) {
+            case Operation::UnsignedPowFull:
+            case Operation::UnsignedNotFull:
+            case Operation::UnsignedMinusFull:
+            case Operation:: UVersion(Add):
+            case Operation:: UVersion(Subtract):
+            case Operation:: UVersion(Multiply):
+            case Operation:: UVersion(Divide):
+            case Operation:: UVersion(Modulo):
+            case Operation:: UVersion(Not):
+            case Operation:: UVersion(Minus):
+            case Operation:: UVersion(And):
+            case Operation:: UVersion(Or):
+            case Operation:: UVersion(GreaterThan):
+            case Operation:: UVersion(LessThan):
+            case Operation:: UVersion(Xor):
+            case Operation:: UVersion(ShiftRight):
+            case Operation:: UVersion(ShiftLeft):
+            case Operation:: UVersion(Equals):
+            case Operation:: UVersion(Pow):
+#define FullImmediate(x) Operation:: UVersion(x ## Full): case Operation:: UVersion(x ## Immediate) 
+            case FullImmediate(Add):
+            case FullImmediate(Subtract):
+            case FullImmediate(Multiply):
+            case FullImmediate(Divide):
+            case FullImmediate(Modulo):
+            case FullImmediate(And):
+            case FullImmediate(Or):
+            case FullImmediate(GreaterThan):
+            case FullImmediate(LessThan):
+            case FullImmediate(Xor):
+            case FullImmediate(ShiftRight):
+            case FullImmediate(ShiftLeft):
+            case FullImmediate(Equals):
+#undef FullImmediate
+                return Discriminant::MemoryAddress;
+            case Operation:: FloatingPointPowFull:
+            case Operation:: FloatingPointMinusFull:
+            case Operation:: FVersion(Add):
+            case Operation:: FVersion(Subtract):
+            case Operation:: FVersion(Multiply):
+            case Operation:: FVersion(Divide):
+            case Operation:: FVersion(Minus):
+            case Operation:: FVersion(GreaterThan):
+            case Operation:: FVersion(LessThan):
+            case Operation:: FVersion(Equals):
+            case Operation:: FVersion(Pow):
+#define FullImmediate(x) Operation:: FVersion(x ## Full): 
+            case FullImmediate(Add):
+            case FullImmediate(Subtract):
+            case FullImmediate(Multiply):
+            case FullImmediate(Divide):
+            case FullImmediate(GreaterThan):
+            case FullImmediate(LessThan):
+            case FullImmediate(Equals):
+#undef FullImmediate
+                return Discriminant::FloatingPoint;
+
+            default:
+                return Discriminant::Count;
+
+        }
+#undef FVersion
+#undef UVersion
+#undef BVersion
+    }
 
     union Datum {
         Datum() = default;

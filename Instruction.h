@@ -504,20 +504,61 @@ namespace Instruction {
 				decodeBits<QuarterAddress, byte, 0xFF00, 8>(offset));
 	}
 	constexpr byte stop() noexcept { return singleByteOp(Operation::Stop); }
-    constexpr byte add() noexcept { return singleByteOp(Operation::Add); }
-    constexpr byte sub() noexcept { return singleByteOp(Operation::Subtract); }
-    constexpr byte mul() noexcept { return singleByteOp(Operation::Multiply); }
-    constexpr byte div() noexcept { return singleByteOp(Operation::Divide); }
-    constexpr byte mod() noexcept { return singleByteOp(Operation::Modulo); }
+#define BeginDefTypeDispatchSingleByteOp(name, def) \
+    constexpr byte name ( Operation op  = forth::Operation::  def) noexcept { \
+        switch (op) {  \
+            case forth::Operation:: def :
+
+#define EndDefTypeDispatchSingleByteOp(name, def) \
+                return singleByteOp(op); \
+            default: \
+                     return stop(); \
+        } \
+    }
+#define DefTypeDispatchCase(x) case forth::Operation :: x :
+#define DefTypeDispatchCaseU(x) DefTypeDispatchCase( Unsigned ## x )
+#define DefTypeDispatchCaseF(x) DefTypeDispatchCase( FloatingPoint ## x )
+#define DefTypeDispatchCaseB(x) DefTypeDispatchCase( Boolean ## x )
+
+#define DefTypeDispatchSingleByteOpSU(name, base) \
+    BeginDefTypeDispatchSingleByteOp(name, base) \
+    DefTypeDispatchCaseU(base) \
+    EndDefTypeDispatchSingleByteOp(name, base)
+#define DefTypeDispatchSingleByteOpSUF(name, base) \
+    BeginDefTypeDispatchSingleByteOp(name, base) \
+    DefTypeDispatchCaseU(base) \
+    DefTypeDispatchCaseF(base) \
+    EndDefTypeDispatchSingleByteOp(name, base)
+#define DefTypeDispatchSingleByteOpSUFB(name, base) \
+    BeginDefTypeDispatchSingleByteOp(name, base) \
+    DefTypeDispatchCaseU(base) \
+    DefTypeDispatchCaseF(base) \
+    DefTypeDispatchCaseB(base) \
+    EndDefTypeDispatchSingleByteOp(name, base)
+
+    DefTypeDispatchSingleByteOpSUF(add, Add)
+    DefTypeDispatchSingleByteOpSUF(sub, Subtract)
+    DefTypeDispatchSingleByteOpSUF(mul, Multiply)
+    DefTypeDispatchSingleByteOpSUF(div, Divide)
+    DefTypeDispatchSingleByteOpSU(mod, Modulo)
+    DefTypeDispatchSingleByteOpSU(shiftRight, ShiftRight);
+    DefTypeDispatchSingleByteOpSU(shiftLeft, ShiftLeft);
+    DefTypeDispatchSingleByteOpSUF(greaterThan, GreaterThan);
+    DefTypeDispatchSingleByteOpSUF(lessThan, LessThan);
+    DefTypeDispatchSingleByteOpSUFB(equals, Equals);
+    DefTypeDispatchSingleByteOpSUFB(typeValue, TypeValue);
+    DefTypeDispatchSingleByteOpSUF(pow, Pow);
     constexpr byte notOp() noexcept { return singleByteOp(Operation::Not); }
     constexpr byte minus() noexcept { return singleByteOp(Operation::Minus); }
     constexpr byte andOp() noexcept { return singleByteOp(Operation::And); }
     constexpr byte orOp() noexcept { return singleByteOp(Operation::Or); }
-    constexpr byte greaterThan() noexcept { return singleByteOp(Operation::GreaterThan); }
-    constexpr byte lessThan() noexcept { return singleByteOp(Operation::LessThan); }
     constexpr byte xorOp() noexcept { return singleByteOp(Operation::Xor); }
-    constexpr byte shiftRight() noexcept { return singleByteOp(Operation::ShiftRight); }
-    constexpr byte shiftLeft() noexcept { return singleByteOp(Operation::ShiftLeft); }
+    constexpr byte popA() noexcept { return singleByteOp(Operation::PopA); }
+    constexpr byte popB() noexcept { return singleByteOp(Operation::PopB); }
+    constexpr byte pushC() noexcept { return singleByteOp(Operation::PushC); }
+    constexpr byte pushA() noexcept { return singleByteOp(Operation::PushA); }
+    constexpr byte pushB() noexcept { return singleByteOp(Operation::PushB); }
+    constexpr byte popC() noexcept { return singleByteOp(Operation::PopC); }
 
     constexpr QuarterAddress popRegister(TargetRegister destination, TargetRegister sp = TargetRegister::SP) noexcept {
         return encodeTwoByte(Operation::PopRegister, encodeRegisterPair(destination, sp));
@@ -525,16 +566,10 @@ namespace Instruction {
     constexpr QuarterAddress pushRegister(TargetRegister destination, TargetRegister sp = TargetRegister::SP) noexcept {
         return encodeTwoByte(Operation::PushRegister, encodeRegisterPair(destination, sp));
     }
-    constexpr byte equals() noexcept { return singleByteOp(Operation::Equals); }
-    constexpr byte typeValue() noexcept { return singleByteOp(Operation::TypeValue); }
     constexpr QuarterAddress load(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Load, dest, src); }
     constexpr QuarterAddress store(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Store, dest, src); }
-    constexpr byte pow() noexcept { return singleByteOp(Operation::Pow); }
     constexpr QuarterAddress move(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Move, dest, src); }
     constexpr QuarterAddress swap(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Swap, dest, src); }
-    constexpr byte popA() noexcept { return singleByteOp(Operation::PopA); }
-    constexpr byte popB() noexcept { return singleByteOp(Operation::PopB); }
-    constexpr byte pushC() noexcept { return singleByteOp(Operation::PushC); }
     constexpr HalfAddress setImmediate16_Lower(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Lower, dest, value);  }
     constexpr HalfAddress setImmediate16_Lowest(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Lowest, dest, value); }
     constexpr HalfAddress setImmediate16_Higher(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Higher, dest, value); }
@@ -652,9 +687,6 @@ namespace Instruction {
     constexpr QuarterAddress swapAB() noexcept {
         return swap(TargetRegister::B, TargetRegister::A);
     }
-    constexpr byte pushA() noexcept { return singleByteOp(Operation::PushA); }
-    constexpr byte pushB() noexcept { return singleByteOp(Operation::PushB); }
-    constexpr byte popC() noexcept { return singleByteOp(Operation::PopC); }
     constexpr size_t operationLength(byte b) noexcept { return getInstructionWidth(static_cast<Operation>(b)); }
     constexpr size_t operationLength(QuarterAddress b) noexcept { return getInstructionWidth(byte(b & 0xFF)); }
     constexpr size_t operationLength(HalfAddress b) noexcept { return getInstructionWidth(byte(b & 0xFF)); }

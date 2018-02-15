@@ -73,10 +73,6 @@ namespace forth {
 			void listWords();
 			void defineWord();
 			void endDefineWord();
-			void setA(const Datum& target) noexcept;
-			void setB(const Datum& target) noexcept;
-			void setTA(Discriminant target) noexcept;
-			void setTB(Discriminant target) noexcept;
 			void initializeBaseDictionary();
 			void dispatchInstruction(const Molecule& m);
 		private:

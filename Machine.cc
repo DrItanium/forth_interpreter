@@ -667,8 +667,6 @@ endLoopTop:
 		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation));
 		dispatchInstruction(Instruction::encodeOperation(Instruction::load(TargetRegister::SP2, TargetRegister::X)));
 	}
-	void Machine::setA(const Datum& target) noexcept { _core.getRegister(TargetRegister::A).setValue(target); }
-	void Machine::setB(const Datum& target) noexcept { _core.getRegister(TargetRegister::B).setValue(target); }
 
 
 	Datum Machine::load(Address addr) {

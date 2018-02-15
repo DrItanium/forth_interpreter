@@ -148,6 +148,7 @@ enum class Operation : byte {
     UVersion(ShiftLeft),
     FUBVersion(Equals),
     FUVersion(Pow),
+    FUBVersion(TypeValue),
 
 	// full versions of operations
 	// these forms are:
@@ -261,7 +262,6 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
     switch (op) {
 #define FullImmediate(x) \
         case Operation:: x ## Full: \
-        case Operation:: FloatingPoint ## x ## Full : \
         case Operation:: Unsigned ## x ## Full
 		FullImmediate(Add):
 		FullImmediate(Subtract):
@@ -275,6 +275,16 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
 		FullImmediate(Xor):
 		FullImmediate(ShiftRight):
 		FullImmediate(ShiftLeft):
+		FullImmediate(Equals):
+#undef FullImmediate
+#define FullImmediate(x) \
+        case Operation:: FloatingPoint ## x ## Full
+		FullImmediate(Add):
+		FullImmediate(Subtract):
+		FullImmediate(Multiply):
+		FullImmediate(Divide): 
+		FullImmediate(GreaterThan): 
+		FullImmediate(LessThan): 
 		FullImmediate(Equals):
 #undef FullImmediate
         case Operation::CallSubroutine:
@@ -380,11 +390,6 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
 #undef Full
 		}
 	}
-constexpr bool involvesUnsigned(Operation op) noexcept {
-    switch (op) {
-        case Operation::
-    }
-}
 constexpr bool andForm(Operation op) noexcept {
 	switch (op) {
 		case Operation::And:
@@ -738,8 +743,6 @@ namespace Instruction {
 					encodeDestinationRegister(dest)),
 				value);
 	}
-	static_assert(Address(0x1214011237) == encodeOperation(Instruction::xorOp(TargetRegister::C, TargetRegister::B, TargetRegister::B), 
-				Instruction::store(TargetRegister::C, TargetRegister::B)), "encodeOperation did not yield a correct value");
 } // end namespace Instruction
 
 

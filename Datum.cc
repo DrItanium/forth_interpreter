@@ -24,7 +24,11 @@ namespace forth {
             backingStore[k] = other.backingStore[k];
         }
     }
-	Register::Register(const Register& r) : _type(r._type), _value(r._value) { }
-	Register::Register() : _type(static_cast<Discriminant>(0)), _value(Address(0)) { }
+	Register::Register(const Register& r) : _value(r._value) { }
+	Register::Register() : _value(Address(0)) { }
+
+    void Register::reset() {
+        _value.address = 0;
+    }
 
 } // end namespace forth

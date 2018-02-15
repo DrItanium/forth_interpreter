@@ -58,6 +58,7 @@ namespace forth {
             case FullImmediate(ShiftLeft):
             case FullImmediate(Equals):
 #undef FullImmediate
+            case Operation:: UVersion(TypeValue):
                 return Discriminant::MemoryAddress;
             case Operation:: FloatingPointPowFull:
             case Operation:: FloatingPointMinusFull:
@@ -70,7 +71,8 @@ namespace forth {
             case Operation:: FVersion(LessThan):
             case Operation:: FVersion(Equals):
             case Operation:: FVersion(Pow):
-#define FullImmediate(x) Operation:: FVersion(x ## Full): 
+            case Operation:: FVersion(TypeValue):
+#define FullImmediate(x) Operation:: FVersion(x ## Full)
             case FullImmediate(Add):
             case FullImmediate(Subtract):
             case FullImmediate(Multiply):
@@ -80,7 +82,46 @@ namespace forth {
             case FullImmediate(Equals):
 #undef FullImmediate
                 return Discriminant::FloatingPoint;
-
+            case Operation:: BVersion(Not):
+            case Operation:: BVersion(And):
+            case Operation:: BVersion(Or):
+            case Operation:: BVersion(Xor):
+            case Operation:: BVersion(Equals):
+            case Operation:: BVersion(TypeValue):
+                return Discriminant::Boolean;
+#define FullImmediate(x) Operation:: x ## Full: case Operation:: x ## Immediate
+            case FullImmediate(Add):
+            case FullImmediate(Subtract):
+            case FullImmediate(Multiply):
+            case FullImmediate(Divide): 
+            case FullImmediate(Modulo): 
+            case FullImmediate(And): 
+            case FullImmediate(Or): 
+            case FullImmediate(GreaterThan): 
+            case FullImmediate(LessThan): 
+            case FullImmediate(Xor):
+            case FullImmediate(ShiftRight):
+            case FullImmediate(ShiftLeft):
+            case FullImmediate(Equals):
+#undef FullImmediate
+            case Operation::Add:
+            case Operation::Subtract:
+            case Operation::Multiply:
+            case Operation::Divide:
+            case Operation::Modulo:
+            case Operation::Not:
+            case Operation::Minus:
+            case Operation::And:
+            case Operation::Or:
+            case Operation::GreaterThan:
+            case Operation::LessThan:
+            case Operation::Xor:
+            case Operation::ShiftRight:
+            case Operation::ShiftLeft:
+            case Operation::Equals:
+            case Operation::TypeValue:
+            case Operation::Pow:
+                return Discriminant::Number;
             default:
                 return Discriminant::Count;
 
@@ -123,10 +164,7 @@ namespace forth {
             Address getAddress() const noexcept { return _value.address; }
             const DictionaryEntry* getWord() const noexcept { return _value.entry; }
             Molecule getMolecule() const noexcept { return static_cast<Molecule>(_value.address); }
-            void reset() { 
-                _value.address = 0;
-                _type = static_cast<decltype(_type)>(0); 
-            }
+            void reset();
             void increment(Address amount = 1) { _value.address += amount; }
 			void decrement(Address amount = 1) { _value.address -= amount; }
         private:

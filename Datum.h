@@ -92,6 +92,11 @@ namespace forth {
             case Operation:: BVersion(Xor):
             case Operation:: BVersion(Equals):
             case Operation:: BVersion(TypeValue):
+            case Operation:: BVersion(NotFull):
+            case Operation:: BVersion(AndFull):
+            case Operation:: BVersion(OrFull):
+            case Operation:: BVersion(XorFull):
+            case Operation:: BVersion(EqualsFull):
                 return Discriminant::Boolean;
 #define FullImmediate(x) Operation:: x ## Full: case Operation:: x ## Immediate
             case FullImmediate(Add):

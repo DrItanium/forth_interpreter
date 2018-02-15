@@ -224,6 +224,11 @@ enum class Operation : byte {
 	FullImmediate(Equals),
 	UnsignedPowFull,
 #undef FullImmediate
+    BVersion(NotFull),
+    BVersion(AndFull),
+    BVersion(OrFull),
+    BVersion(XorFull),
+    BVersion(EqualsFull),
     Count,
 };
 #undef FUBVersion

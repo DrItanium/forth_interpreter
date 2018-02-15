@@ -583,16 +583,17 @@ void Core::dispatchInstruction(const Molecule& m) {
 #define DefEntryB(t, fn) DefEntry( Boolean ## t , fn )
 #define DefEntrySUF(t, fn) DefEntryS(t, fn) , DefEntryU(t, fn), DefEntryF(t, fn)
 #define DefEntrySU(t, fn) DefEntryS(t, fn) , DefEntryU(t, fn) 
+#define DefEntrySUB(t, fn) DefEntrySU(t, fn) , DefEntryB(t, fn)
 		DefEntrySUF(Add,numericCombine),          DefEntrySUF(AddFull, numericCombine),         DefEntrySU(AddImmediate, numericCombine),
 		DefEntrySUF(Subtract,numericCombine),     DefEntrySUF(SubtractFull, numericCombine),    DefEntrySU(SubtractImmediate, numericCombine),
 		DefEntrySUF(Multiply, multiplyOperation), DefEntrySUF(MultiplyFull, multiplyOperation), DefEntrySU(MultiplyImmediate, multiplyOperation),
 		DefEntrySUF(Divide, divideOperation),     DefEntrySUF(DivideFull, divideOperation),     DefEntrySU(DivideImmediate, divideOperation),
-		DefEntry(Modulo, divideOperation), DefEntry(ModuloFull, divideOperation), DefEntry(ModuloImmediate, divideOperation),
-		DefEntry(Not, notOperation), DefEntry(NotFull, notOperation),
-		DefEntry(Minus, minusOperation), DefEntry(MinusFull, minusOperation),
-		DefEntry(ShiftRight, shiftOperation), DefEntry(ShiftRightFull, shiftOperation), DefEntry(ShiftRightImmediate, shiftOperation),
-		DefEntry(ShiftLeft, shiftOperation), DefEntry(ShiftLeftFull, shiftOperation), DefEntry(ShiftLeftImmediate, shiftOperation),
-		DefEntry(Pow, powOperation), DefEntry(PowFull, powOperation),
+		DefEntrySU(Modulo, divideOperation),      DefEntrySU(ModuloFull, divideOperation),      DefEntrySU(ModuloImmediate, divideOperation),
+		DefEntrySUB(Not, notOperation),           DefEntrySUB(NotFull, notOperation),
+		DefEntrySUF(Minus, minusOperation),       DefEntrySUF(MinusFull, minusOperation),
+		DefEntrySU(ShiftRight, shiftOperation),   DefEntrySU(ShiftRightFull, shiftOperation),   DefEntrySU(ShiftRightImmediate, shiftOperation),
+		DefEntrySU(ShiftLeft, shiftOperation),    DefEntrySU(ShiftLeftFull, shiftOperation),   DefEntrySU(ShiftLeftImmediate, shiftOperation),
+		DefEntrySUF(Pow, powOperation),           DefEntrySUF(PowFull, powOperation),
 		DefEntry(And, booleanAlgebra), DefEntry(AndFull, booleanAlgebra), DefEntry(AndImmediate, booleanAlgebra),
 		DefEntry(Or, booleanAlgebra), DefEntry(OrFull, booleanAlgebra), DefEntry(OrImmediate, booleanAlgebra),
 		DefEntry(Xor, booleanAlgebra), DefEntry(XorFull, booleanAlgebra), DefEntry(XorImmediate, booleanAlgebra),

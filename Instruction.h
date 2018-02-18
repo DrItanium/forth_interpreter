@@ -480,18 +480,6 @@ constexpr HalfAddress encodeFourByte(Operation first, TargetRegister dest, Targe
 }
 
 namespace Instruction {
-	constexpr byte encodeDual4BitQuantities(byte lower, byte upper) noexcept {
-		return encodeBits<byte, byte, 0xF0, 4>( encodeBits<byte, byte, 0x0F, 0>(0, lower), upper);
-	}
-	constexpr byte encodeDual4BitQuantities(TargetRegister dest, TargetRegister src0) noexcept {
-		return encodeDual4BitQuantities(static_cast<byte>(dest), static_cast<byte>(src0));
-	}
-	constexpr byte encodeDual4BitQuantities(TargetRegister dest, byte upper) noexcept {
-		return encodeDual4BitQuantities(static_cast<byte>(dest), 0xF & upper);
-	}
-	constexpr byte encodeDual4BitQuantities(TargetRegister dest, QuarterAddress upper) noexcept {
-		return encodeDual4BitQuantities(dest, static_cast<byte>(upper));
-	}
 	constexpr byte stop() noexcept { return encodeSingleByteOperation(Operation::Stop); }
 #define DefTypeDispatchCase(x) case forth::Operation :: x :
 #define DefTypeDispatchCaseU(x) DefTypeDispatchCase( Unsigned ## x )

@@ -5,7 +5,8 @@ OBJECTS = forth.o \
 		  DictionaryEntry.o \
 		  Machine.o \
 		  Problem.o \
-		  Core.o
+		  Core.o \
+		  Instruction.o
 
 OUTPUT_BINARY = forth
 
@@ -37,3 +38,4 @@ Machine.o: Machine.cc Machine.h Types.h DictionaryEntry.h Datum.h Instruction.h 
 DictionaryEntry.o: DictionaryEntry.cc DictionaryEntry.h Types.h Datum.h Problem.h Machine.h Instruction.h Problem.h
 Problem.o: Problem.cc Problem.h
 Core.o: Core.cc Core.h Instruction.h Datum.h Types.h Problem.h
+Instruction.o: Instruction.cc Instruction.h Types.h Problem.h

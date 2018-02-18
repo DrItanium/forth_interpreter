@@ -96,8 +96,6 @@ namespace Instruction {
     DefTypeDispatchCaseB(base) \
     EndDefTypeDispatchSingleByteOp(name, base)
 
-    DefTypeDispatchSingleByteOpSU(shiftRight, ShiftRight);
-    DefTypeDispatchSingleByteOpSU(shiftLeft, ShiftLeft);
     DefTypeDispatchSingleByteOpSUF(greaterThan, GreaterThan);
     DefTypeDispatchSingleByteOpSUF(lessThan, LessThan);
     DefTypeDispatchSingleByteOpSUFB(equals, Equals);
@@ -116,6 +114,42 @@ namespace Instruction {
     DefTypeDispatchSingleByteOpSUB(xorOp, Xor);
 	constexpr bool argumentsImplyCompactedForm(TargetRegister dest, TargetRegister src0, TargetRegister src1 = TargetRegister::B) {
 		return (dest == TargetRegister::C && src0 == TargetRegister::A && src1 == TargetRegister::B);
+	}
+	constexpr HalfAddress shr(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::ShiftRight);
+		} 
+		return encodeThreeByte(Operation::ShiftRightFull, dest, src0, src1);
+	}
+	constexpr HalfAddress shr(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
+		return encodeFourByte(Operation::ShiftRightImmediate, dest, src0, value);
+	}
+	constexpr HalfAddress shru(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::UnsignedShiftRight);
+		} 
+		return encodeThreeByte(Operation::UnsignedShiftRightFull, dest, src0, src1);
+	}
+	constexpr HalfAddress shriu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
+		return encodeFourByte(Operation::UnsignedShiftRightImmediate, dest, src0, value);
+	}
+	constexpr HalfAddress shl(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::ShiftLeft);
+		} 
+		return encodeThreeByte(Operation::ShiftLeftFull, dest, src0, src1);
+	}
+	constexpr HalfAddress shl(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
+		return encodeFourByte(Operation::ShiftLeftImmediate, dest, src0, value);
+	}
+	constexpr HalfAddress shlu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::UnsignedShiftLeft);
+		} 
+		return encodeThreeByte(Operation::UnsignedShiftLeftFull, dest, src0, src1);
+	}
+	constexpr HalfAddress shliu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
+		return encodeFourByte(Operation::UnsignedShiftLeftImmediate, dest, src0, value);
 	}
 	constexpr HalfAddress add(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
 		if (argumentsImplyCompactedForm(dest, src0, src1)) {

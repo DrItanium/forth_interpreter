@@ -70,6 +70,7 @@ namespace forth {
 	template<typename T>
 	constexpr auto quarterMask = T(getLowerHalf(getLowerHalf(fullMask<T>)));
 	static_assert(quarterMask<QuarterAddress> == 0x000F, "Illegal address!");
+	static_assert(quarterMask<Address> == 0x0000'0000'0000'FFFF, "Illegal quarter mask for Address!");
 
 	template<typename T>
 	constexpr auto lowerHalfMask = halfMask<T>;

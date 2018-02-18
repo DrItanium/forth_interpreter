@@ -35,30 +35,18 @@ namespace forth {
 		return static_cast<R>((value & mask) >> shift);
 	}
 
-	constexpr byte getUpperHalf(byte input) noexcept {
-		return decodeBits<byte, byte, 0xF0, halfBitWidth<byte>>(input);
-	}
 	constexpr byte getLowerHalf(byte input) noexcept {
-		return decodeBits<byte, byte, 0x0F>(input);
+		return decodeBits<byte, byte, 0x0'F>(input);
 	}
 
-	constexpr byte getUpperHalf(QuarterAddress input) noexcept {
-		return decodeBits<QuarterAddress, byte, 0xFF'00, halfBitWidth<QuarterAddress>>(input);
-	}
 	constexpr byte getLowerHalf(QuarterAddress input) noexcept {
 		return decodeBits<QuarterAddress, byte, 0x00'FF>(input);
 	}
 
-	constexpr QuarterAddress getUpperHalf(HalfAddress input) noexcept {
-		return decodeBits<HalfAddress, QuarterAddress, 0xFFFF'0000, halfBitWidth<HalfAddress>>(input);
-	}
 	constexpr QuarterAddress getLowerHalf(HalfAddress input) noexcept {
 		return decodeBits<HalfAddress, QuarterAddress, 0x0000'FFFF>(input);
 	}
 
-	constexpr HalfAddress getUpperHalf(Address input) noexcept {
-		return decodeBits<Address, HalfAddress, 0xFFFF'FFFF'0000'0000, halfBitWidth<Address>>(input);
-	}
 	constexpr HalfAddress getLowerHalf(Address input) noexcept {
 		return decodeBits<Address, HalfAddress, 0x0000'0000'FFFF'FFFF>(input);
 	}
@@ -73,7 +61,7 @@ namespace forth {
 		return static_cast<C>(r) < static_cast<C>(count);
 	}
 	template<typename T>
-	using HalfOf = decltype(getUpperHalf(T(0)));
+	using HalfOf = decltype(getLowerHalf(T(0)));
 	template<typename T>
 	using QuarterOf = HalfOf<HalfOf<T>>;
 	template<typename T>
@@ -97,6 +85,10 @@ namespace forth {
 	constexpr auto highestQuarterMask= quarterMask<T> << (quarterBitWidth<T> * 3);
 
 
+	template<typename T>
+	constexpr HalfOf<T> getUpperHalf(T input) noexcept {
+		return decodeBits<T, HalfOf<T>, upperHalfMask<T>, halfBitWidth<T>>(input);
+	}
 	template<typename T>
 	constexpr QuarterOf<T> getLowestQuarter(T value) noexcept {
 		return decodeBits<T, QuarterOf<T>, lowestQuarterMask<T>, quarterBitWidth<T> * 0>(value);

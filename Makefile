@@ -32,9 +32,9 @@ clean:
 
 .PHONY: options clean all
 
-forth.o: forth.cc Machine.h Instruction.h
+forth.o: forth.cc Machine.h Instruction.h Assembler.h
 Datum.o: Datum.cc Types.h Datum.h Instruction.h
-Machine.o: Machine.cc Machine.h Types.h DictionaryEntry.h Datum.h Instruction.h Problem.h Core.h
+Machine.o: Machine.cc Machine.h Types.h DictionaryEntry.h Datum.h Instruction.h Problem.h Core.h Assembler.h
 DictionaryEntry.o: DictionaryEntry.cc DictionaryEntry.h Types.h Datum.h Problem.h Machine.h Instruction.h Problem.h
 Problem.o: Problem.cc Problem.h
 Core.o: Core.cc Core.h Instruction.h Datum.h Types.h Problem.h

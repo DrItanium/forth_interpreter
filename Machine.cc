@@ -12,6 +12,7 @@
 #include "Datum.h"
 #include "DictionaryEntry.h"
 #include "Machine.h"
+#include "Assembler.h"
 
 namespace forth {
 	static constexpr Address storeFalse = Instruction::encodeOperation(

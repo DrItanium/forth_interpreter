@@ -1,6 +1,7 @@
 #include <iostream>
 #include "Machine.h"
 #include "Instruction.h"
+#include "Assembler.h"
 #include <variant>
 
 

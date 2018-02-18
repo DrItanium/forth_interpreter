@@ -9,6 +9,7 @@
 #include <memory>
 #include <sstream>
 #include "Core.h"
+#include "Assembler.h"
 
 namespace forth {
 	class Machine {

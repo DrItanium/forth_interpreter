@@ -77,7 +77,7 @@ namespace forth {
 		return encodeBits<HalfAddress, byte, 0xFF000000, 24>(input, value);
 	}
 	constexpr QuarterAddress getUpperHalf(HalfAddress input) noexcept {
-		return decodeBits<HalfAddress, QuarterAddress, 0xFFFF'0000, 8>(input);
+		return decodeBits<HalfAddress, QuarterAddress, 0xFFFF'0000, 16>(input);
 	}
 	constexpr QuarterAddress getLowerHalf(HalfAddress input) noexcept {
 		return decodeBits<HalfAddress, QuarterAddress, 0x0000'FFFF, 0>(input);
@@ -87,6 +87,19 @@ namespace forth {
 	}
 	constexpr HalfAddress setLowerHalf(HalfAddress input, QuarterAddress value) noexcept {
 		return encodeBits<HalfAddress, HalfAddress, 0x0000'FFFF, 0>(input, value);
+	}
+
+	constexpr HalfAddress getUpperHalf(Address input) noexcept {
+		return decodeBits<Address, HalfAddress, 0xFFFF'FFFF'0000'0000, 32>(input);
+	}
+	constexpr HalfAddress getLowerHalf(Address input) noexcept {
+		return decodeBits<Address, HalfAddress, 0x0000'0000'FFFF'FFFF, 0>(input);
+	}
+	constexpr Address setUpperHalf(Address input, HalfAddress value) noexcept {
+		return encodeBits<Address, HalfAddress, 0xFFFF'FFFF'0000'0000, 32>(input, value);
+	}
+	constexpr Address setLowerHalf(Address input, HalfAddress value) noexcept {
+		return encodeBits<Address, HalfAddress, 0x0000'0000'FFFF'FFFF, 0>(input, value);
 	}
 
 
@@ -106,6 +119,22 @@ namespace forth {
 		static_assert(std::is_integral<C>::value, "C must cast to an integral type");
 		return static_cast<C>(r) < static_cast<C>(count);
 	}
+	template<typename T>
+	using HalfOf = decltype(getUpperHalf(T(0)));
+	template<typename T>
+	using QuarterOf = HalfOf<HalfOf<T>>;
+	template<typename T>
+	constexpr auto upperHalfMask = HalfOf<T>(getUpperHalf(static_cast<T>(-1)));
+	template<typename T>
+	constexpr auto lowerHalfMask = HalfOf<T>(getLowerHalf(static_cast<T>(-1)));
+	template<typename T>
+	constexpr auto lowestQuarterMask = getLowerHalf(lowerHalfMask<T>);
+	template<typename T>
+	constexpr auto lowerQuarterMask = getUpperHalf(lowerHalfMask<T>);
+	template<typename T>
+	constexpr auto higherQuarterMask = getLowerHalf(upperHalfMask<T>);
+	template<typename T>
+	constexpr auto highestQuarterMask = getUpperHalf(upperHalfMask<T>);
 }
 
 #endif // end TYPES_H__

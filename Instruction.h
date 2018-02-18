@@ -587,12 +587,6 @@ namespace Instruction {
         	return encodeTwoByte(Operation::PushRegister, encodeRegisterPair(sp, value));
 		}
     }
-	constexpr byte popA() noexcept { return popRegister(TargetRegister::A, TargetRegister::SP); }
-	constexpr byte popB() noexcept { return popRegister(TargetRegister::B, TargetRegister::SP); }
-	constexpr byte popC() noexcept { return popRegister(TargetRegister::C, TargetRegister::SP); }
-	constexpr byte pushA() noexcept { return pushRegister(TargetRegister::A, TargetRegister::SP); }
-	constexpr byte pushB() noexcept { return pushRegister(TargetRegister::B, TargetRegister::SP); }
-	constexpr byte pushC() noexcept { return pushRegister(TargetRegister::C, TargetRegister::SP); }
     constexpr QuarterAddress load(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Load, dest, src); }
     constexpr QuarterAddress store(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Store, dest, src); }
     constexpr QuarterAddress move(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Move, dest, src); }
@@ -602,16 +596,16 @@ namespace Instruction {
     constexpr HalfAddress setImmediate16_Higher(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Higher, dest, value); }
     constexpr HalfAddress setImmediate16_Highest(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Highest, dest, value); }
     constexpr HalfAddress setImmediate64_Lowest(TargetRegister dest, Address value) noexcept { 
-        return setImmediate16_Lowest(dest, decodeBits<Address, QuarterAddress, 0x0000'0000'0000'FFFF>(value)); 
+        return setImmediate16_Lowest(dest, decodeBits<Address, QuarterAddress, lowestQuarterMask<Address>, 0>(value));
     }
     constexpr HalfAddress setImmediate64_Lower(TargetRegister dest, Address value) noexcept { 
-        return setImmediate16_Lower(dest, decodeBits<Address, QuarterAddress, 0x0000'0000'FFFF'0000, 16>(value)); 
+        return setImmediate16_Lower(dest, decodeBits<Address, QuarterAddress, lowerQuarterMask<Address>, 16>(value)); 
     }
     constexpr HalfAddress setImmediate64_Higher(TargetRegister dest, Address value) noexcept { 
-        return setImmediate16_Higher(dest, decodeBits<Address, QuarterAddress, 0x0000'FFFF'0000'0000, 32>(value)); 
+        return setImmediate16_Higher(dest, decodeBits<Address, QuarterAddress, higherQuarterMask<Address>, 32>(value)); 
     }
     constexpr HalfAddress setImmediate64_Highest(TargetRegister dest, Address value) noexcept { 
-        return setImmediate16_Highest(dest, decodeBits<Address, QuarterAddress, 0xFFFF'0000'0000'0000, 48>(value)); 
+        return setImmediate16_Highest(dest, decodeBits<Address, QuarterAddress, highestQuarterMask<Address>, 48>(value)); 
     }
     constexpr HalfAddress setImmediate32_Lowest(TargetRegister dest, HalfAddress value) noexcept { 
         return setImmediate16_Lowest(dest, decodeBits<HalfAddress, QuarterAddress, 0x0000'FFFF>(value)); 
@@ -790,12 +784,6 @@ namespace Instruction {
     static_assert(Address(0xFDED0017) == setImmediate16_Lower(TargetRegister::A, imm16TestValue), "setImmediate16_Lower is broken!");
     static_assert(Address(0xFDED0018) == setImmediate16_Higher(TargetRegister::A, imm16TestValue), "setImmediate16_Higher is broken!");
     static_assert(Address(0xFDED0019) == setImmediate16_Highest(TargetRegister::A, imm16TestValue), "setImmediate16_Highest is broken!");
-    constexpr QuarterAddress popAB() noexcept {
-        return (QuarterAddress)encodeOperation(popA(), popB());
-    }
-    constexpr QuarterAddress swapAB() noexcept {
-        return swap(TargetRegister::B, TargetRegister::A);
-    }
     constexpr size_t operationLength(byte b) noexcept { return getInstructionWidth(static_cast<Operation>(b)); }
     constexpr size_t operationLength(QuarterAddress b) noexcept { return getInstructionWidth(byte(b & 0xFF)); }
     constexpr size_t operationLength(HalfAddress b) noexcept { return getInstructionWidth(byte(b & 0xFF)); }
@@ -890,6 +878,18 @@ namespace Instruction {
 					encodeDestinationRegister(dest)),
 				value);
 	}
+	constexpr byte popA() noexcept { return popRegister(TargetRegister::A, TargetRegister::SP); }
+	constexpr byte popB() noexcept { return popRegister(TargetRegister::B, TargetRegister::SP); }
+	constexpr byte popC() noexcept { return popRegister(TargetRegister::C, TargetRegister::SP); }
+	constexpr byte pushA() noexcept { return pushRegister(TargetRegister::A, TargetRegister::SP); }
+	constexpr byte pushB() noexcept { return pushRegister(TargetRegister::B, TargetRegister::SP); }
+	constexpr byte pushC() noexcept { return pushRegister(TargetRegister::C, TargetRegister::SP); }
+    constexpr QuarterAddress popAB() noexcept {
+        return (QuarterAddress)encodeOperation(popA(), popB());
+    }
+    constexpr QuarterAddress swapAB() noexcept {
+        return swap(TargetRegister::B, TargetRegister::A);
+    }
 } // end namespace Instruction
 
 

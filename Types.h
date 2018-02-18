@@ -52,16 +52,59 @@ namespace forth {
 		return encodeBits<QuarterAddress, QuarterAddress, 0x00FF, 0>(input, value);
 	}
 
+	constexpr byte getLowestPart(HalfAddress input) noexcept {
+		return decodeBits<HalfAddress, byte, 0x0000'00FF, 0>(input);
+	}
+	constexpr byte getLowerPart(HalfAddress input) noexcept {
+		return decodeBits<HalfAddress, byte, 0x0000'FF00, 8>(input);
+	}
+	constexpr byte getHigherPart(HalfAddress input) noexcept {
+		return decodeBits<HalfAddress, byte, 0x00FF'0000, 16>(input);
+	}
+	constexpr byte getHighestPart(HalfAddress input) noexcept {
+		return decodeBits<HalfAddress, byte, 0xFF00'0000, 24>(input);
+	}
+	constexpr HalfAddress setLowestPart(HalfAddress input, byte value) noexcept {
+		return encodeBits<HalfAddress, byte, 0x000000FF, 0>(input, value);
+	}
+	constexpr HalfAddress setLowerPart(HalfAddress input, byte value) noexcept {
+		return encodeBits<HalfAddress, byte, 0x0000FF00, 8>(input, value);
+	}
+	constexpr HalfAddress setHigherPart(HalfAddress input, byte value) noexcept {
+		return encodeBits<HalfAddress, byte, 0x00FF0000, 16>(input, value);
+	}
+	constexpr HalfAddress setHighestPart(HalfAddress input, byte value) noexcept {
+		return encodeBits<HalfAddress, byte, 0xFF000000, 24>(input, value);
+	}
+	constexpr QuarterAddress getUpperHalf(HalfAddress input) noexcept {
+		return decodeBits<HalfAddress, QuarterAddress, 0xFFFF'0000, 8>(input);
+	}
+	constexpr QuarterAddress getLowerHalf(HalfAddress input) noexcept {
+		return decodeBits<HalfAddress, QuarterAddress, 0x0000'FFFF, 0>(input);
+	}
+	constexpr HalfAddress setUpperHalf(HalfAddress input, QuarterAddress value) noexcept {
+		return encodeBits<HalfAddress, QuarterAddress, 0xFFFF'0000, 8>(input, value);
+	}
+	constexpr HalfAddress setLowerHalf(HalfAddress input, QuarterAddress value) noexcept {
+		return encodeBits<HalfAddress, HalfAddress, 0x0000'FFFF, 0>(input, value);
+	}
+
+
 	template<typename T, typename R>
 	constexpr R setLowerUpperHalves(T lower, T upper) noexcept {
 		return setUpperHalf(setLowerHalf(R(0), lower), upper);
 	}
 
+	template<typename T, typename R>
+	constexpr R setFourParts(T lowest, T lower, T higher, T highest) noexcept {
+		return setHighestPart( setHigherPart( setLowerPart( setLowestPart(R(0), lowest), lower), higher), highest);
+	}
+
 	template<typename T, typename C = byte>
-	constexpr bool legalValue(T r) noexcept {
+	constexpr bool legalValue(T r, T count = T::Count) noexcept {
 		static_assert(std::is_enum<T>::value, "This is an enum value check!");
 		static_assert(std::is_integral<C>::value, "C must cast to an integral type");
-		return static_cast<C>(r) < static_cast<C>(T::Count);
+		return static_cast<C>(r) < static_cast<C>(count);
 	}
 }
 

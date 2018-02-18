@@ -430,34 +430,55 @@ constexpr Operation getOperation(byte i) noexcept {
 }
 static_assert(static_cast<byte>(-1) >= static_cast<byte>(Operation::Count), "Too many operations defined!");
 
+constexpr byte encodeSingleByteOperation(Operation op) noexcept {
+	return static_cast<byte>(op);
+}
+
+constexpr QuarterAddress encodeTwoByte(byte a, byte b) noexcept {
+	return setLowerUpperHalves<byte, QuarterAddress>(a, b);
+}
+constexpr QuarterAddress encodeTwoByte(Operation op, byte b) noexcept {
+	return encodeTwoByte(byte(op), b);
+}
+constexpr QuarterAddress makeQuarterAddress(byte lower, byte upper) noexcept {
+	return encodeTwoByte(lower, upper);
+}
+
+template<typename T>
+constexpr QuarterAddress encodeTwoByte(Operation first, TargetRegister dest, T src) noexcept {
+	return encodeTwoByte(first, encodeRegisterPair(dest, src));
+}
+
+constexpr HalfAddress encodeThreeByte(Operation first, byte second, byte third) noexcept {
+	return setFourParts<byte, HalfAddress>(byte(first), second, third, 0);
+}
+constexpr HalfAddress encodeThreeByte(Operation first, QuarterAddress second) noexcept {
+	return encodeThreeByte(first, getLowerHalf(second), getUpperHalf(second));
+}
+
+constexpr HalfAddress encodeThreeByte(Operation first, TargetRegister dest, TargetRegister src0, TargetRegister src1) noexcept {
+	return encodeThreeByte(first, encodeRegisterPair(dest, src0), setLowerHalf(byte(0), byte(src1)));
+}
+
+constexpr HalfAddress encodeFourByte(Operation first, byte second, byte third, byte fourth) noexcept {
+	return setFourParts<byte, HalfAddress>(byte(first), second, third, fourth);
+}
+constexpr HalfAddress encodeFourByte(Operation first, TargetRegister dest, QuarterAddress upper) noexcept {
+	return setFourParts<byte, HalfAddress>(byte(first), encodeDestinationRegister(dest), getLowerHalf(upper), getUpperHalf(upper));
+}
+constexpr HalfAddress encodeFourByte(Operation first, TargetRegister dest, TargetRegister src0, TargetRegister src1, QuarterAddress offset = 0) noexcept {
+	return encodeFourByte(first, encodeRegisterPair(dest, src0), 
+								 setLowerUpperHalves<byte, byte>(byte(src1), byte(offset)),
+								 decodeBits<QuarterAddress, byte, 0x0FF0, 4>(offset));
+}
+
+constexpr HalfAddress encodeFourByte(Operation first, TargetRegister dest, TargetRegister src0, QuarterAddress offset = 0) noexcept {
+	return encodeFourByte(first, encodeRegisterPair(dest, src0), 
+								 getLowerHalf(offset),
+								 getUpperHalf(offset));
+}
 
 namespace Instruction {
-    constexpr byte singleByteOp(Operation op) noexcept { return static_cast<byte>(op); }
-    constexpr QuarterAddress encodeTwoByte(byte a, byte b) noexcept {
-        return encodeBits<QuarterAddress, byte, 0xFF00, 8>(QuarterAddress(a), b);
-    }
-	constexpr QuarterAddress makeQuarterAddress(byte lower, byte upper) noexcept {
-		return encodeTwoByte(lower, upper);
-	}
-    constexpr QuarterAddress encodeTwoByte(Operation first, byte second) noexcept {
-        return encodeTwoByte(byte(first), second);
-    }
-    template<typename T>
-    constexpr QuarterAddress encodeTwoByte(Operation first, TargetRegister dest, T src) noexcept {
-        return encodeTwoByte(first, encodeRegisterPair(dest, src));
-    }
-    constexpr HalfAddress encodeThreeByte(Operation first, byte second, byte third) noexcept {
-        return encodeBits<HalfAddress, byte, 0xFF0000, 16>( encodeBits<HalfAddress, byte, 0xFF00, 8>(static_cast<HalfAddress>(first), second), third);
-    }
-    constexpr HalfAddress encodeThreeByte(Operation first, QuarterAddress second) noexcept {
-        return encodeBits<HalfAddress, QuarterAddress, 0xFFFF00, 8>(static_cast<HalfAddress>(first), second);
-    }
-    constexpr HalfAddress encodeFourByte(Operation first, byte second, byte third, byte fourth) noexcept {
-		return encodeBits<HalfAddress, byte, 0xFF000000, 24>(
-				encodeBits<HalfAddress, byte, 0x00FF0000, 16>(
-					encodeBits<HalfAddress, byte, 0x0000FF00, 8>(
-						static_cast<HalfAddress>(first), second), third), fourth);
-    }
 	constexpr byte encodeDual4BitQuantities(byte lower, byte upper) noexcept {
 		return encodeBits<byte, byte, 0xF0, 4>( encodeBits<byte, byte, 0x0F, 0>(0, lower), upper);
 	}
@@ -470,20 +491,7 @@ namespace Instruction {
 	constexpr byte encodeDual4BitQuantities(TargetRegister dest, QuarterAddress upper) noexcept {
 		return encodeDual4BitQuantities(dest, static_cast<byte>(upper));
 	}
-	constexpr HalfAddress encodeFourByte(Operation first, TargetRegister destination, QuarterAddress third) noexcept {
-		return encodeFourByte(first, static_cast<byte>(destination), static_cast<byte>(third), static_cast<byte>(third >> 8));
-	}
-	constexpr HalfAddress encodeFourByte(Operation first, TargetRegister dest, TargetRegister src0, TargetRegister src1, QuarterAddress offset = 0) noexcept {
-		return encodeFourByte(first, encodeDual4BitQuantities(dest, src0),
-				encodeDual4BitQuantities(src1, offset),
-				decodeBits<QuarterAddress, byte, 0x0FF0, 4>(offset));
-	}
-	constexpr HalfAddress encodeFourByte(Operation first, TargetRegister dest, TargetRegister src0, QuarterAddress offset = 0) noexcept {
-		return encodeFourByte(first, encodeDual4BitQuantities(dest, src0),
-				static_cast<byte>(offset),
-				decodeBits<QuarterAddress, byte, 0xFF00, 8>(offset));
-	}
-	constexpr byte stop() noexcept { return singleByteOp(Operation::Stop); }
+	constexpr byte stop() noexcept { return encodeSingleByteOperation(Operation::Stop); }
 #define DefTypeDispatchCase(x) case forth::Operation :: x :
 #define DefTypeDispatchCaseU(x) DefTypeDispatchCase( Unsigned ## x )
 #define DefTypeDispatchCaseF(x) DefTypeDispatchCase( FloatingPoint ## x )
@@ -495,7 +503,7 @@ namespace Instruction {
             case forth::Operation:: def :
 
 #define EndDefTypeDispatchSingleByteOp(name, def) \
-                return singleByteOp(op); \
+                return encodeSingleByteOperation(op); \
             default: \
                      return stop(); \
         } \
@@ -547,12 +555,12 @@ namespace Instruction {
     DefTypeDispatchSingleByteOpSUB(orOp, Or);
     DefTypeDispatchSingleByteOpSUB(xorOp, Xor);
 
-    constexpr byte popA() noexcept { return singleByteOp(Operation::PopA); }
-    constexpr byte popB() noexcept { return singleByteOp(Operation::PopB); }
-    constexpr byte pushC() noexcept { return singleByteOp(Operation::PushC); }
-    constexpr byte pushA() noexcept { return singleByteOp(Operation::PushA); }
-    constexpr byte pushB() noexcept { return singleByteOp(Operation::PushB); }
-    constexpr byte popC() noexcept { return singleByteOp(Operation::PopC); }
+    constexpr byte popA() noexcept { return encodeSingleByteOperation(Operation::PopA); }
+    constexpr byte popB() noexcept { return encodeSingleByteOperation(Operation::PopB); }
+    constexpr byte pushC() noexcept { return encodeSingleByteOperation(Operation::PushC); }
+    constexpr byte pushA() noexcept { return encodeSingleByteOperation(Operation::PushA); }
+    constexpr byte pushB() noexcept { return encodeSingleByteOperation(Operation::PushB); }
+    constexpr byte popC() noexcept { return encodeSingleByteOperation(Operation::PopC); }
 
     constexpr QuarterAddress popRegister(TargetRegister destination, TargetRegister sp = TargetRegister::SP) noexcept {
         return encodeTwoByte(Operation::PopRegister, encodeRegisterPair(destination, sp));
@@ -846,7 +854,7 @@ namespace Instruction {
                 0);
     }
     constexpr byte returnSubroutine() noexcept {
-        return singleByteOp(Operation::ReturnSubroutine);
+        return encodeSingleByteOperation(Operation::ReturnSubroutine);
     }
     constexpr QuarterAddress conditionalReturnSubroutine(TargetRegister cond) noexcept {
         return encodeTwoByte(Operation::ConditionalReturnSubroutine, cond, 0);

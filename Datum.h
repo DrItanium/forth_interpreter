@@ -17,7 +17,7 @@ namespace forth {
         Count,
     };
     constexpr bool legalValue(Discriminant value) noexcept {
-        return static_cast<Address>(value) < static_cast<Address>(Discriminant::Count); 
+		return legalValue<Discriminant, Address>(value);
     }
     constexpr forth::Discriminant involvesDiscriminantType(Operation op) noexcept {
 #define FVersion(x) FloatingPoint ## x 

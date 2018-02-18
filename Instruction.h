@@ -555,19 +555,44 @@ namespace Instruction {
     DefTypeDispatchSingleByteOpSUB(orOp, Or);
     DefTypeDispatchSingleByteOpSUB(xorOp, Xor);
 
-    constexpr byte popA() noexcept { return encodeSingleByteOperation(Operation::PopA); }
-    constexpr byte popB() noexcept { return encodeSingleByteOperation(Operation::PopB); }
-    constexpr byte pushC() noexcept { return encodeSingleByteOperation(Operation::PushC); }
-    constexpr byte pushA() noexcept { return encodeSingleByteOperation(Operation::PushA); }
-    constexpr byte pushB() noexcept { return encodeSingleByteOperation(Operation::PushB); }
-    constexpr byte popC() noexcept { return encodeSingleByteOperation(Operation::PopC); }
-
     constexpr QuarterAddress popRegister(TargetRegister destination, TargetRegister sp = TargetRegister::SP) noexcept {
-        return encodeTwoByte(Operation::PopRegister, encodeRegisterPair(destination, sp));
+		if (sp == TargetRegister::SP) {
+			switch(destination) {
+				case TargetRegister::A:
+					return QuarterAddress(encodeSingleByteOperation(Operation::PopA));
+				case TargetRegister::B:
+					return QuarterAddress(encodeSingleByteOperation(Operation::PopB));
+				case TargetRegister::C:
+					return QuarterAddress(encodeSingleByteOperation(Operation::PopC));
+				default:
+					return encodeTwoByte(Operation::PopRegister, encodeRegisterPair(destination, sp));
+			}
+		} else {
+        	return encodeTwoByte(Operation::PopRegister, encodeRegisterPair(destination, sp));
+		}
     }
     constexpr QuarterAddress pushRegister(TargetRegister value, TargetRegister sp = TargetRegister::SP) noexcept {
-        return encodeTwoByte(Operation::PushRegister, encodeRegisterPair(sp, value));
+		if (sp == TargetRegister::SP) {
+			switch(value) {
+				case TargetRegister::A:
+					return QuarterAddress(encodeSingleByteOperation(Operation::PushA));
+				case TargetRegister::B:
+					return QuarterAddress(encodeSingleByteOperation(Operation::PushB));
+				case TargetRegister::C:
+					return QuarterAddress(encodeSingleByteOperation(Operation::PushC));
+				default:
+					return encodeTwoByte(Operation::PushRegister, encodeRegisterPair(sp, value));
+			}
+		} else {
+        	return encodeTwoByte(Operation::PushRegister, encodeRegisterPair(sp, value));
+		}
     }
+	constexpr byte popA() noexcept { return popRegister(TargetRegister::A, TargetRegister::SP); }
+	constexpr byte popB() noexcept { return popRegister(TargetRegister::B, TargetRegister::SP); }
+	constexpr byte popC() noexcept { return popRegister(TargetRegister::C, TargetRegister::SP); }
+	constexpr byte pushA() noexcept { return pushRegister(TargetRegister::A, TargetRegister::SP); }
+	constexpr byte pushB() noexcept { return pushRegister(TargetRegister::B, TargetRegister::SP); }
+	constexpr byte pushC() noexcept { return pushRegister(TargetRegister::C, TargetRegister::SP); }
     constexpr QuarterAddress load(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Load, dest, src); }
     constexpr QuarterAddress store(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Store, dest, src); }
     constexpr QuarterAddress move(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Move, dest, src); }

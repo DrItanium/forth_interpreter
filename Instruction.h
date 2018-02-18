@@ -525,8 +525,6 @@ namespace Instruction {
     DefTypeDispatchCaseB(base) \
     EndDefTypeDispatchSingleByteOp(name, base)
 
-    DefTypeDispatchSingleByteOpSUF(div, Divide)
-    DefTypeDispatchSingleByteOpSU(mod, Modulo)
     DefTypeDispatchSingleByteOpSU(shiftRight, ShiftRight);
     DefTypeDispatchSingleByteOpSU(shiftLeft, ShiftLeft);
     DefTypeDispatchSingleByteOpSUF(greaterThan, GreaterThan);
@@ -545,7 +543,7 @@ namespace Instruction {
     DefTypeDispatchSingleByteOpSUB(andOp, And);
     DefTypeDispatchSingleByteOpSUB(orOp, Or);
     DefTypeDispatchSingleByteOpSUB(xorOp, Xor);
-	constexpr bool argumentsImplyCompactedForm(TargetRegister dest, TargetRegister src0, TargetRegister src1) {
+	constexpr bool argumentsImplyCompactedForm(TargetRegister dest, TargetRegister src0, TargetRegister src1 = TargetRegister::B) {
 		return (dest == TargetRegister::C && src0 == TargetRegister::A && src1 == TargetRegister::B);
 	}
 	constexpr HalfAddress add(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
@@ -619,6 +617,48 @@ namespace Instruction {
 	}
 	constexpr HalfAddress muliu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 		return encodeFourByte(Operation::UnsignedMultiplyImmediate, dest, src0, value);
+	}
+	constexpr HalfAddress div(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::Divide);
+		} 
+		return encodeThreeByte(Operation::DivideFull, dest, src0, src1);
+	}
+	constexpr HalfAddress div(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
+		return encodeFourByte(Operation::DivideImmediate, dest, src0, value);
+	}
+	constexpr HalfAddress divf(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::FloatingPointDivide);
+		} 
+		return encodeThreeByte(Operation::FloatingPointDivideFull, dest, src0, src1);
+	}
+	constexpr HalfAddress divu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::UnsignedDivide);
+		} 
+		return encodeThreeByte(Operation::UnsignedDivideFull, dest, src0, src1);
+	}
+	constexpr HalfAddress diviu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
+		return encodeFourByte(Operation::UnsignedDivideImmediate, dest, src0, value);
+	}
+	constexpr HalfAddress mod(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::Modulo);
+		} 
+		return encodeThreeByte(Operation::ModuloFull, dest, src0, src1);
+	}
+	constexpr HalfAddress mod(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
+		return encodeFourByte(Operation::ModuloImmediate, dest, src0, value);
+	}
+	constexpr HalfAddress modu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::UnsignedModulo);
+		} 
+		return encodeThreeByte(Operation::UnsignedModuloFull, dest, src0, src1);
+	}
+	constexpr HalfAddress modiu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
+		return encodeFourByte(Operation::UnsignedModuloImmediate, dest, src0, value);
 	}
     constexpr QuarterAddress popRegister(TargetRegister destination, TargetRegister sp = TargetRegister::SP) noexcept {
 		if (sp == TargetRegister::SP) {
@@ -848,8 +888,6 @@ namespace Instruction {
 #define FullImmediate(x, name) \
 	constexpr HalfAddress name (TargetRegister dest, TargetRegister src0, TargetRegister src1) noexcept { return encodeFourByte(Operation:: x ## Full , dest, src0, src1, 0); } \
 	constexpr HalfAddress name (TargetRegister dest, TargetRegister src0, QuarterAddress offset) noexcept { return encodeFourByte(Operation:: x ## Immediate , dest, src0, offset); }
-	FullImmediate(Divide, div);
-	FullImmediate(Modulo, mod);
 	constexpr QuarterAddress notOp(TargetRegister dest, TargetRegister src) noexcept {
 		return encodeTwoByte(Operation::NotFull, dest, src);
 	}

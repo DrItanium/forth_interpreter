@@ -51,9 +51,9 @@ void arithmeticOperators(forth::Machine& machine) {
 #define DefBinaryOpSUB(fn, e, str) DefBinaryOpSU(fn, e, str); DefBinaryOpB(fn, e, str)
 #define DefBinaryOpSUF(fn, e, str) DefBinaryOpSU(fn, e, str); DefBinaryOpF(fn, e, str)
 #define DefBinaryOpSUFB(fn, e, str) DefBinaryOpSUF(fn, e, str); DefBinaryOpB(fn, e, str)
-    DefBinaryOpSUF(add, Add, "+");
-    DefBinaryOpSUF(sub, Subtract, "-");
-    DefBinaryOpSUF(mul, Multiply, "*");
+    //DefBinaryOpSUF(add, Add, "+");
+    //DefBinaryOpSUF(sub, Subtract, "-");
+    //DefBinaryOpSUF(mul, Multiply, "*");
     DefBinaryOpSUF(div, Divide, "/");
     DefBinaryOpSU(mod, Modulo, "mod");
     DefBinaryOpSU(shiftRight, ShiftRight, ">>");

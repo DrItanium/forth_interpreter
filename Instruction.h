@@ -597,16 +597,16 @@ namespace Instruction {
     constexpr HalfAddress setImmediate16_Higher(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Higher, dest, value); }
     constexpr HalfAddress setImmediate16_Highest(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Highest, dest, value); }
     constexpr HalfAddress setImmediate64_Lowest(TargetRegister dest, Address value) noexcept { 
-        return setImmediate16_Lowest(dest, decodeBits<Address, QuarterAddress, quarterMask<Address>, 0>(value));
+        return setImmediate16_Lowest(dest, getLowestQuarter(value));
     }
     constexpr HalfAddress setImmediate64_Lower(TargetRegister dest, Address value) noexcept { 
-        return setImmediate16_Lower(dest, decodeBits<Address, QuarterAddress, quarterMask<Address> << 16, 16>(value)); 
+        return setImmediate16_Lower(dest, getLowerQuarter(value));
     }
     constexpr HalfAddress setImmediate64_Higher(TargetRegister dest, Address value) noexcept { 
-        return setImmediate16_Higher(dest, decodeBits<Address, QuarterAddress, higherQuarterMask<Address>, 32>(value)); 
+        return setImmediate16_Higher(dest, getHigherQuarter(value));
     }
     constexpr HalfAddress setImmediate64_Highest(TargetRegister dest, Address value) noexcept { 
-        return setImmediate16_Highest(dest, decodeBits<Address, QuarterAddress, highestQuarterMask<Address>, 48>(value)); 
+        return setImmediate16_Highest(dest, getHighestQuarter(value));
     }
 
     template<Address mask, Address shift>

@@ -62,7 +62,7 @@ void arithmeticOperators(forth::Machine& machine) {
     DefBinaryOpSUF(cmpgt, GreaterThan, ">");
     DefBinaryOpSUF(cmplt, LessThan, "<");
     DefBinaryOpSUFB(cmpeq, Equals, "eq");
-    //DefBinaryOpSUF(pow, Pow, "pow");
+    DefBinaryOpSUF(pow, Pow, "pow");
     //DefBinaryOpSUB(andOp, And, "and");
     //DefBinaryOpSUB(orOp, Or, "or");
     //DefBinaryOpSUB(xorOp, Xor, "xor");

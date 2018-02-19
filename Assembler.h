@@ -96,7 +96,6 @@ namespace Instruction {
     DefTypeDispatchCaseB(base) \
     EndDefTypeDispatchSingleByteOp(name, base)
 
-    DefTypeDispatchSingleByteOpSUF(pow, Pow);
     BeginDefTypeDispatchSingleByteOp(notOp, Not)
         DefTypeDispatchCaseU(Not)
         DefTypeDispatchCaseB(Not)
@@ -110,6 +109,25 @@ namespace Instruction {
     DefTypeDispatchSingleByteOpSUB(xorOp, Xor);
 	constexpr bool argumentsImplyCompactedForm(TargetRegister dest, TargetRegister src0, TargetRegister src1 = TargetRegister::B) noexcept {
 		return (dest == TargetRegister::C && src0 == TargetRegister::A && src1 == TargetRegister::B);
+	}
+
+	constexpr QuarterAddress pow(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::Pow);
+		}
+		return encodeThreeByte(Operation::PowFull, dest, src0, src1);
+	}
+	constexpr QuarterAddress powf(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::FloatingPointPow);
+		}
+		return encodeThreeByte(Operation::FloatingPointPowFull, dest, src0, src1);
+	}
+	constexpr QuarterAddress powu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::UnsignedPow);
+		}
+		return encodeThreeByte(Operation::UnsignedPowFull, dest, src0, src1);
 	}
 
 	constexpr HalfAddress cmpeq(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
@@ -644,9 +662,6 @@ namespace Instruction {
 	FullImmediate(ShiftRight, shiftRight);
 	FullImmediate(ShiftLeft, shiftLeft);
 	FullImmediate(Equals, equals);
-	constexpr QuarterAddress pow(TargetRegister dest, TargetRegister src0, TargetRegister src1) noexcept {
-		return encodeFourByte(Operation::PowFull, dest, src0, src1, 0);
-	}
 #undef FullImmediate
 	constexpr Address loadAddressLowerHalf(TargetRegister reg, Address value) noexcept {
 		return Instruction::encodeOperation(

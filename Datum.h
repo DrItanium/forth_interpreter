@@ -178,6 +178,10 @@ namespace forth {
             void reset();
             void increment(Address amount = 1) { _value.address += amount; }
 			void decrement(Address amount = 1) { _value.address -= amount; }
+			template<Address mask, Address shift>
+			void encodeBits(Address value) noexcept {
+				_value.address = encodeBits<Address, Address, mask, shift>(_value.address, value);
+			}
         private:
             Datum _value;
     };

@@ -24,11 +24,11 @@ static constexpr auto pushB = Instruction::pushB();
 
 template<auto op>
 void addBinaryOperation(forth::Machine& machine, const std::string& name, bool compileTimeInvoke = false) {
-    machine.addMachineCodeWord<
-        popA,
-        popB,
-        op,
-        pushC>(name, compileTimeInvoke);
+	machine.addMachineCodeWord<
+		popA,
+		popB,
+		op,
+		pushC>(name, compileTimeInvoke);
 }
 
 template<auto op>
@@ -52,17 +52,17 @@ void arithmeticOperators(forth::Machine& machine) {
 #define DefBinaryOpSUB(fn, e, str) DefBinaryOpSU(fn, e, str); DefBinaryOpB(fn, e, str)
 #define DefBinaryOpSUF(fn, e, str) DefBinaryOpSU(fn, e, str); DefBinaryOpF(fn, e, str)
 #define DefBinaryOpSUFB(fn, e, str) DefBinaryOpSUF(fn, e, str); DefBinaryOpB(fn, e, str)
-    DefBinaryOpSUF(add, Add, "+");
-    DefBinaryOpSUF(sub, Subtract, "-");
-    DefBinaryOpSUF(mul, Multiply, "*");
-    DefBinaryOpSUF(div, Divide, "/");
-    DefBinaryOpSU(mod, Modulo, "mod");
-    DefBinaryOpSU(shl, ShiftRight, ">>");
-    DefBinaryOpSU(shr, ShiftLeft, "<<");
-    DefBinaryOpSUF(cmpgt, GreaterThan, ">");
-    DefBinaryOpSUF(cmplt, LessThan, "<");
-    DefBinaryOpSUFB(cmpeq, Equals, "eq");
-    DefBinaryOpSUF(pow, Pow, "pow");
+	DefBinaryOpSUF(add, Add, "+");
+	DefBinaryOpSUF(sub, Subtract, "-");
+	DefBinaryOpSUF(mul, Multiply, "*");
+	DefBinaryOpSUF(div, Divide, "/");
+	DefBinaryOpSU(mod, Modulo, "mod");
+	DefBinaryOpSU(shl, ShiftRight, ">>");
+	DefBinaryOpSU(shr, ShiftLeft, "<<");
+	DefBinaryOpSUF(cmpgt, GreaterThan, ">");
+	DefBinaryOpSUF(cmplt, LessThan, "<");
+	DefBinaryOpSUFB(cmpeq, Equals, "eq");
+	DefBinaryOpSUF(pow, Pow, "pow");
 	DefBinaryOpS(andl, And, "and");
 	DefBinaryOpU(and, And, "and");
 	DefBinaryOpB(and, And, "and");
@@ -103,31 +103,31 @@ void arithmeticOperators(forth::Machine& machine) {
 		Instruction::mulu(rb, ra, ra),
 		Instruction::mulu(),
 		pushC>("cubeu");
-    /// @todo: the not op needs to be the boolean kind
+	/// @todo: the not op needs to be the boolean kind
 	machine.addMachineCodeWord<
 		popA,
 		popB,
 		(Instruction::cmpeq()),  // C = top == equals 
 		Instruction::notb(rc, rc), 
 		pushC>("neq");
-    machine.addMachineCodeWord<
-        popA, 
-        popB, 
-        Instruction::cmpeqf(),
-        Instruction::notb(rc, rc),
-        pushC>("neqf");
-    machine.addMachineCodeWord<
-        popA, 
-        popB, 
-        Instruction::cmpequ(),
-        Instruction::notb(rc, rc),
-        pushC>("nequ");
-    machine.addMachineCodeWord<
-        popA, 
-        popB, 
-        Instruction::cmpeqb(),
-        Instruction::notb(rc, rc),
-        pushC>("neqb");
+	machine.addMachineCodeWord<
+		popA, 
+		popB, 
+		Instruction::cmpeqf(),
+		Instruction::notb(rc, rc),
+		pushC>("neqf");
+	machine.addMachineCodeWord<
+		popA, 
+		popB, 
+		Instruction::cmpequ(),
+		Instruction::notb(rc, rc),
+		pushC>("nequ");
+	machine.addMachineCodeWord<
+		popA, 
+		popB, 
+		Instruction::cmpeqb(),
+		Instruction::notb(rc, rc),
+		pushC>("neqb");
 
 	machine.addMachineCodeWord<popA, Instruction::notl(), pushC>("not");
 	machine.addMachineCodeWord<popA, Instruction::notlu(), pushC>("notu");
@@ -234,37 +234,59 @@ void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<popA, Instruction::typevalf(ra)>(",f");
 	machine.addMachineCodeWord<popA, Instruction::typevalb(ra)>(",b");
 	machine.addMachineCodeWord<Instruction::swap(ra, rb)>("swap.ab");
-    machine.addMachineCodeWord<
-        Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-        Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-        Instruction::xorl(rc, ra, ra),
-        Instruction::store(rx, rc)>("quit");
+	machine.addMachineCodeWord<
+		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+		Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+		Instruction::xorl(rc, ra, ra),
+		Instruction::store(rx, rc)>("quit");
 }
 void systemSetup(forth::Machine& machine) {
 	// initial system values that we need to use
 	machine.dispatchInstructionStream<
 		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
 		Instruction::preCompileOperation<
-				Instruction::zeroRegister(forth::TargetRegister::C),
-				Instruction::increment(forth::TargetRegister::C, 0)>(),
+			Instruction::zeroRegister(forth::TargetRegister::C),
+		Instruction::increment(forth::TargetRegister::C, 0)>(),
 		Instruction::preCompileOperation<
-				Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-				Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C),
-				Instruction::decrement(forth::TargetRegister::C, 0)>(),
+			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+		Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C),
+		Instruction::decrement(forth::TargetRegister::C, 0)>(),
 		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::isCompilingLocation),
 		Instruction::preCompileOperation<
-				Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-				Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C)>(),
+			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+		Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C)>(),
 		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::ignoreInputLocation),
 		Instruction::preCompileOperation<
-				Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-				Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C)>()
-					>();
+			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+		Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C)>(),
+		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation),
+		Instruction::preCompileOperation<
+			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation),
+		Instruction::zeroRegister(forth::TargetRegister::C)>(),
+		Instruction::preCompileOperation<
+			Instruction::setImmediate64_Lowest(forth::TargetRegister::C, Address(0xFF0000)),
+		Instruction::setImmediate64_Lower(forth::TargetRegister::C, Address(0xFF0000))>(),
+		Instruction::loadLowerImmediate48(forth::TargetRegister::S, forth::Machine::subroutineStackFullLocation),
+		Instruction::preCompileOperation<
+			Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C),
+		Instruction::setImmediate64_Highest(forth::TargetRegister::S, forth::Machine::subroutineStackFullLocation),
+		Instruction::move(forth::TargetRegister::X, forth::TargetRegister::S)>(),
+		Instruction::preCompileOperation<
+			Instruction::setImmediate64_Lowest(forth::TargetRegister::C, Address(0xFE0000)),
+		Instruction::setImmediate64_Lower(forth::TargetRegister::C, Address(0xFE0000))>(),
+		Instruction::loadLowerImmediate48(forth::TargetRegister::S, forth::Machine::parameterStackEmptyLocation),
+		Instruction::preCompileOperation<
+			Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C),
+		Instruction::setImmediate64_Highest(forth::TargetRegister::S, forth::Machine::parameterStackEmptyLocation),
+		Instruction::store(forth::TargetRegister::S, forth::TargetRegister::C)>(),
+		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
+		Instruction::preCompileOperation<
+			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
+		Instruction::setImmediate64_Lowest(forth::TargetRegister::C, Address(0xFD0000))>(),
+		Instruction::preCompileOperation<
+			Instruction::setImmediate64_Lower(forth::TargetRegister::C, Address(0xFD0000)),
+			Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C)>()>();
 
-	machine.store(forth::Machine::subroutineStackEmptyLocation, Address(0xFF0000));
-	machine.store(forth::Machine::subroutineStackFullLocation, Address(0xFE0000));
-	machine.store(forth::Machine::parameterStackEmptyLocation, Address(0xFE0000));
-	machine.store(forth::Machine::parameterStackFullLocation, Address(0xFD0000));
 	// TODO: set SP2 to the correct register!
 	machine.dispatchInstruction(Instruction::loadAddressLowerHalf(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation));
 	machine.dispatchInstruction(Instruction::loadAddressUpperHalf(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation));
@@ -274,14 +296,14 @@ void systemSetup(forth::Machine& machine) {
 	machine.dispatchInstruction(Instruction::encodeOperation(Instruction::load(forth::TargetRegister::SP, forth::TargetRegister::X)));
 }
 int main() {
-    forth::Machine machine (std::cout, std::cin);
-    machine.initializeBaseDictionary();
+	forth::Machine machine (std::cout, std::cin);
+	machine.initializeBaseDictionary();
 	microarchitectureWords(machine);
 	arithmeticOperators(machine);
 	stackOperators(machine);
 	registerDecls(machine);
 	systemSetup(machine);
-    machine.controlLoop();
+	machine.controlLoop();
 
-    return 0;
+	return 0;
 }

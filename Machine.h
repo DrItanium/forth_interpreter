@@ -76,6 +76,13 @@ namespace forth {
 			void endDefineWord();
 			void initializeBaseDictionary();
 			void dispatchInstruction(const Molecule& m);
+			template<Address first, Address ... rest>
+			void dispatchInstructionStream() noexcept {
+				dispatchInstruction(first);
+				if constexpr (sizeof...(rest) > 0) {
+					dispatchInstructionStream<rest...>();
+				}
+			}
 		private:
 			template<typename ... Rest>
 			void tryCompileWord(const std::string& word, Rest ... words) {
@@ -121,13 +128,6 @@ namespace forth {
 			void printRegisters();
             void printStack();
             void dispatchInstruction();
-			template<Address first, Address ... rest>
-			void dispatchInstructionStream() noexcept {
-				dispatchInstruction(first);
-				if constexpr (sizeof...(rest) > 0) {
-					dispatchInstructionStream<rest...>();
-				}
-			}
             void ifCondition();
             void elseCondition();
             void thenStatement();

@@ -205,33 +205,10 @@ void registerDecls(forth::Machine& machine) {
 	registerWord(C);
 	registerWord(S);
 	registerWord(X);
-	//registerWord(T);
-	//registerWord(TA);
-	//registerWord(TB);
-	//registerWord(TX);
 	registerWord(SP);
 	registerWord(SP2);
 }
 #undef registerWord
-#define discriminantWord(name) \
-	enumWord( "discriminant:" #name , forth::Discriminant:: name )
-void addDiscriminantWords(forth::Machine& machine) {
-	//discriminantWord(Number);
-	//discriminantWord(MemoryAddress);
-	//discriminantWord(FloatingPoint);
-	//discriminantWord(Boolean);
-	//discriminantWord(Word);
-	//discriminantWord(Molecule);
-	//discriminantWord(DictionaryEntry);
-	//machine.buildWord("t.signed", "discriminant:Number", "pop.t");
-	//machine.buildWord("t.fp", "discriminant:FloatingPoint", "pop.t");
-	//machine.buildWord("t.address", "discriminant:MemoryAddress", "pop.t");
-	//machine.buildWord("t.boolean", "discriminant:Boolean", "pop.t");
-	//machine.buildWord("t.word", "discriminant:Word", "pop.t");
-	//machine.buildWord("t.molecule", "discriminant:Molecule", "pop.t");
-	//machine.buildWord("t.dict-entry", "discriminant:DictionaryEntry", "pop.t");
-}
-#undef discriminantWord
 #undef enumWord
 void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<Instruction::stop()>("nop");
@@ -263,18 +240,27 @@ void microarchitectureWords(forth::Machine& machine) {
         Instruction::xorl(rc, ra, ra),
         Instruction::store(rx, rc)>("quit");
 }
-void compoundWords(forth::Machine& machine) {
-	//machine.buildWord("negate", "t.signed", "not");
-	//machine.buildWord("negateu", "t.address", "not");
-	//machine.buildWord("not", "t.boolean", "not");
-	//machine.buildWord("minusf", "t.fp", "minus");
-	//machine.buildWord("minus", "t.signed", "minus");
-}
 void systemSetup(forth::Machine& machine) {
 	// initial system values that we need to use
-	machine.store(forth::Machine::shouldKeepExecutingLocation, true);
-	machine.store(forth::Machine::isCompilingLocation, false);
-	machine.store(forth::Machine::ignoreInputLocation, false);
+	machine.dispatchInstructionStream<
+		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+		Instruction::preCompileOperation<
+				Instruction::zeroRegister(forth::TargetRegister::C),
+				Instruction::increment(forth::TargetRegister::C, 0)>(),
+		Instruction::preCompileOperation<
+				Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+				Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C),
+				Instruction::decrement(forth::TargetRegister::C, 0)>(),
+		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::isCompilingLocation),
+		Instruction::preCompileOperation<
+				Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+				Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C)>(),
+		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::ignoreInputLocation),
+		Instruction::preCompileOperation<
+				Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+				Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C)>()
+					>();
+
 	machine.store(forth::Machine::subroutineStackEmptyLocation, Address(0xFF0000));
 	machine.store(forth::Machine::subroutineStackFullLocation, Address(0xFE0000));
 	machine.store(forth::Machine::parameterStackEmptyLocation, Address(0xFE0000));
@@ -294,8 +280,6 @@ int main() {
 	arithmeticOperators(machine);
 	stackOperators(machine);
 	registerDecls(machine);
-	addDiscriminantWords(machine);
-	compoundWords(machine);
 	systemSetup(machine);
     machine.controlLoop();
 

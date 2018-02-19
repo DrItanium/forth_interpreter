@@ -842,10 +842,10 @@ namespace Instruction {
 } // end namespace Instruction
 } // end namespace forth
 static_assert(sizeof(unsigned long long int) >= sizeof(forth::Address), "Unsigned long long int is a 64-bit value or greater!");
-constexpr forth::QuarterAddressWrapper operator "" _qlowest(unsigned long long int addr) {  return forth::getLowestQuarter(forth::Address(addr)); }
-constexpr forth::QuarterAddressWrapper operator "" _qlower(unsigned long long int addr) {   return forth::getLowerQuarter(forth::Address(addr)); }
-constexpr forth::QuarterAddressWrapper operator "" _qhigher(unsigned long long int addr) {  return forth::getHigherQuarter(forth::Address(addr)); }
-constexpr forth::QuarterAddressWrapper operator "" _qhighest(unsigned long long int addr) { return forth::getHighestQuarter(forth::Address(addr)); }
+constexpr forth::QuarterAddressWrapper operator "" _addrqlowest(unsigned long long int addr) {  return forth::getLowestQuarter(forth::Address(addr)); }
+constexpr forth::QuarterAddressWrapper operator "" _addrqlower(unsigned long long int addr) {   return forth::getLowerQuarter(forth::Address(addr)); }
+constexpr forth::QuarterAddressWrapper operator "" _addrqhigher(unsigned long long int addr) {  return forth::getHigherQuarter(forth::Address(addr)); }
+constexpr forth::QuarterAddressWrapper operator "" _addrqhighest(unsigned long long int addr) { return forth::getHighestQuarter(forth::Address(addr)); }
 
 constexpr forth::HalfAddressWrapper operator "" _hupper(unsigned long long int addr) {  return forth::getUpperHalf(forth::Address(addr)); }
 constexpr forth::HalfAddressWrapper operator "" _hlower(unsigned long long int addr) { return forth::getLowerHalf(forth::Address(addr)); }

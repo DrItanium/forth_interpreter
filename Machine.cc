@@ -286,14 +286,12 @@ namespace forth {
 		//static_assert(loadFalseToStack == 0x1f00000216, "Load false to stack is incorrect!");
         static constexpr auto pushC = Instruction::encodeOperation(Instruction::pushC());
         auto saveToStack = [this](Address value) {
-            microcodeStreamInvoke(
-                    Instruction::encodeOperation(
-                        Instruction::setImmediate64_Lowest(TargetRegister::C, value),
-                        Instruction::setImmediate64_Lower(TargetRegister::C, value)),
-                    Instruction::encodeOperation(
-                        Instruction::setImmediate64_Higher(TargetRegister::C, value),
-                        Instruction::setImmediate64_Highest(TargetRegister::C, value)),
-                    pushC);
+        //static constexpr auto loadLower48 = Instruction::loadLowerImmediate48(TargetRegister::X, shouldKeepExecutingLocation);
+		microcodeStreamInvoke(
+				Instruction::loadLowerImmediate48(TargetRegister::C, value),
+				Instruction::encodeOperation(
+					Instruction::setImmediate64_Highest(TargetRegister::C, value),
+					Instruction::pushC()));
         };
 		if (word.empty()) { 
 			return false; 

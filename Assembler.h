@@ -693,7 +693,7 @@ namespace Instruction {
 				default:
 					return encodeOperation<offset, Args...>(curr, std::move(rest)...);
 			}
-		} else if constexpr (std::is_same<T, QuarterAddress>::value) {
+		} else if constexpr (std::is_same<T, QuarterAddress>::value || std::is_same<T, QuarterAddressWrapper>::value) {
 			switch (getInstructionWidth(first)) {
 				case 1:
 					return encodeOperation<offset + 1, Args...>(encoded, std::move(rest)...);
@@ -702,15 +702,15 @@ namespace Instruction {
 				default:
 					return encodeOperation<offset, Args...>(curr, std::move(rest)...);
 			} 
-		} else if constexpr (std::is_same<T, QuarterAddressWrapper>::value) {
-			switch (getInstructionWidth(first)) {
-				case 1:
-					return encodeOperation<offset + 1, Args...>(encoded, std::move(rest)...);
-				case 2:
-					return encodeOperation<offset + 2, Args...>(encoded, std::move(rest)...);
-				default:
-					return encodeOperation<offset, Args...>(curr, std::move(rest)...);
-			}
+		//} else if constexpr (std::is_same<T, QuarterAddressWrapper>::value) {
+		//	switch (getInstructionWidth(first)) {
+		//		case 1:
+		//			return encodeOperation<offset + 1, Args...>(encoded, std::move(rest)...);
+		//		case 2:
+		//			return encodeOperation<offset + 2, Args...>(encoded, std::move(rest)...);
+		//		default:
+		//			return encodeOperation<offset, Args...>(curr, std::move(rest)...);
+		//	}
 		} else {
 			static_assert(sizeof(T) == 1, "Should only get bytes through here!");
         	return encodeOperation<offset + sizeof(T), Args...>(encoded, std::move(rest)...);

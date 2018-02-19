@@ -154,7 +154,18 @@ namespace forth {
 			}
 		private:
 			QuarterAddress _value;
+	};
 
+	class HalfAddressWrapper
+	{
+		public:
+			constexpr HalfAddressWrapper(unsigned long long int addr) : _value(addr & 0xFFFF'FFFF) { }
+			constexpr HalfAddressWrapper(HalfAddress addr) : _value(addr) { }
+			constexpr HalfAddress get() const noexcept {
+				return _value;
+			}
+		private:
+			HalfAddress _value;
 	};
 }
 

@@ -710,6 +710,16 @@ namespace Instruction {
     constexpr Address compileOperation() noexcept {
         static_assert(offset < 8, "Too many fields provided!");
 		if constexpr (sizeof...(rest) > 0) {
+			/*
+			if constexpr (std::is_same<first, HalfAddress>:: value && (getOperation(first) == Operation::FloatingPointMultiplyFull)) {
+				constexpr auto w = getInstructionWidth(first);
+				static_assert(w == 1, "Instruction width for this operation is not 1!");
+				static_assert(w == 2, "Instruction width for this operation is not 2!");
+				static_assert(w == 3, "Instruction width for this operation is not 3!");
+				static_assert(w == 4, "Instruction width for this operation is not 4!");
+				static_assert((offset + w) == (offset + 3), "Something dumb is going on!");
+			}
+			*/
 			return compileOperation<offset + getInstructionWidth(first), compileSingleOperation<offset, curr, first>(), rest...>();
 		} else {
 			return compileSingleOperation<offset, curr, first>();
@@ -840,6 +850,8 @@ namespace Instruction {
     static_assert(Address(0xFDED0017) == setImmediate16_Lower(TargetRegister::A, imm16TestValue), "setImmediate16_Lower is broken!");
     static_assert(Address(0xFDED0018) == setImmediate16_Higher(TargetRegister::A, imm16TestValue), "setImmediate16_Higher is broken!");
     static_assert(Address(0xFDED0019) == setImmediate16_Highest(TargetRegister::A, imm16TestValue), "setImmediate16_Highest is broken!");
+	static_assert(getInstructionWidth(mulf(TargetRegister::A, TargetRegister::A, TargetRegister::A)) == 3, "FloatingPointMultiplyFull is not three bytes!");
+	static_assert(getInstructionWidth(mulf()) == 1, "FloatingPointMultiplyFull is not three bytes!");
 } // end namespace Instruction
 } // end namespace forth
 

@@ -319,6 +319,7 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
             return 1;
     }
 }
+static_assert(getInstructionWidth(Operation::FloatingPointMultiplyFull) == 3, "FloatingPointMultiplyFull is not 3 bytes wide!");
 #undef FVersion
 #undef UVersion
 #undef BVersion
@@ -347,23 +348,27 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
 	}
 	constexpr bool fullForm(Operation op) noexcept {
 		switch(op) {
-#define Full(x) case Operation :: x ## Full :
-	Full(Add)
-	Full(Subtract)
-	Full(Multiply)
-	Full(Divide)
-	Full(Modulo)
-	Full(And)
-	Full(Or)
-	Full(GreaterThan)
-	Full(LessThan)
-	Full(Xor)
-	Full(ShiftRight)
-	Full(ShiftLeft)
-	Full(Equals)
-	Full(Pow)
-	Full(Not)
-	Full(Minus)
+#define Full(x) Operation :: x ## Full 
+#define FullSUF(x) Full(x) : case Full(FloatingPoint ## x ) : case Full(Unsigned ## x)
+#define FullSU(x) Full(x) : case Full(Unsigned ## x)
+#define FullSUFB(x) Full(x) : case Full(FloatingPoint ## x ) : case Full(Unsigned ## x) : case Full(Boolean ## x)
+#define FullSUB(x) FullSU(x) : case Full(Boolean ## x)
+			case FullSUF(Add):
+			case FullSUF(Subtract):
+			case FullSUF(Multiply):
+			case FullSUF(Divide):
+			case FullSU(Modulo):
+			case FullSUB(And):
+			case FullSUB(Or):
+			case FullSUF(GreaterThan):
+			case FullSUF(LessThan):
+			case FullSUB(Xor):
+			case FullSU(ShiftRight):
+			case FullSU(ShiftLeft):
+			case FullSUFB(Equals):
+			case FullSUF(Pow):
+			case FullSUB(Not):
+			case FullSUF(Minus):
 				return true;
 			default:
 				return false;
@@ -438,6 +443,7 @@ constexpr Operation getOperation(byte i) noexcept {
 }
 static_assert(static_cast<byte>(-1) >= static_cast<byte>(Operation::Count), "Too many operations defined!");
 
+static_assert(getInstructionWidth(byte(0x001275)) == 3, "FloatingPointMultiplyFull is not three bytes!");
 
 
 } // end namespace forth

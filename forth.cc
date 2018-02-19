@@ -76,12 +76,33 @@ void arithmeticOperators(forth::Machine& machine) {
 	//threeArgumentVersion<Instruction::sub()>(machine, "3-");
 	//threeArgumentVersion<Instruction::mul()>(machine, "3*");
 	//threeArgumentVersion<Instruction::div()>(machine, "3/");
-	//machine.addMachineCodeWord<popA, Instruction::mul(rc, ra, ra), pushC>("square");
-	//machine.addMachineCodeWord<
-	//	popA, 
-	//	Instruction::mul(rb, ra, ra),
-	//	Instruction::mul(),
-	//	pushC>("cube");
+	machine.addMachineCodeWord<
+		popA, 
+		Instruction::mul(rc, ra, ra), 
+		pushC>("square");
+	machine.addMachineCodeWord<
+		popA, 
+		Instruction::mulf(rc, ra, ra), 
+		pushC>("squaref");
+	machine.addMachineCodeWord<
+		popA, 
+		Instruction::mulu(rc, ra, ra), 
+		pushC>("squareu");
+	machine.addMachineCodeWord<
+		popA, 
+		Instruction::mul(rb, ra, ra),
+		Instruction::mul(),
+		pushC>("cube");
+	machine.addMachineCodeWord<
+		popA, 
+		Instruction::mulf(rb, ra, ra),
+		Instruction::mulf(),
+		pushC>("cubef");
+	machine.addMachineCodeWord<
+		popA, 
+		Instruction::mulu(rb, ra, ra),
+		Instruction::mulu(),
+		pushC>("cubeu");
     /// @todo: the not op needs to be the boolean kind
 	machine.addMachineCodeWord<
 		popA,

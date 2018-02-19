@@ -574,8 +574,8 @@ endLoopTop:
 		}
 		// _compiling = false;
 		dispatchInstructionStream<
-			Instruction::loadAddressLowerHalf(TargetRegister::X, isCompilingLocation),
-			Instruction::loadAddressUpperHalf(TargetRegister::X, isCompilingLocation),
+			Instruction::loadLowerImmediate48(TargetRegister::X, isCompilingLocation),
+			Instruction::setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
 			storeFalse>();
 	}
 	void Machine::dispatchInstruction() {
@@ -611,19 +611,19 @@ endLoopTop:
 	}
 
 	bool Machine::stackEmpty(TargetRegister sp, Address location) {
-		dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, location));
-		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, location));
+		dispatchInstruction(Instruction::loadLowerImmediate48(TargetRegister::X, location));
 		dispatchInstruction(Instruction::encodeOperation(
-					Instruction::load(TargetRegister::S, TargetRegister::X),
-					Instruction::cmpeq(TargetRegister::C, TargetRegister::S, sp)));
+					Instruction::setImmediate64_Highest(TargetRegister::X, location),
+					Instruction::load(TargetRegister::S, TargetRegister::X)));
+		dispatchInstruction(Instruction::encodeOperation(Instruction::cmpeq(TargetRegister::C, TargetRegister::S, sp)));
 		return _core.getRegister(TargetRegister::C).getTruth();
 	}
 	bool Machine::stackFull(TargetRegister sp, Address location) {
-		dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, location));
-		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, location));
+		dispatchInstruction(Instruction::loadLowerImmediate48(TargetRegister::X, location));
 		dispatchInstruction(Instruction::encodeOperation(
-					Instruction::load(TargetRegister::S, TargetRegister::X),
-					Instruction::cmpeq(TargetRegister::C, TargetRegister::S, sp)));
+					Instruction::setImmediate64_Highest(TargetRegister::X, location),
+					Instruction::load(TargetRegister::S, TargetRegister::X)));
+		dispatchInstruction(Instruction::encodeOperation(Instruction::cmpeq(TargetRegister::C, TargetRegister::S, sp)));
 		return _core.getRegister(TargetRegister::C).getTruth();
 	}
 	void Machine::pushOntoStack(TargetRegister sp, Datum value, Address fullLocation) {

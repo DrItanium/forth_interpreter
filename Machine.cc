@@ -16,7 +16,7 @@
 
 namespace forth {
 	static constexpr Address storeFalse = Instruction::encodeOperation(
-			Instruction::xorOp(TargetRegister::C, TargetRegister::A, TargetRegister::A),
+			Instruction::zeroRegister(TargetRegister::C),
 			Instruction::store(TargetRegister::X, TargetRegister::C));
 	void Machine::seeWord(const DictionaryEntry* entry) {
 		if (entry->isFake()) {
@@ -277,12 +277,12 @@ namespace forth {
 
 	bool Machine::numberRoutine(const std::string& word) noexcept {
 		static constexpr auto loadTrueToStack = Instruction::preCompileOperation<
-			Instruction::xorOp(TargetRegister::C, TargetRegister::C, TargetRegister::C),
+			Instruction::zeroRegister(TargetRegister::C),
 			Instruction::setImmediate16_Lowest(TargetRegister::C, 1), 
 			Instruction::pushC()>();
 		//static_assert(loadTrueToStack == 0x1f00010216, "Load true to stack is incorrect!");
 		static constexpr auto loadFalseToStack = Instruction::preCompileOperation<
-			Instruction::xorOp(TargetRegister::C, TargetRegister::C, TargetRegister::C),
+			Instruction::zeroRegister(TargetRegister::C),
 			Instruction::setImmediate16_Lowest(TargetRegister::C, 0),
 			Instruction::pushC()>();
 		//static_assert(loadFalseToStack == 0x1f00000216, "Load false to stack is incorrect!");
@@ -595,7 +595,7 @@ endLoopTop:
             Instruction::loadLowerImmediate48(TargetRegister::X, isCompilingLocation),
             Instruction::encodeOperation(
                     Instruction::setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
-                    Instruction::xorOp(TargetRegister::C, TargetRegister::C, TargetRegister::C)),
+					Instruction::zeroRegister(TargetRegister::C)),
             Instruction::encodeOperation(
                     Instruction::setImmediate16_Lowest(TargetRegister::C, 1),
                     Instruction::store(TargetRegister::X, TargetRegister::C))>();
@@ -605,7 +605,7 @@ endLoopTop:
             Instruction::loadLowerImmediate48(TargetRegister::X, isCompilingLocation),
             Instruction::encodeOperation(
                     Instruction::setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
-                    Instruction::xorOp(TargetRegister::C, TargetRegister::C, TargetRegister::C)),
+					Instruction::zeroRegister(TargetRegister::C)),
             Instruction::encodeOperation(
                     Instruction::store(TargetRegister::X, TargetRegister::C))>();
 	}
@@ -615,7 +615,7 @@ endLoopTop:
 		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, location));
 		dispatchInstruction(Instruction::encodeOperation(
 					Instruction::load(TargetRegister::S, TargetRegister::X),
-					Instruction::equals(TargetRegister::C, TargetRegister::S, sp)));
+					Instruction::cmpeq(TargetRegister::C, TargetRegister::S, sp)));
 		return _core.getRegister(TargetRegister::C).getTruth();
 	}
 	bool Machine::stackFull(TargetRegister sp, Address location) {
@@ -623,7 +623,7 @@ endLoopTop:
 		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, location));
 		dispatchInstruction(Instruction::encodeOperation(
 					Instruction::load(TargetRegister::S, TargetRegister::X),
-					Instruction::equals(TargetRegister::C, TargetRegister::S, sp)));
+					Instruction::cmpeq(TargetRegister::C, TargetRegister::S, sp)));
 		return _core.getRegister(TargetRegister::C).getTruth();
 	}
 	void Machine::pushOntoStack(TargetRegister sp, Datum value, Address fullLocation) {
@@ -694,12 +694,12 @@ endLoopTop:
         static constexpr auto executionBodyContents = Instruction::preCompileOperation<
                 Instruction::load(TargetRegister::A, TargetRegister::B),
                 Instruction::increment(TargetRegister::B, 0), // advance by one, the core internally increments by one automatically
-                Instruction::equals(TargetRegister::C, TargetRegister::X, TargetRegister::B)>();
+				Instruction::cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B)>();
         static constexpr auto setupRegisters = Instruction::preCompileOperation<
                 Instruction::load(TargetRegister::X, TargetRegister::X),
-                Instruction::xorOp(TargetRegister::A, TargetRegister::A, TargetRegister::A),
+				Instruction::zeroRegister(TargetRegister::A),
                 Instruction::move(TargetRegister::B, TargetRegister::SP)>();
-		static constexpr auto equalityCheck = Instruction::preCompileOperation<Instruction::equals(TargetRegister::C, TargetRegister::X, TargetRegister::B)>();
+		static constexpr auto equalityCheck = Instruction::preCompileOperation<Instruction::cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B)>();
 
 
         dispatchInstruction(loadParameterStackAddressLower);

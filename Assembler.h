@@ -56,45 +56,9 @@ constexpr HalfAddress encodeFourByte(Operation first, TargetRegister dest, Targe
 }
 
 namespace Instruction {
-	constexpr byte stop() noexcept { return encodeSingleByteOperation(Operation::Stop); }
-#define DefTypeDispatchCase(x) case forth::Operation :: x :
-#define DefTypeDispatchCaseU(x) DefTypeDispatchCase( Unsigned ## x )
-#define DefTypeDispatchCaseF(x) DefTypeDispatchCase( FloatingPoint ## x )
-#define DefTypeDispatchCaseB(x) DefTypeDispatchCase( Boolean ## x )
-
-#define BeginDefTypeDispatchSingleByteOp(name, def) \
-    constexpr byte name ( Operation op  = forth::Operation::  def) noexcept { \
-        switch (op) {  \
-            case forth::Operation:: def :
-
-#define EndDefTypeDispatchSingleByteOp(name, def) \
-                return encodeSingleByteOperation(op); \
-            default: \
-                     return stop(); \
-        } \
-    }
-
-#define DefTypeDispatchSingleByteOpSU(name, base) \
-    BeginDefTypeDispatchSingleByteOp(name, base) \
-    DefTypeDispatchCaseU(base) \
-    EndDefTypeDispatchSingleByteOp(name, base)
-#define DefTypeDispatchSingleByteOpSUF(name, base) \
-    BeginDefTypeDispatchSingleByteOp(name, base) \
-    DefTypeDispatchCaseU(base) \
-    DefTypeDispatchCaseF(base) \
-    EndDefTypeDispatchSingleByteOp(name, base)
-#define DefTypeDispatchSingleByteOpSUFB(name, base) \
-    BeginDefTypeDispatchSingleByteOp(name, base) \
-    DefTypeDispatchCaseU(base) \
-    DefTypeDispatchCaseF(base) \
-    DefTypeDispatchCaseB(base) \
-    EndDefTypeDispatchSingleByteOp(name, base)
-
-#define DefTypeDispatchSingleByteOpSUB(name, base) \
-    BeginDefTypeDispatchSingleByteOp(name, base) \
-    DefTypeDispatchCaseU(base) \
-    DefTypeDispatchCaseB(base) \
-    EndDefTypeDispatchSingleByteOp(name, base)
+	constexpr byte stop() noexcept { 
+		return encodeSingleByteOperation(Operation::Stop); 
+	}
 
 	constexpr bool argumentsImplyCompactedForm(TargetRegister dest, TargetRegister src0, TargetRegister src1 = TargetRegister::B) noexcept {
 		return (dest == TargetRegister::C && src0 == TargetRegister::A && src1 == TargetRegister::B);
@@ -502,14 +466,30 @@ namespace Instruction {
         	return encodeTwoByte(Operation::PushRegister, encodeRegisterPair(sp, value));
 		}
     }
-    constexpr QuarterAddress load(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Load, dest, src); }
-    constexpr QuarterAddress store(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Store, dest, src); }
-    constexpr QuarterAddress move(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Move, dest, src); }
-    constexpr QuarterAddress swap(TargetRegister dest, TargetRegister src) noexcept { return encodeTwoByte(Operation::Swap, dest, src); }
-    constexpr HalfAddress setImmediate16_Lower(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Lower, dest, value);  }
-    constexpr HalfAddress setImmediate16_Lowest(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Lowest, dest, value); }
-    constexpr HalfAddress setImmediate16_Higher(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Higher, dest, value); }
-    constexpr HalfAddress setImmediate16_Highest(TargetRegister dest, QuarterAddress value) noexcept { return encodeFourByte(Operation::SetImmediate16_Highest, dest, value); }
+    constexpr QuarterAddress load(TargetRegister dest, TargetRegister src) noexcept { 
+		return encodeTwoByte(Operation::Load, dest, src); 
+	}
+    constexpr QuarterAddress store(TargetRegister dest, TargetRegister src) noexcept { 
+		return encodeTwoByte(Operation::Store, dest, src); 
+	}
+    constexpr QuarterAddress move(TargetRegister dest, TargetRegister src) noexcept { 
+		return encodeTwoByte(Operation::Move, dest, src); 
+	}
+    constexpr QuarterAddress swap(TargetRegister dest, TargetRegister src) noexcept { 
+		return encodeTwoByte(Operation::Swap, dest, src); 
+	}
+	constexpr HalfAddress setImmediate16_Lower(TargetRegister dest, QuarterAddress value) noexcept {
+		return encodeFourByte(Operation::SetImmediate16_Lower, dest, value);  
+	}
+	constexpr HalfAddress setImmediate16_Lowest(TargetRegister dest, QuarterAddress value) noexcept {
+		return encodeFourByte(Operation::SetImmediate16_Lowest, dest, value); 
+	}
+    constexpr HalfAddress setImmediate16_Higher(TargetRegister dest, QuarterAddress value) noexcept { 
+		return encodeFourByte(Operation::SetImmediate16_Higher, dest, value); 
+	}
+    constexpr HalfAddress setImmediate16_Highest(TargetRegister dest, QuarterAddress value) noexcept { 
+		return encodeFourByte(Operation::SetImmediate16_Highest, dest, value); 
+	}
     constexpr HalfAddress setImmediate64_Lowest(TargetRegister dest, Address value) noexcept { 
         return setImmediate16_Lowest(dest, getLowestQuarter(value));
     }
@@ -750,9 +730,6 @@ namespace Instruction {
             return operationLength(first);
         }
     }
-#define FullImmediate(x, name) \
-	constexpr HalfAddress name (TargetRegister dest, TargetRegister src0, TargetRegister src1) noexcept { return encodeFourByte(Operation:: x ## Full , dest, src0, src1, 0); } \
-	constexpr HalfAddress name (TargetRegister dest, TargetRegister src0, QuarterAddress offset) noexcept { return encodeFourByte(Operation:: x ## Immediate , dest, src0, offset); }
 	constexpr QuarterAddress notOp(TargetRegister dest, TargetRegister src) noexcept {
 		return encodeTwoByte(Operation::NotFull, dest, src);
 	}
@@ -760,15 +737,6 @@ namespace Instruction {
 		return encodeTwoByte(Operation::MinusFull, dest, src);
 	}
 
-	FullImmediate(And, andOp);
-	FullImmediate(Or, orOp);
-	FullImmediate(GreaterThan, greaterThan);
-	FullImmediate(LessThan, lessThan);
-	FullImmediate(Xor, xorOp);
-	FullImmediate(ShiftRight, shiftRight);
-	FullImmediate(ShiftLeft, shiftLeft);
-	FullImmediate(Equals, equals);
-#undef FullImmediate
 	constexpr Address loadAddressLowerHalf(TargetRegister reg, Address value) noexcept {
 		return Instruction::encodeOperation(
 				Instruction::setImmediate64_Lowest(reg, value),
@@ -836,6 +804,9 @@ namespace Instruction {
     constexpr QuarterAddress swapAB() noexcept {
         return swap(TargetRegister::B, TargetRegister::A);
     }
+	constexpr auto zeroRegister(TargetRegister reg) noexcept -> decltype(xorl(reg, reg, reg)) {
+		return xorl(reg, reg, reg);
+	}
     constexpr QuarterAddress imm16TestValue = 0xfded;
 	static_assert(popA() == popRegister(TargetRegister::A, TargetRegister::SP), "Two different code paths for popA should yield the same result!");
 	static_assert(getInstructionWidth(cmpeq()) == 1, "Compare eq should only be one byte if the args are defaulted");

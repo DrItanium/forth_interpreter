@@ -253,7 +253,7 @@ void microarchitectureWords(forth::Machine& machine) {
     machine.addMachineCodeWord<
         Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
         Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-        Instruction::xorOp(rc, ra, ra),
+        Instruction::xorl(rc, ra, ra),
         Instruction::store(rx, rc)>("quit");
 }
 void compoundWords(forth::Machine& machine) {

@@ -130,7 +130,11 @@ void arithmeticOperators(forth::Machine& machine) {
         pushC>("neqb");
 
 	machine.addMachineCodeWord<popA, Instruction::notl(), pushC>("not");
+	machine.addMachineCodeWord<popA, Instruction::notlu(), pushC>("notu");
+	machine.addMachineCodeWord<popA, Instruction::notb(), pushC>("notb");
 	machine.addMachineCodeWord<popA, Instruction::minusl(), pushC>("minus");
+	machine.addMachineCodeWord<popA, Instruction::minusf(), pushC>("minusf");
+	machine.addMachineCodeWord<popA, Instruction::minuslu(), pushC>("minusu");
 	machine.addMachineCodeWord<popA, Instruction::load(rc, ra), pushC>("load");
 	machine.addMachineCodeWord<popA, Instruction::load(ra, ra), Instruction::load(rc, ra), pushC>("iload");
 	machine.addMachineCodeWord<popA, popB, Instruction::store(ra, rb)>("store");
@@ -249,6 +253,9 @@ void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<moveAtoB>("a->b");
 	machine.addMachineCodeWord<popA, popB>("pop.ab");
 	machine.addMachineCodeWord<popA, Instruction::typeval(ra)>(",");
+	machine.addMachineCodeWord<popA, Instruction::typevalu(ra)>(",u");
+	machine.addMachineCodeWord<popA, Instruction::typevalf(ra)>(",f");
+	machine.addMachineCodeWord<popA, Instruction::typevalb(ra)>(",b");
 	machine.addMachineCodeWord<Instruction::swap(ra, rb)>("swap.ab");
     machine.addMachineCodeWord<
         Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
@@ -257,10 +264,6 @@ void microarchitectureWords(forth::Machine& machine) {
         Instruction::store(rx, rc)>("quit");
 }
 void compoundWords(forth::Machine& machine) {
-	//machine.buildWord(",u", "t.address", ",");
-	//machine.buildWord(",f", "t.fp", ",");
-	//machine.buildWord(",b", "t.boolean", ",");
-	//machine.buildWord(",", "t.signed", ",");
 	//machine.buildWord("negate", "t.signed", "not");
 	//machine.buildWord("negateu", "t.address", "not");
 	//machine.buildWord("not", "t.boolean", "not");

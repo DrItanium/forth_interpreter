@@ -594,6 +594,10 @@ namespace Instruction {
 		}
 	}
 	template<byte startOffset>
+	constexpr Address encodeOperation(QuarterAddressWrapper value, Address target = 0) noexcept {
+		return encodeOperation<startOffset>(value.get(), target);
+	}
+	template<byte startOffset>
 	constexpr Address encodeOperation(HalfAddress value, Address target = 0) noexcept {
 		if (auto width = getInstructionWidth(value); width == 1) {
 			return encodeOperation<startOffset>((byte)value, target);

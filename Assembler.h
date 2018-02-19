@@ -3,6 +3,7 @@
 #define ASSEMBLER_H__
 
 #include "Types.h"
+#include "Instruction.h"
 #include <type_traits>
 
 namespace forth {
@@ -481,14 +482,26 @@ namespace Instruction {
 	constexpr HalfAddress setImmediate16_Lower(TargetRegister dest, QuarterAddress value) noexcept {
 		return encodeFourByte(Operation::SetImmediate16_Lower, dest, value);  
 	}
+	constexpr HalfAddress setImmediate16_Lower(TargetRegister dest, QuarterAddressWrapper value) noexcept {
+		return encodeFourByte(Operation::SetImmediate16_Lower, dest, value.get());  
+	}
 	constexpr HalfAddress setImmediate16_Lowest(TargetRegister dest, QuarterAddress value) noexcept {
 		return encodeFourByte(Operation::SetImmediate16_Lowest, dest, value); 
+	}
+	constexpr HalfAddress setImmediate16_Lowest(TargetRegister dest, QuarterAddressWrapper value) noexcept {
+		return encodeFourByte(Operation::SetImmediate16_Lowest, dest, value.get()); 
 	}
     constexpr HalfAddress setImmediate16_Higher(TargetRegister dest, QuarterAddress value) noexcept { 
 		return encodeFourByte(Operation::SetImmediate16_Higher, dest, value); 
 	}
+	constexpr HalfAddress setImmediate16_Higher(TargetRegister dest, QuarterAddressWrapper value) noexcept {
+		return encodeFourByte(Operation::SetImmediate16_Lowest, dest, value.get()); 
+	}
     constexpr HalfAddress setImmediate16_Highest(TargetRegister dest, QuarterAddress value) noexcept { 
 		return encodeFourByte(Operation::SetImmediate16_Highest, dest, value); 
+	}
+    constexpr HalfAddress setImmediate16_Highest(TargetRegister dest, QuarterAddressWrapper value) noexcept { 
+		return encodeFourByte(Operation::SetImmediate16_Highest, dest, value.get()); 
 	}
     constexpr HalfAddress setImmediate64_Lowest(TargetRegister dest, Address value) noexcept { 
         return setImmediate16_Lowest(dest, getLowestQuarter(value));
@@ -598,26 +611,30 @@ namespace Instruction {
 
 	template<byte startOffset, Address target, auto value>
 	constexpr Address compileSingleOperation() noexcept {
-		if constexpr (constexpr auto width = getInstructionWidth(value); width == 1) {
-			return encodeOperation<startOffset>((byte)value, target);
-		} else if constexpr (width == 2) {
-			return encodeOperation<startOffset>(static_cast<QuarterAddress>(value), target);
-		} else if constexpr (width == 3) {
-			return encodeThreeByteAddress<startOffset>(value, target);
-		} else if constexpr (width == 4) {
-			return encodeFourByteAddress<startOffset>(value, target);
-        } else if constexpr (width == 5) {
-            return encodeFiveByteAddress<startOffset>(value, target);
-        } else if constexpr (width == 6) {
-            return encodeSixByteAddress<startOffset>(value, target);
-        } else if constexpr (width == 7) {
-            return encodeSevenByteAddress<startOffset>(value, target);
-        } else if constexpr (width == 8) {
-            return encodeEightByteAddress<startOffset>(value, target);
-        } else {
-            // skip
-            return target;
-        }
+		if constexpr (std::is_same<decltype(value), QuarterAddressWrapper>::value) {
+			return compileSingleOperation<startOffset, target, value.get()>();
+		} else {
+			if constexpr (constexpr auto width = getInstructionWidth(value); width == 1) {
+				return encodeOperation<startOffset>((byte)value, target);
+			} else if constexpr (width == 2) {
+				return encodeOperation<startOffset>(static_cast<QuarterAddress>(value), target);
+			} else if constexpr (width == 3) {
+				return encodeThreeByteAddress<startOffset>(value, target);
+			} else if constexpr (width == 4) {
+				return encodeFourByteAddress<startOffset>(value, target);
+			} else if constexpr (width == 5) {
+				return encodeFiveByteAddress<startOffset>(value, target);
+			} else if constexpr (width == 6) {
+				return encodeSixByteAddress<startOffset>(value, target);
+			} else if constexpr (width == 7) {
+				return encodeSevenByteAddress<startOffset>(value, target);
+			} else if constexpr (width == 8) {
+				return encodeEightByteAddress<startOffset>(value, target);
+			} else {
+				// skip
+				return target;
+			}
+		}
 	}
 
     template<byte startOffset>
@@ -690,16 +707,6 @@ namespace Instruction {
     constexpr Address compileOperation() noexcept {
         static_assert(offset < 8, "Too many fields provided!");
 		if constexpr (sizeof...(rest) > 0) {
-			/*
-			if constexpr (std::is_same<first, HalfAddress>:: value && (getOperation(first) == Operation::FloatingPointMultiplyFull)) {
-				constexpr auto w = getInstructionWidth(first);
-				static_assert(w == 1, "Instruction width for this operation is not 1!");
-				static_assert(w == 2, "Instruction width for this operation is not 2!");
-				static_assert(w == 3, "Instruction width for this operation is not 3!");
-				static_assert(w == 4, "Instruction width for this operation is not 4!");
-				static_assert((offset + w) == (offset + 3), "Something dumb is going on!");
-			}
-			*/
 			return compileOperation<offset + getInstructionWidth(first), compileSingleOperation<offset, curr, first>(), rest...>();
 		} else {
 			return compileSingleOperation<offset, curr, first>();
@@ -825,6 +832,10 @@ namespace Instruction {
 	static_assert(getInstructionWidth(mulf()) == 1, "FloatingPointMultiplyFull is not three bytes!");
 } // end namespace Instruction
 } // end namespace forth
-
+static_assert(sizeof(unsigned long long int) >= sizeof(forth::Address), "Unsigned long long int is a 64-bit value or greater!");
+constexpr forth::QuarterAddressWrapper operator "" _qlowest(unsigned long long int addr) {  return forth::getLowestQuarter(forth::Address(addr)); }
+constexpr forth::QuarterAddressWrapper operator "" _qlower(unsigned long long int addr) {   return forth::getLowerQuarter(forth::Address(addr)); }
+constexpr forth::QuarterAddressWrapper operator "" _qhigher(unsigned long long int addr) {  return forth::getHigherQuarter(forth::Address(addr)); }
+constexpr forth::QuarterAddressWrapper operator "" _qhighest(unsigned long long int addr) { return forth::getHighestQuarter(forth::Address(addr)); }
 
 #endif

@@ -144,6 +144,18 @@ namespace forth {
 	constexpr T setLowerUpperHalves(HalfOf<T> lower, HalfOf<T> upper) noexcept {
 		return setUpperHalf<T>(setLowerHalf<T>(T(0), lower), upper);
 	}
+	class QuarterAddressWrapper
+	{
+		public:
+			constexpr QuarterAddressWrapper(unsigned long long int addr) : _value(addr & 0xFFFF) { }
+			constexpr QuarterAddressWrapper(QuarterAddress addr) : _value(addr) { }
+			constexpr QuarterAddress get() const noexcept {
+				return _value;
+			}
+		private:
+			QuarterAddress _value;
+
+	};
 }
 
 #endif // end TYPES_H__

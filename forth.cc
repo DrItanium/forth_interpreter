@@ -264,16 +264,16 @@ void systemSetup(forth::Machine& machine) {
 			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation),
 		Instruction::zeroRegister(forth::TargetRegister::C)>(),
 		Instruction::preCompileOperation<
-			Instruction::setImmediate64_Lowest(forth::TargetRegister::C, Address(0xFF0000)),
-		Instruction::setImmediate64_Lower(forth::TargetRegister::C, Address(0xFF0000))>(),
+			Instruction::setImmediate16_Lowest(forth::TargetRegister::C, 0xFF0000_qlowest),
+		Instruction::setImmediate16_Lower(forth::TargetRegister::C, 0xFF0000_qlower)>(),
 		Instruction::loadLowerImmediate48(forth::TargetRegister::S, forth::Machine::subroutineStackFullLocation),
 		Instruction::preCompileOperation<
 			Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C),
 		Instruction::setImmediate64_Highest(forth::TargetRegister::S, forth::Machine::subroutineStackFullLocation),
 		Instruction::move(forth::TargetRegister::X, forth::TargetRegister::S)>(),
 		Instruction::preCompileOperation<
-			Instruction::setImmediate64_Lowest(forth::TargetRegister::C, Address(0xFE0000)),
-		Instruction::setImmediate64_Lower(forth::TargetRegister::C, Address(0xFE0000))>(),
+			Instruction::setImmediate16_Lowest(forth::TargetRegister::C, 0xFE0000_qlowest),
+		Instruction::setImmediate16_Lower(forth::TargetRegister::C, 0xFE0000_qlower)>(),
 		Instruction::loadLowerImmediate48(forth::TargetRegister::S, forth::Machine::parameterStackEmptyLocation),
 		Instruction::preCompileOperation<
 			Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C),
@@ -282,9 +282,9 @@ void systemSetup(forth::Machine& machine) {
 		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
 		Instruction::preCompileOperation<
 			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
-		Instruction::setImmediate64_Lowest(forth::TargetRegister::C, Address(0xFD0000))>(),
+		Instruction::setImmediate16_Lowest(forth::TargetRegister::C, 0xFD0000_qlowest)>(),
 		Instruction::preCompileOperation<
-			Instruction::setImmediate64_Lower(forth::TargetRegister::C, Address(0xFD0000)),
+			Instruction::setImmediate16_Lower(forth::TargetRegister::C, 0xFD0000_qlower),
 		Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C)>(),
 		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation),
 		Instruction::preCompileOperation<

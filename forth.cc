@@ -63,9 +63,15 @@ void arithmeticOperators(forth::Machine& machine) {
     DefBinaryOpSUF(cmplt, LessThan, "<");
     DefBinaryOpSUFB(cmpeq, Equals, "eq");
     DefBinaryOpSUF(pow, Pow, "pow");
-    //DefBinaryOpSUB(andOp, And, "and");
-    //DefBinaryOpSUB(orOp, Or, "or");
-    //DefBinaryOpSUB(xorOp, Xor, "xor");
+	DefBinaryOpS(andl, And, "and");
+	DefBinaryOpU(and, And, "and");
+	DefBinaryOpB(and, And, "and");
+	DefBinaryOpS(orl, Or, "or");
+	DefBinaryOpU(or, Or, "or");
+	DefBinaryOpB(or, Or, "or");
+	DefBinaryOpS(xorl, Xor, "xor");
+	DefBinaryOpU(xor, Xor, "xor");
+	DefBinaryOpB(xor, Xor, "xor");
 	//threeArgumentVersion<Instruction::add()>(machine, "3+");
 	//threeArgumentVersion<Instruction::sub()>(machine, "3-");
 	//threeArgumentVersion<Instruction::mul()>(machine, "3*");

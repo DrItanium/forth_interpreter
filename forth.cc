@@ -9,10 +9,11 @@ using Address = forth::Address;
 using Operation = forth::Operation;
 namespace Instruction = forth::Instruction;
 
-static constexpr auto ra = forth::TargetRegister::A;
-static constexpr auto rb = forth::TargetRegister::B;
-static constexpr auto rc = forth::TargetRegister::C;
-static constexpr auto rx = forth::TargetRegister::X;
+static constexpr auto ra = 0_reg;
+static constexpr auto rb = 1_reg;
+static constexpr auto rc = 2_reg;
+static constexpr auto rs = 3_reg;
+static constexpr auto rx = 4_reg;
 static constexpr auto moveCtoA = Instruction::move(ra, rc);
 static constexpr auto moveAtoB = Instruction::move(rb, ra);
 static constexpr auto popA = Instruction::popA();
@@ -21,6 +22,10 @@ static constexpr auto popC = Instruction::popRegister(rc);
 static constexpr auto pushC = Instruction::pushC();
 static constexpr auto pushA = Instruction::pushA();
 static constexpr auto pushB = Instruction::pushB();
+
+static_assert(3_reg == forth::TargetRegister::S, "Bad assumption!");
+static_assert(4_reg == forth::TargetRegister::X, "Bad assumption!");
+static_assert(0_reg == forth::TargetRegister::A, "Bad assumption!");
 
 template<auto op>
 void addBinaryOperation(forth::Machine& machine, const std::string& name, bool compileTimeInvoke = false) {
@@ -235,65 +240,65 @@ void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<popA, Instruction::typevalb(ra)>(",b");
 	machine.addMachineCodeWord<Instruction::swap(ra, rb)>("swap.ab");
 	machine.addMachineCodeWord<
-		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-		Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+		Instruction::loadLowerImmediate48(rx, forth::Machine::shouldKeepExecutingLocation),
+		Instruction::setImmediate64_Highest(rx, forth::Machine::shouldKeepExecutingLocation),
 		Instruction::xorl(rc, ra, ra),
 		Instruction::store(rx, rc)>("quit");
 }
 void systemSetup(forth::Machine& machine) {
 	// initial system values that we need to use
 	machine.dispatchInstructionStream<
-		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+		Instruction::loadLowerImmediate48(rx, forth::Machine::shouldKeepExecutingLocation),
 		Instruction::preCompileOperation<
-			Instruction::zeroRegister(forth::TargetRegister::C),
-		Instruction::increment(forth::TargetRegister::C, 0)>(),
+			Instruction::zeroRegister(rc),
+		Instruction::increment(rc, 0)>(),
 		Instruction::preCompileOperation<
-			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-		Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C),
-		Instruction::decrement(forth::TargetRegister::C, 0)>(),
-		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::isCompilingLocation),
+			Instruction::setImmediate64_Highest(rx, forth::Machine::shouldKeepExecutingLocation),
+		Instruction::store(rx, rc),
+		Instruction::decrement(rc, 0)>(),
+		Instruction::loadLowerImmediate48(rx, forth::Machine::isCompilingLocation),
 		Instruction::preCompileOperation<
-			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-		Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C)>(),
-		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::ignoreInputLocation),
+			Instruction::setImmediate64_Highest(rx, forth::Machine::shouldKeepExecutingLocation),
+		Instruction::store(rx, rc)>(),
+		Instruction::loadLowerImmediate48(rx, forth::Machine::ignoreInputLocation),
 		Instruction::preCompileOperation<
-			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-		Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C)>(),
-		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation),
+			Instruction::setImmediate64_Highest(rx, forth::Machine::shouldKeepExecutingLocation),
+		Instruction::store(rx, rc)>(),
+		Instruction::loadLowerImmediate48(rx, forth::Machine::subroutineStackEmptyLocation),
 		Instruction::preCompileOperation<
-			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation),
-		Instruction::zeroRegister(forth::TargetRegister::C)>(),
+			Instruction::setImmediate64_Highest(rx, forth::Machine::subroutineStackEmptyLocation),
+		Instruction::zeroRegister(rc)>(),
 		Instruction::preCompileOperation<
-			Instruction::setImmediate16_Lowest(forth::TargetRegister::C, 0xFF0000_addrqlowest),
-		Instruction::setImmediate16_Lower(forth::TargetRegister::C, 0xFF0000_addrqlower)>(),
+			Instruction::setImmediate16_Lowest(rc, 0xFF0000_addrqlowest),
+		Instruction::setImmediate16_Lower(rc, 0xFF0000_addrqlower)>(),
 		Instruction::loadLowerImmediate48(forth::TargetRegister::S, forth::Machine::subroutineStackFullLocation),
 		Instruction::preCompileOperation<
-			Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C),
+			Instruction::store(rx, rc),
 		Instruction::setImmediate64_Highest(forth::TargetRegister::S, forth::Machine::subroutineStackFullLocation),
-		Instruction::move(forth::TargetRegister::X, forth::TargetRegister::S)>(),
+		Instruction::move(rx, forth::TargetRegister::S)>(),
 		Instruction::preCompileOperation<
-			Instruction::setImmediate16_Lowest(forth::TargetRegister::C, 0xFE0000_addrqlowest),
-		Instruction::setImmediate16_Lower(forth::TargetRegister::C, 0xFE0000_addrqlower)>(),
+			Instruction::setImmediate16_Lowest(rc, 0xFE0000_addrqlowest),
+		Instruction::setImmediate16_Lower(rc, 0xFE0000_addrqlower)>(),
 		Instruction::loadLowerImmediate48(forth::TargetRegister::S, forth::Machine::parameterStackEmptyLocation),
 		Instruction::preCompileOperation<
-			Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C),
+			Instruction::store(rx, rc),
 		Instruction::setImmediate64_Highest(forth::TargetRegister::S, forth::Machine::parameterStackEmptyLocation),
-		Instruction::store(forth::TargetRegister::S, forth::TargetRegister::C)>(),
-		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
+		Instruction::store(forth::TargetRegister::S, rc)>(),
+		Instruction::loadLowerImmediate48(rx, forth::Machine::parameterStackEmptyLocation),
 		Instruction::preCompileOperation<
-			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
-		Instruction::setImmediate16_Lowest(forth::TargetRegister::C, 0xFD0000_addrqlowest)>(),
+			Instruction::setImmediate64_Highest(rx, forth::Machine::parameterStackEmptyLocation),
+		Instruction::setImmediate16_Lowest(rc, 0xFD0000_addrqlowest)>(),
 		Instruction::preCompileOperation<
-			Instruction::setImmediate16_Lower(forth::TargetRegister::C, 0xFD0000_addrqlower),
-		Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C)>(),
-		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation),
+			Instruction::setImmediate16_Lower(rc, 0xFD0000_addrqlower),
+		Instruction::store(rx, rc)>(),
+		Instruction::loadLowerImmediate48(rx, forth::Machine::subroutineStackEmptyLocation),
 		Instruction::preCompileOperation<
-			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation),
-		Instruction::load(forth::TargetRegister::SP2, forth::TargetRegister::X)>(),
-		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
+			Instruction::setImmediate64_Highest(rx, forth::Machine::subroutineStackEmptyLocation),
+		Instruction::load(forth::TargetRegister::SP2, rx)>(),
+		Instruction::loadLowerImmediate48(rx, forth::Machine::parameterStackEmptyLocation),
 		Instruction::preCompileOperation<
-			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
-		Instruction::load(forth::TargetRegister::SP, forth::TargetRegister::X)>()
+			Instruction::setImmediate64_Highest(rx, forth::Machine::parameterStackEmptyLocation),
+		Instruction::load(forth::TargetRegister::SP, rx)>()
 			>();
 }
 

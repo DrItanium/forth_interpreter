@@ -4,6 +4,7 @@
 
 #include "Types.h"
 #include "Instruction.h"
+#include "Problem.h"
 #include <type_traits>
 
 namespace forth {
@@ -849,5 +850,13 @@ constexpr forth::QuarterAddressWrapper operator "" _addrqhighest(unsigned long l
 
 constexpr forth::HalfAddressWrapper operator "" _hupper(unsigned long long int addr) {  return forth::getUpperHalf(forth::Address(addr)); }
 constexpr forth::HalfAddressWrapper operator "" _hlower(unsigned long long int addr) { return forth::getLowerHalf(forth::Address(addr)); }
+
+constexpr forth::TargetRegister operator "" _reg(unsigned long long index) {
+	if (forth::legalValue(forth::TargetRegister(index))) {
+		return static_cast<forth::TargetRegister>(index);
+	} else {
+		throw forth::Problem("cast", "bad register literal!");
+	}
+}
 
 #endif

@@ -218,8 +218,7 @@ namespace forth {
             template<byte depth, Address current, auto first, auto ... rest>
             void buildAndInstallMoleculeToMemory(Address memory) {
                 // we could encode each operation into a separate word to start with
-				static constexpr byte newDepth = depth + getInstructionWidth(first);
-				if constexpr (newDepth == 8) {
+				if constexpr (constexpr byte newDepth = depth + getInstructionWidth(first) ; newDepth == 8) {
 					static constexpr auto newAddress = Instruction::encodeOperation<depth, decltype(first)>(current, first);
 					installMoleculeToMemory0(newAddress, memory);
 					if constexpr ( sizeof...(rest) > 0) {
@@ -244,7 +243,7 @@ namespace forth {
 					static constexpr auto newAddress = Instruction::encodeOperation<depth, decltype(first)>(current, first);
 					// we did not fill up the current molecule either
 					if constexpr (sizeof... (rest) > 0) {
-						buildAndInstallMoleculeToMemory<newDepth, newAddress, rest...>(memory + 1);
+						buildAndInstallMoleculeToMemory<newDepth, newAddress, rest...>(memory);
 					} else {
 						// nothing left to do so just stop here!
 						installMoleculeToMemory0(newAddress, memory);

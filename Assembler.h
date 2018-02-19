@@ -605,6 +605,10 @@ namespace Instruction {
 	constexpr Address encodeOperation() noexcept {
 		return compileOperation<0, 0u, first, rest...>();
 	}
+	template<auto first, auto ... rest>
+	constexpr Address preCompileOperation() noexcept {
+		return encodeOperation<first, rest...>();
+	}
     template<typename T, typename ... Args>
     constexpr Address encodeOperation(T first, Args&& ... rest) noexcept {
         return encodeOperation<0, T, Args...>(0, first, std::move(rest)...);

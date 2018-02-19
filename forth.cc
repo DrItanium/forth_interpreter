@@ -43,29 +43,29 @@ void threeArgumentVersion(forth::Machine& machine, const std::string& name, bool
 		pushC>(name);
 }
 void arithmeticOperators(forth::Machine& machine) {
-#define DefBinaryOp(fn, e, str) addBinaryOperation<Instruction:: fn( Operation:: e )>(machine, str )
-#define DefBinaryOpU(fn, e, str) DefBinaryOp(fn, Unsigned ## e , str "u")
-#define DefBinaryOpF(fn, e, str) DefBinaryOp(fn, FloatingPoint ## e , str "f")
-#define DefBinaryOpB(fn, e, str) DefBinaryOp(fn, Boolean ## e, str "b")
+#define DefBinaryOp(fn, e, str) addBinaryOperation<Instruction:: fn()>(machine, str )
+#define DefBinaryOpU(fn, e, str) DefBinaryOp(fn ## u, Unsigned ## e , str "u")
+#define DefBinaryOpF(fn, e, str) DefBinaryOp(fn ## f, FloatingPoint ## e , str "f")
+#define DefBinaryOpB(fn, e, str) DefBinaryOp(fn ## b, Boolean ## e, str "b")
 #define DefBinaryOpS(fn, e, str) DefBinaryOp(fn, e, str)
 #define DefBinaryOpSU(fn, e, str) DefBinaryOpS(fn, e, str); DefBinaryOpU(fn, e, str)
 #define DefBinaryOpSUB(fn, e, str) DefBinaryOpSU(fn, e, str); DefBinaryOpB(fn, e, str)
 #define DefBinaryOpSUF(fn, e, str) DefBinaryOpSU(fn, e, str); DefBinaryOpF(fn, e, str)
 #define DefBinaryOpSUFB(fn, e, str) DefBinaryOpSUF(fn, e, str); DefBinaryOpB(fn, e, str)
-    //DefBinaryOpSUF(add, Add, "+");
-    //DefBinaryOpSUF(sub, Subtract, "-");
-    //DefBinaryOpSUF(mul, Multiply, "*");
-    //DefBinaryOpSUF(div, Divide, "/");
-    //DefBinaryOpSU(mod, Modulo, "mod");
-    //DefBinaryOpSU(shiftRight, ShiftRight, ">>");
-    //DefBinaryOpSU(shiftLeft, ShiftLeft, "<<");
+    DefBinaryOpSUF(add, Add, "+");
+    DefBinaryOpSUF(sub, Subtract, "-");
+    DefBinaryOpSUF(mul, Multiply, "*");
+    DefBinaryOpSUF(div, Divide, "/");
+    DefBinaryOpSU(mod, Modulo, "mod");
+    DefBinaryOpSU(shl, ShiftRight, ">>");
+    DefBinaryOpSU(shr, ShiftLeft, "<<");
+    DefBinaryOpSUF(cmpgt, GreaterThan, ">");
+    DefBinaryOpSUF(cmplt, LessThan, "<");
+    DefBinaryOpSUFB(cmpeq, Equals, "eq");
+    //DefBinaryOpSUF(pow, Pow, "pow");
     //DefBinaryOpSUB(andOp, And, "and");
     //DefBinaryOpSUB(orOp, Or, "or");
     //DefBinaryOpSUB(xorOp, Xor, "xor");
-    //DefBinaryOpSUF(greaterThan, GreaterThan, ">");
-    //DefBinaryOpSUF(lessThan, LessThan, "<");
-    //DefBinaryOpSUFB(equals, Equals, "eq");
-    //DefBinaryOpSUF(pow, Pow, "pow");
 	//threeArgumentVersion<Instruction::add()>(machine, "3+");
 	//threeArgumentVersion<Instruction::sub()>(machine, "3-");
 	//threeArgumentVersion<Instruction::mul()>(machine, "3*");

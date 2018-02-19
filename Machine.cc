@@ -511,7 +511,7 @@ loopTop:
 		auto parent = popSubroutine();
 		addWord(_compileTarget);
 		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
-				static constexpr auto checkCondition = Instruction::preCompileOperation< Instruction::popA(), Instruction::notOp()>();
+				static constexpr auto checkCondition = Instruction::preCompileOperation< Instruction::popA(), Instruction::notl()>();
 				static_assert(0x061c == checkCondition, "conditional operation failed!");
                 // super gross but far more accurately models the underlying micro architecture
 endLoopTop:

@@ -81,29 +81,29 @@ void arithmeticOperators(forth::Machine& machine) {
 		popA,
 		popB,
 		(Instruction::cmpeq()),  // C = top == equals 
-		Instruction::notOp(rc, rc), 
+		Instruction::notb(rc, rc), 
 		pushC>("neq");
     machine.addMachineCodeWord<
         popA, 
         popB, 
         Instruction::cmpeqf(),
-        Instruction::notOp(rc, rc),
+        Instruction::notb(rc, rc),
         pushC>("neqf");
     machine.addMachineCodeWord<
         popA, 
         popB, 
         Instruction::cmpequ(),
-        Instruction::notOp(rc, rc),
+        Instruction::notb(rc, rc),
         pushC>("nequ");
     machine.addMachineCodeWord<
         popA, 
         popB, 
         Instruction::cmpeqb(),
-        Instruction::notOp(rc, rc),
+        Instruction::notb(rc, rc),
         pushC>("neqb");
 
-	machine.addMachineCodeWord<popA, Instruction::notOp(), pushC>("not");
-	machine.addMachineCodeWord<popA, Instruction::minus(), pushC>("minus");
+	machine.addMachineCodeWord<popA, Instruction::notl(), pushC>("not");
+	machine.addMachineCodeWord<popA, Instruction::minusl(), pushC>("minus");
 	machine.addMachineCodeWord<popA, Instruction::load(rc, ra), pushC>("load");
 	machine.addMachineCodeWord<popA, Instruction::load(ra, ra), Instruction::load(rc, ra), pushC>("iload");
 	machine.addMachineCodeWord<popA, popB, Instruction::store(ra, rb)>("store");

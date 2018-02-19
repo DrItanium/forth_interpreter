@@ -96,34 +96,61 @@ namespace Instruction {
     DefTypeDispatchCaseB(base) \
     EndDefTypeDispatchSingleByteOp(name, base)
 
-    BeginDefTypeDispatchSingleByteOp(notOp, Not)
-        DefTypeDispatchCaseU(Not)
-        DefTypeDispatchCaseB(Not)
-    EndDefTypeDispatchSingleByteOp(notOp, Not);
-    BeginDefTypeDispatchSingleByteOp(minus, Minus)
-        DefTypeDispatchCaseF(Minus)
-        DefTypeDispatchCaseU(Minus)
-    EndDefTypeDispatchSingleByteOp(minus, Minus);
     DefTypeDispatchSingleByteOpSUB(andOp, And);
     DefTypeDispatchSingleByteOpSUB(orOp, Or);
     DefTypeDispatchSingleByteOpSUB(xorOp, Xor);
 	constexpr bool argumentsImplyCompactedForm(TargetRegister dest, TargetRegister src0, TargetRegister src1 = TargetRegister::B) noexcept {
 		return (dest == TargetRegister::C && src0 == TargetRegister::A && src1 == TargetRegister::B);
 	}
-
-	constexpr QuarterAddress pow(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+	constexpr QuarterAddress minusl(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0)) {
+			return encodeSingleByteOperation(Operation::Minus);
+		} 
+		return encodeTwoByte(Operation::MinusFull, dest, src0);
+	}
+	constexpr QuarterAddress minuslu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0)) {
+			return encodeSingleByteOperation(Operation::UnsignedMinus);
+		} 
+		return encodeTwoByte(Operation::UnsignedMinusFull, dest, src0);
+	}
+	constexpr QuarterAddress minusf(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0)) {
+			return encodeSingleByteOperation(Operation::FloatingPointMinus);
+		} 
+		return encodeTwoByte(Operation::FloatingPointMinusFull, dest, src0);
+	}
+	constexpr QuarterAddress notl(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0)) {
+			return encodeSingleByteOperation(Operation::Not);
+		} 
+		return encodeTwoByte(Operation::NotFull, dest, src0);
+	}
+	constexpr QuarterAddress notlu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0)) {
+			return encodeSingleByteOperation(Operation::UnsignedNot);
+		} 
+		return encodeTwoByte(Operation::UnsignedNotFull, dest, src0);
+	}
+	constexpr QuarterAddress notb(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0)) {
+			return encodeSingleByteOperation(Operation::BooleanNot);
+		} 
+		return encodeTwoByte(Operation::BooleanNotFull, dest, src0);
+	}
+	constexpr HalfAddress pow(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
 		if (argumentsImplyCompactedForm(dest, src0, src1)) {
 			return encodeSingleByteOperation(Operation::Pow);
 		}
 		return encodeThreeByte(Operation::PowFull, dest, src0, src1);
 	}
-	constexpr QuarterAddress powf(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+	constexpr HalfAddress powf(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
 		if (argumentsImplyCompactedForm(dest, src0, src1)) {
 			return encodeSingleByteOperation(Operation::FloatingPointPow);
 		}
 		return encodeThreeByte(Operation::FloatingPointPowFull, dest, src0, src1);
 	}
-	constexpr QuarterAddress powu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+	constexpr HalfAddress powu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
 		if (argumentsImplyCompactedForm(dest, src0, src1)) {
 			return encodeSingleByteOperation(Operation::UnsignedPow);
 		}

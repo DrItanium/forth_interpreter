@@ -81,63 +81,21 @@ void arithmeticOperators(forth::Machine& machine) {
 	//threeArgumentVersion<Instruction::sub()>(machine, "3-");
 	//threeArgumentVersion<Instruction::mul()>(machine, "3*");
 	//threeArgumentVersion<Instruction::div()>(machine, "3/");
-	machine.addMachineCodeWord<
-		popA, 
-		Instruction::mul(rc, ra, ra), 
-		pushC>("square");
-	machine.addMachineCodeWord<
-		popA, 
-		Instruction::mulf(rc, ra, ra), 
-		pushC>("squaref");
-	machine.addMachineCodeWord<
-		popA, 
-		Instruction::mulu(rc, ra, ra), 
-		pushC>("squareu");
-	machine.addMachineCodeWord<
-		popA, 
-		Instruction::mul(rb, ra, ra),
-		Instruction::mul(),
-		pushC>("cube");
-	machine.addMachineCodeWord<
-		popA, 
-		Instruction::mulf(rb, ra, ra),
-		Instruction::mulf(),
-		pushC>("cubef");
-	machine.addMachineCodeWord<
-		popA, 
-		Instruction::mulu(rb, ra, ra),
-		Instruction::mulu(),
-		pushC>("cubeu");
-	/// @todo: the not op needs to be the boolean kind
-	machine.addMachineCodeWord<
-		popA,
-		popB,
-		(Instruction::cmpeq()),  // C = top == equals 
-		Instruction::notb(rc, rc), 
-		pushC>("neq");
-	machine.addMachineCodeWord<
-		popA, 
-		popB, 
-		Instruction::cmpeqf(),
-		Instruction::notb(rc, rc),
-		pushC>("neqf");
-	machine.addMachineCodeWord<
-		popA, 
-		popB, 
-		Instruction::cmpequ(),
-		Instruction::notb(rc, rc),
-		pushC>("nequ");
-	machine.addMachineCodeWord<
-		popA, 
-		popB, 
-		Instruction::cmpeqb(),
-		Instruction::notb(rc, rc),
-		pushC>("neqb");
+	machine.addMachineCodeWord< popA, Instruction::mul(rc, ra, ra), pushC>("square");
+	machine.addMachineCodeWord< popA, Instruction::mulf(rc, ra, ra), pushC>("squaref");
+	machine.addMachineCodeWord< popA, Instruction::mulu(rc, ra, ra), pushC>("squareu");
+	machine.addMachineCodeWord< popA, Instruction::mul(rb, ra, ra), Instruction::mul(), pushC>("cube");
+	machine.addMachineCodeWord< popA, Instruction::mulf(rb, ra, ra), Instruction::mulf(), pushC>("cubef");
+	machine.addMachineCodeWord< popA, Instruction::mulu(rb, ra, ra), Instruction::mulu(), pushC>("cubeu");
+	machine.addMachineCodeWord< popA, popB, (Instruction::cmpeq()),  Instruction::notb(rc, rc), pushC>("neq");
+	machine.addMachineCodeWord< popA, popB, Instruction::cmpeqf(), Instruction::notb(rc, rc), pushC>("neqf");
+	machine.addMachineCodeWord< popA, popB, Instruction::cmpequ(), Instruction::notb(rc, rc), pushC>("nequ");
+	machine.addMachineCodeWord< popA, popB, Instruction::cmpeqb(), Instruction::notb(rc, rc), pushC>("neqb");
 
-	machine.addMachineCodeWord<popA, Instruction::notl(), pushC>("not");
-	machine.addMachineCodeWord<popA, Instruction::notlu(), pushC>("notu");
-	machine.addMachineCodeWord<popA, Instruction::notb(), pushC>("notb");
-	machine.addMachineCodeWord<popA, Instruction::minusl(), pushC>("minus");
+	machine.addMachineCodeWord< popA, Instruction::notl(), pushC>("not");
+	machine.addMachineCodeWord< popA, Instruction::notlu(), pushC>("notu");
+	machine.addMachineCodeWord< popA, Instruction::notb(), pushC>("notb");
+	machine.addMachineCodeWord< popA, Instruction::minusl(), pushC>("minus");
 	machine.addMachineCodeWord<popA, Instruction::minusf(), pushC>("minusf");
 	machine.addMachineCodeWord<popA, Instruction::minuslu(), pushC>("minusu");
 	machine.addMachineCodeWord<popA, Instruction::load(rc, ra), pushC>("load");
@@ -222,7 +180,7 @@ void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<pushC>("push.c");
 	machine.addMachineCodeWord<pushA>("push.a");
 	machine.addMachineCodeWord<pushB>("push.b");
-	machine.addMachineCodeWord<Instruction::pushRegister(forth::TargetRegister::S)>("push.s");
+	machine.addMachineCodeWord<Instruction::pushRegister(rs)>("push.s");
 #define pushPopGeneric(postfix, target) \
 	machine.addMachineCodeWord<Instruction::pushRegister(forth::TargetRegister:: target)> ("push." #postfix); \
 	machine.addMachineCodeWord<Instruction::popRegister(forth::TargetRegister:: target)> ("pop." #postfix)
@@ -271,19 +229,19 @@ void systemSetup(forth::Machine& machine) {
 		Instruction::preCompileOperation<
 			Instruction::setImmediate16_Lowest(rc, 0xFF0000_addrqlowest),
 		Instruction::setImmediate16_Lower(rc, 0xFF0000_addrqlower)>(),
-		Instruction::loadLowerImmediate48(forth::TargetRegister::S, forth::Machine::subroutineStackFullLocation),
+		Instruction::loadLowerImmediate48(rs, forth::Machine::subroutineStackFullLocation),
 		Instruction::preCompileOperation<
 			Instruction::store(rx, rc),
-		Instruction::setImmediate64_Highest(forth::TargetRegister::S, forth::Machine::subroutineStackFullLocation),
-		Instruction::move(rx, forth::TargetRegister::S)>(),
+		Instruction::setImmediate64_Highest(rs, forth::Machine::subroutineStackFullLocation),
+		Instruction::move(rx, rs)>(),
 		Instruction::preCompileOperation<
 			Instruction::setImmediate16_Lowest(rc, 0xFE0000_addrqlowest),
 		Instruction::setImmediate16_Lower(rc, 0xFE0000_addrqlower)>(),
-		Instruction::loadLowerImmediate48(forth::TargetRegister::S, forth::Machine::parameterStackEmptyLocation),
+		Instruction::loadLowerImmediate48(rs, forth::Machine::parameterStackEmptyLocation),
 		Instruction::preCompileOperation<
 			Instruction::store(rx, rc),
-		Instruction::setImmediate64_Highest(forth::TargetRegister::S, forth::Machine::parameterStackEmptyLocation),
-		Instruction::store(forth::TargetRegister::S, rc)>(),
+		Instruction::setImmediate64_Highest(rs, forth::Machine::parameterStackEmptyLocation),
+		Instruction::store(rs, rc)>(),
 		Instruction::loadLowerImmediate48(rx, forth::Machine::parameterStackEmptyLocation),
 		Instruction::preCompileOperation<
 			Instruction::setImmediate64_Highest(rx, forth::Machine::parameterStackEmptyLocation),

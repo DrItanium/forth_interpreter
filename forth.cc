@@ -285,16 +285,26 @@ void systemSetup(forth::Machine& machine) {
 		Instruction::setImmediate64_Lowest(forth::TargetRegister::C, Address(0xFD0000))>(),
 		Instruction::preCompileOperation<
 			Instruction::setImmediate64_Lower(forth::TargetRegister::C, Address(0xFD0000)),
-			Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C)>()>();
+		Instruction::store(forth::TargetRegister::X, forth::TargetRegister::C)>(),
+		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation),
+		Instruction::preCompileOperation<
+			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation),
+		Instruction::load(forth::TargetRegister::SP2, forth::TargetRegister::X)>(),
+		Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
+		Instruction::preCompileOperation<
+			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
+		Instruction::load(forth::TargetRegister::SP, forth::TargetRegister::X)>()
+			>();
 
-	// TODO: set SP2 to the correct register!
-	machine.dispatchInstruction(Instruction::loadAddressLowerHalf(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation));
-	machine.dispatchInstruction(Instruction::loadAddressUpperHalf(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation));
-	machine.dispatchInstruction(Instruction::encodeOperation(Instruction::load(forth::TargetRegister::SP2, forth::TargetRegister::X)));
-	machine.dispatchInstruction(Instruction::loadAddressLowerHalf(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation));
-	machine.dispatchInstruction(Instruction::loadAddressUpperHalf(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation));
-	machine.dispatchInstruction(Instruction::encodeOperation(Instruction::load(forth::TargetRegister::SP, forth::TargetRegister::X)));
+
+	//machine.dispatchInstruction(Instruction::loadAddressLowerHalf(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation));
+	//machine.dispatchInstruction(Instruction::loadAddressUpperHalf(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation));
+	//machine.dispatchInstruction(Instruction::encodeOperation(Instruction::load(forth::TargetRegister::SP2, forth::TargetRegister::X)));
+	//machine.dispatchInstruction(Instruction::loadAddressLowerHalf(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation));
+	//machine.dispatchInstruction(Instruction::loadAddressUpperHalf(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation));
+	//machine.dispatchInstruction(Instruction::encodeOperation(Instruction::load(forth::TargetRegister::SP, forth::TargetRegister::X)));
 }
+
 int main() {
 	forth::Machine machine (std::cout, std::cin);
 	machine.initializeBaseDictionary();

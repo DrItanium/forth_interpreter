@@ -295,14 +295,6 @@ void systemSetup(forth::Machine& machine) {
 			Instruction::setImmediate64_Highest(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
 		Instruction::load(forth::TargetRegister::SP, forth::TargetRegister::X)>()
 			>();
-
-
-	//machine.dispatchInstruction(Instruction::loadAddressLowerHalf(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation));
-	//machine.dispatchInstruction(Instruction::loadAddressUpperHalf(forth::TargetRegister::X, forth::Machine::subroutineStackEmptyLocation));
-	//machine.dispatchInstruction(Instruction::encodeOperation(Instruction::load(forth::TargetRegister::SP2, forth::TargetRegister::X)));
-	//machine.dispatchInstruction(Instruction::loadAddressLowerHalf(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation));
-	//machine.dispatchInstruction(Instruction::loadAddressUpperHalf(forth::TargetRegister::X, forth::Machine::parameterStackEmptyLocation));
-	//machine.dispatchInstruction(Instruction::encodeOperation(Instruction::load(forth::TargetRegister::SP, forth::TargetRegister::X)));
 }
 
 int main() {

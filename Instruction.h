@@ -289,6 +289,9 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
 #undef FullImmediate
             return 4;
 		case Operation::TypeValue:
+		case Operation::FloatingPointTypeValue:
+		case Operation::BooleanTypeValue:
+		case Operation::UnsignedTypeValue:
         case Operation::PopRegister:
         case Operation::PushRegister:
         case Operation::Move:
@@ -416,13 +419,13 @@ constexpr byte getInstructionWidth(byte value) noexcept {
     return getInstructionWidth(static_cast<Operation>(value));
 }
 constexpr byte getInstructionWidth(QuarterAddress value) noexcept {
-    return getInstructionWidth(byte(value & 0xFF));
+    return getInstructionWidth(byte(value));
 }
 constexpr byte getInstructionWidth(HalfAddress value) noexcept {
-    return getInstructionWidth(byte(value & 0xFF));
+    return getInstructionWidth(byte(value));
 }
 constexpr byte getInstructionWidth(Address value) noexcept {
-    return getInstructionWidth(byte(value & 0xFF));
+    return getInstructionWidth(byte(value));
 }
 constexpr byte getDestinationRegister(byte field) noexcept { 
 	return getLowerHalf(field);

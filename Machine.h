@@ -166,7 +166,7 @@ namespace forth {
             template<auto first, auto ... rest>
             void moleculeSequence() {
                 if constexpr (Instruction::operationLength(first, std::move(rest)...) <= 8) {
-                    moleculeWord<Instruction::encodeOperation(first, std::move(rest)...)>();
+                    moleculeWord<Instruction::encodeOperation<first, rest...>()>();
                 } else {
                     makeMoleculeSequence<getInstructionWidth(first), Instruction::encodeOperation<0, decltype(first)>(0, first), rest...>();
                 }

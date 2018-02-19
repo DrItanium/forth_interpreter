@@ -84,7 +84,7 @@ namespace forth {
 	constexpr auto higherQuarterMask = quarterMask<T> << (quarterBitWidth<T> * 2);
 	template<typename T>
 	constexpr auto highestQuarterMask= quarterMask<T> << (quarterBitWidth<T> * 3);
-
+	static_assert(highestQuarterMask<Address> == 0xFFFF'0000'0000'0000, "Highest Quater Mask is wrong!");
 
 	template<typename T>
 	constexpr HalfOf<T> getUpperHalf(T input) noexcept {
@@ -105,7 +105,7 @@ namespace forth {
 
 	template<typename T>
 	constexpr QuarterOf<T> getHighestQuarter(T value) noexcept {
-		return decodeBits<T, QuarterOf<T>, higherQuarterMask<T>, quarterBitWidth<T> * 3>(value);
+		return decodeBits<T, QuarterOf<T>, highestQuarterMask<T>, quarterBitWidth<T> * 3>(value);
 	}
 
 	template<typename T>

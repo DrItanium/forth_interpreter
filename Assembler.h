@@ -96,8 +96,6 @@ namespace Instruction {
     DefTypeDispatchCaseB(base) \
     EndDefTypeDispatchSingleByteOp(name, base)
 
-    DefTypeDispatchSingleByteOpSUFB(equals, Equals);
-    DefTypeDispatchSingleByteOpSUFB(typeValue, TypeValue);
     DefTypeDispatchSingleByteOpSUF(pow, Pow);
     BeginDefTypeDispatchSingleByteOp(notOp, Not)
         DefTypeDispatchCaseU(Not)
@@ -110,8 +108,52 @@ namespace Instruction {
     DefTypeDispatchSingleByteOpSUB(andOp, And);
     DefTypeDispatchSingleByteOpSUB(orOp, Or);
     DefTypeDispatchSingleByteOpSUB(xorOp, Xor);
-	constexpr bool argumentsImplyCompactedForm(TargetRegister dest, TargetRegister src0, TargetRegister src1 = TargetRegister::B) {
+	constexpr bool argumentsImplyCompactedForm(TargetRegister dest, TargetRegister src0, TargetRegister src1 = TargetRegister::B) noexcept {
 		return (dest == TargetRegister::C && src0 == TargetRegister::A && src1 == TargetRegister::B);
+	}
+
+	constexpr HalfAddress cmpeq(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::Equals);
+		} 
+		return encodeThreeByte(Operation::EqualsFull, dest, src0, src1);
+	}
+	constexpr HalfAddress cmpeq(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
+		return encodeFourByte(Operation::EqualsImmediate, dest, src0, value);
+	}
+	constexpr HalfAddress cmpeqf(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::FloatingPointEquals);
+		} 
+		return encodeThreeByte(Operation::FloatingPointEqualsFull, dest, src0, src1);
+	}
+	constexpr HalfAddress cmpequ(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::UnsignedEquals);
+		} 
+		return encodeThreeByte(Operation::UnsignedEqualsFull, dest, src0, src1);
+	}
+	constexpr HalfAddress cmpeqiu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
+		return encodeFourByte(Operation::UnsignedEqualsImmediate, dest, src0, value);
+	}
+	constexpr HalfAddress cmpeqb(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
+		if (argumentsImplyCompactedForm(dest, src0, src1)) {
+			return encodeSingleByteOperation(Operation::BooleanEquals);
+		} 
+		return encodeThreeByte(Operation::BooleanEqualsFull, dest, src0, src1);
+	}
+
+	constexpr QuarterAddress typeval(TargetRegister dest = TargetRegister::A) noexcept {
+		return encodeTwoByte(Operation::TypeValue, byte(dest));
+	}
+	constexpr QuarterAddress typevalf(TargetRegister dest = TargetRegister::A) noexcept {
+		return encodeTwoByte(Operation::FloatingPointTypeValue, byte(dest));
+	}
+	constexpr QuarterAddress typevalb(TargetRegister dest = TargetRegister::A) noexcept {
+		return encodeTwoByte(Operation::BooleanTypeValue, byte(dest));
+	}
+	constexpr QuarterAddress typevalu(TargetRegister dest = TargetRegister::A) noexcept {
+		return encodeTwoByte(Operation::UnsignedTypeValue, byte(dest));
 	}
 
 	constexpr HalfAddress cmplt(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
@@ -366,6 +408,7 @@ namespace Instruction {
     constexpr HalfAddress setImmediate64_Highest(TargetRegister dest, Address value) noexcept { 
         return setImmediate16_Highest(dest, getHighestQuarter(value));
     }
+	static_assert(0xFFFF0419 == setImmediate64_Highest(TargetRegister::X, 0xFFFF'FFFF'FFFF'0001), "Encoding is wrong!");
 
     template<Address mask, Address shift>
     constexpr Address encodeByte(byte value, Address target = 0) noexcept {
@@ -421,8 +464,12 @@ namespace Instruction {
     }
     template<byte startOffset>
     constexpr Address encodeByteOperation(byte value, Address target = 0) noexcept {
-        static_assert(startOffset < 8, "Illegal byte offset start address!");
-        return encodeByte<Address(0xFF) << (startOffset * 8), startOffset * 8>(value, target);
+		if constexpr (startOffset < 8) {
+        	return encodeByte<Address(0xFF) << Address (startOffset * 8), startOffset * 8>(value, target);
+		} else {
+        	static_assert(startOffset < 8, "Illegal byte offset start address!");
+			return target;
+		}
     }
 	template<byte startOffset>
 	constexpr Address encodeOperation(byte value, Address target = 0) noexcept {
@@ -431,7 +478,7 @@ namespace Instruction {
 	template<byte startOffset>
 	constexpr Address encodeOperation(QuarterAddress value, Address target = 0) noexcept {
 		if (auto width = getInstructionWidth(value); width == 1) {
-			return encodeByteOperation<startOffset>(static_cast<byte>(value & 0x00'FF), target);
+			return encodeByteOperation<startOffset>(static_cast<byte>(value), target);
 		} else if (width == 2) {
 			return encodeQuarterOperation<startOffset>(value, target);
 		} else {
@@ -455,6 +502,30 @@ namespace Instruction {
 		}
 	}
 
+	template<byte startOffset, Address target, auto value>
+	constexpr Address compileSingleOperation() noexcept {
+		if constexpr (constexpr auto width = getInstructionWidth(value); width == 1) {
+			return encodeOperation<startOffset>((byte)value, target);
+		} else if constexpr (width == 2) {
+			return encodeOperation<startOffset>(static_cast<QuarterAddress>(value), target);
+		} else if constexpr (width == 3) {
+			return encodeThreeByteAddress<startOffset>(value, target);
+		} else if constexpr (width == 4) {
+			return encodeFourByteAddress<startOffset>(value, target);
+        } else if constexpr (width == 5) {
+            return encodeFiveByteAddress<startOffset>(value, target);
+        } else if constexpr (width == 6) {
+            return encodeSixByteAddress<startOffset>(value, target);
+        } else if constexpr (width == 7) {
+            return encodeSevenByteAddress<startOffset>(value, target);
+        } else if constexpr (width == 8) {
+            return encodeEightByteAddress<startOffset>(value, target);
+        } else {
+            // skip
+            return target;
+        }
+	}
+
     template<byte startOffset>
     constexpr Address encodeOperation(Address value, Address target = 0) noexcept {
         if (auto width = getInstructionWidth(value); width < 5) {
@@ -474,6 +545,7 @@ namespace Instruction {
     }
 
 
+
     template<byte offset, typename T>
     constexpr Address encodeOperation(Address curr, T first) noexcept {
         static_assert(offset < 8, "Too many fields provided!");
@@ -482,13 +554,14 @@ namespace Instruction {
     template<byte offset, typename T, typename ... Args>
     constexpr Address encodeOperation(Address curr, T first, Args&& ... rest) noexcept {
         static_assert(offset < 8, "Too many fields provided!");
-		auto encoded = encodeOperation<offset>(curr, first);
+		auto encoded = encodeOperation<offset>(first, curr);
 		if constexpr (std::is_same<T, HalfAddress>::value) {
 			switch (getInstructionWidth(first)) {
 				case 1: return encodeOperation<offset + 1, Args...>(encoded, std::move(rest)...);
 				case 2: return encodeOperation<offset + 2, Args...>(encoded, std::move(rest)...);
 				case 3: return encodeOperation<offset + 3, Args...>(encoded, std::move(rest)...);
-				case 4: return encodeOperation<offset + 4, Args...>(encoded, std::move(rest)...);
+				case 4: 
+						return encodeOperation<offset + 4, Args...>(encoded, std::move(rest)...);
 				default:
 					return encodeOperation<offset, Args...>(curr, std::move(rest)...);
 			}
@@ -505,7 +578,6 @@ namespace Instruction {
 				default:
 					return encodeOperation<offset, Args...>(curr, std::move(rest)...);
 			}
-
 		} else if constexpr (std::is_same<T, QuarterAddress>::value) {
 			switch (getInstructionWidth(first)) {
 				case 1:
@@ -514,14 +586,25 @@ namespace Instruction {
 					return encodeOperation<offset + 2, Args...>(encoded, std::move(rest)...);
 				default:
 					return encodeOperation<offset, Args...>(curr, std::move(rest)...);
-			}
+			} 
 		} else {
-        	return encodeOperation<offset + sizeof(T), Args...>( 
-        	        encodeOperation<offset, T>(curr, first),
-        	        std::move(rest)...);
+			static_assert(sizeof(T) == 1, "Should only get bytes through here!");
+        	return encodeOperation<offset + sizeof(T), Args...>(encoded, std::move(rest)...);
 		}
     }
-
+    template<byte offset, Address curr, auto first, auto ... rest>
+    constexpr Address compileOperation() noexcept {
+        static_assert(offset < 8, "Too many fields provided!");
+		if constexpr (sizeof...(rest) > 0) {
+			return compileOperation<offset + getInstructionWidth(first), compileSingleOperation<offset, curr, first>(), rest...>();
+		} else {
+			return compileSingleOperation<offset, curr, first>();
+		}
+    }
+	template<auto first, auto ... rest>
+	constexpr Address encodeOperation() noexcept {
+		return compileOperation<0, 0u, first, rest...>();
+	}
     template<typename T, typename ... Args>
     constexpr Address encodeOperation(T first, Args&& ... rest) noexcept {
         return encodeOperation<0, T, Args...>(0, first, std::move(rest)...);
@@ -580,7 +663,7 @@ namespace Instruction {
     constexpr HalfAddress jump(QuarterInteger offset) noexcept {
         return encodeFourByte(Operation::Jump,
                 decodeBits<QuarterInteger, byte, 0x00FF, 0>(offset),
-                decodeBits<QuarterInteger, byte, 0xFF00, 8>(offset),
+                decodeBits<QuarterInteger, byte, QuarterInteger(0xFF00), 8>(offset),
                 0);
     }
     constexpr QuarterAddress jumpIndirect(TargetRegister reg) noexcept {
@@ -588,9 +671,10 @@ namespace Instruction {
         return encodeTwoByte(Operation::JumpIndirect, reg, TargetRegister::A);
     }
     constexpr HalfAddress conditionalBranch(TargetRegister cond, QuarterInteger offset) noexcept {
-        return encodeFourByte(Operation::ConditionalBranch, byte(cond), 
+        return encodeFourByte(Operation::ConditionalBranch, 
+				byte(cond), 
                 decodeBits<QuarterInteger, byte, 0x00FF, 0>(offset),
-                decodeBits<QuarterInteger, byte, 0xFF00, 8>(offset));
+                decodeBits<QuarterInteger, byte, QuarterInteger(0xFF00), 8>(offset));
     }
     constexpr HalfAddress conditionalCallSubroutine(TargetRegister cond, QuarterInteger offset) noexcept {
         return encodeFourByte(Operation::ConditionalCallSubroutine, cond, offset);
@@ -628,6 +712,10 @@ namespace Instruction {
         return swap(TargetRegister::B, TargetRegister::A);
     }
     constexpr QuarterAddress imm16TestValue = 0xfded;
+	static_assert(popA() == popRegister(TargetRegister::A, TargetRegister::SP), "Two different code paths for popA should yield the same result!");
+	static_assert(getInstructionWidth(cmpeq()) == 1, "Compare eq should only be one byte if the args are defaulted");
+	static_assert(operationLength(popA(), popB(), cmpeq(), notOp(TargetRegister::C, TargetRegister::C), pushC()) < 8, "This instruction sequence is incorrectly encoded!");
+	static_assert(getInstructionWidth(cmpeq()) == 1, "Compare eq should only be one byte if the args are defaulted");
 	static_assert(byte(0xFD) == getUpperHalf(imm16TestValue), "getUpperHalf is not working correctly!");
 	static_assert(byte(0xED) == getLowerHalf(imm16TestValue), "getUpperHalf is not working correctly!");
 	static_assert(byte(0x00) == byte(TargetRegister::A), "register cast assumptions broken!");

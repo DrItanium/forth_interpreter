@@ -80,25 +80,25 @@ void arithmeticOperators(forth::Machine& machine) {
 	machine.addMachineCodeWord<
 		popA,
 		popB,
-		Instruction::equals(),  // C = top == equals 
+		(Instruction::cmpeq()),  // C = top == equals 
 		Instruction::notOp(rc, rc), 
 		pushC>("neq");
     machine.addMachineCodeWord<
         popA, 
         popB, 
-        Instruction::equals(Operation::FloatingPointEquals),
+        Instruction::cmpeqf(),
         Instruction::notOp(rc, rc),
         pushC>("neqf");
     machine.addMachineCodeWord<
         popA, 
         popB, 
-        Instruction::equals(Operation::UnsignedEquals),
+        Instruction::cmpequ(),
         Instruction::notOp(rc, rc),
         pushC>("nequ");
     machine.addMachineCodeWord<
         popA, 
         popB, 
-        Instruction::equals(Operation::BooleanEquals),
+        Instruction::cmpeqb(),
         Instruction::notOp(rc, rc),
         pushC>("neqb");
 
@@ -221,7 +221,7 @@ void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<moveCtoA>("c->a");
 	machine.addMachineCodeWord<moveAtoB>("a->b");
 	machine.addMachineCodeWord<popA, popB>("pop.ab");
-	machine.addMachineCodeWord<popA, Instruction::typeValue()>(",");
+	machine.addMachineCodeWord<popA, Instruction::typeval(ra)>(",");
 	machine.addMachineCodeWord<Instruction::swap(ra, rb)>("swap.ab");
     machine.addMachineCodeWord<
         Instruction::loadLowerImmediate48(forth::TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),

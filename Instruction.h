@@ -327,19 +327,20 @@ static_assert(getInstructionWidth(Operation::FloatingPointMultiplyFull) == 3, "F
 	constexpr bool immediateForm(Operation op) noexcept {
 		switch(op) {
 #define Immediate(x) case Operation :: x ## Immediate :
-	Immediate(Add)
-	Immediate(Subtract)
-	Immediate(Multiply)
-	Immediate(Divide)
-	Immediate(Modulo)
-	Immediate(And)
-	Immediate(Or)
-	Immediate(GreaterThan)
-	Immediate(LessThan)
-	Immediate(Xor)
-	Immediate(ShiftRight)
-	Immediate(ShiftLeft)
-	Immediate(Equals)
+#define ImmediateSU(x) Immediate(Unsigned ## x) Immediate(x) 
+	ImmediateSU(Add)
+	ImmediateSU(Subtract)
+	ImmediateSU(Multiply)
+	ImmediateSU(Divide)
+	ImmediateSU(Modulo)
+	ImmediateSU(And)
+	ImmediateSU(Or)
+	ImmediateSU(GreaterThan)
+	ImmediateSU(LessThan)
+	ImmediateSU(Xor)
+	ImmediateSU(ShiftRight)
+	ImmediateSU(ShiftLeft)
+	ImmediateSU(Equals)
 				return true;
 			default:
 				return false;

@@ -612,10 +612,15 @@ namespace Instruction {
 			return target;
 		}
 	}
+	template<byte startOffset>
+	constexpr Address encodeOperation(HalfAddressWrapper value, Address target = 0) noexcept {
+		return encodeOperation<startOffset>(value.get(), target);
+	}
 
 	template<byte startOffset, Address target, auto value>
 	constexpr Address compileSingleOperation() noexcept {
-		if constexpr (std::is_same<decltype(value), QuarterAddressWrapper>::value) {
+		if constexpr (std::is_same<decltype(value), QuarterAddressWrapper>::value ||
+				      std::is_same<decltype(value), HalfAddressWrapper>::value) {
 			return compileSingleOperation<startOffset, target, value.get()>();
 		} else {
 			if constexpr (constexpr auto width = getInstructionWidth(value); width == 1) {
@@ -670,7 +675,7 @@ namespace Instruction {
     constexpr Address encodeOperation(Address curr, T first, Args&& ... rest) noexcept {
         static_assert(offset < 8, "Too many fields provided!");
 		auto encoded = encodeOperation<offset>(first, curr);
-		if constexpr (std::is_same<T, HalfAddress>::value) {
+		if constexpr (std::is_same<T, HalfAddress>::value || std::is_same<T, HalfAddressWrapper>::value) {
 			switch (getInstructionWidth(first)) {
 				case 1: return encodeOperation<offset + 1, Args...>(encoded, std::move(rest)...);
 				case 2: return encodeOperation<offset + 2, Args...>(encoded, std::move(rest)...);
@@ -702,15 +707,6 @@ namespace Instruction {
 				default:
 					return encodeOperation<offset, Args...>(curr, std::move(rest)...);
 			} 
-		//} else if constexpr (std::is_same<T, QuarterAddressWrapper>::value) {
-		//	switch (getInstructionWidth(first)) {
-		//		case 1:
-		//			return encodeOperation<offset + 1, Args...>(encoded, std::move(rest)...);
-		//		case 2:
-		//			return encodeOperation<offset + 2, Args...>(encoded, std::move(rest)...);
-		//		default:
-		//			return encodeOperation<offset, Args...>(curr, std::move(rest)...);
-		//	}
 		} else {
 			static_assert(sizeof(T) == 1, "Should only get bytes through here!");
         	return encodeOperation<offset + sizeof(T), Args...>(encoded, std::move(rest)...);
@@ -850,5 +846,8 @@ constexpr forth::QuarterAddressWrapper operator "" _qlowest(unsigned long long i
 constexpr forth::QuarterAddressWrapper operator "" _qlower(unsigned long long int addr) {   return forth::getLowerQuarter(forth::Address(addr)); }
 constexpr forth::QuarterAddressWrapper operator "" _qhigher(unsigned long long int addr) {  return forth::getHigherQuarter(forth::Address(addr)); }
 constexpr forth::QuarterAddressWrapper operator "" _qhighest(unsigned long long int addr) { return forth::getHighestQuarter(forth::Address(addr)); }
+
+constexpr forth::HalfAddressWrapper operator "" _hupper(unsigned long long int addr) {  return forth::getUpperHalf(forth::Address(addr)); }
+constexpr forth::HalfAddressWrapper operator "" _hlower(unsigned long long int addr) { return forth::getLowerHalf(forth::Address(addr)); }
 
 #endif

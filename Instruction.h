@@ -436,6 +436,9 @@ constexpr byte getInstructionWidth(Address value) noexcept {
 constexpr byte getInstructionWidth(QuarterAddressWrapper w) noexcept {
 	return getInstructionWidth(w.get());
 }
+constexpr byte getInstructionWidth(HalfAddressWrapper w) noexcept {
+	return getInstructionWidth(w.get());
+}
 constexpr byte getDestinationRegister(byte field) noexcept { 
 	return getLowerHalf(field);
 }

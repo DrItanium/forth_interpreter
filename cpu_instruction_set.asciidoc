@@ -126,6 +126,8 @@ opcode):
 | xor | xor | xoru | no | xorb | C = A, B
 | not | not | notu | no | notb | C = A
 | minus | minus | minusu | minusf | no | C = A
+| greater than | gt | gtu | gtf | no | C = A, B
+| less than | lt | ltu | ltf | no | C = A, B
 
 |====================================
 

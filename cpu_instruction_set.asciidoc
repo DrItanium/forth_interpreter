@@ -41,3 +41,12 @@ dictionary pointer, it is meant to be a pointer to the front of the dictionary.
 The Index register is designed to be used when executing a forth word, it keeps
 track of where the cpu currently is in the word. The Temporary register is meant
 for macros and other purposes where the data can be safely volatile.
+
+
+Instruction Set
+===============
+
+The instruction set of the core is very simple with instruction widths ranging from 1 byte to 8 bytes. 
+The one byte instructions are compressed versions of standard operations where the 
+registers used are fixed to a specific kind. The wider instructions allow one to
+specify register combinations.

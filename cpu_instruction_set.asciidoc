@@ -65,13 +65,46 @@ another instruction.
 
 .Instruction formats
 |==========================
-| Form                    | byte 0 | byte 1                                      | byte 2                               | byte 3   | byte 4   | byte 5   | byte 6   | byte 7
-| Single Byte             | opcode | _free_                                      | _free_                               | _free_   | _free_   | _free_   | _free_   | _free_
-| Two Operand             | opcode | _destination_ [0->3] , _source_ [4->7]      | _free_                               | _free_   | _free_   | _free_   | _free_   | _free_
-| Three Operand           | opcode | _destination_ [0->3] , _source_ [4->7]      | _source1_ [0->3] , _always_ 0 [4->7] | _free_   | _free_   | _free_   | _free_   | _free_
-| Three Operand Immediate | opcode | _destination_ [0->3] , _source_ [4->7]    2+| _imm16_ [0->15] | _free_   | _free_   | _free_   | _free_
-| Increment / Decrement   | opcode | _destination_ [0->3] , _imm4_ (one added to this immediate by cpu) [4->7] | _free_   | _free_   | _free_   | _free_   | _free_ | _free_
-| Jump                    | opcode 2+| _imm16_ [0->15] | _free_   | _free_    | _free_   | _free_ | _free_
-| Conditional Jump        | opcode | _destination_ [0->3] , _always_ 0 [4->7] 2+| _imm16_ [0->15] | _free_    | _free_   | _free_ | _free_
-| Load Immediate 48       | opcode | _destination_ [0->3] , _always_ 0 [4->7]  6+| _imm48_ [0->47]
+| Form                    | width  | byte 0 | byte 1                                      | byte 2                               | byte 3   | byte 4   | byte 5   | byte 6   | byte 7
+| Single Byte             | 1      | opcode | _free_                                      | _free_                               | _free_   | _free_   | _free_   | _free_   | _free_
+| Two Operand             | 2      | opcode | _destination_ [0->3] , _source_ [4->7]      | _free_                               | _free_   | _free_   | _free_   | _free_   | _free_
+| Three Operand           | 3      | opcode | _destination_ [0->3] , _source_ [4->7]      | _source1_ [0->3] , _always_ 0 [4->7] | _free_   | _free_   | _free_   | _free_   | _free_
+| Three Operand Immediate | 4      | opcode | _destination_ [0->3] , _source_ [4->7]    2+| _imm16_ [0->15] | _free_   | _free_   | _free_   | _free_
+| Increment / Decrement   | 2      | opcode | _destination_ [0->3] , _imm4_ (one added to this immediate by cpu) [4->7] | _free_   | _free_   | _free_   | _free_   | _free_ | _free_
+| Jump                    | 3      | opcode 2+| _imm16_ [0->15] | _free_   | _free_    | _free_   | _free_ | _free_
+| Conditional Jump        | 4      | opcode | _destination_ [0->3] , _always_ 0 [4->7] 2+| _imm16_ [0->15] | _free_    | _free_   | _free_ | _free_
+| Set Immediate 16        | 4      | opcode | _destination_ [0->3] , _always_ 0 [4->7]    2+| _imm16_ [0->15] | _free_   | _free_   | _free_   | _free_
+| Load Immediate 48       | 8      | opcode | _destination_ [0->3] , _always_ 0 [4->7]  6+| _imm48_ [0->47]
 |==========================
+
+The single byte versions of the three operand and two operand instructions implicitly use
+registers A and B as the source registers (A is source0 and B is source1 (if used)) with register
+C being the destination. The push and pop specific registers implicitly use register SP.
+
+The one byte version of multiply (regardless of variant) would be used if the instruction looks like this:
+
+```
+multiplyf C = A, B (floating-point)
+multiply  C = A, B (signed)
+multiplyu C = A, B (unsigned)
+```
+
+The jump and conditional jump forms which are the call variety, use register SP2 implicitly.
+
+loading a full 64-bit immediate is a combination of:
+
+```
+loadimm48 ?dest = ?imm48
+setimm16_highest ?dest = ?imm16
+```
+
+This requires two molecules to complete with 4 bytes left over in the second molecule.
+
+Throughout the rest of this document, the double semi-colon will imply a stop if necessary. 
+Unfillable bytes in an instructions must be set to zero
+
+The typed operations assume that the programmer has put the right data into the registers.
+If doing a floating point add on two integers then the integers are interpreted as floating point numbers
+using the defined bit pattern.
+
+

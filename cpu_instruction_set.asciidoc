@@ -100,11 +100,34 @@ setimm16_highest ?dest = ?imm16
 
 This requires two molecules to complete with 4 bytes left over in the second molecule.
 
-Throughout the rest of this document, the double semi-colon will imply a stop if necessary. 
+Throughout the rest of this document, the double semi-colon will imply a stop.
 Unfillable bytes in an instructions must be set to zero
 
-The typed operations assume that the programmer has put the right data into the registers.
+IMPORTANT: The typed operations assume that the programmer has put the right data into the registers.
 If doing a floating point add on two integers then the integers are interpreted as floating point numbers
 using the defined bit pattern.
+
+Because the number of different operations is vast with this chip, the following table will layout the 
+opcodes by kind. The table will show what kind of operands are supported (thus implying a different 
+opcode):
+
+.Instruction concepts and opcode mnemonics for supported data types
+|====================================
+| Concept  | Signed | Unsigned | Floating Point | Boolean | Implied One Byte Arguments
+| add      | add    | addu     | addf           | no      | C = A, B
+| subtract | sub    | subu     | subf           | no      | C = A, B
+| multiply | mul    | mulu     | mulf           | no      | C = A, B
+| divide   | div    | divu     | divf           | no      | C = A, B
+| modulo   | mod    | modu     | no             | no      | C = A, B
+| shift left | shl  | shlu     | no | no | C = A, B
+| shift right | shr | shru | no | no | C = A, B
+| and | and | andu | no | andb | C = A, B
+| or | or | oru | no | orb | C = A, B
+| xor | xor | xoru | no | xorb | C = A, B
+| not | not | notu | no | notb | C = A
+| minus | minus | minusu | minusf | no | C = A
+
+|====================================
+
 
 

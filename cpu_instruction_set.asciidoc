@@ -1,0 +1,43 @@
+Forth CPU
+=========
+
+The CPU powering this forth implementation is a fully working chip. 
+It has been designed to act as the execution backend of this forth implementation.
+
+It has the following features:
+
+- Encoding space up to 16 registers (currently 10 registers are defined!)
+- Dual stack pointers, one for parameters and another for subroutine
+- 64-bit words
+- Instructions are variable length and must fit within a single word
+- 27-bit byte level program counter
+- 24-bit word level program counter
+- Has an extra 64 k of storage for cpu variables
+- Support for floating point, unsigned, signed, and boolean values from the same registers.
+- Compressed versions of standard instructions useful for implementing forth words in less space
+
+
+Registers
+=========
+
+Currently, 10 of the 16 total possible registers are defined:
+
+- A
+- B
+- C
+- S
+- X
+- SP
+- SP2
+- DP
+- Index
+- Temporary
+
+Registers A, B, and C are meant to be the general purpose registers used in carrying
+out forth operations. Register S is meant to be used for selection purposes.
+Register X is meant to be used for storing absolute addresses. Register SP is the
+parameter stack pointer. Register SP2 is the subroutine stack pointer. DP is the
+dictionary pointer, it is meant to be a pointer to the front of the dictionary.
+The Index register is designed to be used when executing a forth word, it keeps
+track of where the cpu currently is in the word. The Temporary register is meant
+for macros and other purposes where the data can be safely volatile.

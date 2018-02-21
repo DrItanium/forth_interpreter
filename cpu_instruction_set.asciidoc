@@ -65,16 +65,18 @@ another instruction.
 
 .Instruction formats
 |==========================
-| Form                    | width  | byte 0 | byte 1                                      | byte 2                               | byte 3   | byte 4   | byte 5   | byte 6   | byte 7
-| Single Byte             | 1      | opcode | _free_                                      | _free_                               | _free_   | _free_   | _free_   | _free_   | _free_
-| Two Operand             | 2      | opcode | _destination_ [0->3] , _source_ [4->7]      | _free_                               | _free_   | _free_   | _free_   | _free_   | _free_
-| Three Operand           | 3      | opcode | _destination_ [0->3] , _source_ [4->7]      | _source1_ [0->3] , _always_ 0 [4->7] | _free_   | _free_   | _free_   | _free_   | _free_
-| Three Operand Immediate | 4      | opcode | _destination_ [0->3] , _source_ [4->7]    2+| _imm16_ [0->15] | _free_   | _free_   | _free_   | _free_
-| Increment / Decrement   | 2      | opcode | _destination_ [0->3] , _imm4_ (one added to this immediate by cpu) [4->7] | _free_   | _free_   | _free_   | _free_   | _free_ | _free_
-| Jump                    | 3      | opcode 2+| _imm16_ [0->15] | _free_   | _free_    | _free_   | _free_ | _free_
-| Conditional Jump        | 4      | opcode | _destination_ [0->3] , _always_ 0 [4->7] 2+| _imm16_ [0->15] | _free_    | _free_   | _free_ | _free_
-| Set Immediate 16        | 4      | opcode | _destination_ [0->3] , _always_ 0 [4->7]    2+| _imm16_ [0->15] | _free_   | _free_   | _free_   | _free_
-| Load Immediate 48       | 8      | opcode | _destination_ [0->3] , _always_ 0 [4->7]  6+| _imm48_ [0->47]
+| Form                      | width  | byte 0 | byte 1                                      | byte 2                               | byte 3   | byte 4   | byte 5   | byte 6   | byte 7
+| Single Byte               | 1      | opcode | _free_                                      | _free_                               | _free_   | _free_   | _free_   | _free_   | _free_
+| Two Operand               | 2      | opcode | _destination_ [0->3] , _source_ [4->7]      | _free_                               | _free_   | _free_   | _free_   | _free_   | _free_
+| Three Operand             | 3      | opcode | _destination_ [0->3] , _source_ [4->7]      | _source1_ [0->3] , _always_ 0 [4->7] | _free_   | _free_   | _free_   | _free_   | _free_
+| Three Operand Immediate   | 4      | opcode | _destination_ [0->3] , _source_ [4->7]    2+| _imm16_ [0->15] | _free_   | _free_   | _free_   | _free_
+| Increment / Decrement     | 2      | opcode | _destination_ [0->3] , _imm4_ (one added to this immediate by cpu) [4->7] | _free_   | _free_   | _free_   | _free_   | _free_ | _free_
+| Jump                      | 3      | opcode 2+| _imm16_ [0->15] | _free_   | _free_    | _free_   | _free_ | _free_
+| Jump Indirect             | 2      | opcode | _destination_ [0->3] , _always_ 0 | _free_ | _free_   | _free_    | _free_   | _free_ | _free_
+| Conditional Jump          | 4      | opcode | _destination_ [0->3] , _always_ 0 [4->7] 2+| _imm16_ [0->15] | _free_    | _free_   | _free_ | _free_
+| Conditional Jump Indirect | 2      | opcode | _destination_ [0->3] , _source_ [4->7] | _free_ | _free_ | _free_    | _free_   | _free_ | _free_
+| Set Immediate 16          | 4      | opcode | _destination_ [0->3] , _always_ 0 [4->7]    2+| _imm16_ [0->15] | _free_   | _free_   | _free_   | _free_
+| Load Immediate 48         | 8      | opcode | _destination_ [0->3] , _always_ 0 [4->7]  6+| _imm48_ [0->47]
 |==========================
 
 The single byte versions of the three operand and two operand instructions implicitly use
@@ -114,23 +116,43 @@ opcode):
 .Instruction concepts and opcode mnemonics for supported data types
 |====================================
 | Concept     | Signed | Unsigned | Floating Point | Boolean | Untyped | Implied One Byte Arguments
-| stop        | none   | none     | none           | none    | stop    | none
-| add         | add    | addu     | addf           | none    | none    | C = A, B
-| subtract    | sub    | subu     | subf           | none    | none    | C = A, B
-| multiply    | mul    | mulu     | mulf           | none    | none    | C = A, B
-| divide      | div    | divu     | divf           | none    | none    | C = A, B
-| modulo      | mod    | modu     | none           | none    | none    | C = A, B
-| shift left  | shl    | shlu     | none           | none    | none    | C = A, B
-| shift right | shr    | shru     | none           | none    | none    | C = A, B
-| and | and | andu | none | andb | none | C = A, B
-| or | or | oru | none | orb | none | C = A, B
-| xor | xor | xoru | none | xorb | none | C = A, B
-| not | not | notu | none | notb | none | C = A
-| minus | minus | minusu | minusf | none | none | C = A
-| greater than | cmpgt | cmpgtu | cmpgtf | none | none | C = A, B
-| less than | cmplt | cmpltu | cmpltf | none | none | C = A, B
-| equals | cmpeq | cmpequ | cmpeqf | cmpeqb | none | C = A, B
-
+| stop        |    |      |            |     | stop    | 
+| add         | add    | addu     | addf           |     |     | C = A, B
+| subtract    | sub    | subu     | subf           |     |     | C = A, B
+| multiply    | mul    | mulu     | mulf           |     |     | C = A, B
+| divide      | div    | divu     | divf           |     |     | C = A, B
+| modulo      | mod    | modu     |            |     |     | C = A, B
+| shift left  | shl    | shlu     |            |     |     | C = A, B
+| shift right | shr    | shru     |            |     |     | C = A, B
+| and | and | andu |  | andb |  | C = A, B
+| or | or | oru |  | orb |  | C = A, B
+| xor | xor | xoru |  | xorb |  | C = A, B
+| not | not | notu |  | notb |  | C = A
+| minus | minus | minusu | minusf |  |  | C = A
+| greater than | cmpgt | cmpgtu | cmpgtf |  |  | C = A, B
+| less than | cmplt | cmpltu | cmpltf |  |  | C = A, B
+| equals | cmpeq | cmpequ | cmpeqf | cmpeqb |  | C = A, B
+| pow    | pow | powu | powf |  |  | C = A, B
+| increment | incr | incru | incrf |  |  | 
+| decrement | decr | decru | decrf |  |  | 
+| type value | type | typeu | typef | typeb |  | A
+| load |  |  |  |  | load |  
+| store |  |  |  |  | store |  
+| Set bits [0:15]  |  |  |  |  | setimm16.lowest | 
+| Set bits [16:31] |  |  |  |  | setimm16.lower | 
+| Set bits [32:47] |  |  |  |  | setimm16.higher | 
+| Set bits [48:63] |  |  |  |  | setimm16.highest | 
+| move register to register |  |  |  |  | move | 
+| swap register contents |  |  |  |  | swap | 
+| Pop Top of Stack into Designated Register | | | | | pop | (A, SP) , (B, SP), (C, SP)
+| Push Designated Register onto Stack | | | | | push | (SP, A), (B, SP), (C, SP)
+| Jump | | | | | jump | 
+| Jump Indirect | | | | | jumpi | 
+| Jump Absolute | | | | | jumpa | 
+| Call Subroutine | | | | | call | 
+| Call Subroutine Indirect | | | | | calli | 
+| Return From Subroutine | | | | | ret | 
+| load immediate bits [48:63] |  |  |  |  | loadimm48 | 
 |====================================
 
 

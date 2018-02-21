@@ -113,21 +113,23 @@ opcode):
 
 .Instruction concepts and opcode mnemonics for supported data types
 |====================================
-| Concept  | Signed | Unsigned | Floating Point | Boolean | Implied One Byte Arguments
-| add      | add    | addu     | addf           | no      | C = A, B
-| subtract | sub    | subu     | subf           | no      | C = A, B
-| multiply | mul    | mulu     | mulf           | no      | C = A, B
-| divide   | div    | divu     | divf           | no      | C = A, B
-| modulo   | mod    | modu     | no             | no      | C = A, B
-| shift left | shl  | shlu     | no | no | C = A, B
-| shift right | shr | shru | no | no | C = A, B
-| and | and | andu | no | andb | C = A, B
-| or | or | oru | no | orb | C = A, B
-| xor | xor | xoru | no | xorb | C = A, B
-| not | not | notu | no | notb | C = A
-| minus | minus | minusu | minusf | no | C = A
-| greater than | gt | gtu | gtf | no | C = A, B
-| less than | lt | ltu | ltf | no | C = A, B
+| Concept     | Signed | Unsigned | Floating Point | Boolean | Untyped | Implied One Byte Arguments
+| stop        | none   | none     | none           | none    | stop    | none
+| add         | add    | addu     | addf           | none    | none    | C = A, B
+| subtract    | sub    | subu     | subf           | none    | none    | C = A, B
+| multiply    | mul    | mulu     | mulf           | none    | none    | C = A, B
+| divide      | div    | divu     | divf           | none    | none    | C = A, B
+| modulo      | mod    | modu     | none           | none    | none    | C = A, B
+| shift left  | shl    | shlu     | none           | none    | none    | C = A, B
+| shift right | shr    | shru     | none           | none    | none    | C = A, B
+| and | and | andu | none | andb | none | C = A, B
+| or | or | oru | none | orb | none | C = A, B
+| xor | xor | xoru | none | xorb | none | C = A, B
+| not | not | notu | none | notb | none | C = A
+| minus | minus | minusu | minusf | none | none | C = A
+| greater than | cmpgt | cmpgtu | cmpgtf | none | none | C = A, B
+| less than | cmplt | cmpltu | cmpltf | none | none | C = A, B
+| equals | cmpeq | cmpequ | cmpeqf | cmpeqb | none | C = A, B
 
 |====================================
 

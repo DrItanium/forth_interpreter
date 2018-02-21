@@ -47,6 +47,31 @@ Instruction Set
 ===============
 
 The instruction set of the core is very simple with instruction widths ranging from 1 byte to 8 bytes. 
+Multiple instructions are encoded into a single 64-bit molecule. Instructions cannot span
+multiple molecules. If the opcode zero is encountered then the processor will skip executing the
+rest of the molecule.
 The one byte instructions are compressed versions of standard operations where the 
 registers used are fixed to a specific kind. The wider instructions allow one to
-specify register combinations.
+specify register combinations. The type of the operand is described in the instruction op code.
+Thus a floating point add is a different opcode to an unsigned add, etc. 
+
+The format of the instructions is as follows:
+
+All instructions start with an 8-bit type code.
+
+All eight bits are devoted to the type code, there is no way to determine the 
+width from the bit pattern itself. fields that are marked as free are not part of the instruction and can hold 
+another instruction.
+
+.Instruction formats
+|==========================
+| Form                    | byte 0 | byte 1                                      | byte 2                               | byte 3   | byte 4   | byte 5   | byte 6   | byte 7
+| Single Byte             | opcode | _free_                                      | _free_                               | _free_   | _free_   | _free_   | _free_   | _free_
+| Two Operand             | opcode | _destination_ [0->3] , _source_ [4->7]      | _free_                               | _free_   | _free_   | _free_   | _free_   | _free_
+| Three Operand           | opcode | _destination_ [0->3] , _source_ [4->7]      | _source1_ [0->3] , _always_ 0 [4->7] | _free_   | _free_   | _free_   | _free_   | _free_
+| Three Operand Immediate | opcode | _destination_ [0->3] , _source_ [4->7]    2+| _imm16_ [0->15] | _free_   | _free_   | _free_   | _free_
+| Increment / Decrement   | opcode | _destination_ [0->3] , _imm4_ (one added to this immediate by cpu) [4->7] | _free_   | _free_   | _free_   | _free_   | _free_ | _free_
+| Jump                    | opcode 2+| _imm16_ [0->15] | _free_   | _free_    | _free_   | _free_ | _free_
+| Conditional Jump        | opcode | _destination_ [0->3] , _always_ 0 [4->7] 2+| _imm16_ [0->15] | _free_    | _free_   | _free_ | _free_
+| Load Immediate 48       | opcode | _destination_ [0->3] , _always_ 0 [4->7]  6+| _imm48_ [0->47]
+|==========================

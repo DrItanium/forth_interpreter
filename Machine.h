@@ -39,6 +39,7 @@ namespace forth {
 			void typeValue(Discriminant discriminant, const Datum& value);
 			void addWord(DictionaryEntry* entry);
 			void addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke = false);
+			std::function<void(Address, Address)> getMemoryInstallationFunction();
 			template<typename T, typename ... Rest>
 			void buildWord(const std::string& name, T word, Rest ... words) {
 				// compile up a series of words from c++

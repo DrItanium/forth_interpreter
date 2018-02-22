@@ -206,6 +206,12 @@ void microarchitectureWords(forth::Machine& machine) {
 namespace forth::Instruction {
 void systemSetup(forth::Machine& machine) {
 	// initial system values that we need to use
+	forth::AssemblerBuilder test(0xFDED);
+	test.labelHere("test0");
+	test.encodeInstructionStream(Instruction::add(), 
+			Instruction::move(TargetRegister::A, TargetRegister::C),
+			Instruction::add());
+	test.installIntoMemory(machine.getMemoryInstallationFunction());
 	machine.constructInstructionSequence<
 		loadLowerImmediate48(rx, forth::Machine::shouldKeepExecutingLocation),
 		zeroRegister(rc), 

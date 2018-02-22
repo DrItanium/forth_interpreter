@@ -721,4 +721,7 @@ loopRestart:
             goto loopRestart;
         }
 	}
+	std::function<void(Address, Address)> Machine::getMemoryInstallationFunction() {
+		return _core.getMemoryInstallationFunction();
+	}
 } // end namespace forth

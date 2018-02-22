@@ -191,6 +191,7 @@ namespace forth {
 		fn("DP", _core.getRegister(TargetRegister::DP).getValue());
 		fn("Index", _core.getRegister(TargetRegister::Index).getValue());
 		fn("Temp", _core.getRegister(TargetRegister::Temporary).getValue());
+        fn("Zero", _core.getRegister(TargetRegister::Zero).getValue());
 		_output.setf(flags); // restore after done
 	}
 	void Machine::defineWord() {

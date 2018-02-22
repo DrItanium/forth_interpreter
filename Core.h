@@ -91,11 +91,11 @@ class Core {
 		}
 		Datum& getSystemVariable(Address index);
 	private:
-	private:
 		Register _a, _b, _c, _s, _x;
 		Register _sp, _sp2, _imm, _pc;
         Register _dp, _index;
 		Register _tmp0, _tmp1;
+        ReadOnlyRegister _zero;
 		Register _currentMolecule, _moleculePosition;
 		OutputFunction _output;
 		// mapped to 0xFFFFFFFFFFFF0000

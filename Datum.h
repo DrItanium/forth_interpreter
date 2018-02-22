@@ -165,25 +165,35 @@ namespace forth {
 
     class Register {
         public:
-            Register();
-            Register(const Register& other);
-            const Datum& getValue() const noexcept { return _value; }
-            void setValue(Datum d) noexcept { _value = d; }
-            bool getTruth() const noexcept { return _value.truth; }
-            Floating getFP() const noexcept { return _value.fp; }
-            Integer getInt() const noexcept { return _value.numValue; }
-            Address getAddress() const noexcept { return _value.address; }
-            const DictionaryEntry* getWord() const noexcept { return _value.entry; }
-            Molecule getMolecule() const noexcept { return static_cast<Molecule>(_value.address); }
+            Register(const Register& r) = delete;
+            Register(bool readonly = false);
+            ~Register();
+            const Datum& getValue() const noexcept;
+            void setValue(Datum d) noexcept;
+            bool getTruth() const noexcept;
+            Floating getFP() const noexcept;
+            Integer getInt() const noexcept;
+            Address getAddress() const noexcept;
+            const DictionaryEntry* getWord() const noexcept;
+            Molecule getMolecule() const noexcept;
+            bool isReadonly() const noexcept { return _readonly; }
             void reset();
-            void increment(Address amount = 1) { _value.address += amount; }
-			void decrement(Address amount = 1) { _value.address -= amount; }
+            void increment(Address amount = 1);
+            void decrement(Address amount = 1);
 			template<Address mask, Address shift>
 			void encodeBits(Address value) noexcept {
-				_value.address = encodeBits<Address, Address, mask, shift>(_value.address, value);
+                if (!_readonly) {
+				    _value.address = encodeBits<Address, Address, mask, shift>(_value.address, value);
+                }
 			}
         private:
             Datum _value;
+            bool _readonly;
+    };
+    class ReadOnlyRegister : public Register {
+        public:
+            ReadOnlyRegister(const ReadOnlyRegister&) = delete;
+            ReadOnlyRegister() : Register(true) { }
     };
 } // end namespace forth
 #endif // end DATUM_H__

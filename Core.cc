@@ -32,6 +32,8 @@ Register& Core::getRegister(TargetRegister reg) {
             return _dp;
         case Type::Index:
             return _index;
+        case Type::Zero:
+            return _zero;
 		default:
 			throw Problem("getRegister", "Undefined register!");
 	}
@@ -143,7 +145,7 @@ Core::FiveRegisterForm Core::extractFiveRegisterForm() {
             TargetRegister(getSourceRegister(regs)),
             TargetRegister(getDestinationRegister(regs2)),
             TargetRegister(getSourceRegister(regs2)),
-            TargetRegister(getDestinationRegsiter(regs3)));
+            TargetRegister(getDestinationRegister(regs3)));
 }
 
 

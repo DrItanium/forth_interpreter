@@ -291,7 +291,7 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
 		FullImmediate(ShiftLeft):
 		FullImmediate(Equals):
 #undef FullImmediate
-        case Operation::EncodeBits;
+        case Operation::EncodeBits:
             return 4;
 		case Operation::TypeValue:
 		case Operation::FloatingPointTypeValue:

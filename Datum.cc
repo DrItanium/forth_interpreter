@@ -24,12 +24,54 @@ namespace forth {
             backingStore[k] = other.backingStore[k];
         }
     }
-	Register::Register(const Register& r) : _value(r._value) { }
-	Register::Register() : _value(Address(0)) { }
 
-    void Register::reset() {
-        _value.address = 0;
-    }
 
+            const Datum& Register::getValue() const noexcept { 
+
+                return _value; 
+            }
+            void Register::setValue(Datum d) noexcept {
+                if (!_readonly) {
+                    _value = d;
+                }
+            }
+            bool Register::getTruth() const noexcept { 
+                return _value.truth; 
+            }
+            Floating Register::getFP() const noexcept {
+                return _value.fp; 
+            }
+            Integer Register::getInt() const noexcept { 
+                return _value.numValue; 
+            }
+            Address Register::getAddress() const noexcept { 
+                return _value.address; 
+            }
+            const DictionaryEntry* Register::getWord() const noexcept {
+                return _value.entry; 
+            }
+            Molecule Register::getMolecule() const noexcept { 
+                return static_cast<Molecule>(_value.address); 
+            }
+            void Register::reset() {
+                if (!_readonly) {
+                    _value.address = 0;
+                }
+            }
+            void Register::increment(Address amount) { 
+                if (!_readonly) {
+                    _value.address += amount; 
+                }
+            }
+            void Register::decrement(Address amount) { 
+                if (!_readonly) {
+                    _value.address -= amount; 
+                }
+            }
+            Register::Register(bool readonly) : _value(Address(0)), _readonly(readonly) { }
+            Register::~Register() { 
+                _value.address = 0;
+                _readonly = false;
+            }
 
 } // end namespace forth

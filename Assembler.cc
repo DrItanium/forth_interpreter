@@ -29,5 +29,37 @@ namespace forth {
 		installMolecule(std::get<0>(tup), std::get<1>(tup));
 	}
 
+	void AssemblerBuilder::labelHere(const std::string& name) {
+		if (auto result = _names.find(name); result == _names.cend()) {
+			_names.emplace(name, _currentLocation);
+		} else {
+			throw Problem("labelHere", "Requested label already registered!");
+		}
+	}
+
+	Address AssemblerBuilder::absoluteLabelAddress(const std::string& name) const {
+		if (auto result = _names.find(name); result != _names.cend()) {
+			return result->second;
+		} else {
+			throw Problem("absoluteLabelAddress", "Can't find label name!");
+		}
+	}
+	Integer AssemblerBuilder::relativeLabelAddress(const std::string& name) const {
+		return relativeLabelAddress(name, here());
+	}
+	Integer AssemblerBuilder::relativeLabelAddress(const std::string& name, Address from) const {
+		if (auto result = _names.find(name); result != _names.cend()) {
+			auto loc = result->second;
+			if (loc > from) {
+				return -(Integer(loc - from));
+			} else if (loc < from) {
+				return Integer(from - loc);
+			} else {
+				return 0;
+			}
+		} else {
+			throw Problem("relativeLabelAddress", "Can't find label name!");
+		}
+	}
 } // end namespace forth
 

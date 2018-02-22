@@ -7,6 +7,7 @@
 #include "Problem.h"
 #include <type_traits>
 #include <functional>
+#include <map>
 #include <list>
 
 namespace forth {
@@ -847,6 +848,7 @@ namespace Instruction {
 class AssemblerBuilder {
 	public:
 		using AddressToMolecule = std::tuple<Address, Molecule>;
+		using NameToAddress = std::tuple<std::string, Address>;
 	public:
 		AssemblerBuilder(Address baseAddress);
 		~AssemblerBuilder();
@@ -858,12 +860,23 @@ class AssemblerBuilder {
 		 * currentLocation by one!
 		 */
 		void newMolecule();
-	private:
-
+		void labelHere(const std::string& name);
+		Address absoluteLabelAddress(const std::string& name) const;
+		Integer relativeLabelAddress(const std::string& name) const;
+		Integer relativeLabelAddress(const std::string& name, Address from) const;
+		Address here() const noexcept { return _currentLocation; }
+		Address getBaseAddress() const noexcept { return _baseAddress; }
+		Molecule getCurrentMolecule() const noexcept { return _currentMolecule; }
+		template<typename T, typename ... Rest>
+		void encodeMolecule(T first, Rest&& ... rest) {
+			_currentMolecule = Instruction::encodeOperation(first, std::move(rest)...);
+			newMolecule();
+		}
 	private:
 		Address _baseAddress, _currentLocation;
 		Molecule _currentMolecule;
-		std::list<std::tuple<Address, Molecule>> _operations;
+		std::map<std::string, Address> _names;
+		std::list<AddressToMolecule> _operations;
 
 };
 

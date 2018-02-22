@@ -14,6 +14,7 @@ namespace forth {
 
 	void AssemblerBuilder::installIntoMemory(std::function<void(Address, Address)> fn) {
 		for (const auto& m : _operations) {
+			// mapping between an address and the value to install into
 		}
 	}
 

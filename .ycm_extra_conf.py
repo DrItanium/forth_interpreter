@@ -41,7 +41,7 @@ flags = [
 '-x',
 'c++',
 '-I.',
-'-std=c++1z',
+'-std=c++17',
 ]
 
 # Set this to the absolute path to the folder (NOT the file!) containing the

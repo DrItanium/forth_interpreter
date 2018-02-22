@@ -745,7 +745,7 @@ namespace Instruction {
     template<typename T, typename ... Rest>
     constexpr size_t operationLength(T first, Rest ... rest) noexcept {
         if constexpr (sizeof...(rest) > 0) {
-            return operationLength(first) + operationLength(std::move(rest)...);
+            return operationLength(first) + operationLength(rest...);
         } else {
             return operationLength(first);
         }
@@ -869,9 +869,14 @@ class AssemblerBuilder {
 		Molecule getCurrentMolecule() const noexcept { return _currentMolecule; }
 		template<typename T, typename ... Rest>
 		void encodeMolecule(T first, Rest&& ... rest) {
+			if (Instruction::operationLength(first, std::move(rest)...) > 8) {
+				throw Problem("encodeMolecule", "Too many operations defined for a single molecule!");
+			}
 			_currentMolecule = Instruction::encodeOperation(first, std::move(rest)...);
 			newMolecule();
 		}
+		// TODO: add support for variable numbers of molecules during runtime
+		// execution
 	private:
 		Address _baseAddress, _currentLocation;
 		Molecule _currentMolecule;

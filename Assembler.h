@@ -875,8 +875,67 @@ class AssemblerBuilder {
 			_currentMolecule = Instruction::encodeOperation(first, std::move(rest)...);
 			newMolecule();
 		}
+
+		template<typename T, typename ... Rest>
+		void encodeInstructionStream(T first, Rest&& ... rest) {
+			encodeInstructionStream(0, first, std::move(rest)...);
+		}
 		// TODO: add support for variable numbers of molecules during runtime
 		// execution
+	private:
+		template<typename T, typename ... Rest>
+		void encodeInstructionStream(byte depth, T first, Rest&& ... rest) {
+				byte newDepth = depth + getInstructionWidth(first);
+				if (newDepth > 7) {
+					// we need to start a new molecule, with the current
+					// instruction added
+					newMolecule();
+					encodeInstructionStream(0, first, std::move(rest)...);
+				} else if (newDepth == 7) {
+					_currentMolecule._value = Instruction::encodeOperation<7, decltype(first)>(_currentMolecule._value, first);
+					// okay, we filled up the current molecule and need to
+					// restart
+					newMolecule();
+					if constexpr (sizeof...(rest) > 0) {
+						encodeInstructionStream(0, std::move(rest)...);
+					}
+				} else {
+					// known DRY because the compiler won't accept it
+					// otherwise!
+					switch (depth) {
+						case 0:
+							_currentMolecule._value = Instruction::encodeOperation<0, decltype(first)>(_currentMolecule._value, first);
+							break;
+						case 1:
+							_currentMolecule._value = Instruction::encodeOperation<1, decltype(first)>(_currentMolecule._value, first);
+							break;
+						case 2:
+							_currentMolecule._value = Instruction::encodeOperation<2, decltype(first)>(_currentMolecule._value, first);
+							break;
+						case 3:
+							_currentMolecule._value = Instruction::encodeOperation<3, decltype(first)>(_currentMolecule._value, first);
+							break;
+						case 4:
+							_currentMolecule._value = Instruction::encodeOperation<4, decltype(first)>(_currentMolecule._value, first);
+							break;
+						case 5:
+							_currentMolecule._value = Instruction::encodeOperation<5, decltype(first)>(_currentMolecule._value, first);
+							break;
+						case 6:
+							_currentMolecule._value = Instruction::encodeOperation<6, decltype(first)>(_currentMolecule._value, first);
+							break;
+						default:
+							throw Problem("encodeInstructionStream", "Illegal depth!");
+					}
+					// we did not fill up the current molecule either
+					if constexpr (sizeof... (rest) > 0) {
+						encodeInstructionStream(newDepth, std::move(rest)...);
+					} else {
+						// nothing left to do so just stop here!
+						newMolecule();
+					}
+				}
+		}
 	private:
 		Address _baseAddress, _currentLocation;
 		Molecule _currentMolecule;

@@ -59,13 +59,22 @@ class Core {
 		void typeValue(Operation op);
 		void loadStore(Operation op);
 		void setImm16(Operation op);
+        void encodeDecodeBits(Operation op);
 	private:
 		using ThreeRegisterForm = std::tuple<TargetRegister, TargetRegister, TargetRegister>;
 		using ThreeRegisterImmediateForm = std::tuple<TargetRegister, TargetRegister, QuarterAddress>;
 		using TwoRegisterForm = std::tuple<TargetRegister, TargetRegister>;
 		using ThreeRegisterArguments = std::tuple<Register&, Register&, Register&>;
 		using TwoRegisterArguments = std::tuple<Register&, Register&>;
+        using FourRegisterForm = std::tuple<TargetRegister, TargetRegister, TargetRegister, TargetRegister>;
+		using FourRegisterArguments = std::tuple<Register&, Register&, Register&, Register&>;
+        using FiveRegisterForm = std::tuple<TargetRegister, TargetRegister, TargetRegister, TargetRegister, TargetRegister>;
+		using FiveRegisterArguments = std::tuple<Register&, Register&, Register&, Register&, Register&>;
 		ThreeRegisterArguments extractArguments(Operation op, std::function<void(Register&, Address)> onImmediate = nullptr);
+        FourRegisterArguments extractArguments4(Operation op);
+        FiveRegisterArguments extractArguments5(Operation op);
+        FourRegisterForm extractFourRegisterForm();
+        FiveRegisterForm extractFiveRegisterForm();
 		ThreeRegisterForm extractThreeRegisterForm();
 		ThreeRegisterImmediateForm extractThreeRegisterImmediateForm();
 		TwoRegisterForm extractTwoRegisterForm();

@@ -114,6 +114,37 @@ Core::ThreeRegisterArguments Core::extractArguments(Operation op, std::function<
 		return std::forward_as_tuple(_c, _a, _b);
 	}
 }
+Core::FourRegisterArguments Core::extractArguments4(Operation op) {
+    auto x = extractFourRegisterForm();
+    return std::forward_as_tuple(getRegister(std::get<0>(x)), getRegister(std::get<1>(x)), getRegister(std::get<2>(x)), getRegister(std::get<3>(x)));
+}
+
+Core::FourRegisterForm Core::extractFourRegisterForm() {
+    auto regs = extractByteFromMolecule();
+    auto regs2 = extractByteFromMolecule();
+    return std::make_tuple(TargetRegister(getDestinationRegister(regs)),
+            TargetRegister(getSourceRegister(regs)),
+            TargetRegister(getDestinationRegister(regs2)),
+            TargetRegister(getSourceRegister(regs2)));
+}
+
+Core::FiveRegisterArguments Core::extractArguments5(Operation op) {
+    auto x = extractFiveRegisterForm();
+    return std::forward_as_tuple(getRegister(std::get<0>(x)), getRegister(std::get<1>(x)), getRegister(std::get<2>(x)), 
+            getRegister(std::get<3>(x)),
+            getRegister(std::get<4>(x)));
+}
+
+Core::FiveRegisterForm Core::extractFiveRegisterForm() {
+    auto regs = extractByteFromMolecule();
+    auto regs2 = extractByteFromMolecule();
+    auto regs3 = extractByteFromMolecule();
+    return std::make_tuple(TargetRegister(getDestinationRegister(regs)),
+            TargetRegister(getSourceRegister(regs)),
+            TargetRegister(getDestinationRegister(regs2)),
+            TargetRegister(getSourceRegister(regs2)),
+            TargetRegister(getDestinationRegsiter(regs3)));
+}
 
 
 void Core::store(Address addr, const Datum& value) {
@@ -766,6 +797,21 @@ void Core::executionCycle(Address startAddress) {
         _advancePC = true;
     }
     // we've halted at this point
+}
+
+void Core::encodeDecodeBits(Operation op) {
+    if (op == Operation::DecodeBits) {
+        auto t = extractArguments4(op);
+        auto& [dest, value, mask, shift] = t;
+        dest.setValue(decodeBits<Address, Address>(value.getAddress(), mask.getAddress(), shift.getAddress()));
+    } else if (op == Operation::EncodeBits) {
+        auto t = extractArguments5(op);
+        auto& [dest, src, value, mask, shift] = t;
+        dest.setValue(encodeBits<Address, Address>(src.getAddress(), value.getAddress(), mask.getAddress(), shift.getAddress()));
+    } else {
+        throw Problem("encodeDecodeBits", "unknown encode-decode operation!");
+    }
+
 }
 
 

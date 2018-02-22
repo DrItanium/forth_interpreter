@@ -191,6 +191,8 @@ enum class Operation : byte {
     BVersion(OrFull),
     BVersion(XorFull),
     BVersion(EqualsFull),
+    DecodeBits,
+    EncodeBits,
     Count,
 };
 #undef FUBVersion
@@ -262,6 +264,7 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
 #undef FullImmediate
         case Operation::CallSubroutine:
         case Operation::Jump:
+        case Operation::DecodeBits:
             return 3;
         case Operation::ConditionalBranch:
         case Operation::ConditionalCallSubroutine:
@@ -287,6 +290,7 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
 		FullImmediate(ShiftLeft):
 		FullImmediate(Equals):
 #undef FullImmediate
+        case Operation::EncodeBits;
             return 4;
 		case Operation::TypeValue:
 		case Operation::FloatingPointTypeValue:

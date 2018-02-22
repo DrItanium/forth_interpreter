@@ -152,6 +152,12 @@ opcode):
 | Call Subroutine | | | | | call | 
 | Call Subroutine Indirect | | | | | calli | 
 | Return From Subroutine | | | | | ret | 
+| Conditional Jump | | | | | cjump | 
+| Conditional Jump Indirect | | | | | cjumpi | 
+| Conditional Jump Absolute | | | | | cjumpa | 
+| Conditional Call Subroutine | | | | | ccall | 
+| Conditional Call Subroutine Indirect | | | | | ccalli | 
+| Conditional Return From Subroutine | | | | | cret | 
 | load immediate bits [48:63] |  |  |  |  | loadimm48 | 
 |====================================
 

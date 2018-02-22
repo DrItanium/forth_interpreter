@@ -700,7 +700,7 @@ endLoopTop:
                 Instruction::move(TargetRegister::B, TargetRegister::SP)>();
 		static constexpr auto equalityCheck = Instruction::preCompileOperation<Instruction::cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B)>();
         static constexpr auto loadParameterStackAddressLower = Instruction::loadLowerImmediate48(TargetRegister::X, parameterStackEmptyLocation);
-        static constexpr auto loadParameterStackAddressUpper = Instruction::precompileOperation<
+        static constexpr auto loadParameterStackAddressUpper = Instruction::preCompileOperation<
             Instruction::setImmediate64_Highest(TargetRegister::X, parameterStackEmptyLocation)
             >();
         dispatchInstruction(loadParameterStackAddressLower);

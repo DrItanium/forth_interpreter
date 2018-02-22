@@ -6,6 +6,7 @@
 #include "Instruction.h"
 #include "Problem.h"
 #include <type_traits>
+#include <functional>
 
 namespace forth {
 constexpr byte encodeSingleByteOperation(Operation op) noexcept {
@@ -841,6 +842,21 @@ namespace Instruction {
 	static_assert(getInstructionWidth(mulf(TargetRegister::A, TargetRegister::A, TargetRegister::A)) == 3, "FloatingPointMultiplyFull is not three bytes!");
 	static_assert(getInstructionWidth(mulf()) == 1, "FloatingPointMultiplyFull is not three bytes!");
 } // end namespace Instruction
+
+class AssemblerBuilder {
+	public:
+		AssemblerBuilder(Address baseAddress);
+		~AssemblerBuilder();
+		void installIntoMemory(std::function<void(Address, Address)> fn);
+		void installMolecule(const Molecule& m);
+	private:
+
+	private:
+		Address _baseAddress, _currentLocation;
+		std::list<Molecule> _operations;
+
+};
+
 } // end namespace forth
 static_assert(sizeof(unsigned long long int) >= sizeof(forth::Address), "Unsigned long long int is a 64-bit value or greater!");
 constexpr forth::QuarterAddressWrapper operator "" _addrqlowest(unsigned long long int addr) {  return forth::getLowestQuarter(forth::Address(addr)); }

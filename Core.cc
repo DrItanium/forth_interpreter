@@ -676,6 +676,7 @@ void Core::dispatchInstruction(const Molecule& m) {
 		DefEntry(ConditionalBranch, conditionalBranch), 
         DefEntry(ConditionalBranchIndirect, conditionalBranch), DefEntry(ConditionalCallSubroutine, conditionalBranch),
 		DefEntry(ConditionalCallSubroutineIndirect, conditionalBranch), DefEntry(ConditionalReturnSubroutine, conditionalBranch),
+		DefEntry(EncodeBits, encodeDecodeBits), DefEntry(DecodeBits, encodeDecodeBits),
 #undef DefEntry
 	};
 	auto throwError = [](Operation op) {
@@ -813,6 +814,10 @@ void Core::encodeDecodeBits(Operation op) {
     } else {
         throw Problem("encodeDecodeBits", "unknown encode-decode operation!");
     }
+}
+
+std::function<void(Address, Address)> Core::getMemoryInstallationFunction() noexcept {
+	return [this](Address location, Address value) { store(location, value); };
 }
 
 

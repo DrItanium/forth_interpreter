@@ -811,7 +811,6 @@ void Core::encodeDecodeBits(Operation op) {
     } else {
         throw Problem("encodeDecodeBits", "unknown encode-decode operation!");
     }
-
 }
 
 

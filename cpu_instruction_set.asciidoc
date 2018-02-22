@@ -159,6 +159,8 @@ opcode):
 | Conditional Call Subroutine Indirect | | | | | ccalli | 
 | Conditional Return From Subroutine | | | | | cret | 
 | load immediate bits [48:63] |  |  |  |  | loadimm48 | 
+| encode bits |  |  |  |  | encode.bits | 
+| decode bits |  |  |  |  | decode.bits | 
 |====================================
 
 

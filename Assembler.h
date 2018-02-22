@@ -846,15 +846,24 @@ namespace Instruction {
 
 class AssemblerBuilder {
 	public:
+		using AddressToMolecule = std::tuple<Address, Molecule>;
+	public:
 		AssemblerBuilder(Address baseAddress);
 		~AssemblerBuilder();
 		void installIntoMemory(std::function<void(Address, Address)> fn);
-		void installMolecule(const Molecule& m);
+		void installMolecule(Address address, const Molecule& m);
+		void installMolecule(AddressToMolecule tup);
+		/**
+		 * Install the current molecule into the list and advance the
+		 * currentLocation by one!
+		 */
+		void newMolecule();
 	private:
 
 	private:
 		Address _baseAddress, _currentLocation;
-		std::list<Molecule> _operations;
+		Molecule _currentMolecule;
+		std::list<std::tuple<Address, Molecule>> _operations;
 
 };
 

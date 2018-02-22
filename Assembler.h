@@ -822,7 +822,7 @@ namespace Instruction {
         return swap(TargetRegister::B, TargetRegister::A);
     }
 	constexpr auto zeroRegister(TargetRegister reg) noexcept -> decltype(xorl(reg, reg, reg)) {
-		return xorl(reg, reg, reg);
+        return move(reg, TargetRegister::Zero);
 	}
     constexpr QuarterAddress imm16TestValue = 0xfded;
 	static_assert(popA() == popRegister(TargetRegister::A, TargetRegister::SP), "Two different code paths for popA should yield the same result!");

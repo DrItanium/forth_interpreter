@@ -32,6 +32,7 @@ Currently, 10 of the 16 total possible registers are defined:
 - DP
 - Index
 - Temporary
+- Zero
 
 Registers A, B, and C are meant to be the general purpose registers used in carrying
 out forth operations. Register S is meant to be used for selection purposes.
@@ -41,6 +42,8 @@ dictionary pointer, it is meant to be a pointer to the front of the dictionary.
 The Index register is designed to be used when executing a forth word, it keeps
 track of where the cpu currently is in the word. The Temporary register is meant
 for macros and other purposes where the data can be safely volatile.
+
+NOTE: The zero register can be read from, all writes to it are ignored
 
 
 Instruction Set

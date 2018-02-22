@@ -689,8 +689,6 @@ endLoopTop:
 		//	auto element = load(curr);
 		//	_output << "\t- " << element << std::endl;
 		//}
-        static constexpr auto loadParameterStackAddressLower = Instruction::loadAddressLowerHalf(TargetRegister::X, parameterStackEmptyLocation);
-        static constexpr auto loadParameterStackAddressUpper = Instruction::loadAddressUpperHalf(TargetRegister::X, parameterStackEmptyLocation);
         static constexpr auto executionBodyContents = Instruction::preCompileOperation<
                 Instruction::load(TargetRegister::A, TargetRegister::B),
                 Instruction::increment(TargetRegister::B, 0), // advance by one, the core internally increments by one automatically
@@ -700,8 +698,10 @@ endLoopTop:
 				Instruction::zeroRegister(TargetRegister::A),
                 Instruction::move(TargetRegister::B, TargetRegister::SP)>();
 		static constexpr auto equalityCheck = Instruction::preCompileOperation<Instruction::cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B)>();
-
-
+        static constexpr auto loadParameterStackAddressLower = Instruction::loadLowerImmediate48(TargetRegister::X, parameterStackEmptyLocation);
+        static constexpr auto loadParameterStackAddressUpper = Instruction::precompileOperation<
+            Instruction::setImmediate64_Highest(TargetRegister::X, parameterStackEmptyLocation)
+            >();
         dispatchInstruction(loadParameterStackAddressLower);
         dispatchInstruction(loadParameterStackAddressUpper);
         dispatchInstruction(setupRegisters);

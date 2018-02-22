@@ -7,6 +7,7 @@
 #include "Problem.h"
 #include <type_traits>
 #include <functional>
+#include <list>
 
 namespace forth {
 constexpr byte encodeSingleByteOperation(Operation op) noexcept {

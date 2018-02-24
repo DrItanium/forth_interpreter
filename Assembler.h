@@ -516,7 +516,7 @@ namespace Instruction {
     constexpr HalfAddress setImmediate64_Highest(TargetRegister dest, Address value) noexcept { 
         return setImmediate16_Highest(dest, getHighestQuarter(value));
     }
-	static_assert(0xFFFF0418 == setImmediate64_Highest(TargetRegister::X, 0xFFFF'FFFF'FFFF'0001), "Encoding is wrong!");
+	static_assert(0xFFFF0518 == setImmediate64_Highest(TargetRegister::X, 0xFFFF'FFFF'FFFF'0001), "Encoding is wrong!");
 
     template<Address mask, Address shift>
     constexpr Address encodeByte(byte value, Address target = 0) noexcept {
@@ -831,13 +831,13 @@ namespace Instruction {
 	static_assert(getInstructionWidth(cmpeq()) == 1, "Compare eq should only be one byte if the args are defaulted");
 	static_assert(byte(0xFD) == getUpperHalf(imm16TestValue), "getUpperHalf is not working correctly!");
 	static_assert(byte(0xED) == getLowerHalf(imm16TestValue), "getUpperHalf is not working correctly!");
-	static_assert(byte(0x00) == byte(TargetRegister::A), "register cast assumptions broken!");
+	static_assert(byte(0x01) == byte(TargetRegister::A), "register cast assumptions broken!");
 	static_assert(byte(0x15) == byte(Operation::SetImmediate16_Lowest), "Operation index is no longer correct!");
-	static_assert(Address(0xFDED0015) == encodeFourByte(Operation::SetImmediate16_Lowest, TargetRegister::A, imm16TestValue), "Encoding is broken!");
-    static_assert(Address(0xFDED0015) == setImmediate16_Lowest(TargetRegister::A, imm16TestValue), "setImmediate16_Lowest is broken!");
-    static_assert(Address(0xFDED0016) == setImmediate16_Lower(TargetRegister::A, imm16TestValue), "setImmediate16_Lower is broken!");
-    static_assert(Address(0xFDED0017) == setImmediate16_Higher(TargetRegister::A, imm16TestValue), "setImmediate16_Higher is broken!");
-    static_assert(Address(0xFDED0018) == setImmediate16_Highest(TargetRegister::A, imm16TestValue), "setImmediate16_Highest is broken!");
+	static_assert(Address(0xFDED0115) == encodeFourByte(Operation::SetImmediate16_Lowest, TargetRegister::A, imm16TestValue), "Encoding is broken!");
+    static_assert(Address(0xFDED0115) == setImmediate16_Lowest(TargetRegister::A, imm16TestValue), "setImmediate16_Lowest is broken!");
+    static_assert(Address(0xFDED0116) == setImmediate16_Lower(TargetRegister::A, imm16TestValue), "setImmediate16_Lower is broken!");
+    static_assert(Address(0xFDED0117) == setImmediate16_Higher(TargetRegister::A, imm16TestValue), "setImmediate16_Higher is broken!");
+    static_assert(Address(0xFDED0118) == setImmediate16_Highest(TargetRegister::A, imm16TestValue), "setImmediate16_Highest is broken!");
 	static_assert(getInstructionWidth(mulf(TargetRegister::A, TargetRegister::A, TargetRegister::A)) == 3, "FloatingPointMultiplyFull is not three bytes!");
 	static_assert(getInstructionWidth(mulf()) == 1, "FloatingPointMultiplyFull is not three bytes!");
 } // end namespace Instruction
@@ -974,13 +974,5 @@ constexpr forth::QuarterAddressWrapper operator "" _addrqhighest(unsigned long l
 
 constexpr forth::HalfAddressWrapper operator "" _hupper(unsigned long long int addr) {  return forth::getUpperHalf(forth::Address(addr)); }
 constexpr forth::HalfAddressWrapper operator "" _hlower(unsigned long long int addr) { return forth::getLowerHalf(forth::Address(addr)); }
-
-constexpr forth::TargetRegister operator "" _reg(unsigned long long index) {
-	if (forth::legalValue(forth::TargetRegister(index))) {
-		return static_cast<forth::TargetRegister>(index);
-	} else {
-		throw forth::Problem("cast", "bad register literal!");
-	}
-}
 
 #endif

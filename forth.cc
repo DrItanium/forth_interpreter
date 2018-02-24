@@ -9,11 +9,11 @@ using Address = forth::Address;
 using Operation = forth::Operation;
 namespace Instruction = forth::Instruction;
 
-static constexpr auto ra = 0_reg;
-static constexpr auto rb = 1_reg;
-static constexpr auto rc = 2_reg;
-static constexpr auto rs = 3_reg;
-static constexpr auto rx = 4_reg;
+static constexpr auto ra = forth::TargetRegister::A;
+static constexpr auto rb = forth::TargetRegister::B;
+static constexpr auto rc = forth::TargetRegister::C;
+static constexpr auto rs = forth::TargetRegister::S;
+static constexpr auto rx = forth::TargetRegister::X;
 static constexpr auto moveCtoA = Instruction::move(ra, rc);
 static constexpr auto moveAtoB = Instruction::move(rb, ra);
 static constexpr auto popA = Instruction::popA();
@@ -22,10 +22,6 @@ static constexpr auto popC = Instruction::popRegister(rc);
 static constexpr auto pushC = Instruction::pushC();
 static constexpr auto pushA = Instruction::pushA();
 static constexpr auto pushB = Instruction::pushB();
-
-static_assert(3_reg == forth::TargetRegister::S, "Bad assumption!");
-static_assert(4_reg == forth::TargetRegister::X, "Bad assumption!");
-static_assert(0_reg == forth::TargetRegister::A, "Bad assumption!");
 
 template<auto op>
 void addBinaryOperation(forth::Machine& machine, const std::string& name, bool compileTimeInvoke = false) {

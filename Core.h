@@ -9,27 +9,45 @@
 namespace forth {
 class Core {
 	public:
-		static constexpr Address largestAddress = 0xFF'FFFF;
+        static constexpr Address largestByteAddress = 0x7FF'FFFF;
+		static constexpr Address largestAddress = largestByteAddress >> 3;
 		static constexpr Address memoryCapacity = (largestAddress + 1);
+        static constexpr Address memoryByteCapacity = (largestByteAddress + 1);
 		// we have a 64-kiloword area for storing internal system values.
-		static constexpr Address systemVariableStart = 0xFFFF'FFFF'FFFF'0000;
-		static constexpr Address systemVariableEnd = 0xFFFF'FFFF'FFFF'FFFF;
+		static constexpr Address byteSystemVariableStart = 0xFFFF'FFFF'FFF8'0000;
+        static constexpr Address systemVariableStart = byteSystemVariableStart >> 3;
+        static constexpr Address byteSystemVariableEnd = 0xFFFF'FFFF'FFFF'FFFF;
+		static constexpr Address systemVariableEnd = byteSystemVariableEnd >> 3;
 		static constexpr Address terminateExecutionVariable = systemVariableEnd;
 		static constexpr Address sp2StackEmpty = systemVariableEnd - 1;
 		static constexpr Address sp2StackFull = systemVariableEnd - 2;
 		static constexpr Address spStackEmpty = systemVariableEnd - 3;
 		static constexpr Address spStackFull = systemVariableEnd - 4;
-		static constexpr Address userVariableEnd = 0xFFFF'FFFF'FFFF'7FFF;
-		static constexpr Address userVariableStart = systemVariableStart;
+        static constexpr Address byteUserVariableStart = byteSystemVariableStart;
+        static constexpr Address byteUserVariableEnd = 0xFFFF'FFFF'FFFB'FFFF;
+        static constexpr Address userVariableStart = byteUserVariableStart >> 3;
+        static constexpr Address userVariableEnd = byteUserVariableEnd >> 3;
 		static constexpr Address systemVariableSize = (systemVariableEnd - systemVariableStart) + 1;
+        static_assert(systemVariableSize == 0x10000, "System variable size is not 64 kwords");
+        static_assert((byteSystemVariableEnd - byteSystemVariableStart) == 0x7FFFF, "System variable size is not 512k in size!");
 		using OutputFunction = std::function<void(Discriminant, TargetRegister, const Register&)>;
+        constexpr Address getWordAddress(Address input) noexcept {
+            return input >> 3;
+        }
+        constexpr Address getByteOffset(Address input) noexcept {
+            return decodeBits<Address, Address, ~(Address(0b111)), 3>(input);
+        }
 	public:
 		Core(OutputFunction output);
 		~Core() = default;
 		//void executionLoop();
 		void setOutputFunction(OutputFunction output);
-		void dispatchInstruction(const Molecule& m);
-		Datum load(Address addr);
+		void dispatchInstruction(const Molecule& m, Address offset = 0);
+        /**
+         * Returns the word closest to the target addres
+         */
+		Datum loadWord(Address addr);
+        byte loadByte(Address addr);
 		void store(Address addr, const Datum& value);
 		Register& getRegister(TargetRegister reg);
 		void push(const Datum& d, TargetRegister sp);
@@ -84,7 +102,7 @@ class Core {
 		byte extractByteFromMolecule();
 		Address extractImm48();
 		Operation extractOperationFromMolecule();
-		void setCurrentMolecule(const Molecule& m);
+		void setCurrentMolecule(const Molecule& m, Address offset = 0);
 		void advanceMoleculePosition(Address amount = 1);
 	private:
 		static constexpr bool inSystemVariableArea(Address value) noexcept {

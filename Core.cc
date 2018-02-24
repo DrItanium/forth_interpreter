@@ -39,7 +39,8 @@ Register& Core::getRegister(TargetRegister reg) {
 	}
 }
 Datum& Core::getSystemVariable(Address index) {
-	if (!Core::inSystemVariableArea(index)) {
+    auto closestWord = getWordAddress(index);
+	if (!Core::inSystemVariableArea(closestWord)) {
 		std::stringstream ss;
 		ss << "Illegal address: " << std::hex << index;
 		auto msg = ss.str();
@@ -47,9 +48,9 @@ Datum& Core::getSystemVariable(Address index) {
 	}
 	return _systemVariables[index - systemVariableStart];
 }
-void Core::setCurrentMolecule(const Molecule& m) {
+void Core::setCurrentMolecule(const Molecule& m, Address offset) {
 	_currentMolecule.setValue(m._value);
-	_moleculePosition.reset();
+    _moleculePosition.setValue(offset);
 }
 
 
@@ -158,9 +159,9 @@ void Core::store(Address addr, const Datum& value) {
 	}
 }
 
-Datum Core::load(Address addr) {
+Datum Core::loadWord(Address addr) {
 	if (addr <= largestAddress) {
-		return _memory[addr];
+		return _memory[getWordAddress(addr)];
 	} else {
 		return getSystemVariable(addr);
 	}
@@ -634,7 +635,7 @@ void Core::loadImm48(Operation op) {
 	getRegister((TargetRegister)(getDestinationRegister(extractByteFromMolecule()))).setValue(extractImm48());
 }
 
-void Core::dispatchInstruction(const Molecule& m) {
+void Core::dispatchInstruction(const Molecule& m, Address offset) {
 	static std::map<Operation, decltype(std::mem_fn(&Core::numericCombine))> dispatchTable = {
 #define DefEntry(t, fn) { Operation :: t , std::mem_fn<void(Operation)>(&Core:: fn ) }
 #define DefEntryS(t, fn) DefEntry(t, fn)
@@ -685,7 +686,7 @@ void Core::dispatchInstruction(const Molecule& m) {
 		auto str = msg.str();
 		throw Problem("dispatchInstruction", str);
 	};
-	setCurrentMolecule(m);
+	setCurrentMolecule(m, offset);
 	while (_moleculePosition.getAddress() < sizeof(Molecule)) {
 		auto op = static_cast<Operation>(extractByteFromMolecule());
 		if (op == Operation::Stop) {
@@ -791,12 +792,13 @@ void Core::executionCycle(Address startAddress) {
     _pc.setValue(startAddress);
     while(value.address == 0) {
         // load the current address
-        auto value = load(_pc.getAddress());
-        dispatchInstruction(value.address);
+        auto current = load(getWordAddress(_pc.getAddress()));
+        dispatchInstruction(current.address, getByteOffset(_pc.getAddress()));
         if (_advancePC) {
+            // goto the next byte if it makes sense
             _pc.increment();
         }
-        _pc.setValue(_pc.getAddress() & Core::largestAddress);
+        _pc.setValue(_pc.getAddress() & Core::largestByteAddress);
         _advancePC = true;
     }
     // we've halted at this point

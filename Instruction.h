@@ -194,6 +194,16 @@ enum class Operation : byte {
     BVersion(EqualsFull),
     DecodeBits,
     EncodeBits,
+    LoadHalfAddress,
+    LoadHalfInteger,
+    LoadQuarterAddress,
+    LoadQuarterInteger,
+    LoadByte,
+    StoreByte,
+    StoreHalfAddress,
+    StoreHalfInteger,
+    StoreQuarterAddress,
+    StoreQuarterInteger,
     Count,
 };
 #undef FUBVersion

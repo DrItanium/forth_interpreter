@@ -158,7 +158,16 @@ namespace forth {
         Floating fp;
         const DictionaryEntry* entry;
         DictionaryEntry* subroutine;
-        byte backingStore[sizeof(Integer)];
+        byte backingStore[sizeof(Address)];
+        void setField(byte index, byte value);
+        byte getField(byte index);
+        HalfAddress upperHalfAddress() noexcept;
+        HalfAddress lowerHalfAddress() noexcept;
+        QuarterAddress highestQuarterAddress() noexcept;
+        QuarterAddress higherQuarterAddress() noexcept;
+        QuarterAddress lowerQuarterAddress() noexcept;
+        QuarterAddress lowestQuarterAddress() noexcept;
+
     };
     std::ostream& operator<<(std::ostream& out, const Datum& dt);
 	std::ostream& operator<<(std::ostream& out, const Discriminant& d);

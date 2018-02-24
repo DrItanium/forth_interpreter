@@ -31,11 +31,28 @@ class Core {
         static_assert(systemVariableSize == 0x10000, "System variable size is not 64 kwords");
         static_assert((byteSystemVariableEnd - byteSystemVariableStart) == 0x7FFFF, "System variable size is not 512k in size!");
 		using OutputFunction = std::function<void(Discriminant, TargetRegister, const Register&)>;
-        constexpr Address getWordAddress(Address input) noexcept {
+        static constexpr Address getWordAddress(Address input) noexcept {
             return input >> 3;
         }
-        constexpr Address getByteOffset(Address input) noexcept {
+        static constexpr Address getByteOffset(Address input) noexcept {
             return decodeBits<Address, Address, ~(Address(0b111)), 3>(input);
+        }
+        template<typename T>
+        static constexpr bool spansTwoAddresses(Address addr) noexcept {
+            if constexpr (sizeof(T) > sizeof(Address)) {
+                return true;
+            } else if constexpr (sizeof(T) == sizeof(Address)) {
+                return getByteOffset(addr) != 0;
+            } else {
+                return getByteOffset(addr) <= (sizeof(Address) - sizeof(T));
+            }
+        }
+        static constexpr bool spansTwoAddresses(Address addr, byte size) noexcept {
+            if (sizeof(Address) < size) {
+                return true;
+            } else {
+                return getByteOffset(addr) <= (sizeof(Address) - size);
+            } 
         }
 	public:
 		Core(OutputFunction output);
@@ -48,6 +65,9 @@ class Core {
          */
 		Datum loadWord(Address addr);
         byte loadByte(Address addr);
+        QuarterAddress loadQuarterAddress(Address addr);
+        HalfAddress loadHalfAddress(Address addr);
+        Address loadLower48(Address addr);
 		void store(Address addr, const Datum& value);
 		Register& getRegister(TargetRegister reg);
 		void push(const Datum& d, TargetRegister sp);

@@ -1,3 +1,4 @@
+#include "Types.h"
 #include "Core.h"
 #include "Problem.h"
 #include "Datum.h"
@@ -39,6 +40,9 @@ Register& Core::getRegister(TargetRegister reg) {
 	}
 }
 Datum& Core::getSystemVariable(Address index) {
+    if (getByteOffset(index) != 0) {
+        throw Problem("getSystemVariable", "System variables are 8-bytes wide and must be accessed on 8-byte boundaries!");
+    }
     auto closestWord = getWordAddress(index);
 	if (!Core::inSystemVariableArea(closestWord)) {
 		std::stringstream ss;
@@ -55,7 +59,7 @@ void Core::setCurrentMolecule(const Molecule& m, Address offset) {
 
 
 void Core::advanceMoleculePosition(Address amount) {
-	_moleculePosition.increment(amount);
+    _pc.increment(amount);
 }
 
 
@@ -64,21 +68,22 @@ Operation Core::extractOperationFromMolecule() {
 }
 
 byte Core::extractByteFromMolecule() {
-	auto b = Molecule(_currentMolecule.getAddress()).getByte(_moleculePosition.getAddress());
+    auto b = loadByte(_pc.getAddress());
 	advanceMoleculePosition();
 	return b;
 }
 
 QuarterAddress Core::extractQuarterAddressFromMolecule() {
-	auto q = Molecule(_currentMolecule.getAddress()).getQuarterAddress(_moleculePosition.getAddress());
+    auto q = loadQuarterAddress(_pc.getAddress());
 	advanceMoleculePosition(sizeof(q));
 	return q;
 }
 QuarterInteger Core::extractQuarterIntegerFromMolecule() {
-	auto q = Molecule(_currentMolecule.getAddress()).getQuarterOffset(_moleculePosition.getAddress());
+    auto q = loadQuarterInteger(_pc.getAddress());
 	advanceMoleculePosition(sizeof(q));
 	return q;
 }
+
 
 Core::TwoRegisterForm Core::extractTwoRegisterForm() {
 	// single byte
@@ -158,13 +163,76 @@ void Core::store(Address addr, const Datum& value) {
 		getSystemVariable(addr).address = value.address;
 	}
 }
-
+byte Core::loadByte(Address addr) {
+    return loadWord(getWordAddress(addr)).getField(getByteOffset(addr));
+}
+QuarterAddress Core::loadQuarterAddress(forth::Address addr) {
+    auto offset = getByteOffset(addr);
+    switch(offset) {
+        case 0:
+            return loadWord(addr).lowestQuarterAddress();
+        case 2:
+            return loadWord(getWordAddress(addr)).lowerQuarterAddress();
+        case 4:
+            return loadWord(getWordAddress(addr)).higherQuarterAddress();
+        case 6:
+            return loadWord(getWordAddress(addr)).highestQuarterAddress();
+        case 1:
+        case 3:
+        case 5:
+        case 7:
+            break;
+        default:
+            throw Problem("Core::loadQuarterAddress", "bad offset");
+    }
+    Datum tmp(Address(0));
+    tmp.setField(0, loadByte(addr));
+    tmp.setField(1, loadByte(addr + 1));
+    return tmp.lowestQuarterAddress();
+}
+HalfAddress Core::loadHalfAddress(Address addr) {
+    auto offset = getByteOffset(addr);
+    switch (offset) {
+        case 0:
+            return loadWord(addr).lowerHalfAddress();
+        case 4:
+            return loadWord(getWordAddress(addr)).upperHalfAddress();
+        case 1:
+        case 2:
+        case 3:
+        case 5:
+        case 6:
+        case 7:
+            break;
+        default:
+            throw Problem("Core::loadHalfAddress", "bad offset!");
+    }
+    Datum tmp(Address(0));
+    tmp.setField(0, loadByte(addr + 0));
+    tmp.setField(1, loadByte(addr + 1));
+    tmp.setField(2, loadByte(addr + 2));
+    tmp.setField(3, loadByte(addr + 3));
+    return tmp.lowerHalfAddress();
+}
 Datum Core::loadWord(Address addr) {
-	if (addr <= largestAddress) {
-		return _memory[getWordAddress(addr)];
-	} else {
-		return getSystemVariable(addr);
-	}
+    if (auto offset = getByteOffset(addr); offset != 0) {
+        if (addr <= largestByteAddress) {
+            throw Problem("loadWord", "Accessing system variables must occur on 8-byte boundaries!");
+        } else {
+            // do the much more expensive byte by byte load
+            Datum storage(Address(0));
+            for (auto loc = addr, offset = (Address)0; loc < (addr + sizeof(Address)); ++loc, ++offset) {
+                storage.setField(offset, loadByte(loc));
+            }
+            return storage;
+        }
+    } else {
+        if (addr <= largestByteAddress) {
+            return _memory[getWordAddress(addr)];
+        } else {
+            return getSystemVariable(addr);
+        }
+    }
 }
 
 void Core::push(TargetRegister reg, TargetRegister sp) {
@@ -704,7 +772,7 @@ void Core::loadStore(Operation op) {
     auto& dest = getRegister(trd);
     auto& src = getRegister(trs);
 	if (op == Operation::Load) {
-         dest.setValue(load(src.getAddress()));
+         dest.setValue(loadWord(src.getAddress()));
 	} else if (op == Operation::Store) {
          store(dest.getAddress(), src.getValue());
 	} else {

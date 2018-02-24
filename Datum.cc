@@ -74,4 +74,32 @@ namespace forth {
 		_readonly = false;
 	}
 
+    void Datum::setField(byte index, byte value) {
+        if (index >= sizeof(Address)) {
+            throw Problem("Datum::setField", "index is too large!");
+        } else {
+            // cross platform way to do this
+            address = encodeBits<Address, byte>(address, value, 0xFF << index, index << 3);
+        }
+    }
+    byte Datum::getField(byte index) {
+        if (index >= sizeof(Address)) {
+            throw Problem("Datum::getfield", "index is too large!");
+        } else {
+            return decodeBits<Address, byte>(address, 0xFF << index, index << 3);
+        }
+    }
+
+    HalfAddress Datum::upperHalfAddress() noexcept {
+        return getUpperHalf(address);
+    }
+    HalfAddress Datum::lowerHalfAddress() noexcept {
+        return getLowerHalf(address);
+    }
+
+    QuarterAddress Datum::highestQuarterAddress() noexcept { return getUpperHalf(upperHalfAddress()); }
+    QuarterAddress Datum::higherQuarterAddress() noexcept { return getLowerHalf(upperHalfAddress()); }
+    QuarterAddress Datum::lowerQuarterAddress() noexcept { return getUpperHalf(lowerHalfAddress()); }
+    QuarterAddress Datum::lowestQuarterAddress() noexcept { return getLowerHalf(lowerHalfAddress()); }
+
 } // end namespace forth

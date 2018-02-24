@@ -122,7 +122,6 @@ class Core {
 		byte extractByteFromMolecule();
 		Address extractImm48();
 		Operation extractOperationFromMolecule();
-		void setCurrentMolecule(const Molecule& m, Address offset = 0);
 		void advanceMoleculePosition(Address amount = 1);
 	private:
 		static constexpr bool inSystemVariableArea(Address value) noexcept {

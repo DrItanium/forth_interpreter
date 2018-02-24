@@ -52,10 +52,6 @@ Datum& Core::getSystemVariable(Address index) {
 	}
 	return _systemVariables[index - systemVariableStart];
 }
-void Core::setCurrentMolecule(const Molecule& m, Address offset) {
-	_currentMolecule.setValue(m._value);
-    _moleculePosition.setValue(offset);
-}
 
 
 void Core::advanceMoleculePosition(Address amount) {
@@ -79,9 +75,14 @@ QuarterAddress Core::extractQuarterAddressFromMolecule() {
 	return q;
 }
 QuarterInteger Core::extractQuarterIntegerFromMolecule() {
-    auto q = loadQuarterInteger(_pc.getAddress());
-	advanceMoleculePosition(sizeof(q));
-	return q;
+    union {
+        QuarterAddress v;
+        QuarterInteger i;
+
+    } k;
+    k.v = loadQuarterAddress(_pc.getAddress());
+	advanceMoleculePosition(sizeof(QuarterAddress));
+	return k.i;
 }
 
 
@@ -269,7 +270,7 @@ Datum Core::pop(TargetRegister sp) {
 			throw Problem("push_sp2", "Subroutine Stack Empty!");
 		}
 	}
-	auto result = load(stackPointer.getAddress());
+	auto result = loadWord(stackPointer.getAddress());
 	stackPointer.increment();
 	return result;
 }
@@ -330,7 +331,7 @@ void numericOperationIntegerOnly(Operation op, const std::string& name, Register
 	}
 }
 void Core::numericCombine(Operation op) {
-	auto result = extractArguments(op, [op, this](Register& r, auto val) {
+	auto result = extractArguments(op, [op](Register& r, auto val) {
 				if (involvesDiscriminantType(op) == Discriminant::FloatingPoint) {
 					r.setValue(static_cast<Floating>(val));
 				} else {
@@ -348,7 +349,7 @@ void Core::numericCombine(Operation op) {
 void Core::multiplyOperation(Operation op) {
 	auto t = extractArguments(op, nullptr);
 	auto& [dest, src0, src1] = t;
-	auto fn = [this](auto a, auto b) { return a * b; };
+	auto fn = [](auto a, auto b) { return a * b; };
 	numericOperation(op, "*", dest, src0, src1, fn);
 }
 
@@ -694,13 +695,16 @@ void Core::conditionalBranch(Operation op) {
 }
 
 Address Core::extractImm48() {
-	auto b = Molecule(_currentMolecule.getAddress()).getImm48(_moleculePosition.getAddress());
-	advanceMoleculePosition(6);
-	return b;
+    auto lowest16 = Address(extractQuarterAddressFromMolecule());
+    auto lower16 = Address(extractQuarterAddressFromMolecule()) << 16;
+    auto higher16 = Address(extractQuarterAddressFromMolecule()) << 32;
+    return lowest16 & lower16 & higher16;
 }
 
 void Core::loadImm48(Operation op) {
-	getRegister((TargetRegister)(getDestinationRegister(extractByteFromMolecule()))).setValue(extractImm48());
+    auto tr = TargetRegister(getDestinationRegister(extractByteFromMolecule()));
+    auto imm48 = extractImm48();
+    getRegister(tr).setValue(imm48);
 }
 
 void Core::dispatchInstruction(const Molecule& m, Address offset) {
@@ -754,15 +758,12 @@ void Core::dispatchInstruction(const Molecule& m, Address offset) {
 		auto str = msg.str();
 		throw Problem("dispatchInstruction", str);
 	};
-	setCurrentMolecule(m, offset);
-	while (_moleculePosition.getAddress() < sizeof(Molecule)) {
-		auto op = static_cast<Operation>(extractByteFromMolecule());
-        if (auto result = dispatchTable.find(op); result == dispatchTable.end()) {
-            throwError(op);
-        } else {
-            result->second(this, op);
-        }
-	}
+    auto op = static_cast<Operation>(extractByteFromMolecule());
+    if (auto result = dispatchTable.find(op); result == dispatchTable.end()) {
+        throwError(op);
+    } else {
+        result->second(this, op);
+    }
 }
 
 void Core::loadStore(Operation op) {

@@ -15,9 +15,9 @@
 #include "Assembler.h"
 
 namespace forth {
-	static constexpr Address storeFalse = Instruction::encodeOperation(
-			Instruction::zeroRegister(TargetRegister::C),
-			Instruction::store(TargetRegister::X, TargetRegister::C));
+	static constexpr Address storeFalse = encodeOperation(
+			zeroRegister(TargetRegister::C),
+			store(TargetRegister::X, TargetRegister::C));
 	void Machine::seeWord(const DictionaryEntry* entry) {
 		if (entry->isFake()) {
 			_output << "compiled entry: { " << std::endl;
@@ -117,10 +117,10 @@ namespace forth {
         _core.getRegister(TargetRegister::C).getWord()->operator()(this);
 	}
 	void Machine::ifCondition() {
-		static constexpr auto prepRegisters = Instruction::preCompileOperation<
-				Instruction::popB(), 
-				Instruction::popA(),
-				Instruction::popC()>();
+		static constexpr auto prepRegisters = preCompileOperation<
+				popB(), 
+				popA(),
+				popC()>();
 		// if we're not in compilation mode then error out
 		if (!inCompilationMode()) {
 			throw Problem("if", "must be defining a word!");
@@ -277,23 +277,23 @@ namespace forth {
 	}
 
 	bool Machine::numberRoutine(const std::string& word) noexcept {
-		static constexpr auto loadTrueToStack = Instruction::preCompileOperation<
-			Instruction::zeroRegister(TargetRegister::C),
-			Instruction::setImmediate16_Lowest(TargetRegister::C, 1), 
-			Instruction::pushC()>();
+		static constexpr auto loadTrueToStack = preCompileOperation<
+			zeroRegister(TargetRegister::C),
+			setImmediate16_Lowest(TargetRegister::C, 1), 
+			pushC()>();
 		//static_assert(loadTrueToStack == 0x1f00010216, "Load true to stack is incorrect!");
-		static constexpr auto loadFalseToStack = Instruction::preCompileOperation<
-			Instruction::zeroRegister(TargetRegister::C),
-			Instruction::setImmediate16_Lowest(TargetRegister::C, 0),
-			Instruction::pushC()>();
+		static constexpr auto loadFalseToStack = preCompileOperation<
+			zeroRegister(TargetRegister::C),
+			setImmediate16_Lowest(TargetRegister::C, 0),
+			pushC()>();
 		//static_assert(loadFalseToStack == 0x1f00000216, "Load false to stack is incorrect!");
         auto saveToStack = [this](Address value) {
-        //static constexpr auto loadLower48 = Instruction::loadLowerImmediate48(TargetRegister::X, shouldKeepExecutingLocation);
+        //static constexpr auto loadLower48 = loadLowerImmediate48(TargetRegister::X, shouldKeepExecutingLocation);
 		microcodeStreamInvoke(
-				Instruction::loadLowerImmediate48(TargetRegister::C, value),
-				Instruction::encodeOperation(
-					Instruction::setImmediate64_Highest(TargetRegister::C, value),
-					Instruction::pushC()));
+				loadLowerImmediate48(TargetRegister::C, value),
+				encodeOperation(
+					setImmediate64_Highest(TargetRegister::C, value),
+					pushC()));
         };
 		if (word.empty()) { 
 			return false; 
@@ -465,8 +465,8 @@ namespace forth {
 		auto parent = popSubroutine();
 		addWord(_compileTarget);
 		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
-				static constexpr auto performEqualityCheck = Instruction::preCompileOperation<Instruction::popA(), Instruction::popB(), Instruction::cmpeq()>();
-				static constexpr auto saveABToStack = Instruction::preCompileOperation<Instruction::pushB(), Instruction::pushA()>();
+				static constexpr auto performEqualityCheck = preCompileOperation<popA(), popB(), cmpeq()>();
+				static constexpr auto saveABToStack = preCompileOperation<pushB(), pushA()>();
 				static_assert(Address(0x111d1c) == performEqualityCheck, "Equality check operation failed!");
 				//static_assert(Address(0x2122) == saveABToStack, "Save AB to stack routine failed!");
 				microcodeInvoke(performEqualityCheck);
@@ -512,7 +512,7 @@ loopTop:
 		auto parent = popSubroutine();
 		addWord(_compileTarget);
 		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
-				static constexpr auto checkCondition = Instruction::preCompileOperation< Instruction::popA(), Instruction::notl()>();
+				static constexpr auto checkCondition = preCompileOperation< popA(), notl()>();
 				static_assert(0x061c == checkCondition, "conditional operation failed!");
                 // super gross but far more accurately models the underlying micro architecture
 endLoopTop:
@@ -552,9 +552,9 @@ endLoopTop:
         top.entry->operator()(this);
     }
 	bool Machine::keepExecuting() noexcept {
-        static constexpr auto loadLower48 = Instruction::loadLowerImmediate48(TargetRegister::X, shouldKeepExecutingLocation);
-        static constexpr auto loadUpper16AndLoad = Instruction::preCompileOperation<Instruction::setImmediate64_Highest(TargetRegister::X, shouldKeepExecutingLocation),
-                                                                         Instruction::load(TargetRegister::X, TargetRegister::X)>();
+        static constexpr auto loadLower48 = loadLowerImmediate48(TargetRegister::X, shouldKeepExecutingLocation);
+        static constexpr auto loadUpper16AndLoad = preCompileOperation<setImmediate64_Highest(TargetRegister::X, shouldKeepExecutingLocation),
+                                                                         load(TargetRegister::X, TargetRegister::X)>();
         dispatchInstructionStream<loadLower48, loadUpper16AndLoad>();
 		return _core.getRegister(TargetRegister::X).getTruth();
 	}
@@ -562,9 +562,9 @@ endLoopTop:
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
 		// clear the stacks and the input pointer
         dispatchInstructionStream<
-            Instruction::loadLowerImmediate48(TargetRegister::X, parameterStackEmptyLocation),
-            Instruction::encodeOperation(Instruction::setImmediate64_Highest(TargetRegister::X, parameterStackEmptyLocation),
-                                         Instruction::load(TargetRegister::SP, TargetRegister::X))>();
+            loadLowerImmediate48(TargetRegister::X, parameterStackEmptyLocation),
+            encodeOperation(setImmediate64_Highest(TargetRegister::X, parameterStackEmptyLocation),
+                                         load(TargetRegister::SP, TargetRegister::X))>();
 		clearSubroutineStack();
 		_input.clear();
 		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -575,8 +575,8 @@ endLoopTop:
 		}
 		// _compiling = false;
 		dispatchInstructionStream<
-			Instruction::loadLowerImmediate48(TargetRegister::X, isCompilingLocation),
-			Instruction::setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
+			loadLowerImmediate48(TargetRegister::X, isCompilingLocation),
+			setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
 			storeFalse>();
 	}
 	void Machine::dispatchInstruction() {
@@ -586,55 +586,55 @@ endLoopTop:
 	}
 	bool Machine::inCompilationMode() noexcept {
 		dispatchInstructionStream<
-            Instruction::loadLowerImmediate48(TargetRegister::X, isCompilingLocation),
-            Instruction::preCompileOperation<Instruction::setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
-                                         Instruction::load(TargetRegister::X, TargetRegister::X)>()>();
+            loadLowerImmediate48(TargetRegister::X, isCompilingLocation),
+            preCompileOperation<setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
+                                         load(TargetRegister::X, TargetRegister::X)>()>();
 		return _core.getRegister(TargetRegister::X).getTruth();
 	}
 	void Machine::activateCompileMode() {
 		dispatchInstructionStream<
-            Instruction::loadLowerImmediate48(TargetRegister::X, isCompilingLocation),
-            Instruction::encodeOperation(
-                    Instruction::setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
-					Instruction::zeroRegister(TargetRegister::C)),
-            Instruction::encodeOperation(
-                    Instruction::setImmediate16_Lowest(TargetRegister::C, 1),
-                    Instruction::store(TargetRegister::X, TargetRegister::C))>();
+            loadLowerImmediate48(TargetRegister::X, isCompilingLocation),
+            encodeOperation(
+                    setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
+					zeroRegister(TargetRegister::C)),
+            encodeOperation(
+                    setImmediate16_Lowest(TargetRegister::C, 1),
+                    store(TargetRegister::X, TargetRegister::C))>();
 	}
 	void Machine::deactivateCompileMode() {
 		dispatchInstructionStream<
-            Instruction::loadLowerImmediate48(TargetRegister::X, isCompilingLocation),
-            Instruction::encodeOperation(
-                    Instruction::setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
-					Instruction::zeroRegister(TargetRegister::C)),
-            Instruction::encodeOperation(
-                    Instruction::store(TargetRegister::X, TargetRegister::C))>();
+            loadLowerImmediate48(TargetRegister::X, isCompilingLocation),
+            encodeOperation(
+                    setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
+					zeroRegister(TargetRegister::C)),
+            encodeOperation(
+                    store(TargetRegister::X, TargetRegister::C))>();
 	}
 
 	bool Machine::stackEmpty(TargetRegister sp, Address location) {
-		dispatchInstruction(Instruction::loadLowerImmediate48(TargetRegister::X, location));
-		dispatchInstruction(Instruction::encodeOperation(
-					Instruction::setImmediate64_Highest(TargetRegister::X, location),
-					Instruction::load(TargetRegister::S, TargetRegister::X)));
-		dispatchInstruction(Instruction::encodeOperation(Instruction::cmpeq(TargetRegister::C, TargetRegister::S, sp)));
+		dispatchInstruction(loadLowerImmediate48(TargetRegister::X, location));
+		dispatchInstruction(encodeOperation(
+					setImmediate64_Highest(TargetRegister::X, location),
+					load(TargetRegister::S, TargetRegister::X)));
+		dispatchInstruction(encodeOperation(cmpeq(TargetRegister::C, TargetRegister::S, sp)));
 		return _core.getRegister(TargetRegister::C).getTruth();
 	}
 	bool Machine::stackFull(TargetRegister sp, Address location) {
-		dispatchInstruction(Instruction::loadLowerImmediate48(TargetRegister::X, location));
-		dispatchInstruction(Instruction::encodeOperation(
-					Instruction::setImmediate64_Highest(TargetRegister::X, location),
-					Instruction::load(TargetRegister::S, TargetRegister::X)));
-		dispatchInstruction(Instruction::encodeOperation(Instruction::cmpeq(TargetRegister::C, TargetRegister::S, sp)));
+		dispatchInstruction(loadLowerImmediate48(TargetRegister::X, location));
+		dispatchInstruction(encodeOperation(
+					setImmediate64_Highest(TargetRegister::X, location),
+					load(TargetRegister::S, TargetRegister::X)));
+		dispatchInstruction(encodeOperation(cmpeq(TargetRegister::C, TargetRegister::S, sp)));
 		return _core.getRegister(TargetRegister::C).getTruth();
 	}
 	void Machine::pushOntoStack(TargetRegister sp, Datum value, Address fullLocation) {
 		if (stackFull(sp, fullLocation)) {
 			throw Problem("pushOntoStack", "STACK FULL!!!");
 		}
-        dispatchInstruction(Instruction::loadLowerImmediate48(TargetRegister::X, value.address));
-        dispatchInstruction(Instruction::encodeOperation(
-                    Instruction::setImmediate64_Highest(TargetRegister::X, value.address),
-                    Instruction::pushRegister(TargetRegister::X, sp)));
+        dispatchInstruction(loadLowerImmediate48(TargetRegister::X, value.address));
+        dispatchInstruction(encodeOperation(
+                    setImmediate64_Highest(TargetRegister::X, value.address),
+                    pushRegister(TargetRegister::X, sp)));
 	}
 	void Machine::pushSubroutine(Datum value) {
 		try {
@@ -647,7 +647,7 @@ endLoopTop:
 		if (stackEmpty(sp, emptyLocation)) {
 			throw Problem("pop", "STACK EMPTY!");
 		}
-        dispatchInstruction(Instruction::encodeOperation(Instruction::popRegister(TargetRegister::C, sp)));
+        dispatchInstruction(encodeOperation(popRegister(TargetRegister::C, sp)));
 		return _core.getRegister(TargetRegister::C).getValue();
 	}
 	Datum Machine::popSubroutine() {
@@ -664,9 +664,9 @@ endLoopTop:
 		return stackFull(TargetRegister::SP2, subroutineStackFullLocation);
 	}
 	void Machine::clearSubroutineStack() {
-		dispatchInstruction(Instruction::loadAddressLowerHalf(TargetRegister::X, subroutineStackEmptyLocation));
-		dispatchInstruction(Instruction::loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation));
-		dispatchInstruction(Instruction::encodeOperation(Instruction::load(TargetRegister::SP2, TargetRegister::X)));
+		dispatchInstruction(loadAddressLowerHalf(TargetRegister::X, subroutineStackEmptyLocation));
+		dispatchInstruction(loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation));
+		dispatchInstruction(encodeOperation(load(TargetRegister::SP2, TargetRegister::X)));
 	}
 
 
@@ -690,18 +690,18 @@ endLoopTop:
 		//	auto element = load(curr);
 		//	_output << "\t- " << element << std::endl;
 		//}
-        static constexpr auto executionBodyContents = Instruction::preCompileOperation<
-                Instruction::load(TargetRegister::A, TargetRegister::B),
-                Instruction::increment(TargetRegister::B, 0), // advance by one, the core internally increments by one automatically
-				Instruction::cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B)>();
-        static constexpr auto setupRegisters = Instruction::preCompileOperation<
-                Instruction::load(TargetRegister::X, TargetRegister::X),
-				Instruction::zeroRegister(TargetRegister::A),
-                Instruction::move(TargetRegister::B, TargetRegister::SP)>();
-		static constexpr auto equalityCheck = Instruction::preCompileOperation<Instruction::cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B)>();
-        static constexpr auto loadParameterStackAddressLower = Instruction::loadLowerImmediate48(TargetRegister::X, parameterStackEmptyLocation);
-        static constexpr auto loadParameterStackAddressUpper = Instruction::preCompileOperation<
-            Instruction::setImmediate64_Highest(TargetRegister::X, parameterStackEmptyLocation)
+        static constexpr auto executionBodyContents = preCompileOperation<
+                load(TargetRegister::A, TargetRegister::B),
+                increment(TargetRegister::B, 0), // advance by one, the core internally increments by one automatically
+				cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B)>();
+        static constexpr auto setupRegisters = preCompileOperation<
+                load(TargetRegister::X, TargetRegister::X),
+				zeroRegister(TargetRegister::A),
+                move(TargetRegister::B, TargetRegister::SP)>();
+		static constexpr auto equalityCheck = preCompileOperation<cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B)>();
+        static constexpr auto loadParameterStackAddressLower = loadLowerImmediate48(TargetRegister::X, parameterStackEmptyLocation);
+        static constexpr auto loadParameterStackAddressUpper = preCompileOperation<
+            setImmediate64_Highest(TargetRegister::X, parameterStackEmptyLocation)
             >();
         dispatchInstruction(loadParameterStackAddressLower);
         dispatchInstruction(loadParameterStackAddressUpper);
@@ -723,5 +723,8 @@ loopRestart:
 	}
 	std::function<void(Address, Address)> Machine::getMemoryInstallationFunction() {
 		return _core.getMemoryInstallationFunction();
+	}
+	std::function<void(Address, Address)> Machine::getInstructionInstallationFunction() {
+		return _core.getInstructionInstallationFunction();
 	}
 } // end namespace forth

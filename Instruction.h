@@ -199,6 +199,7 @@ enum class Operation : byte {
     //StoreByte,
     //StoreHalfAddress,
     //StoreQuarterAddress,
+    LeaveExecutionLoop, // a hack to support returning to native code
     Count,
 };
 #undef FUBVersion

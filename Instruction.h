@@ -5,6 +5,7 @@
 #include "Problem.h"
 #include <iostream>
 #include <list>
+#include <tuple>
 namespace forth {
 
 
@@ -458,6 +459,11 @@ constexpr byte getSourceRegister(byte field) noexcept {
 }
 constexpr Operation getOperation(byte i) noexcept {
     return static_cast<Operation>(i);
+}
+
+template<typename T>
+constexpr byte getInstructionWidth(std::tuple<byte, T> value) noexcept {
+	return std::get<0>(value);
 }
 static_assert(static_cast<byte>(-1) >= static_cast<byte>(Operation::Count), "Too many operations defined!");
 

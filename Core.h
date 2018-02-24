@@ -13,29 +13,38 @@ class Core {
 		static constexpr Address largestAddress = largestByteAddress >> 3;
 		static constexpr Address memoryCapacity = (largestAddress + 1);
         static constexpr Address memoryByteCapacity = (largestByteAddress + 1);
+		static constexpr Address byteAddressMask = 0b111;
+		static constexpr Address wordAddressMask = ~byteAddressMask;
+		template<Address index>
+		static constexpr auto wordToByteOffset = index * 8;
 		// we have a 64-kiloword area for storing internal system values.
 		static constexpr Address byteSystemVariableStart = 0xFFFF'FFFF'FFF8'0000;
         static constexpr Address byteSystemVariableEnd = 0xFFFF'FFFF'FFFF'FFFF;
         static constexpr Address byteUserVariableStart = byteSystemVariableStart;
         static constexpr Address byteUserVariableEnd = 0xFFFF'FFFF'FFFB'FFFF;
-        static constexpr Address systemVariableStart = byteSystemVariableStart >> 3;
-		static constexpr Address systemVariableEnd = byteSystemVariableEnd >> 3;
-        static constexpr Address userVariableStart = byteUserVariableStart >> 3;
-        static constexpr Address userVariableEnd = byteUserVariableEnd >> 3;
+        static constexpr Address systemVariableStart = byteSystemVariableStart & wordAddressMask;
+		static constexpr Address systemVariableEnd = byteSystemVariableEnd & wordAddressMask;
+        static constexpr Address userVariableStart = byteUserVariableStart & wordAddressMask;
+        static constexpr Address userVariableEnd = byteUserVariableEnd & wordAddressMask;
 		static constexpr Address terminateExecutionVariable = systemVariableEnd;
-		static constexpr Address sp2StackEmpty = systemVariableEnd - 1;
-		static constexpr Address sp2StackFull = systemVariableEnd - 2;
-		static constexpr Address spStackEmpty = systemVariableEnd - 3;
-		static constexpr Address spStackFull = systemVariableEnd - 4;
-		static constexpr Address systemVariableSize = (systemVariableEnd - systemVariableStart) + 1;
+		static constexpr Address sp2StackEmpty = systemVariableEnd - wordToByteOffset<1>;
+		static constexpr Address sp2StackFull = systemVariableEnd - wordToByteOffset<2>;
+		static constexpr Address spStackEmpty = systemVariableEnd - wordToByteOffset<3>;
+		static constexpr Address spStackFull = systemVariableEnd - wordToByteOffset<4>;
+		static constexpr Address systemVariableMask = (systemVariableEnd - systemVariableStart) >> 3;
+		static_assert(systemVariableMask == 0xFFFF, "System variable mask is not correct!");
+		static constexpr Address systemVariableSize = ((systemVariableEnd - systemVariableStart) + wordToByteOffset<1>) >> 3;
         static_assert(systemVariableSize == 0x10000, "System variable size is not 64 kwords");
         static_assert((byteSystemVariableEnd - byteSystemVariableStart) == 0x7FFFF, "System variable size is not 512k in size!");
 		using OutputFunction = std::function<void(Discriminant, TargetRegister, const Register&)>;
+		static constexpr Address getNearestWordAddress(Address input) noexcept {
+			return decodeBits<Address, Address, wordAddressMask, 0>(input);
+		}
         static constexpr Address getWordAddress(Address input) noexcept {
-            return input >> 3;
+			return getNearestWordAddress(input) >> 3;
         }
         static constexpr Address getByteOffset(Address input) noexcept {
-            return decodeBits<Address, Address, ~(Address(0b111)), 3>(input);
+            return decodeBits<Address, Address, byteAddressMask, 0>(input);
         }
         template<typename T>
         static constexpr bool spansTwoAddresses(Address addr) noexcept {
@@ -77,6 +86,7 @@ class Core {
 		std::function<void(Address, Address)> getMemoryInstallationFunction() noexcept;
 		std::function<void(Address, Address)> getInstructionInstallationFunction() noexcept;
 	private:
+		void returnToNative(Operation op);
 		void push(TargetRegister reg, TargetRegister sp);
 		void pop(TargetRegister dest, TargetRegister sp);
 		void savePositionToSubroutineStack();
@@ -101,6 +111,7 @@ class Core {
 		void loadStore(Operation op);
 		void setImm16(Operation op);
         void encodeDecodeBits(Operation op);
+		void nop(Operation op);
 	private:
 		using ThreeRegisterForm = std::tuple<TargetRegister, TargetRegister, TargetRegister>;
 		using ThreeRegisterImmediateForm = std::tuple<TargetRegister, TargetRegister, QuarterAddress>;

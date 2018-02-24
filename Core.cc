@@ -43,14 +43,14 @@ Datum& Core::getSystemVariable(Address index) {
     if (getByteOffset(index) != 0) {
         throw Problem("getSystemVariable", "System variables are 8-bytes wide and must be accessed on 8-byte boundaries!");
     }
-    auto closestWord = getWordAddress(index);
-	if (!Core::inSystemVariableArea(closestWord)) {
+	if (!Core::inSystemVariableArea(index)) {
 		std::stringstream ss;
 		ss << "Illegal address: " << std::hex << index;
 		auto msg = ss.str();
 		throw Problem("getSystemVariable", msg);
 	}
-	return _systemVariables[index - systemVariableStart];
+	// convert from byte oriented to word oriented
+	return _systemVariables[(index - systemVariableStart) >> 3];
 }
 
 
@@ -156,8 +156,7 @@ Core::FiveRegisterForm Core::extractFiveRegisterForm() {
 }
 
 void Core::storeByte(Address addr, byte value) {
-    auto wordAddr = getWordAddress(addr);
-    auto& word = (wordAddr <= largestAddress) ? _memory[wordAddr] : getSystemVariable(wordAddr);
+    auto& word = (addr <= largestByteAddress ) ? _memory[getNearestWordAddress(addr)] : getSystemVariable(addr);
     word.setField(getByteOffset(addr), value);
 }
 void Core::store(Address addr, const Datum& value) {
@@ -175,12 +174,12 @@ void Core::store(Address addr, const Datum& value) {
             _memory[wordAddr] = value.numValue;
         } else {
             // see if we're in the system variable area instead!
-            getSystemVariable(wordAddr).address = value.address;
+            getSystemVariable(addr).address = value.address;
         }
     }
 }
 byte Core::loadByte(Address addr) {
-    return loadWord(getWordAddress(addr)).getField(getByteOffset(addr));
+    return loadWord(getNearestWordAddress(addr)).getField(getByteOffset(addr));
 }
 QuarterAddress Core::loadQuarterAddress(forth::Address addr) {
     auto offset = getByteOffset(addr);
@@ -188,11 +187,11 @@ QuarterAddress Core::loadQuarterAddress(forth::Address addr) {
         case 0:
             return loadWord(addr).lowestQuarterAddress();
         case 2:
-            return loadWord(getWordAddress(addr)).lowerQuarterAddress();
+            return loadWord(getNearestWordAddress(addr)).lowerQuarterAddress();
         case 4:
-            return loadWord(getWordAddress(addr)).higherQuarterAddress();
+            return loadWord(getNearestWordAddress(addr)).higherQuarterAddress();
         case 6:
-            return loadWord(getWordAddress(addr)).highestQuarterAddress();
+            return loadWord(getNearestWordAddress(addr)).highestQuarterAddress();
         case 1:
         case 3:
         case 5:
@@ -212,7 +211,7 @@ HalfAddress Core::loadHalfAddress(Address addr) {
         case 0:
             return loadWord(addr).lowerHalfAddress();
         case 4:
-            return loadWord(getWordAddress(addr)).upperHalfAddress();
+            return loadWord(getNearestWordAddress(addr)).upperHalfAddress();
         case 1:
         case 2:
         case 3:
@@ -232,7 +231,7 @@ HalfAddress Core::loadHalfAddress(Address addr) {
 }
 Datum Core::loadWord(Address addr) {
     if (auto offset = getByteOffset(addr); offset != 0) {
-        if (addr <= largestByteAddress) {
+        if (addr >= largestByteAddress) {
             throw Problem("loadWord", "Accessing system variables must occur on 8-byte boundaries!");
         } else {
             // do the much more expensive byte by byte load
@@ -712,6 +711,7 @@ void Core::loadImm48(Operation op) {
     auto imm48 = extractImm48();
     getRegister(tr).setValue(imm48);
 }
+void Core::nop(Operation op) { }
 
 void Core::dispatchInstruction() {
 	static std::map<Operation, decltype(std::mem_fn(&Core::numericCombine))> dispatchTable = {
@@ -756,6 +756,7 @@ void Core::dispatchInstruction() {
         DefEntry(ConditionalBranchIndirect, conditionalBranch), DefEntry(ConditionalCallSubroutine, conditionalBranch),
 		DefEntry(ConditionalCallSubroutineIndirect, conditionalBranch), DefEntry(ConditionalReturnSubroutine, conditionalBranch),
 		DefEntry(EncodeBits, encodeDecodeBits), DefEntry(DecodeBits, encodeDecodeBits),
+		DefEntry(Nop, nop), DefEntry(LeaveExecutionLoop, returnToNative),
 #undef DefEntry
 	};
     auto op = static_cast<Operation>(extractByteFromMolecule());
@@ -860,6 +861,9 @@ void Core::executionCycle(Address startAddress) {
     while(value.address == 0) {
         // load the current address
         dispatchInstruction();
+		if (value.address != 0) {
+			break;
+		}
         if (_advancePC) {
             // goto the next byte if it makes sense
             _pc.increment();
@@ -899,6 +903,13 @@ std::function<void(Address, Address)> Core::getInstructionInstallationFunction()
 			storeByte(curr, conv.getField(byte(i)));
 		}
 	};
+}
+
+void Core::returnToNative(Operation op) {
+	if (op != Operation::LeaveExecutionLoop) {
+		throw Problem("returnToNative", "Illegal operation provided!");
+	}
+	store(Core::terminateExecutionVariable, Address(1));
 }
 
 

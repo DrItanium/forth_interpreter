@@ -15,8 +15,8 @@ namespace forth {
 	class Machine {
 		public:
 			static constexpr Address shouldKeepExecutingLocation = Core::userVariableStart;
-			static constexpr Address isCompilingLocation = Core::userVariableStart + 1;
-			static constexpr Address ignoreInputLocation = Core::userVariableStart + 2;
+			static constexpr Address isCompilingLocation = Core::userVariableStart + Core::wordToByteOffset<1>;
+			static constexpr Address ignoreInputLocation = Core::userVariableStart + Core::wordToByteOffset<2>;
 			static constexpr Address subroutineStackEmptyLocation = Core::sp2StackEmpty;
 			static constexpr Address subroutineStackFullLocation = Core::sp2StackFull;
 			static constexpr Address parameterStackEmptyLocation = Core::spStackEmpty;

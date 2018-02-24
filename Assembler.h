@@ -961,8 +961,7 @@ class AssemblerBuilder {
 		Address _baseAddress, _currentLocation;
 		Molecule _currentMolecule;
 		std::map<std::string, Address> _names;
-		std::list<AddressToMolecule> _operations;
-
+        std::list<Molecule> _operations;
 };
 
 } // end namespace forth

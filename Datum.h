@@ -160,13 +160,13 @@ namespace forth {
         DictionaryEntry* subroutine;
         byte backingStore[sizeof(Address)];
         void setField(byte index, byte value);
-        byte getField(byte index);
-        HalfAddress upperHalfAddress() noexcept;
-        HalfAddress lowerHalfAddress() noexcept;
-        QuarterAddress highestQuarterAddress() noexcept;
-        QuarterAddress higherQuarterAddress() noexcept;
-        QuarterAddress lowerQuarterAddress() noexcept;
-        QuarterAddress lowestQuarterAddress() noexcept;
+        byte getField(byte index) const;
+        HalfAddress upperHalfAddress() const noexcept;
+        HalfAddress lowerHalfAddress() const noexcept;
+        QuarterAddress highestQuarterAddress() const noexcept;
+        QuarterAddress higherQuarterAddress() const noexcept;
+        QuarterAddress lowerQuarterAddress() const noexcept;
+        QuarterAddress lowestQuarterAddress() const noexcept;
 
     };
     std::ostream& operator<<(std::ostream& out, const Datum& dt);

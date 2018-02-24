@@ -82,7 +82,7 @@ namespace forth {
             address = encodeBits<Address, byte>(address, value, 0xFF << index, index << 3);
         }
     }
-    byte Datum::getField(byte index) {
+    byte Datum::getField(byte index) const {
         if (index >= sizeof(Address)) {
             throw Problem("Datum::getfield", "index is too large!");
         } else {
@@ -90,16 +90,16 @@ namespace forth {
         }
     }
 
-    HalfAddress Datum::upperHalfAddress() noexcept {
+    HalfAddress Datum::upperHalfAddress() const noexcept {
         return getUpperHalf(address);
     }
-    HalfAddress Datum::lowerHalfAddress() noexcept {
+    HalfAddress Datum::lowerHalfAddress() const noexcept {
         return getLowerHalf(address);
     }
 
-    QuarterAddress Datum::highestQuarterAddress() noexcept { return getUpperHalf(upperHalfAddress()); }
-    QuarterAddress Datum::higherQuarterAddress() noexcept { return getLowerHalf(upperHalfAddress()); }
-    QuarterAddress Datum::lowerQuarterAddress() noexcept { return getUpperHalf(lowerHalfAddress()); }
-    QuarterAddress Datum::lowestQuarterAddress() noexcept { return getLowerHalf(lowerHalfAddress()); }
+    QuarterAddress Datum::highestQuarterAddress() const noexcept { return getUpperHalf(upperHalfAddress()); }
+    QuarterAddress Datum::higherQuarterAddress() const noexcept { return getLowerHalf(upperHalfAddress()); }
+    QuarterAddress Datum::lowerQuarterAddress() const noexcept { return getUpperHalf(lowerHalfAddress()); }
+    QuarterAddress Datum::lowestQuarterAddress() const noexcept { return getLowerHalf(lowerHalfAddress()); }
 
 } // end namespace forth

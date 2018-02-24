@@ -69,6 +69,7 @@ class Core {
         HalfAddress loadHalfAddress(Address addr);
         Address loadLower48(Address addr);
 		void store(Address addr, const Datum& value);
+        void storeByte(Address addr, byte value);
 		Register& getRegister(TargetRegister reg);
 		void push(const Datum& d, TargetRegister sp);
 		Datum pop(TargetRegister sp);

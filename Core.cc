@@ -155,14 +155,29 @@ Core::FiveRegisterForm Core::extractFiveRegisterForm() {
             TargetRegister(getDestinationRegister(regs3)));
 }
 
-
+void Core::storeByte(Address addr, byte value) {
+    auto wordAddr = getWordAddress(addr);
+    auto& word = (wordAddr <= largestAddress) ? _memory[wordAddr] : getSystemVariable(wordAddr);
+    word.setField(getByteOffset(addr), value);
+}
 void Core::store(Address addr, const Datum& value) {
-	if (addr <= largestAddress) {
-		_memory[addr] = value.numValue;
-	} else {
-		// see if we're in the system variable area instead!
-		getSystemVariable(addr).address = value.address;
-	}
+    // check for unaligned addresses
+    if (auto offset = getByteOffset(addr); offset != 0) {
+        if (addr > largestByteAddress) {
+            throw Problem("Core::store", "Can't do unaligned stores on system variables!");
+        }
+        for (auto loc = addr, j = 0ul; loc < (addr + sizeof(Address)); ++loc, ++j) {
+            storeByte(loc, value.getField(j));
+        }
+    } else {
+        auto wordAddr = getWordAddress(addr);
+        if (wordAddr <= largestAddress) {
+            _memory[wordAddr] = value.numValue;
+        } else {
+            // see if we're in the system variable area instead!
+            getSystemVariable(wordAddr).address = value.address;
+        }
+    }
 }
 byte Core::loadByte(Address addr) {
     return loadWord(getWordAddress(addr)).getField(getByteOffset(addr));

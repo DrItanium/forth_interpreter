@@ -157,8 +157,8 @@ Core::FiveRegisterForm Core::extractFiveRegisterForm() {
 }
 
 void Core::storeByte(Address addr, byte value) {
-    auto& word = (addr <= largestByteAddress ) ? _memory[getNearestWordAddress(addr)] : getSystemVariable(addr);
-	std::cout << "Installed to " << getNearestWordAddress(addr) << std::endl;
+    auto& word = (addr <= largestByteAddress ) ? _memory[getWordAddress(addr)] : getSystemVariable(addr);
+	std::cout << "Installed to " << std::hex << "0x" << addr << " -> 0x" << getWordAddress(addr) << std::endl;
     word.setField(getByteOffset(addr), value);
 }
 void Core::store(Address addr, const Datum& value) {
@@ -621,29 +621,24 @@ void Core::savePositionToSubroutineStack() {
 }
 void Core::jumpOperation(Operation op) {
     auto callSubroutine = [this]() {
-        _advancePC = false;
         auto lower16 = extractQuarterIntegerFromMolecule();
         auto upper8 = extractByteFromMolecule();
         savePositionToSubroutineStack();
         _pc.setValue(Address(makeImm24(lower16, upper8)));
     };
     auto callSubroutineIndirect = [this]() {
-        _advancePC = false;
         auto b = extractByteFromMolecule();
         savePositionToSubroutineStack();
         _pc.setValue(getRegister((TargetRegister)getDestinationRegister(b)).getValue());
     };
 	switch (op) {
 		case Operation::Jump:
-            _advancePC = false;
 			_pc.setValue(_pc.getInt() + extractQuarterIntegerFromMolecule());
 			break;
 		case Operation::JumpAbsolute: 
-            _advancePC = false;
 			_pc.setValue((Address)makeImm24(extractQuarterIntegerFromMolecule(), extractByteFromMolecule()));
 			break;
 		case Operation::JumpIndirect: 
-            _advancePC = false;
 			_pc.setValue(getRegister((TargetRegister)getDestinationRegister(extractByteFromMolecule())).getValue());
 			break;
 		case Operation::CallSubroutine: 
@@ -653,7 +648,6 @@ void Core::jumpOperation(Operation op) {
             callSubroutineIndirect();
 			break;
 		case Operation::ReturnSubroutine: 
-            _advancePC = false;
 			_pc.setValue(pop(TargetRegister::SP2));
 			break;
 		default:
@@ -663,7 +657,6 @@ void Core::jumpOperation(Operation op) {
 void Core::conditionalBranch(Operation op) {
 	auto k = extractByteFromMolecule();
 	if (getRegister(TargetRegister(getDestinationRegister(k))).getTruth()) {
-        _advancePC = false;
 		switch (op) {
 			case Operation::ConditionalBranch:
 				jumpOperation(Operation::Jump);
@@ -838,18 +831,23 @@ void Core::setImm16(Operation op) {
 	auto k = extractByteFromMolecule();
 	auto tr = static_cast<TargetRegister>(getDestinationRegister(k));
     auto& dest = getRegister(tr);
+	auto oldPC = _pc.getAddress();
+	auto q = extractQuarterAddressFromMolecule();
+	if (oldPC != (_pc.getAddress() - 2)) {
+		throw Problem("setImm16", "PC is not being correctly updated!");
+	}
     switch (op) {
         case Operation::SetImmediate16_Lowest:
-            dest.setValue(computeImmediate16<Immediate16Positions::Lowest>(dest.getAddress(), extractQuarterAddressFromMolecule()));
+            dest.setValue(computeImmediate16<Immediate16Positions::Lowest>(dest.getAddress(), q)); 
             break;
         case Operation::SetImmediate16_Lower:
-            dest.setValue(computeImmediate16<Immediate16Positions::Lower>(dest.getAddress(), extractQuarterAddressFromMolecule()));
+            dest.setValue(computeImmediate16<Immediate16Positions::Lower>(dest.getAddress(), q));
             break;
         case Operation::SetImmediate16_Higher:
-            dest.setValue(computeImmediate16<Immediate16Positions::Higher>(dest.getAddress(), extractQuarterAddressFromMolecule()));
+            dest.setValue(computeImmediate16<Immediate16Positions::Higher>(dest.getAddress(), q));
             break;
         case Operation::SetImmediate16_Highest:
-            dest.setValue(computeImmediate16<Immediate16Positions::Highest>(dest.getAddress(), extractQuarterAddressFromMolecule()));
+            dest.setValue(computeImmediate16<Immediate16Positions::Highest>(dest.getAddress(), q));
             break;
         default:
             throw Problem("setImm16", "unknown set imm16 operation!");
@@ -860,18 +858,15 @@ void Core::executionCycle(Address startAddress) {
     auto& value = getSystemVariable(Core::terminateExecutionVariable);
     value.address = 0;
     _pc.setValue(startAddress);
+	std::cout << "_pc starts at: " << std::hex << _pc.getAddress() << std::endl;
     while(value.address == 0) {
         // load the current address
         dispatchInstruction();
 		if (value.address != 0) {
 			break;
 		}
-        if (_advancePC) {
-            // goto the next byte if it makes sense
-            _pc.increment();
-        }
         _pc.setValue(_pc.getAddress() & Core::largestByteAddress);
-        _advancePC = true;
+		std::cout << "_pc is now: " << std::hex << _pc.getAddress() << std::endl;
     }
     // we've halted at this point
 }

@@ -818,7 +818,7 @@ constexpr QuarterAddress popAB() noexcept {
 constexpr QuarterAddress swapAB() noexcept {
     return swap(TargetRegister::B, TargetRegister::A);
 }
-constexpr auto zeroRegister(TargetRegister reg) noexcept -> decltype(xorl(reg, reg, reg)) {
+constexpr auto zeroRegister(TargetRegister reg) noexcept -> decltype(move(reg, TargetRegister::Zero)) {
     return move(reg, TargetRegister::Zero);
 }
 constexpr QuarterAddress imm16TestValue = 0xfded;

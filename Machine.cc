@@ -15,9 +15,7 @@
 #include "Assembler.h"
 
 namespace forth {
-	static constexpr Address storeFalse = encodeOperation(
-			zeroRegister(TargetRegister::C),
-			store(TargetRegister::X, TargetRegister::C));
+
 	void Machine::seeWord(const DictionaryEntry* entry) {
 		if (entry->isFake()) {
 			_output << "compiled entry: { " << std::endl;
@@ -579,7 +577,7 @@ endLoopTop:
 		// _compiling = false;
 		AssemblerBuilder ab2(jitCacheLocation);
 		ab.addInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
-						  storeFalse);
+						  forth::store(TargetRegister::X, TargetRegister::Zero));
 		dispatchInstruction(ab2);
 	}
 	void Machine::dispatchInstruction() {

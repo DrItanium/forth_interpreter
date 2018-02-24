@@ -601,14 +601,7 @@ constexpr HalfAddress makeImm24(QuarterAddress lower16, byte upper8) noexcept {
 	return encodeBits<HalfAddress, QuarterAddress, 0x00FF0000, 16>(HalfAddress(lower16), static_cast<QuarterAddress>(upper8));
 }
 void Core::savePositionToSubroutineStack() {
-	auto value = _moleculePosition.getValue();
-    if (value.address >= 8) {
-        push(_pc.getAddress() + 1, TargetRegister::SP2);
-        push(Address(0), TargetRegister::SP2);
-    } else {
-        push(_pc.getValue(), TargetRegister::SP2);
-        push(value, TargetRegister::SP2);
-    }
+    push(_pc.getValue(), TargetRegister::SP2);
 }
 void Core::jumpOperation(Operation op) {
     auto callSubroutine = [this]() {
@@ -645,7 +638,6 @@ void Core::jumpOperation(Operation op) {
 			break;
 		case Operation::ReturnSubroutine: 
             _advancePC = false;
-			_moleculePosition.setValue(pop(TargetRegister::SP2));
 			_pc.setValue(pop(TargetRegister::SP2));
 			break;
 		default:
@@ -672,7 +664,6 @@ void Core::conditionalBranch(Operation op) {
 				_pc.setValue(getRegister((TargetRegister)getSourceRegister(k)).getAddress());
 				break;
 			case Operation::ConditionalReturnSubroutine:
-				_moleculePosition.setValue(pop(TargetRegister::SP2));
 				_pc.setValue(pop(TargetRegister::SP2));
 				break;
 			default:
@@ -682,7 +673,7 @@ void Core::conditionalBranch(Operation op) {
 		switch (op) {
 			case Operation::ConditionalBranch:
 			case Operation::ConditionalCallSubroutine:
-				_moleculePosition.increment(2);
+                _pc.increment(2);
 				break;
 			case Operation::ConditionalBranchIndirect:
 			case Operation::ConditionalReturnSubroutine:
@@ -804,7 +795,6 @@ void Core::typeValue(Operation op) {
 		_output(involvesDiscriminantType(op), tr, getRegister(tr));
 	} else {
 		throw Problem("typeValue", "no output function defined!");
-				
 	}
 }
 void Core::setOutputFunction(Core::OutputFunction output) {

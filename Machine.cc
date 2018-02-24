@@ -28,7 +28,7 @@ namespace forth {
 			_output << "\tNative Operation!" << std::endl;
 		} else {
 			auto flags = _output.flags();
-			auto outputDictionaryEntry = [this, entry](auto space) {
+			auto outputDictionaryEntry = [this](auto space) {
                 auto innerTarget = std::get<const DictionaryEntry*>(space->_data);
 				if (innerTarget->isFake()) {
 					seeWord(innerTarget);
@@ -36,7 +36,7 @@ namespace forth {
 					_output << innerTarget->getName();
 				}
 			};
-			auto outputWord = [this, entry](auto space) {
+			auto outputWord = [this](auto space) {
                 auto innerTarget = std::get<const DictionaryEntry*>(space->_data);
 				if (innerTarget->isFake()) {
 					_output << "0x" << std::hex << innerTarget;

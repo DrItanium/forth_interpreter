@@ -71,6 +71,7 @@ byte Core::extractByteFromMolecule() {
 
 QuarterAddress Core::extractQuarterAddressFromMolecule() {
     auto q = loadQuarterAddress(_pc.getAddress());
+	static_assert(sizeof(q) == 2, "q is not two bytes!");
 	advanceMoleculePosition(sizeof(q));
 	return q;
 }
@@ -157,6 +158,7 @@ Core::FiveRegisterForm Core::extractFiveRegisterForm() {
 
 void Core::storeByte(Address addr, byte value) {
     auto& word = (addr <= largestByteAddress ) ? _memory[getNearestWordAddress(addr)] : getSystemVariable(addr);
+	std::cout << "Installed to " << getNearestWordAddress(addr) << std::endl;
     word.setField(getByteOffset(addr), value);
 }
 void Core::store(Address addr, const Datum& value) {
@@ -900,7 +902,9 @@ std::function<void(Address, Address)> Core::getInstructionInstallationFunction()
 		}
 		Datum conv(instruction);
 		for (auto curr = location, i = Address(0); curr < (location + width); ++curr, ++i) {
-			storeByte(curr, conv.getField(byte(i)));
+			auto value = conv.getField(byte(i));
+			std::cout << "Installing " << std::hex << int(value) << " to location " << std::hex << curr << std::endl;
+			storeByte(curr, value);
 		}
 	};
 }

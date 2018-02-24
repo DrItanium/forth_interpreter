@@ -79,7 +79,7 @@ namespace forth {
             throw Problem("Datum::setField", "index is too large!");
         } else {
             // cross platform way to do this
-            address = encodeBits<Address, byte>(address, value, 0xFF << index, index << 3);
+            address = encodeBits<Address, byte>(address, value, Address(0xFF) << (index << 3), index << 3);
         }
     }
     byte Datum::getField(byte index) const {

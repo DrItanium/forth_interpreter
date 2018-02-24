@@ -81,6 +81,10 @@ namespace forth {
 		_operations.emplace(_currentLocation, std::get<1>(op));
 		_currentLocation += std::get<0>(op);
 	}
+	void AssemblerBuilder::addInstruction(EagerInstruction op) {
+		// invoke it
+		op(*this);
+	}
 	SizedResolvableLazyFunction jumpRelative(const std::string& name) {
 		return std::make_tuple(getInstructionWidth(Operation::Jump), 
 							[name](AssemblerBuilder& ab, Address from) {
@@ -132,6 +136,17 @@ namespace forth {
 				[name, r](AssemblerBuilder& ab, Address _) {
 					return forth::loadLowerImmediate48(r, ab.absoluteLabelAddress(name));
 				});
+	}
+	EagerInstruction loadImmediate64(TargetRegister r, Address value) {
+		return [r, value](AssemblerBuilder& ab) {
+			ab.addInstruction(loadLowerImmediate48(r, value), setImmediate64_Highest(r, value));
+		};
+	}
+	EagerInstruction loadImmediate64(TargetRegister r, const std::string& name) {
+		return [r, name](AssemblerBuilder& ab) {
+			ab.addInstruction(loadLowerImmediate48(r, name));
+			ab.addInstruction(setImmediate16_Highest(r, name));
+		};
 	}
 } // end namespace forth
 

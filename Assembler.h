@@ -845,6 +845,11 @@ using ResolvableLazyFunction = std::function<Address(AssemblerBuilder&, Address 
 using SizedResolvableLazyFunction = std::tuple<byte, ResolvableLazyFunction>;
 using LazyInstruction = std::function<Address()>;
 using SizedLazyInstruction = std::tuple<byte, LazyInstruction>;
+/**
+ * Used to denote a modifier to an instruction to be performed then and there
+ * useful for macros!
+ */
+using EagerInstruction = std::function<void(AssemblerBuilder&)>;
 class AssemblerBuilder {
 	public:
 		using AddressToMolecule = std::tuple<Address, Molecule>;
@@ -868,6 +873,7 @@ class AssemblerBuilder {
 		void addInstruction(ResolvableLazyFunction op, byte width = sizeof(Address));
 		void addInstruction(SizedResolvableLazyFunction op);
 		void addInstruction(SizedLazyInstruction op);
+		void addInstruction(EagerInstruction op);
 		template<typename T>
 		void addInstruction(T first) {
 			if (auto width = getInstructionWidth(first); width == 0) {
@@ -905,6 +911,8 @@ constexpr HalfAddress jumpRelative(QuarterInteger imm16) noexcept {
 }
 SizedResolvableLazyFunction jumpRelative(const std::string& name);
 
+EagerInstruction loadImmediate64(TargetRegister r, Address value);
+EagerInstruction loadImmediate64(TargetRegister r, const std::string& name);
 
 } // end namespace forth
 static_assert(sizeof(unsigned long long int) >= sizeof(forth::Address), "Unsigned long long int is a 64-bit value or greater!");

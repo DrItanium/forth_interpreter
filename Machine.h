@@ -21,6 +21,7 @@ namespace forth {
 			static constexpr Address subroutineStackFullLocation = Core::sp2StackFull;
 			static constexpr Address parameterStackEmptyLocation = Core::spStackEmpty;
 			static constexpr Address parameterStackFullLocation = Core::spStackFull;
+			static constexpr Address jitCacheLocation = 0x1000; // byte based
             // capacity variables for the two stacks, each one has 64k worth of data
 		public:
 			Machine(std::ostream& output, std::istream& input);
@@ -81,14 +82,8 @@ namespace forth {
 			void defineWord();
 			void endDefineWord();
 			void initializeBaseDictionary();
-			void dispatchInstruction(const Molecule& m);
-			template<Address first, Address ... rest>
-			void dispatchInstructionStream() noexcept {
-				dispatchInstruction(first);
-				if constexpr (sizeof...(rest) > 0) {
-					dispatchInstructionStream<rest...>();
-				}
-			}
+			void dispatchInstruction(AssemblerBuilder&);
+
 			
 		private:
 			template<typename ... Rest>
@@ -209,12 +204,11 @@ namespace forth {
 				}
             }
 			void installMoleculeToMemory0(Address value, Address memory) {
-				dispatchInstruction(loadLowerImmediate48(TargetRegister::A, memory));
-				dispatchInstruction(loadLowerImmediate48(TargetRegister::B, value));
-				dispatchInstruction(encodeOperation(
-							setImmediate64_Highest(TargetRegister::A, memory),
-							setImmediate64_Highest(TargetRegister::B, value)));
-				dispatchInstruction(encodeOperation(forth::store(TargetRegister::A, TargetRegister::B)));
+				AssemblerBuilder ab(jitCacheLocation);
+				ab.addInstruction(loadImmediate64(TargetRegister::A, memory),
+								  loadImmediate64(TargetRegister::B, value),
+								  forth::store(TargetRegister::A, TargetRegister::B));
+				dispatchInstruction(ab);
 			}
             template<byte depth, Address current, auto first, auto ... rest>
             void buildAndInstallMoleculeToMemory(Address memory) {

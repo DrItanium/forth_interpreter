@@ -86,7 +86,9 @@ namespace forth {
         if (index >= sizeof(Address)) {
             throw Problem("Datum::getfield", "index is too large!");
         } else {
-            return decodeBits<Address, byte>(address, 0xFF << index, index << 3);
+			auto mask = Address(0xFF) << (index << 3);
+			auto shift = index << 3;
+            return decodeBits<Address, byte>(address, mask, shift);
         }
     }
 

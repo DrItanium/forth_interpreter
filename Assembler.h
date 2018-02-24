@@ -801,12 +801,10 @@ constexpr QuarterAddress conditionalCallSubroutineIndirect(TargetRegister dest, 
     return encodeTwoByte(Operation::ConditionalCallSubroutineIndirect, dest, cond);
 }
 constexpr Address loadLowerImmediate48(TargetRegister dest, Address value) noexcept {
-	return encodeBits<Address, Address, 0xFFFFFFFFFFFF0000, 16>(
-			encodeBits<Address, byte, 0x000000000000FF00, 8>(
-				encodeBits<Address, byte, 0x00000000000000FF, 0>(0,
-					static_cast<byte>(Operation::LoadImmediateLower48)),
-				encodeDestinationRegister(dest)),
-			value);
+	auto imm48 = decodeBits<Address, Address, 0x0000'FFFF'FFFF'FFFF, 0>(value) << 16;
+	auto edest = Address(encodeDestinationRegister(dest)) << 8;
+	auto op = Address(byte(Operation::LoadImmediateLower48));
+	return imm48 | edest | op;
 }
 constexpr byte popA() noexcept { return popRegister(TargetRegister::A, TargetRegister::SP); }
 constexpr byte popB() noexcept { return popRegister(TargetRegister::B, TargetRegister::SP); }

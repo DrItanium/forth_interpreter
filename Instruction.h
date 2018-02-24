@@ -55,6 +55,7 @@ constexpr byte encodeRegisterPair(TargetRegister dest, T src) noexcept {
 
 
 enum class Operation : byte {
+	Nop,
     Add,
     Subtract,
     Multiply,

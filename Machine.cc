@@ -531,7 +531,8 @@ endLoopTop:
 		// now we have to construct a single entry for the parent which has the conditional code added as well
 	}
 	void Machine::dispatchInstruction(const Molecule& molecule) {
-		_core.dispatchInstruction(molecule);
+		//_core.dispatchInstruction(molecule);
+		throw Problem("Machine::dispatchInstruction", "Reimplement to make a JIT cache location");
 	}
     void Machine::injectWord() {
         // read the next word and then lookup that entry
@@ -554,7 +555,7 @@ endLoopTop:
 	bool Machine::keepExecuting() noexcept {
         static constexpr auto loadLower48 = loadLowerImmediate48(TargetRegister::X, shouldKeepExecutingLocation);
         static constexpr auto loadUpper16AndLoad = preCompileOperation<setImmediate64_Highest(TargetRegister::X, shouldKeepExecutingLocation),
-                                                                         load(TargetRegister::X, TargetRegister::X)>();
+                                                                         forth::load(TargetRegister::X, TargetRegister::X)>();
         dispatchInstructionStream<loadLower48, loadUpper16AndLoad>();
 		return _core.getRegister(TargetRegister::X).getTruth();
 	}
@@ -564,7 +565,7 @@ endLoopTop:
         dispatchInstructionStream<
             loadLowerImmediate48(TargetRegister::X, parameterStackEmptyLocation),
             encodeOperation(setImmediate64_Highest(TargetRegister::X, parameterStackEmptyLocation),
-                                         load(TargetRegister::SP, TargetRegister::X))>();
+                                         forth::load(TargetRegister::SP, TargetRegister::X))>();
 		clearSubroutineStack();
 		_input.clear();
 		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -588,7 +589,7 @@ endLoopTop:
 		dispatchInstructionStream<
             loadLowerImmediate48(TargetRegister::X, isCompilingLocation),
             preCompileOperation<setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
-                                         load(TargetRegister::X, TargetRegister::X)>()>();
+                                         forth::load(TargetRegister::X, TargetRegister::X)>()>();
 		return _core.getRegister(TargetRegister::X).getTruth();
 	}
 	void Machine::activateCompileMode() {
@@ -599,7 +600,7 @@ endLoopTop:
 					zeroRegister(TargetRegister::C)),
             encodeOperation(
                     setImmediate16_Lowest(TargetRegister::C, 1),
-                    store(TargetRegister::X, TargetRegister::C))>();
+                    forth::store(TargetRegister::X, TargetRegister::C))>();
 	}
 	void Machine::deactivateCompileMode() {
 		dispatchInstructionStream<
@@ -608,14 +609,14 @@ endLoopTop:
                     setImmediate64_Highest(TargetRegister::X, isCompilingLocation),
 					zeroRegister(TargetRegister::C)),
             encodeOperation(
-                    store(TargetRegister::X, TargetRegister::C))>();
+                    forth::store(TargetRegister::X, TargetRegister::C))>();
 	}
 
 	bool Machine::stackEmpty(TargetRegister sp, Address location) {
 		dispatchInstruction(loadLowerImmediate48(TargetRegister::X, location));
 		dispatchInstruction(encodeOperation(
 					setImmediate64_Highest(TargetRegister::X, location),
-					load(TargetRegister::S, TargetRegister::X)));
+					forth::load(TargetRegister::S, TargetRegister::X)));
 		dispatchInstruction(encodeOperation(cmpeq(TargetRegister::C, TargetRegister::S, sp)));
 		return _core.getRegister(TargetRegister::C).getTruth();
 	}
@@ -623,7 +624,7 @@ endLoopTop:
 		dispatchInstruction(loadLowerImmediate48(TargetRegister::X, location));
 		dispatchInstruction(encodeOperation(
 					setImmediate64_Highest(TargetRegister::X, location),
-					load(TargetRegister::S, TargetRegister::X)));
+					forth::load(TargetRegister::S, TargetRegister::X)));
 		dispatchInstruction(encodeOperation(cmpeq(TargetRegister::C, TargetRegister::S, sp)));
 		return _core.getRegister(TargetRegister::C).getTruth();
 	}
@@ -666,12 +667,12 @@ endLoopTop:
 	void Machine::clearSubroutineStack() {
 		dispatchInstruction(loadAddressLowerHalf(TargetRegister::X, subroutineStackEmptyLocation));
 		dispatchInstruction(loadAddressUpperHalf(TargetRegister::X, subroutineStackEmptyLocation));
-		dispatchInstruction(encodeOperation(load(TargetRegister::SP2, TargetRegister::X)));
+		dispatchInstruction(encodeOperation(forth::load(TargetRegister::SP2, TargetRegister::X)));
 	}
 
 
 	Datum Machine::load(Address addr) {
-		return _core.load(addr);
+		return _core.loadWord(addr);
 	}
 	void Machine::store(Address addr, const Datum& value) {
 		_core.store(addr, value);
@@ -691,13 +692,13 @@ endLoopTop:
 		//	_output << "\t- " << element << std::endl;
 		//}
         static constexpr auto executionBodyContents = preCompileOperation<
-                load(TargetRegister::A, TargetRegister::B),
+                forth::load(TargetRegister::A, TargetRegister::B),
                 increment(TargetRegister::B, 0), // advance by one, the core internally increments by one automatically
 				cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B)>();
         static constexpr auto setupRegisters = preCompileOperation<
-                load(TargetRegister::X, TargetRegister::X),
+                forth::load(TargetRegister::X, TargetRegister::X),
 				zeroRegister(TargetRegister::A),
-                move(TargetRegister::B, TargetRegister::SP)>();
+                forth::move(TargetRegister::B, TargetRegister::SP)>();
 		static constexpr auto equalityCheck = preCompileOperation<cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B)>();
         static constexpr auto loadParameterStackAddressLower = loadLowerImmediate48(TargetRegister::X, parameterStackEmptyLocation);
         static constexpr auto loadParameterStackAddressUpper = preCompileOperation<

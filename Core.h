@@ -59,7 +59,7 @@ class Core {
 		~Core() = default;
 		//void executionLoop();
 		void setOutputFunction(OutputFunction output);
-		void dispatchInstruction(const Molecule& m, Address offset = 0);
+		void dispatchInstruction();
         /**
          * Returns the word closest to the target addres
          */
@@ -134,7 +134,6 @@ class Core {
         Register _dp, _index;
 		Register _tmp0, _tmp1;
         ReadOnlyRegister _zero;
-		Register _currentMolecule, _moleculePosition;
 		OutputFunction _output;
 		// mapped to 0xFFFFFFFFFFFF0000
 		std::unique_ptr<Datum[]> _memory, _systemVariables;

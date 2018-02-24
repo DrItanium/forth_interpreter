@@ -707,7 +707,7 @@ void Core::loadImm48(Operation op) {
     getRegister(tr).setValue(imm48);
 }
 
-void Core::dispatchInstruction(const Molecule& m, Address offset) {
+void Core::dispatchInstruction() {
 	static std::map<Operation, decltype(std::mem_fn(&Core::numericCombine))> dispatchTable = {
 #define DefEntry(t, fn) { Operation :: t , std::mem_fn<void(Operation)>(&Core:: fn ) }
 #define DefEntryS(t, fn) DefEntry(t, fn)
@@ -752,15 +752,12 @@ void Core::dispatchInstruction(const Molecule& m, Address offset) {
 		DefEntry(EncodeBits, encodeDecodeBits), DefEntry(DecodeBits, encodeDecodeBits),
 #undef DefEntry
 	};
-	auto throwError = [](Operation op) {
+    auto op = static_cast<Operation>(extractByteFromMolecule());
+    if (auto result = dispatchTable.find(op); result == dispatchTable.end()) {
 		std::stringstream msg;
 		msg << "Unknown instruction address: 0x" << std::hex << static_cast<int>(op);
 		auto str = msg.str();
 		throw Problem("dispatchInstruction", str);
-	};
-    auto op = static_cast<Operation>(extractByteFromMolecule());
-    if (auto result = dispatchTable.find(op); result == dispatchTable.end()) {
-        throwError(op);
     } else {
         result->second(this, op);
     }
@@ -857,8 +854,7 @@ void Core::executionCycle(Address startAddress) {
     _pc.setValue(startAddress);
     while(value.address == 0) {
         // load the current address
-        auto current = load(getWordAddress(_pc.getAddress()));
-        dispatchInstruction(current.address, getByteOffset(_pc.getAddress()));
+        dispatchInstruction();
         if (_advancePC) {
             // goto the next byte if it makes sense
             _pc.increment();

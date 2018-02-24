@@ -15,18 +15,18 @@ class Core {
         static constexpr Address memoryByteCapacity = (largestByteAddress + 1);
 		// we have a 64-kiloword area for storing internal system values.
 		static constexpr Address byteSystemVariableStart = 0xFFFF'FFFF'FFF8'0000;
-        static constexpr Address systemVariableStart = byteSystemVariableStart >> 3;
         static constexpr Address byteSystemVariableEnd = 0xFFFF'FFFF'FFFF'FFFF;
+        static constexpr Address byteUserVariableStart = byteSystemVariableStart;
+        static constexpr Address byteUserVariableEnd = 0xFFFF'FFFF'FFFB'FFFF;
+        static constexpr Address systemVariableStart = byteSystemVariableStart >> 3;
 		static constexpr Address systemVariableEnd = byteSystemVariableEnd >> 3;
+        static constexpr Address userVariableStart = byteUserVariableStart >> 3;
+        static constexpr Address userVariableEnd = byteUserVariableEnd >> 3;
 		static constexpr Address terminateExecutionVariable = systemVariableEnd;
 		static constexpr Address sp2StackEmpty = systemVariableEnd - 1;
 		static constexpr Address sp2StackFull = systemVariableEnd - 2;
 		static constexpr Address spStackEmpty = systemVariableEnd - 3;
 		static constexpr Address spStackFull = systemVariableEnd - 4;
-        static constexpr Address byteUserVariableStart = byteSystemVariableStart;
-        static constexpr Address byteUserVariableEnd = 0xFFFF'FFFF'FFFB'FFFF;
-        static constexpr Address userVariableStart = byteUserVariableStart >> 3;
-        static constexpr Address userVariableEnd = byteUserVariableEnd >> 3;
 		static constexpr Address systemVariableSize = (systemVariableEnd - systemVariableStart) + 1;
         static_assert(systemVariableSize == 0x10000, "System variable size is not 64 kwords");
         static_assert((byteSystemVariableEnd - byteSystemVariableStart) == 0x7FFFF, "System variable size is not 512k in size!");

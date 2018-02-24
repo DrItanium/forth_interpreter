@@ -689,15 +689,11 @@ void Core::dispatchInstruction(const Molecule& m, Address offset) {
 	setCurrentMolecule(m, offset);
 	while (_moleculePosition.getAddress() < sizeof(Molecule)) {
 		auto op = static_cast<Operation>(extractByteFromMolecule());
-		if (op == Operation::Stop) {
-			return;
-		} else {
-			if (auto result = dispatchTable.find(op); result == dispatchTable.end()) {
-				throwError(op);
-			} else {
-				result->second(this, op);
-			}
-		}
+        if (auto result = dispatchTable.find(op); result == dispatchTable.end()) {
+            throwError(op);
+        } else {
+            result->second(this, op);
+        }
 	}
 }
 

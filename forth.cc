@@ -174,7 +174,6 @@ void registerDecls(forth::Machine& machine) {
 #undef registerWord
 #undef enumWord
 void microarchitectureWords(forth::Machine& machine) {
-	machine.addMachineCodeWord<Instruction::stop()>("nop");
 	machine.addMachineCodeWord<popA>("pop.a");
 	machine.addMachineCodeWord<popB>("pop.b");
 	machine.addMachineCodeWord<pushC>("push.c");

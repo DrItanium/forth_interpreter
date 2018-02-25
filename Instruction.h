@@ -202,6 +202,8 @@ enum class Operation : byte {
     //StoreHalfAddress,
     //StoreQuarterAddress,
     LeaveExecutionLoop, // a hack to support returning to native code
+	PrintString, // read two registers to get start and length in memory
+	PrintChar, // print a character stored in a register
     Count,
 };
 #undef FUBVersion
@@ -325,6 +327,8 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         case Operation::Decrement:
         case Operation::FloatingPointDecrement:
         case Operation::UnsignedDecrement:
+		case Operation::PrintString:
+		case Operation::PrintChar:
             return 2;
 		case Operation::LoadImmediateLower48:
 			return 8;

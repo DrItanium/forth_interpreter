@@ -751,6 +751,7 @@ void Core::dispatchInstruction() {
 		DefEntry(ConditionalCallSubroutineIndirect, conditionalBranch), DefEntry(ConditionalReturnSubroutine, conditionalBranch),
 		DefEntry(EncodeBits, encodeDecodeBits), DefEntry(DecodeBits, encodeDecodeBits),
 		DefEntry(Nop, nop), DefEntry(LeaveExecutionLoop, returnToNative),
+		DefEntry(PrintString, printString),
 #undef DefEntry
 	};
     auto op = static_cast<Operation>(extractByteFromMolecule());
@@ -917,6 +918,27 @@ void Core::returnToNative(Operation op) {
 			break;
 		default:
 			throw Problem("returnToNative", "Illegal operation provided!");
+	}
+}
+
+void Core::printString(Operation op) {
+	if (op == Operation::PrintString) {
+		auto second = extractByteFromMolecule();
+		auto startReg = TargetRegister(getDestinationRegister(second));
+		auto lengthReg = TargetRegister(getSourceRegister(second));
+		// collect the data up into a string
+		auto begin = getRegister(startReg).getAddress();
+		auto length = getRegister(lengthReg).getAddress();
+		auto end = length + begin;
+		for (auto loc = begin; loc < end; ++loc) {
+			std::cout << char(loadByte(loc));
+		}
+	} else if (op == Operation::PrintChar) {
+		auto second = extractByteFromMolecule();
+		auto charReg = TargetRegister(getDestinationRegister(second));
+		std::cout << char(getRegister(charReg).getAddress());
+	} else {
+		throw Problem("printString", "Illegal operation!");
 	}
 }
 

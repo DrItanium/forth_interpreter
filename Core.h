@@ -113,6 +113,7 @@ class Core {
 		void setImm16(Operation op);
         void encodeDecodeBits(Operation op);
 		void nop(Operation op);
+		void printString(Operation op);
 	private:
 		using ThreeRegisterForm = std::tuple<TargetRegister, TargetRegister, TargetRegister>;
 		using ThreeRegisterImmediateForm = std::tuple<TargetRegister, TargetRegister, QuarterAddress>;

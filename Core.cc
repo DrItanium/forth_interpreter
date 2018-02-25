@@ -698,7 +698,7 @@ Address Core::extractImm48() {
     auto lowest16 = Address(extractQuarterAddressFromMolecule());
     auto lower16 = Address(extractQuarterAddressFromMolecule()) << 16;
     auto higher16 = Address(extractQuarterAddressFromMolecule()) << 32;
-    return lowest16 & lower16 & higher16;
+    return lowest16 | lower16 | higher16;
 }
 
 void Core::loadImm48(Operation op) {
@@ -818,7 +818,7 @@ enum class Immediate16Positions : byte {
 	Highest,
 };
 template<Immediate16Positions pos>
-constexpr auto Immediate16ShiftIndex = static_cast<Address>(pos) * 16;
+constexpr auto Immediate16ShiftIndex = static_cast<Address>(pos) << 4;
 template<Immediate16Positions pos>
 constexpr auto Immediate16Mask = static_cast<Address>(0xFFFF) << Immediate16ShiftIndex<pos>;
 
@@ -836,22 +836,29 @@ void Core::setImm16(Operation op) {
 	if (oldPC != (_pc.getAddress() - 2)) {
 		throw Problem("setImm16", "PC is not being correctly updated!");
 	}
+	auto addr = dest.getAddress();
+	std::cout << "Old address is: " << std::hex << addr << std::endl;
     switch (op) {
         case Operation::SetImmediate16_Lowest:
-            dest.setValue(computeImmediate16<Immediate16Positions::Lowest>(dest.getAddress(), q)); 
+            dest.setValue(computeImmediate16<Immediate16Positions::Lowest>(addr, q)); 
             break;
         case Operation::SetImmediate16_Lower:
-            dest.setValue(computeImmediate16<Immediate16Positions::Lower>(dest.getAddress(), q));
+            dest.setValue(computeImmediate16<Immediate16Positions::Lower>(addr, q));
             break;
         case Operation::SetImmediate16_Higher:
-            dest.setValue(computeImmediate16<Immediate16Positions::Higher>(dest.getAddress(), q));
+            dest.setValue(computeImmediate16<Immediate16Positions::Higher>(addr, q));
             break;
         case Operation::SetImmediate16_Highest:
-            dest.setValue(computeImmediate16<Immediate16Positions::Highest>(dest.getAddress(), q));
+            dest.setValue(computeImmediate16<Immediate16Positions::Highest>(addr, q));
             break;
         default:
             throw Problem("setImm16", "unknown set imm16 operation!");
     }
+	if (op == Operation::SetImmediate16_Highest) {
+		if (dest.getAddress() != (addr | (Address(q) << 48))) {
+			throw Problem("setImm16", "Corruption of destination by setImm16");
+		}
+	}
 }
 
 void Core::executionCycle(Address startAddress) {

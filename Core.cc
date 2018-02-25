@@ -863,13 +863,17 @@ void Core::setImm16(Operation op) {
 
 void Core::executionCycle(Address startAddress) {
     auto& value = getSystemVariable(Core::terminateExecutionVariable);
+	auto& rmc = getSystemVariable(Core::returnToMicrocode);
     value.address = 0;
     _pc.setValue(startAddress);
 	std::cout << "_pc starts at: " << std::hex << _pc.getAddress() << std::endl;
     while(value.address == 0) {
         // load the current address
         dispatchInstruction();
-		if (value.address != 0) {
+
+		if (rmc.truth) {
+			// reset it
+			rmc.address = 0;
 			break;
 		}
         _pc.setValue(_pc.getAddress() & Core::largestByteAddress);
@@ -912,10 +916,13 @@ std::function<void(Address, Address)> Core::getInstructionInstallationFunction()
 }
 
 void Core::returnToNative(Operation op) {
-	if (op != Operation::LeaveExecutionLoop) {
-		throw Problem("returnToNative", "Illegal operation provided!");
+	switch (op) {
+		case Operation::LeaveExecutionLoop:
+			store(Core::returnToMicrocode, Address(1));
+			break;
+		default:
+			throw Problem("returnToNative", "Illegal operation provided!");
 	}
-	store(Core::terminateExecutionVariable, Address(1));
 }
 
 

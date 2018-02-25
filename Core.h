@@ -31,6 +31,7 @@ class Core {
 		static constexpr Address sp2StackFull = systemVariableEnd - wordToByteOffset<2>;
 		static constexpr Address spStackEmpty = systemVariableEnd - wordToByteOffset<3>;
 		static constexpr Address spStackFull = systemVariableEnd - wordToByteOffset<4>;
+		static constexpr Address returnToMicrocode = systemVariableEnd - wordToByteOffset<5>;
 		static constexpr Address systemVariableMask = (systemVariableEnd - systemVariableStart) >> 3;
 		static_assert(systemVariableMask == 0xFFFF, "System variable mask is not correct!");
 		static constexpr Address systemVariableSize = ((systemVariableEnd - systemVariableStart) + wordToByteOffset<1>) >> 3;

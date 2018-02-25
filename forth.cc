@@ -200,13 +200,8 @@ void microarchitectureWords(forth::Machine& machine) {
 namespace forth {
 void systemSetup(forth::Machine& machine) {
 	// initial system values that we need to use
-	forth::AssemblerBuilder test(0xFDED);
-	test.labelHere("test0");
-	test.addInstruction(add(),
-			move(TargetRegister::A, TargetRegister::C),
-			add());
-	test.installIntoMemory(machine.getInstructionInstallationFunction());
-	machine.constructInstructionSequence<
+	forth::AssemblerBuilder init(Machine::jitCacheLocation);
+	init.addInstruction(
 		loadLowerImmediate48(rx, forth::Machine::shouldKeepExecutingLocation),
 		zeroRegister(rc), 
 		increment(rc, 0),
@@ -244,7 +239,8 @@ void systemSetup(forth::Machine& machine) {
 		load(forth::TargetRegister::SP2, rx),
 		loadLowerImmediate48(rx, forth::Machine::parameterStackEmptyLocation),
 		setImmediate64_Highest(rx, forth::Machine::parameterStackEmptyLocation),
-		load(forth::TargetRegister::SP, rx)>(0x000000);
+		load(forth::TargetRegister::SP, rx));
+	machine.dispatchInstruction(init);
 	//TODO: keep implementing this
 	//AssemblerBuilder initCode(0);
 	//initCode.addInstruction(

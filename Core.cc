@@ -751,7 +751,7 @@ void Core::dispatchInstruction() {
 		DefEntry(ConditionalCallSubroutineIndirect, conditionalBranch), DefEntry(ConditionalReturnSubroutine, conditionalBranch),
 		DefEntry(EncodeBits, encodeDecodeBits), DefEntry(DecodeBits, encodeDecodeBits),
 		DefEntry(Nop, nop), DefEntry(LeaveExecutionLoop, returnToNative),
-		DefEntry(PrintString, printString),
+		DefEntry(PrintString, printString), DefEntry(PrintChar, printString), DefEntry(TypeDatum, printString),
 #undef DefEntry
 	};
     auto op = static_cast<Operation>(extractByteFromMolecule());
@@ -937,6 +937,10 @@ void Core::printString(Operation op) {
 		auto second = extractByteFromMolecule();
 		auto charReg = TargetRegister(getDestinationRegister(second));
 		std::cout << char(getRegister(charReg).getAddress());
+	} else if (op == Operation::TypeDatum) {
+		auto second = extractByteFromMolecule();
+		auto charReg = TargetRegister(getDestinationRegister(second));
+		std::cout << getRegister(charReg).getValue();
 	} else {
 		throw Problem("printString", "Illegal operation!");
 	}

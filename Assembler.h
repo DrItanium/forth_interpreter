@@ -875,13 +875,17 @@ class AssemblerBuilder {
 		void addInstruction(const std::string& label);
 		template<typename T>
 		void addInstruction(T first) {
-			if (auto width = getInstructionWidth(first); width == 0) {
-				throw Problem("AssemblerBuilder::addInstruction", "Got an instruction of width 0");
-			} else if (width > sizeof(T)) {
-				throw Problem("AssemblerBuilder::addInstruction", "Got an instruction which is wider than the type provided!");
+			if constexpr (std::is_same<T, EagerInstruction>::value) {
+				addInstruction(EagerInstruction(first));
 			} else {
-				_operations.emplace(_currentLocation, first);
-				_currentLocation += width;
+				if (auto width = getInstructionWidth(first); width == 0) {
+					throw Problem("AssemblerBuilder::addInstruction", "Got an instruction of width 0");
+				} else if (width > sizeof(T)) {
+					throw Problem("AssemblerBuilder::addInstruction", "Got an instruction which is wider than the type provided!");
+				} else {
+					_operations.emplace(_currentLocation, first);
+					_currentLocation += width;
+				}
 			}
 		}
 		template<typename T, typename ... Rest>
@@ -928,8 +932,15 @@ constexpr QuarterAddress printString(TargetRegister start, TargetRegister length
 	return encodeTwoByte(Operation::PrintString, start, length);
 }
 
+
 constexpr QuarterAddress printChar(TargetRegister src) noexcept {
 	return encodeTwoByte(Operation::PrintString, encodeDestinationRegister(src));
+}
+EagerInstruction printChar(char c);
+EagerInstruction printChar(const std::string& str);
+
+constexpr QuarterAddress typeDatum(TargetRegister src) noexcept {
+	return encodeTwoByte(Operation::TypeDatum, encodeDestinationRegister(src));
 }
 
 } // end namespace forth

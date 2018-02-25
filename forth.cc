@@ -200,7 +200,7 @@ void microarchitectureWords(forth::Machine& machine) {
 namespace forth {
 void systemSetup(forth::Machine& machine) {
 	// initial system values that we need to use
-	forth::AssemblerBuilder init(Machine::jitCacheLocation);
+	forth::AssemblerBuilder init(0);
 	init.addInstruction(
 		loadLowerImmediate48(rx, forth::Machine::shouldKeepExecutingLocation),
 		zeroRegister(rc), 

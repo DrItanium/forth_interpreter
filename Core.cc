@@ -158,7 +158,6 @@ Core::FiveRegisterForm Core::extractFiveRegisterForm() {
 
 void Core::storeByte(Address addr, byte value) {
     auto& word = (addr <= largestByteAddress ) ? _memory[getWordAddress(addr)] : getSystemVariable(addr);
-	std::cout << "Installed to " << std::hex << "0x" << addr << " -> 0x" << getWordAddress(addr) << std::endl;
     word.setField(getByteOffset(addr), value);
 }
 void Core::store(Address addr, const Datum& value) {
@@ -837,7 +836,6 @@ void Core::setImm16(Operation op) {
 		throw Problem("setImm16", "PC is not being correctly updated!");
 	}
 	auto addr = dest.getAddress();
-	std::cout << "Old address is: " << std::hex << addr << std::endl;
     switch (op) {
         case Operation::SetImmediate16_Lowest:
             dest.setValue(computeImmediate16<Immediate16Positions::Lowest>(addr, q)); 
@@ -866,7 +864,6 @@ void Core::executionCycle(Address startAddress) {
 	auto& rmc = getSystemVariable(Core::returnToMicrocode);
     value.address = 0;
     _pc.setValue(startAddress);
-	std::cout << "_pc starts at: " << std::hex << _pc.getAddress() << std::endl;
     while(value.address == 0) {
         // load the current address
         dispatchInstruction();
@@ -877,7 +874,6 @@ void Core::executionCycle(Address startAddress) {
 			break;
 		}
         _pc.setValue(_pc.getAddress() & Core::largestByteAddress);
-		std::cout << "_pc is now: " << std::hex << _pc.getAddress() << std::endl;
     }
     // we've halted at this point
 }
@@ -909,7 +905,6 @@ std::function<void(Address, Address)> Core::getInstructionInstallationFunction()
 		Datum conv(instruction);
 		for (auto curr = location, i = Address(0); curr < (location + width); ++curr, ++i) {
 			auto value = conv.getField(byte(i));
-			std::cout << "Installing " << std::hex << int(value) << " to location " << std::hex << curr << std::endl;
 			storeByte(curr, value);
 		}
 	};

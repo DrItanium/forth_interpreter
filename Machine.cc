@@ -532,7 +532,7 @@ endLoopTop:
 	void Machine::dispatchInstruction(AssemblerBuilder& ab) {
 		ab.addInstruction(forth::returnToNative());
 		ab.installIntoMemory(_core.getInstructionInstallationFunction());
-		_core.executionCycle(jitCacheLocation);
+		_core.executionCycle(ab.getBaseAddress());
 	}
     void Machine::injectWord() {
         // read the next word and then lookup that entry

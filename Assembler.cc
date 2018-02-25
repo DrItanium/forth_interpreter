@@ -148,5 +148,24 @@ namespace forth {
 			ab.addInstruction(setImmediate16_Highest(r, name));
 		};
 	}
+	EagerInstruction label(const std::string& name) {
+		return [name](AssemblerBuilder& ab) {
+			ab.labelHere(name);
+		};
+	}
+	void AssemblerBuilder::addInstruction(const std::string& labelName) {
+		labelHere(labelName);
+	}
+	SizedResolvableLazyFunction conditionalBranch(TargetRegister cond, const std::string& name) {
+		return std::make_tuple(getInstructionWidth(Operation::ConditionalBranch),
+					[name, cond](AssemblerBuilder& ab, Address from) {
+						auto addr = ab.relativeLabelAddress(name, from);
+						if (addr > 32767 || addr < -32768) {
+							throw Problem("conditionalBranch", "Can't encode label into a relative 16-bit offset!");
+						} else {
+							return conditionalBranch(cond, addr);
+						}
+					});
+	}
 } // end namespace forth
 

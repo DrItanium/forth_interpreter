@@ -83,6 +83,12 @@ namespace forth {
 			void endDefineWord();
 			void initializeBaseDictionary();
 			void dispatchInstruction(AssemblerBuilder&);
+			template<typename T, typename ... Rest>
+			void dispatchInstruction(T first, Rest&& ... rest) {
+				AssemblerBuilder ab(jitCacheLocation);
+				ab.addInstruction(first, std::move(rest)...);
+				dispatchInstruction(ab);
+			}
 
 			
 		private:

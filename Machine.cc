@@ -275,23 +275,8 @@ namespace forth {
 	}
 
 	bool Machine::numberRoutine(const std::string& word) noexcept {
-		static constexpr auto loadTrueToStack = preCompileOperation<
-			zeroRegister(TargetRegister::C),
-			setImmediate16_Lowest(TargetRegister::C, 1), 
-			pushC()>();
-		//static_assert(loadTrueToStack == 0x1f00010216, "Load true to stack is incorrect!");
-		static constexpr auto loadFalseToStack = preCompileOperation<
-			zeroRegister(TargetRegister::C),
-			setImmediate16_Lowest(TargetRegister::C, 0),
-			pushC()>();
-		//static_assert(loadFalseToStack == 0x1f00000216, "Load false to stack is incorrect!");
         auto saveToStack = [this](Address value) {
-        //static constexpr auto loadLower48 = loadLowerImmediate48(TargetRegister::X, shouldKeepExecutingLocation);
-		microcodeStreamInvoke(
-				loadLowerImmediate48(TargetRegister::C, value),
-				encodeOperation(
-					setImmediate64_Highest(TargetRegister::C, value),
-					pushC()));
+			dispatchInstruction(loadImmediate64(TargetRegister::C, value), pushC());
         };
 		if (word.empty()) { 
 			return false; 
@@ -301,11 +286,11 @@ namespace forth {
 		// first do some inspection first
 		// We need to load into c and then push it to the stack
 		if (word == "true") {
-			microcodeInvoke(loadTrueToStack);
+			dispatchInstruction(addiu(TargetRegister::C, TargetRegister::Zero, 1), pushC());
 			return true;
 		}
 		if (word == "false") {
-			microcodeInvoke(loadFalseToStack);
+			dispatchInstruction(zeroRegister(TargetRegister::C), pushC());
 			return true;
 		}
 		std::istringstream parseAttempt(word);
@@ -422,7 +407,6 @@ namespace forth {
 			addWord("then", std::mem_fn(&Machine::thenStatement), true);
 			addWord("begin", std::mem_fn(&Machine::beginStatement), true);
 			addWord("end", std::mem_fn(&Machine::endStatement), true);
-			addWord("uc", std::mem_fn<void()>(&Machine::dispatchInstruction));
 			addWord("do", std::mem_fn(&Machine::doStatement), true);
 			addWord("continue", std::mem_fn(&Machine::continueStatement), true);
 			addWord("choose.c", std::mem_fn(&Machine::chooseRegister));
@@ -449,9 +433,7 @@ namespace forth {
                 throw Problem("microcodeInvoke", "No compile target yet compiling!");
             }
         } else {
-			AssemblerBuilder ab(jitCacheLocation);
-			ab.addInstruction(m);
-			dispatchInstruction(ab);
+			dispatchInstruction(m);
         }
 	}
 	void Machine::continueStatement() {
@@ -553,19 +535,15 @@ endLoopTop:
         top.entry->operator()(this);
     }
 	bool Machine::keepExecuting() noexcept {
-		AssemblerBuilder ab(jitCacheLocation);
-		ab.addInstruction(loadImmediate64(TargetRegister::X, shouldKeepExecutingLocation),
-						  forth::load(TargetRegister::X, TargetRegister::X));
-		dispatchInstruction(ab);
+		dispatchInstruction(loadImmediate64(TargetRegister::X, shouldKeepExecutingLocation),
+				forth::load(TargetRegister::X, TargetRegister::X));
 		return _core.getRegister(TargetRegister::X).getTruth();
 	}
 
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
-		AssemblerBuilder ab(jitCacheLocation);
 		// clear the stacks and the input pointer
-		ab.addInstruction(loadImmediate64(TargetRegister::X, parameterStackEmptyLocation),
+		dispatchInstruction(loadImmediate64(TargetRegister::X, parameterStackEmptyLocation),
 						  forth::load(TargetRegister::SP, TargetRegister::X));
-		dispatchInstruction(ab);
 		clearSubroutineStack();
 		_input.clear();
 		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -574,67 +552,48 @@ endLoopTop:
 			delete _compileTarget;
 			_compileTarget = nullptr;
 		}
-		// _compiling = false;
-		AssemblerBuilder ab2(jitCacheLocation);
-		ab.addInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
-						  forth::store(TargetRegister::X, TargetRegister::Zero));
-		dispatchInstruction(ab2);
+		dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation), 
+				forth::store(TargetRegister::X, TargetRegister::Zero));
 	}
 	void Machine::dispatchInstruction() {
-		AssemblerBuilder ab(jitCacheLocation);
 		// just pop a molecule off of the stack and pass it to
 		// dispatchInstruction
 		Molecule tmp(popParameter().address);
-		ab.addInstruction(tmp);
-		dispatchInstruction(ab);
+		dispatchInstruction(tmp);
 	}
 	bool Machine::inCompilationMode() noexcept {
-		AssemblerBuilder ab(jitCacheLocation);
-		ab.addInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
+		dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
 						  forth::load(TargetRegister::X, TargetRegister::X));
-		dispatchInstruction(ab);
 		return _core.getRegister(TargetRegister::X).getTruth();
 	}
 	void Machine::activateCompileMode() {
-		AssemblerBuilder ab(jitCacheLocation);
-		ab.addInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
-				zeroRegister(TargetRegister::C),
-				setImmediate16_Lowest(TargetRegister::C, 1),
+		dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
+				loadImmediate16(TargetRegister::C, 1),
 				forth::store(TargetRegister::X, TargetRegister::C));
-		dispatchInstruction(ab);
 	}
 	void Machine::deactivateCompileMode() {
-		AssemblerBuilder ab(jitCacheLocation);
-		ab.addInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
-				zeroRegister(TargetRegister::C),
-				forth::store(TargetRegister::X, TargetRegister::C));
-		dispatchInstruction(ab);
+		dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
+				forth::store(TargetRegister::X, TargetRegister::Zero));
 	}
 
 	bool Machine::stackEmpty(TargetRegister sp, Address location) {
-		AssemblerBuilder ab(jitCacheLocation);
-		ab.addInstruction(loadImmediate64(TargetRegister::X, location),
-						  forth::load(TargetRegister::S, TargetRegister::X),
-						  cmpeq(TargetRegister::C, TargetRegister::S, sp));
-		dispatchInstruction(ab);
+		dispatchInstruction(loadImmediate64(TargetRegister::X, location),
+				forth::load(TargetRegister::Temporary, TargetRegister::X),
+				cmpeq(TargetRegister::C, TargetRegister::Temporary, sp));
 		return _core.getRegister(TargetRegister::C).getTruth();
 	}
 	bool Machine::stackFull(TargetRegister sp, Address location) {
-		AssemblerBuilder ab(jitCacheLocation);
-		ab.addInstruction(loadImmediate64(TargetRegister::X, location),
-				forth::load(TargetRegister::S, TargetRegister::X),
-				cmpeq(TargetRegister::C, TargetRegister::S, sp));
-		dispatchInstruction(ab);
+		dispatchInstruction(loadImmediate64(TargetRegister::X, location),
+				forth::load(TargetRegister::Temporary, TargetRegister::X),
+				cmpeq(TargetRegister::C, TargetRegister::Temporary, sp));
 		return _core.getRegister(TargetRegister::C).getTruth();
 	}
 	void Machine::pushOntoStack(TargetRegister sp, Datum value, Address fullLocation) {
 		if (stackFull(sp, fullLocation)) {
 			throw Problem("pushOntoStack", "STACK FULL!!!");
 		}
-		AssemblerBuilder ab(jitCacheLocation);
-		ab.addInstruction(loadImmediate64(TargetRegister::X, value.address),
-						  pushRegister(TargetRegister::X, sp));
-		dispatchInstruction(ab);
+		dispatchInstruction(loadImmediate64(TargetRegister::X, value.address),
+				pushRegister(TargetRegister::X, sp));
 	}
 	void Machine::pushSubroutine(Datum value) {
 		try {
@@ -647,9 +606,7 @@ endLoopTop:
 		if (stackEmpty(sp, emptyLocation)) {
 			throw Problem("pop", "STACK EMPTY!");
 		}
-		AssemblerBuilder ab(jitCacheLocation);
-		ab.addInstruction(popRegister(TargetRegister::C, sp));
-		dispatchInstruction(ab);
+		dispatchInstruction(popRegister(TargetRegister::C, sp));
 		return _core.getRegister(TargetRegister::C).getValue();
 	}
 	Datum Machine::popSubroutine() {
@@ -666,10 +623,8 @@ endLoopTop:
 		return stackFull(TargetRegister::SP2, subroutineStackFullLocation);
 	}
 	void Machine::clearSubroutineStack() {
-		AssemblerBuilder ab(jitCacheLocation);
-		ab.addInstruction(loadImmediate64(TargetRegister::X, subroutineStackEmptyLocation),
+		dispatchInstruction(loadImmediate64(TargetRegister::X, subroutineStackEmptyLocation),
 				forth::load(TargetRegister::SP2, TargetRegister::X));
-		dispatchInstruction(ab);
 	}
 
 
@@ -687,30 +642,43 @@ endLoopTop:
 	}
 	void Machine::printStack() {
         // load the bottom of the stack
-        
-		//auto bottom = load(parameterStackEmptyLocation).address;
-		//for (auto curr = _core.getRegister(TargetRegister::SP).getAddress(); curr < bottom; ++curr) {
-		//	auto element = load(curr);
-		//	_output << "\t- " << element << std::endl;
-		//}
-        AssemblerBuilder ab2(jitCacheLocation);
-		ab2.addInstruction(forth::load(TargetRegister::A, TargetRegister::B),
-				increment(TargetRegister::B, 0),
-				cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B));
+#ifdef MICROCODE_SETUP
 		AssemblerBuilder ab(jitCacheLocation);
 		ab.addInstruction(loadImmediate64(TargetRegister::X, parameterStackEmptyLocation),
 						  forth::load(TargetRegister::X, TargetRegister::X),
 						  zeroRegister(TargetRegister::A),
 						  forth::move(TargetRegister::B, TargetRegister::SP),
-						  cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B));
+						  cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B),
+						  forth::conditionalBranch(TargetRegister::C, "done"),
+						  "loopRestart",
+						  forth::load(TargetRegister::A, TargetRegister::B),
+						  increment(TargetRegister::B, 0),
+						  cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B),
+						  // TODO: insert print command here
+						  notb(TargetRegister::C, TargetRegister::C),
+						  forth::conditionalBranch(TargetRegister::C, "loopRestart"),
+						  "done");
 		dispatchInstruction(ab);
+#endif
+
+
+
+
+		
+		dispatchInstruction(loadImmediate64(TargetRegister::X, parameterStackEmptyLocation),
+							forth::load(TargetRegister::X, TargetRegister::X),
+							zeroRegister(TargetRegister::A),
+							forth::move(TargetRegister::B, TargetRegister::SP),
+							cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B));
         if (_core.getRegister(TargetRegister::C).getTruth()) {
             return;
         }
         // Once again, this is just to make rewriting easier later on
 loopRestart:
         // now load the current address from B
-        dispatchInstruction(ab2);
+		dispatchInstruction(forth::load(TargetRegister::A, TargetRegister::B),
+				increment(TargetRegister::B, 0),
+				cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B));
         _output << "\t- " << _core.getRegister(TargetRegister::A).getValue() << std::endl;
         if (!_core.getRegister(TargetRegister::C).getTruth()) {
             goto loopRestart;

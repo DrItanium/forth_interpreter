@@ -872,6 +872,7 @@ class AssemblerBuilder {
 		void addInstruction(SizedResolvableLazyFunction op);
 		void addInstruction(SizedLazyInstruction op);
 		void addInstruction(EagerInstruction op);
+		void addInstruction(const std::string& label);
 		template<typename T>
 		void addInstruction(T first) {
 			if (auto width = getInstructionWidth(first); width == 0) {
@@ -908,6 +909,7 @@ constexpr HalfAddress jumpRelative(QuarterInteger imm16) noexcept {
 	return encodeThreeByte(Operation::Jump, byte(imm16), byte(imm16 >> 8));
 }
 SizedResolvableLazyFunction jumpRelative(const std::string& name);
+SizedResolvableLazyFunction conditionalBranch(TargetRegister reg, const std::string& name);
 
 EagerInstruction loadImmediate64(TargetRegister r, Address value);
 EagerInstruction loadImmediate64(TargetRegister r, const std::string& name);
@@ -915,6 +917,12 @@ EagerInstruction loadImmediate64(TargetRegister r, const std::string& name);
 constexpr byte returnToNative() noexcept {
 	return encodeSingleByteOperation(Operation::LeaveExecutionLoop);
 }
+
+constexpr auto loadImmediate16(TargetRegister dest, QuarterAddress value) noexcept -> decltype(addiu(dest, TargetRegister::Zero, value)) { 
+	return addiu(dest, TargetRegister::Zero, value);
+}
+
+EagerInstruction label(const std::string& name);
 
 } // end namespace forth
 static_assert(sizeof(unsigned long long int) >= sizeof(forth::Address), "Unsigned long long int is a 64-bit value or greater!");

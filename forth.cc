@@ -22,6 +22,7 @@ static constexpr auto pushC = forth::pushC();
 static constexpr auto pushA = forth::pushA();
 static constexpr auto pushB = forth::pushB();
 
+
 //template<auto op>
 //void addBinaryOperation(forth::Machine& machine, const std::string& name, bool compileTimeInvoke = false) {
 //	machine.addMachineCodeWord<
@@ -197,97 +198,18 @@ void systemSetup(forth::Machine& machine) {
 	// initial system values that we need to use
 	forth::AssemblerBuilder init(0);
 	init.addInstruction(
-		loadLowerImmediate48(rx, forth::Machine::shouldKeepExecutingLocation),
-		zeroRegister(rc), 
-		increment(rc, 0),
-		setImmediate64_Highest(rx, forth::Machine::shouldKeepExecutingLocation),
-		store(rx, rc),
-		decrement(rc, 0),
-		loadLowerImmediate48(rx, forth::Machine::isCompilingLocation),
-		setImmediate64_Highest(rx, forth::Machine::shouldKeepExecutingLocation),
-		store(rx, rc),
-		loadLowerImmediate48(rx, forth::Machine::ignoreInputLocation),
-		setImmediate64_Highest(rx, forth::Machine::shouldKeepExecutingLocation),
-		store(rx, rc),
-		loadLowerImmediate48(rx, forth::Machine::subroutineStackEmptyLocation),
-		setImmediate64_Highest(rx, forth::Machine::subroutineStackEmptyLocation),
-		zeroRegister(rc),
-		setImmediate16_Lowest(rc, 0xFF0000_addrqlowest),
-		setImmediate16_Lower(rc, 0xFF0000_addrqlower),
-		loadLowerImmediate48(rs, forth::Machine::subroutineStackFullLocation),
-		store(rx, rc),
-		setImmediate64_Highest(rs, forth::Machine::subroutineStackFullLocation),
-		move(rx, rs),
-		setImmediate16_Lowest(rc, 0xFE0000_addrqlowest),
-		setImmediate16_Lower(rc, 0xFE0000_addrqlower),
-		loadLowerImmediate48(rs, forth::Machine::parameterStackEmptyLocation),
-		store(rx, rc),
-		setImmediate64_Highest(rs, forth::Machine::parameterStackEmptyLocation),
-		store(rs, rc),
-		loadLowerImmediate48(rx, forth::Machine::parameterStackEmptyLocation),
-		setImmediate64_Highest(rx, forth::Machine::parameterStackEmptyLocation),
-		setImmediate16_Lowest(rc, 0xFD0000_addrqlowest),
-		setImmediate16_Lower(rc, 0xFD0000_addrqlower),
-		store(rx, rc),
-		loadLowerImmediate48(rx, forth::Machine::subroutineStackEmptyLocation),
-		setImmediate64_Highest(rx, forth::Machine::subroutineStackEmptyLocation),
-		load(forth::TargetRegister::SP2, rx),
-		loadLowerImmediate48(rx, forth::Machine::parameterStackEmptyLocation),
-		setImmediate64_Highest(rx, forth::Machine::parameterStackEmptyLocation),
-		load(forth::TargetRegister::SP, rx));
+        storeImmediate64(forth::Machine::shouldKeepExecutingLocation, 1),
+        storeImmediate64(forth::Machine::isCompilingLocation, 0),
+        storeImmediate64(forth::Machine::ignoreInputLocation, 0),
+        storeImmediate64(forth::Machine::subroutineStackEmptyLocation, 0xFF0000),
+        storeImmediate64(forth::Machine::subroutineStackFullLocation, 0xFE0000),
+        storeImmediate64(forth::Machine::parameterStackEmptyLocation, 0xFE0000),
+        storeImmediate64(forth::Machine::parameterStackFullLocation, 0xFD0000),
+        loadImmediate64(rx, forth::Machine::subroutineStackEmptyLocation),
+        load(forth::TargetRegister::SP2, rx),
+        loadImmediate64(rx, forth::Machine::parameterStackEmptyLocation),
+        load(forth::TargetRegister::SP, rx));
 	machine.dispatchInstruction(init);
-	//TODO: keep implementing this
-	//AssemblerBuilder initCode(0);
-	//initCode.addInstruction(
-	//	loadImmediate64(rx, forth::Machine::shouldKeepExecutingLocation),
-	//	zeroRegister(rc),
-	//	increment(rc, 0),
-	//	store(rx, rc),
-	//	decrement(rc, 0),
-	//	loadImmediate64(rx, forth::Machine::isCompilingLocation),
-	//	store(rx, rc),
-	//	loadImmediate64(rx, forth::Machine::ignoreInputLocation),
-	//	store(rx, rc),
-	//	loadImmediate64(rx, forth::Machine::subroutineStackEmptyLocation),
-	//	zeroRegister(
-
-
-	//	loadLowerImmediate48(rx, forth::Machine::subroutineStackEmptyLocation),
-	//	preCompileOperation<
-	//		setImmediate64_Highest(rx, forth::Machine::subroutineStackEmptyLocation),
-	//	zeroRegister(rc)>(),
-	//	preCompileOperation<
-	//		setImmediate16_Lowest(rc, 0xFF0000_addrqlowest),
-	//	setImmediate16_Lower(rc, 0xFF0000_addrqlower)>(),
-	//	loadLowerImmediate48(rs, forth::Machine::subroutineStackFullLocation),
-	//	preCompileOperation<
-	//		store(rx, rc),
-	//	setImmediate64_Highest(rs, forth::Machine::subroutineStackFullLocation),
-	//	move(rx, rs)>(),
-	//	preCompileOperation<
-	//		setImmediate16_Lowest(rc, 0xFE0000_addrqlowest),
-	//	setImmediate16_Lower(rc, 0xFE0000_addrqlower)>(),
-	//	loadLowerImmediate48(rs, forth::Machine::parameterStackEmptyLocation),
-	//	preCompileOperation<
-	//		store(rx, rc),
-	//	setImmediate64_Highest(rs, forth::Machine::parameterStackEmptyLocation),
-	//	store(rs, rc)>(),
-	//	loadLowerImmediate48(rx, forth::Machine::parameterStackEmptyLocation),
-	//	preCompileOperation<
-	//		setImmediate64_Highest(rx, forth::Machine::parameterStackEmptyLocation),
-	//	setImmediate16_Lowest(rc, 0xFD0000_addrqlowest)>(),
-	//	preCompileOperation<
-	//		setImmediate16_Lower(rc, 0xFD0000_addrqlower),
-	//	store(rx, rc)>(),
-	//	loadLowerImmediate48(rx, forth::Machine::subroutineStackEmptyLocation),
-	//	preCompileOperation<
-	//		setImmediate64_Highest(rx, forth::Machine::subroutineStackEmptyLocation),
-	//	load(forth::TargetRegister::SP2, rx)>(),
-	//	loadLowerImmediate48(rx, forth::Machine::parameterStackEmptyLocation),
-	//	preCompileOperation<
-	//		setImmediate64_Highest(rx, forth::Machine::parameterStackEmptyLocation),
-	//	load(forth::TargetRegister::SP, rx)>()
-	//		>();
 }
 }
 

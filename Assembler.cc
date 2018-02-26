@@ -167,5 +167,29 @@ namespace forth {
 						}
 					});
 	}
+    EagerInstruction storeImmediate64(TargetRegister addr, Address value) {
+        if (addr == TargetRegister::Temporary) {
+            throw Problem("Assembler::storeImmediate64", "Temporary register already in use!");
+        } else {
+            if (value == 0) {
+                return [addr](AssemblerBuilder& ab) { ab.addInstruction(store(addr, TargetRegister::Zero)); };
+            } else {
+
+            }
+            return [addr, value](AssemblerBuilder& ab) {
+                ab.addInstruction(loadImmediate64(TargetRegister::Temporary, value),
+                                  store(addr, TargetRegister::Temporary));
+            };
+        }
+    }
+    EagerInstruction storeImmediate64(Address value) {
+        return storeImmediate64(TargetRegister::X, value);
+    }
+    EagerInstruction storeImmediate64(Address addr, Address value) {
+        return [addr, value](AssemblerBuilder& ab) {
+            ab.addInstruction(loadImmediate64(TargetRegister::X, addr),
+                              storeImmediate64(TargetRegister::X, value));
+        };
+    }
 } // end namespace forth
 

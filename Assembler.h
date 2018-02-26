@@ -875,14 +875,18 @@ class AssemblerBuilder {
 		void addInstruction(const std::string& label);
 		template<typename T>
 		void addInstruction(T first) {
-			if (auto width = getInstructionWidth(first); width == 0) {
-				throw Problem("AssemblerBuilder::addInstruction", "Got an instruction of width 0");
-			} else if (width > sizeof(T)) {
-				throw Problem("AssemblerBuilder::addInstruction", "Got an instruction which is wider than the type provided!");
-			} else {
-				_operations.emplace(_currentLocation, first);
-				_currentLocation += width;
-			}
+            if constexpr (std::is_same<EagerInstruction, T>::value) {
+                addInstruction(EagerInstruction(first));
+            } else {
+			    if (auto width = getInstructionWidth(first); width == 0) {
+			    	throw Problem("AssemblerBuilder::addInstruction", "Got an instruction of width 0");
+			    } else if (width > sizeof(T)) {
+			    	throw Problem("AssemblerBuilder::addInstruction", "Got an instruction which is wider than the type provided!");
+			    } else {
+			    	_operations.emplace(_currentLocation, first);
+			    	_currentLocation += width;
+			    }
+            }
 		}
 		template<typename T, typename ... Rest>
 		void addInstruction(T first, Rest&& ... rest) {
@@ -921,6 +925,16 @@ constexpr byte returnToNative() noexcept {
 constexpr auto loadImmediate16(TargetRegister dest, QuarterAddress value) noexcept -> decltype(addiu(dest, TargetRegister::Zero, value)) { 
 	return addiu(dest, TargetRegister::Zero, value);
 }
+
+/**
+ * Store into register X our contents!
+ */
+EagerInstruction storeImmediate64(Address value);
+EagerInstruction storeImmediate64(TargetRegister addr, Address value);
+/**
+ * load a specific address into X and a value into Temporary, then store temporary into X
+ */
+EagerInstruction storeImmediate64(Address addr, Address value);
 
 EagerInstruction label(const std::string& name);
 

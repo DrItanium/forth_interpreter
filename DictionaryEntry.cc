@@ -89,6 +89,9 @@ namespace forth {
 			case Type::Word:
 				machine->pushParameter(std::get<const DictionaryEntry*>(_data));
 				break;
+            case Type::String:
+                machine->pushParameter(std::get<const std::string*>(_data));
+                break;
 			default:
 				throw Problem("unknown", "UNKNOWN ENTRY KIND!");
 		}

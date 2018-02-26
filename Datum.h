@@ -152,6 +152,8 @@ namespace forth {
         Datum(const DictionaryEntry* x) : entry(x) { }
         Datum(DictionaryEntry* x) : subroutine(x) { }
         Datum(const Datum& other);
+        Datum(const std::string& other);
+        Datum(const std::string* other);
         bool truth;
         Integer numValue;
         Address address;
@@ -159,6 +161,7 @@ namespace forth {
         const DictionaryEntry* entry;
         DictionaryEntry* subroutine;
         byte backingStore[sizeof(Address)];
+        const std::string* _string;
         void setField(byte index, byte value);
         byte getField(byte index) const;
         HalfAddress upperHalfAddress() const noexcept;

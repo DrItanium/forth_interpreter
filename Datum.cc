@@ -25,6 +25,9 @@ namespace forth {
 		}
 	}
 
+    Datum::Datum(const std::string* value) : _string(value) { }
+    Datum::Datum(const std::string& value) : _string(&value) { }
+
 
 	const Datum& Register::getValue() const noexcept { 
 

@@ -23,10 +23,11 @@ namespace forth {
 					FloatingPoint,
 					Boolean,
 					DictEntry,
-					Word,
+                    Word,
+                    String,
 				};
 				Discriminant _type;
-                std::variant<Integer, Address, Floating, bool, const DictionaryEntry*> _data;
+                std::variant<Integer, Address, Floating, bool, const DictionaryEntry*, const std::string*> _data;
 
 				void invoke(Machine* machine) const;
                 void operator()(Machine* machine) const;

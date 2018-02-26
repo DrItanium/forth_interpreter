@@ -216,6 +216,7 @@ void systemSetup(forth::Machine& machine) {
 int main() {
 	forth::Machine machine (std::cout, std::cin);
 	machine.initializeBaseDictionary();
+    machine.addMachineCodeWord<popA, popB, forth::add(), pushC>("+");
 	//microarchitectureWords(machine);
 	//arithmeticOperators(machine);
 	//stackOperators(machine);

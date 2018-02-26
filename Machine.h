@@ -265,6 +265,8 @@ namespace forth {
 			bool subroutineStackEmpty();
 			void clearSubroutineStack();
 			bool subroutineStackFull();
+            void invokeCore();
+            void terminateControlLoop();
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;

@@ -414,9 +414,20 @@ namespace forth {
             addWord("'", std::mem_fn(&Machine::injectWord));
             addWord("execute", std::mem_fn(&Machine::executeTop));
             addWord("raiseError", std::mem_fn(&Machine::raiseError));
+            addWord("uc", std::mem_fn(&Machine::invokeCore));
+            addWord("quit", std::mem_fn(&Machine::terminateControlLoop));
 			_microcodeInvoke = lookupWord("uc");
 		}
 	}
+    void Machine::terminateControlLoop() {
+        dispatchInstruction(loadImmediate64(TargetRegister::X, shouldKeepExecutingLocation),
+                            forth::store(TargetRegister::X, TargetRegister::Zero));
+    }
+    void Machine::invokeCore() {
+        // invoke a single molecule/address
+        auto value = Molecule(popParameter().address);
+        dispatchInstruction(value);
+    }
 	void Machine::doStatement() {
 		if (!inCompilationMode()) {
 			throw Problem("do", "Not compiling!");

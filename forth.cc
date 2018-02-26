@@ -191,11 +191,6 @@ void microarchitectureWords(forth::Machine& machine) {
 	machine.addMachineCodeWord<popA, typevalf(ra)>(",f");
 	machine.addMachineCodeWord<popA, typevalb(ra)>(",b");
 	machine.addMachineCodeWord<swap(ra, rb)>("swap.ab");
-	machine.addMachineCodeWord<
-		loadLowerImmediate48(rx, forth::Machine::shouldKeepExecutingLocation),
-		setImmediate64_Highest(rx, forth::Machine::shouldKeepExecutingLocation),
-		xorl(rc, ra, ra),
-		store(rx, rc)>("quit");
 }
 namespace forth {
 void systemSetup(forth::Machine& machine) {

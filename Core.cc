@@ -268,7 +268,7 @@ void Core::push(const Datum& d, TargetRegister sp) {
 			throw Problem("push_sp2", "Subroutine Stack Full!");
 		}
 	}
-	stackPointer.decrement();
+	stackPointer.decrement(sizeof(Address));
 	store (stackPointer.getAddress(), d);
 }
 
@@ -286,7 +286,7 @@ Datum Core::pop(TargetRegister sp) {
 		}
 	}
 	auto result = loadWord(stackPointer.getAddress());
-	stackPointer.increment();
+	stackPointer.increment(sizeof(Address));
 	return result;
 }
 void Core::pop(TargetRegister reg, TargetRegister sp) {

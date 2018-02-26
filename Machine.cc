@@ -724,7 +724,7 @@ endLoopTop:
 loopRestart:
         // now load the current address from B
 		dispatchInstruction(forth::load(TargetRegister::A, TargetRegister::B),
-				increment(TargetRegister::B, 0),
+                addiu(TargetRegister::B, TargetRegister::B, 8),
 				cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B));
         _output << "\t- " << _core.getRegister(TargetRegister::A).getValue() << std::endl;
         if (!_core.getRegister(TargetRegister::C).getTruth()) {

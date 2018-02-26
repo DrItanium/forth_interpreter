@@ -10,6 +10,7 @@
 #include <functional>
 #include <map>
 #include <list>
+#include "Datum.h"
 
 namespace forth {
 constexpr byte encodeSingleByteOperation(Operation op) noexcept {
@@ -936,7 +937,11 @@ EagerInstruction storeImmediate64(TargetRegister addr, Address value);
  */
 EagerInstruction storeImmediate64(Address addr, Address value);
 
+EagerInstruction indirectLoad(TargetRegister dest, TargetRegister src = TargetRegister::X);
+
 EagerInstruction label(const std::string& name);
+EagerInstruction pushImmediate(const Datum& value, TargetRegister sp);
+EagerInstruction pushImmediate(Address value, TargetRegister sp);
 
 } // end namespace forth
 static_assert(sizeof(unsigned long long int) >= sizeof(forth::Address), "Unsigned long long int is a 64-bit value or greater!");

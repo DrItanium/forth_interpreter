@@ -174,12 +174,11 @@ namespace forth {
             if (value == 0) {
                 return [addr](AssemblerBuilder& ab) { ab.addInstruction(store(addr, TargetRegister::Zero)); };
             } else {
-
+                return [addr, value](AssemblerBuilder& ab) {
+                    ab.addInstruction(loadImmediate64(TargetRegister::Temporary, value),
+                                      store(addr, TargetRegister::Temporary));
+                };
             }
-            return [addr, value](AssemblerBuilder& ab) {
-                ab.addInstruction(loadImmediate64(TargetRegister::Temporary, value),
-                                  store(addr, TargetRegister::Temporary));
-            };
         }
     }
     EagerInstruction storeImmediate64(Address value) {
@@ -190,6 +189,31 @@ namespace forth {
             ab.addInstruction(loadImmediate64(TargetRegister::X, addr),
                               storeImmediate64(TargetRegister::X, value));
         };
+    }
+    EagerInstruction indirectLoad(TargetRegister dest, TargetRegister src) {
+        if (dest == src) {
+            return [dest, src](AssemblerBuilder& ab) {
+                ab.addInstruction(load(dest, src), 
+                        load(dest, dest));
+            };
+        } else {
+            if (src == TargetRegister::Temporary) {
+                throw Problem("indirectLoad", "Temporary already in use!");
+            }
+            return [dest, src](AssemblerBuilder& ab) {
+                ab.addInstruction(load(TargetRegister::Temporary, src),
+                        load(dest, TargetRegister::Temporary));
+            };
+        }
+    }
+    EagerInstruction pushImmediate(Address value, TargetRegister sp) {
+        return [value, sp](AssemblerBuilder& ab) {
+            ab.addInstruction(loadImmediate64(TargetRegister::Temporary, value),
+                    pushRegister(TargetRegister::Temporary, sp));
+        };
+    }
+    EagerInstruction pushImmediate(const Datum& value, TargetRegister sp) {
+        return pushImmediate(value.address, sp);
     }
 } // end namespace forth
 

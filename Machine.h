@@ -272,6 +272,7 @@ namespace forth {
             void terminateControlLoop();
             void constructString();
             void printString();
+            void printNewLine();
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;

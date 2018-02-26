@@ -423,11 +423,14 @@ namespace forth {
             addWord("quit", std::mem_fn(&Machine::terminateControlLoop));
             addWord("\"", std::mem_fn(&Machine::constructString));
             addWord(",str", std::mem_fn(&Machine::printString));
+            addWord(".CR", std::mem_fn(&Machine::printNewLine));
 			_microcodeInvoke = lookupWord("uc");
 		}
 	}
+    void Machine::printNewLine() {
+        _output << std::endl;
+    }
     void Machine::printString() {
-
         _output << *(popParameter()._string);
     }
     void Machine::constructString() {

@@ -427,7 +427,8 @@ namespace forth {
 		}
 	}
     void Machine::printString() {
-        _output << popParameter()._string;
+
+        _output << *(popParameter()._string);
     }
     void Machine::constructString() {
 			auto flags = _output.flags();
@@ -439,7 +440,7 @@ namespace forth {
                 if (!str.empty() && str.back() == '"') {
                     // remove the ending "
                     auto s = input.str();
-                    _stringCache.emplace_back(s.substr(0, s.size() - 1));
+                    _stringCache.emplace_back(s.substr(0, s.size() - 2));
                     // place the reference onto the stack
                     if (inCompilationMode()) {
                         _compileTarget->addSpaceEntry(_stringCache.back());

@@ -422,18 +422,30 @@ namespace forth {
             addWord("uc", std::mem_fn(&Machine::invokeCore));
             addWord("quit", std::mem_fn(&Machine::terminateControlLoop));
             addWord("\"", std::mem_fn(&Machine::constructString));
+            addWord(",str", std::mem_fn(&Machine::printString));
 			_microcodeInvoke = lookupWord("uc");
 		}
 	}
+    void Machine::printString() {
+        _output << popParameter()._string;
+    }
     void Machine::constructString() {
-        _output << "Constructing string" << std::endl;
 			auto flags = _output.flags();
             // keep reading until we get a word that ends with "
+            std::stringstream input;
             while (true) {
                 auto str = readWord();
-                _output << str;
+                input << str << " ";
                 if (!str.empty() && str.back() == '"') {
-                    _output << " {ending input}" << std::endl;
+                    // remove the ending "
+                    auto s = input.str();
+                    _stringCache.emplace_back(s.substr(0, s.size() - 1));
+                    // place the reference onto the stack
+                    if (inCompilationMode()) {
+                        _compileTarget->addSpaceEntry(_stringCache.back());
+                    } else {
+                        pushParameter(_stringCache.back());
+                    }
                     break;
                 }
             }

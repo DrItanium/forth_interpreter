@@ -96,4 +96,10 @@ namespace forth {
 				throw Problem("unknown", "UNKNOWN ENTRY KIND!");
 		}
 	}
+    void DictionaryEntry::addSpaceEntry(const std::string& value) {
+        SpaceEntry se;
+        se._type = SpaceEntry::Discriminant::String;
+        se._data = &value;
+        _space.emplace_back(se);
+    }
 } // end namespace forth

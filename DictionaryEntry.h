@@ -51,6 +51,7 @@ namespace forth {
 			void addSpaceEntry(const DictionaryEntry* value);
             void addSpaceEntry(SpaceEntry::Discriminant type, const DictionaryEntry* value);
 			void pushWord(const DictionaryEntry* value);
+            void addSpaceEntry(const std::string& value);
 			void operator()(Machine* machine) const;
             void markCompileTimeInvoke() noexcept { _compileTimeInvoke = true; }
             bool compileTimeInvoke() const noexcept { return _compileTimeInvoke; }

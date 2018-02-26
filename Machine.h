@@ -271,6 +271,7 @@ namespace forth {
             void invokeCore();
             void terminateControlLoop();
             void constructString();
+            void printString();
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;
@@ -281,6 +282,7 @@ namespace forth {
 			DictionaryEntry* _compileTarget = nullptr;
 			Core _core;
 			const DictionaryEntry* _microcodeInvoke = nullptr;
+            std::list<std::string> _stringCache;
 	};
 } // end namespace forth
 

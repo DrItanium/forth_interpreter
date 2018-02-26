@@ -19,7 +19,6 @@ namespace forth {
 			static constexpr Address shouldKeepExecutingLocation = userVariableAddress<0>;
 			static constexpr Address isCompilingLocation = userVariableAddress<1>;
 			static constexpr Address ignoreInputLocation = userVariableAddress<2>;
-            static constexpr Address captureInputIntoStringLocation = userVariableAddress<3>;
 			static constexpr Address subroutineStackEmptyLocation = Core::sp2StackEmpty;
 			static constexpr Address subroutineStackFullLocation = Core::sp2StackFull;
 			static constexpr Address parameterStackEmptyLocation = Core::spStackEmpty;
@@ -137,23 +136,8 @@ namespace forth {
             void swapRegisters(const Molecule& m);
 			void compileMicrocodeInvoke(const Molecule& m, DictionaryEntry* current);
 			void microcodeInvoke(const Molecule& m);
-			template<typename First, typename ... Rest>
-			void microcodeStreamInvoke(First addr, Rest&& ... rest) {
-				static_assert(std::is_same<typename std::remove_reference<typename std::remove_cv<First>::type>::type, Address>::value, "All arguments must be of type Address!");
-				microcodeInvoke(addr);
-				if constexpr (sizeof...(rest) > 0) {
-					microcodeStreamInvoke(std::move(rest)...);
-				}
-			}
             void injectWord();
             void executeTop();
-			void installMoleculeToMemory0(Address value, Address memory) {
-				AssemblerBuilder ab(jitCacheLocation);
-				ab.addInstruction(loadImmediate64(TargetRegister::A, memory),
-								  loadImmediate64(TargetRegister::B, value),
-								  forth::store(TargetRegister::A, TargetRegister::B));
-				dispatchInstruction(ab);
-			}
 			bool keepExecuting() noexcept;
 			bool inCompilationMode() noexcept;
 			void activateCompileMode();

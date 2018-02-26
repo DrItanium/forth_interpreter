@@ -13,6 +13,7 @@
 #include "DictionaryEntry.h"
 #include "Machine.h"
 #include "Assembler.h"
+#include <iomanip>
 
 namespace forth {
 
@@ -169,9 +170,13 @@ namespace forth {
 		_compileTarget->addSpaceEntry(lookupWord("choose.c"));
 		_compileTarget->addSpaceEntry(lookupWord("invoke.c"));
 	}
-	std::string Machine::readWord() {
+	std::string Machine::readWord(bool allowEscapedQuotes) {
 		std::string word;
-		_input >> word;
+        if (allowEscapedQuotes) {
+		    _input >> std::quoted(word);
+        } else {
+            _input >> word;
+        }
 		return word;
 	}
 	void Machine::printRegisters() {
@@ -416,9 +421,24 @@ namespace forth {
             addWord("raiseError", std::mem_fn(&Machine::raiseError));
             addWord("uc", std::mem_fn(&Machine::invokeCore));
             addWord("quit", std::mem_fn(&Machine::terminateControlLoop));
+            addWord("\"", std::mem_fn(&Machine::constructString));
 			_microcodeInvoke = lookupWord("uc");
 		}
 	}
+    void Machine::constructString() {
+        _output << "Constructing string" << std::endl;
+			auto flags = _output.flags();
+            // keep reading until we get a word that ends with "
+            while (true) {
+                auto str = readWord();
+                _output << str;
+                if (!str.empty() && str.back() == '"') {
+                    _output << " {ending input}" << std::endl;
+                    break;
+                }
+            }
+            _output.setf(flags);
+    }
     void Machine::terminateControlLoop() {
         dispatchInstruction(loadImmediate64(TargetRegister::X, shouldKeepExecutingLocation),
                             forth::store(TargetRegister::X, TargetRegister::Zero));

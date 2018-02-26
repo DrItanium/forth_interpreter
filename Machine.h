@@ -14,9 +14,12 @@
 namespace forth {
 	class Machine {
 		public:
-			static constexpr Address shouldKeepExecutingLocation = Core::userVariableStart;
-			static constexpr Address isCompilingLocation = Core::userVariableStart + Core::wordToByteOffset<1>;
-			static constexpr Address ignoreInputLocation = Core::userVariableStart + Core::wordToByteOffset<2>;
+            template<Address index>
+            static constexpr auto userVariableAddress = Core::userVariableStart + Core::wordToByteOffset<index>;
+			static constexpr Address shouldKeepExecutingLocation = userVariableAddress<0>;
+			static constexpr Address isCompilingLocation = userVariableAddress<1>;
+			static constexpr Address ignoreInputLocation = userVariableAddress<2>;
+            static constexpr Address captureInputIntoStringLocation = userVariableAddress<3>;
 			static constexpr Address subroutineStackEmptyLocation = Core::sp2StackEmpty;
 			static constexpr Address subroutineStackFullLocation = Core::sp2StackFull;
 			static constexpr Address parameterStackEmptyLocation = Core::spStackEmpty;
@@ -148,7 +151,7 @@ namespace forth {
              */
             void seeWord();
             void seeWord(const DictionaryEntry* entry);
-			std::string readWord();
+			std::string readWord(bool allowEscapedQuotes = false);
             void moveOrSwap(TargetRegister from, TargetRegister to, bool swap = false);
             void moveRegister(const Molecule& m);
             void swapRegisters(const Molecule& m);
@@ -267,6 +270,7 @@ namespace forth {
 			bool subroutineStackFull();
             void invokeCore();
             void terminateControlLoop();
+            void constructString();
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;

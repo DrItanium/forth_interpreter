@@ -58,27 +58,7 @@ namespace forth {
              */
             template<auto first, auto ... rest>
             void addMachineCodeWord(const std::string& name, bool compileTimeInvoke = false) {
-				activateCompileMode();
-				_compileTarget = new DictionaryEntry(name);
-				if (compileTimeInvoke) {
-					_compileTarget->markCompileTimeInvoke();
-				}
-				moleculeSequence<first, rest...>();
-				endDefineWord();
-            }
-            template<auto first, auto ... rest>
-            void constructInstructionSequence(Address baseOffset) {
-				buildAndInstallMoleculeToMemory<0, 0, first, rest...>(baseOffset);
-            }
-            template<Address first, Address ... rest>
-            void addMoleculeSequence(const std::string& name, bool compileTimeInvoke = false) {
-				activateCompileMode();
-				_compileTarget = new DictionaryEntry(name);
-				if (compileTimeInvoke) {
-					_compileTarget->markCompileTimeInvoke();
-				}
-				moleculeWord<first, rest...>();
-				endDefineWord();
+                addWord(name, [this](Machine* _) { dispatchInstruction(first, rest...); }, compileTimeInvoke);
             }
 			void addition(Discriminant type);
 			void listWords();
@@ -167,51 +147,6 @@ namespace forth {
 			}
             void injectWord();
             void executeTop();
-            template<Address first, Address ... rest>
-            void moleculeWord() {
-                microcodeInvoke(first);
-                if constexpr (sizeof...(rest) > 0) {
-                    moleculeWord<rest...>();
-                }
-            }
-            template<auto first, auto ... rest>
-            void moleculeSequence() {
-                if constexpr (operationLength(first, std::move(rest)...) <= 8) {
-                    moleculeWord<encodeOperation<first, rest...>()>();
-                } else {
-                    makeMoleculeSequence<getInstructionWidth(first), encodeOperation<0, decltype(first)>(0, first), rest...>();
-                }
-            }
-            template<byte depth, Address current, auto first, auto ... rest>
-            void makeMoleculeSequence() {
-                // we could encode each operation into a separate word to start with
-				static constexpr byte newDepth = depth + getInstructionWidth(first);
-				if constexpr (newDepth > 7) {
-					// we need to start a new molecule, with the current
-					// instruction added
-					moleculeWord<current>();
-					makeMoleculeSequence<0, 0, first, rest...>();
-				} else if constexpr (newDepth == 7) {
-					static constexpr auto newAddress = encodeOperation<depth, decltype(first)>(current, first);
-					// okay, we filled up the current molecule and need to
-					// restart
-					moleculeWord<newAddress>();
-					if constexpr (sizeof...(rest) > 0) {
-						makeMoleculeSequence<0, 0, rest...>();
-					}
-				} else {
-					// known DRY because the compiler won't accept it
-					// otherwise!
-					static constexpr auto newAddress = encodeOperation<depth, decltype(first)>(current, first);
-					// we did not fill up the current molecule either
-					if constexpr (sizeof... (rest) > 0) {
-						makeMoleculeSequence<newDepth, newAddress, rest...>();
-					} else {
-						// nothing left to do so just stop here!
-						moleculeWord<newAddress>();
-					}
-				}
-            }
 			void installMoleculeToMemory0(Address value, Address memory) {
 				AssemblerBuilder ab(jitCacheLocation);
 				ab.addInstruction(loadImmediate64(TargetRegister::A, memory),
@@ -219,41 +154,6 @@ namespace forth {
 								  forth::store(TargetRegister::A, TargetRegister::B));
 				dispatchInstruction(ab);
 			}
-            template<byte depth, Address current, auto first, auto ... rest>
-            void buildAndInstallMoleculeToMemory(Address memory) {
-                // we could encode each operation into a separate word to start with
-				if constexpr (constexpr byte newDepth = depth + getInstructionWidth(first) ; newDepth == 8) {
-					static constexpr auto newAddress = encodeOperation<depth, decltype(first)>(current, first);
-					installMoleculeToMemory0(newAddress, memory);
-					if constexpr ( sizeof...(rest) > 0) {
-						buildAndInstallMoleculeToMemory<0, 0, rest...>(memory + 1);
-					}
-				} else if constexpr (newDepth > 7) {
-					// we need to start a new molecule, with the current
-					// instruction added
-					installMoleculeToMemory0(current, memory);
-					buildAndInstallMoleculeToMemory<0, 0, first, rest...>(memory + 1);
-				} else if constexpr (newDepth == 7) {
-					static constexpr auto newAddress = encodeOperation<depth, decltype(first)>(current, first);
-					// okay, we filled up the current molecule and need to
-					// restart
-					installMoleculeToMemory0(newAddress, memory);
-					if constexpr (sizeof...(rest) > 0) {
-						buildAndInstallMoleculeToMemory<0, 0, rest...>(memory + 1);
-					}
-				} else {
-					// known DRY because the compiler won't accept it
-					// otherwise!
-					static constexpr auto newAddress = encodeOperation<depth, decltype(first)>(current, first);
-					// we did not fill up the current molecule either
-					if constexpr (sizeof... (rest) > 0) {
-						buildAndInstallMoleculeToMemory<newDepth, newAddress, rest...>(memory);
-					} else {
-						// nothing left to do so just stop here!
-						installMoleculeToMemory0(newAddress, memory);
-					}
-				}
-            }
 			bool keepExecuting() noexcept;
 			bool inCompilationMode() noexcept;
 			void activateCompileMode();

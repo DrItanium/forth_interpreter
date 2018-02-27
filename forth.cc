@@ -208,7 +208,9 @@ void systemSetup(forth::Machine& machine) {
         loadImmediate64(rx, forth::Machine::subroutineStackEmptyLocation),
         load(forth::TargetRegister::SP2, rx),
         loadImmediate64(rx, forth::Machine::parameterStackEmptyLocation),
-        load(forth::TargetRegister::SP, rx));
+        load(forth::TargetRegister::SP, rx),
+		forth::returnToNative(),
+		// setup the code fragment routines here
 	machine.dispatchInstruction(init);
 }
 }

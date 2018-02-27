@@ -936,6 +936,7 @@ EagerInstruction storeImmediate64(TargetRegister addr, Address value);
  * load a specific address into X and a value into Temporary, then store temporary into X
  */
 EagerInstruction storeImmediate64(Address addr, Address value);
+EagerInstruction storeImmediate64(Address addr, const std::string& value);
 
 EagerInstruction indirectLoad(TargetRegister dest, TargetRegister src = TargetRegister::X);
 

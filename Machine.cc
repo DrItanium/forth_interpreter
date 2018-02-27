@@ -272,6 +272,7 @@ namespace forth {
 	}
 
 	Datum Machine::popParameter() {
+		dispatchInstruction(forth::popRegister(TargetRegister::Temporary, TargetRegister::SP));
 		return _core.pop(TargetRegister::SP);
 	}
 
@@ -689,26 +690,6 @@ endLoopTop:
 	}
 	void Machine::printStack() {
         // load the bottom of the stack
-		/*
-		dispatchInstruction(loadImmediate64(TargetRegister::X, parameterStackEmptyLocation),
-							forth::load(TargetRegister::X, TargetRegister::X),
-							zeroRegister(TargetRegister::A),
-							forth::move(TargetRegister::B, TargetRegister::SP),
-							cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B));
-        if (_core.getRegister(TargetRegister::C).getTruth()) {
-            return;
-        }
-        // Once again, this is just to make rewriting easier later on
-loopRestart:
-        // now load the current address from B
-		dispatchInstruction(forth::load(TargetRegister::A, TargetRegister::B),
-                addiu(TargetRegister::B, TargetRegister::B, 8),
-				cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B));
-        _output << "\t- " << _core.getRegister(TargetRegister::A).getValue() << std::endl;
-        if (!_core.getRegister(TargetRegister::C).getTruth()) {
-            goto loopRestart;
-        }
-		*/
 		dispatchInstruction(loadImmediate64(TargetRegister::X, parameterStackEmptyLocation),
 				forth::load(TargetRegister::X, TargetRegister::X),
 				zeroRegister(TargetRegister::A),

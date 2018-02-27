@@ -168,6 +168,13 @@ namespace forth {
 						}
 					});
 	}
+	EagerInstruction storeImmediate64(Address addr, const std::string& name) {
+		return [addr, name](AssemblerBuilder& ab) {
+			ab.addInstruction(loadImmediate64(TargetRegister::X, addr),
+							  loadImmediate64(TargetRegister::Temporary, name),
+							  store(TargetRegister::X, TargetRegister::Temporary));
+		};
+	}
     EagerInstruction storeImmediate64(TargetRegister addr, Address value) {
         if (addr == TargetRegister::Temporary) {
             throw Problem("Assembler::storeImmediate64", "Temporary register already in use!");

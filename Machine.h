@@ -19,6 +19,7 @@ namespace forth {
 			static constexpr Address shouldKeepExecutingLocation = userVariableAddress<0>;
 			static constexpr Address isCompilingLocation = userVariableAddress<1>;
 			static constexpr Address ignoreInputLocation = userVariableAddress<2>;
+			static constexpr Address codeFragmentsLocation = userVariableAddress<3>;
 			static constexpr Address subroutineStackEmptyLocation = Core::sp2StackEmpty;
 			static constexpr Address subroutineStackFullLocation = Core::sp2StackFull;
 			static constexpr Address parameterStackEmptyLocation = Core::spStackEmpty;

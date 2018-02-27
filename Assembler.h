@@ -943,6 +943,21 @@ EagerInstruction label(const std::string& name);
 EagerInstruction pushImmediate(const Datum& value, TargetRegister sp);
 EagerInstruction pushImmediate(Address value, TargetRegister sp);
 
+constexpr QuarterAddress printString(TargetRegister start, TargetRegister length) noexcept {
+	return encodeTwoByte(Operation::PrintString, start, length);
+}
+
+
+constexpr QuarterAddress printChar(TargetRegister src) noexcept {
+	return encodeTwoByte(Operation::PrintString, encodeDestinationRegister(src));
+}
+EagerInstruction printChar(char c);
+EagerInstruction printChar(const std::string& str);
+
+constexpr QuarterAddress typeDatum(TargetRegister src) noexcept {
+	return encodeTwoByte(Operation::TypeDatum, encodeDestinationRegister(src));
+}
+
 } // end namespace forth
 static_assert(sizeof(unsigned long long int) >= sizeof(forth::Address), "Unsigned long long int is a 64-bit value or greater!");
 constexpr forth::QuarterAddressWrapper operator "" _addrqlowest(unsigned long long int addr) {  return forth::getLowestQuarter(forth::Address(addr)); }

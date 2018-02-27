@@ -466,9 +466,13 @@ void numericBoolAndInteger(Operation op, const std::string& name, Register& dest
 void Core::notOperation(Operation op) {
     std::tuple<TargetRegister, TargetRegister> tup;
     switch (op) {
+		case Operation::BooleanNot:
+		case Operation::UnsignedNot:
         case Operation::Not:
             tup = std::make_tuple(TargetRegister::C, TargetRegister::A);
             break;
+        case Operation::BooleanNotFull:
+		case Operation::UnsignedNotFull:
         case Operation::NotFull:
             tup = extractTwoRegisterForm();
             break;
@@ -495,9 +499,13 @@ void Core::notOperation(Operation op) {
 void Core::minusOperation(Operation op) {
     std::tuple<TargetRegister, TargetRegister> tup;
     switch (op) {
+		case Operation::FloatingPointMinus:
+		case Operation::UnsignedMinus:
         case Operation::Minus:
             tup = std::make_tuple(TargetRegister::C, TargetRegister::A);
             break;
+		case Operation::FloatingPointMinusFull:
+		case Operation::UnsignedMinusFull:
         case Operation::MinusFull:
             tup = extractTwoRegisterForm();
             break;
@@ -751,6 +759,7 @@ void Core::dispatchInstruction() {
 		DefEntry(ConditionalCallSubroutineIndirect, conditionalBranch), DefEntry(ConditionalReturnSubroutine, conditionalBranch),
 		DefEntry(EncodeBits, encodeDecodeBits), DefEntry(DecodeBits, encodeDecodeBits),
 		DefEntry(Nop, nop), DefEntry(LeaveExecutionLoop, returnToNative),
+		DefEntry(PrintString, printString), DefEntry(PrintChar, printString), DefEntry(TypeDatum, printString),
 #undef DefEntry
 	};
     auto op = static_cast<Operation>(extractByteFromMolecule());
@@ -917,6 +926,31 @@ void Core::returnToNative(Operation op) {
 			break;
 		default:
 			throw Problem("returnToNative", "Illegal operation provided!");
+	}
+}
+
+void Core::printString(Operation op) {
+	if (op == Operation::PrintString) {
+		auto second = extractByteFromMolecule();
+		auto startReg = TargetRegister(getDestinationRegister(second));
+		auto lengthReg = TargetRegister(getSourceRegister(second));
+		// collect the data up into a string
+		auto begin = getRegister(startReg).getAddress();
+		auto length = getRegister(lengthReg).getAddress();
+		auto end = length + begin;
+		for (auto loc = begin; loc < end; ++loc) {
+			std::cout << char(loadByte(loc));
+		}
+	} else if (op == Operation::PrintChar) {
+		auto second = extractByteFromMolecule();
+		auto charReg = TargetRegister(getDestinationRegister(second));
+		std::cout << char(getRegister(charReg).getAddress());
+	} else if (op == Operation::TypeDatum) {
+		auto second = extractByteFromMolecule();
+		auto charReg = TargetRegister(getDestinationRegister(second));
+		std::cout << getRegister(charReg).getValue();
+	} else {
+		throw Problem("printString", "Illegal operation!");
 	}
 }
 

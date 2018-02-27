@@ -215,5 +215,18 @@ namespace forth {
     EagerInstruction pushImmediate(const Datum& value, TargetRegister sp) {
         return pushImmediate(value.address, sp);
     }
-} // end namespace forth
+	EagerInstruction printChar(char c) {
+		return [c](AssemblerBuilder& ab) {
+			ab.addInstruction(loadImmediate16(TargetRegister::Temporary, QuarterAddress(c)),
+							  printChar(TargetRegister::Temporary));
+		};
+	}
+	EagerInstruction printChar(const std::string& str) {
+		return [str](AssemblerBuilder& ab) {
+			for (const auto c : str) {
+				ab.addInstruction(printChar(c));
+			}
+		};
+	}
 
+} // end namespace forth

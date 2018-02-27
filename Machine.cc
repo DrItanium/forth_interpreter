@@ -662,24 +662,22 @@ loopRestart:
             goto loopRestart;
         }
 		*/
-		AssemblerBuilder ab(jitCacheLocation);
-		ab.addInstruction(loadImmediate64(TargetRegister::X, parameterStackEmptyLocation),
-						  forth::load(TargetRegister::X, TargetRegister::X),
-						  zeroRegister(TargetRegister::A),
-						  forth::move(TargetRegister::B, TargetRegister::SP),
-						  cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B),
-						  forth::conditionalBranch(TargetRegister::C, "done"),
-						  label("loopRestart"),
-						  forth::load(TargetRegister::A, TargetRegister::B),
-						  increment(TargetRegister::B, 0),
-						  cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B),
-						  printChar("\t- "),
-						  typeDatum(TargetRegister::A),
-						  printChar('\n'),
-						  notb(TargetRegister::C, TargetRegister::C),
-						  forth::conditionalBranch(TargetRegister::C, "loopRestart"),
-						  label("done"));
-		dispatchInstruction(ab);
+		dispatchInstruction(loadImmediate64(TargetRegister::X, parameterStackEmptyLocation),
+				forth::load(TargetRegister::X, TargetRegister::X),
+				zeroRegister(TargetRegister::A),
+				forth::move(TargetRegister::B, TargetRegister::SP),
+				cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B),
+				forth::conditionalBranch(TargetRegister::C, "done"),
+				label("loopRestart"),
+				forth::load(TargetRegister::A, TargetRegister::B),
+				increment(TargetRegister::B, 0),
+				cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B),
+				printChar("\t- "),
+				typeDatum(TargetRegister::A),
+				printChar('\n'),
+				notb(TargetRegister::C, TargetRegister::C),
+				forth::conditionalBranch(TargetRegister::C, "loopRestart"),
+				label("done"));
 	}
 	std::function<void(Address, Address)> Machine::getMemoryInstallationFunction() {
 		return _core.getMemoryInstallationFunction();

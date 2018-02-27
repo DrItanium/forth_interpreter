@@ -669,11 +669,7 @@ void Core::conditionalBranch(Operation op) {
 	auto& cond = getRegister(TargetRegister(getDestinationRegister(k)));
 	auto jumpRelativeToPC = [this]() {
 		auto offset = extractQuarterIntegerFromMolecule();
-		std::cout << "offset: " << offset << std::endl;
-		std::cout << "before pc: 0x" << std::hex << _pc.getAddress() << std::endl;
-		std::cout << "pc as signed: 0x" << std::hex << _pc.getInt() << std::endl;
 		_pc.setValue(_pc.getInt() + offset);
-		std::cout << "pc: 0x" << std::hex << _pc.getAddress() << std::endl;
 		// the offset is messed up right now and is ahead by two bytes so we
 		// have to move the address back three places as the address is computed
 		// relative to the _front_ of the instruction

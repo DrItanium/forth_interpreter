@@ -209,7 +209,17 @@ void systemSetup(forth::Machine& machine) {
         load(forth::TargetRegister::SP2, rx),
         loadImmediate64(rx, forth::Machine::parameterStackEmptyLocation),
         load(forth::TargetRegister::SP, rx),
+		storeImmediate64(forth::Machine::terminateControlLoopLocation, "terminateControlLoop"),
+		// now start using the other system variables to 
 		forth::returnToNative(),
+		label("terminateControlLoop"),
+		loadImmediate64(TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+		forth::store(TargetRegister::X, TargetRegister::Zero),
+		forth::returnToNative()
+		);
+
+
+		
 		// setup the code fragment routines here
 	machine.dispatchInstruction(init);
 }

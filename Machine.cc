@@ -457,8 +457,9 @@ namespace forth {
             _output.setf(flags);
     }
     void Machine::terminateControlLoop() {
-        dispatchInstruction(loadImmediate64(TargetRegister::X, shouldKeepExecutingLocation),
-                            forth::store(TargetRegister::X, TargetRegister::Zero));
+		dispatchInstruction(loadImmediate64(TargetRegister::X, terminateControlLoopLocation),
+							forth::load(TargetRegister::X, TargetRegister::X),
+							jumpIndirect(TargetRegister::X));
     }
     void Machine::invokeCore() {
         // invoke a single molecule/address

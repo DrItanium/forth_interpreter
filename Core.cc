@@ -71,8 +71,7 @@ byte Core::extractByteFromMolecule() {
 
 QuarterAddress Core::extractQuarterAddressFromMolecule() {
     auto q = loadQuarterAddress(_pc.getAddress());
-	static_assert(sizeof(q) == 2, "q is not two bytes!");
-	advanceMoleculePosition(sizeof(q));
+	advanceMoleculePosition(2);
 	return q;
 }
 QuarterInteger Core::extractQuarterIntegerFromMolecule() {
@@ -82,7 +81,7 @@ QuarterInteger Core::extractQuarterIntegerFromMolecule() {
 
     } k;
     k.v = loadQuarterAddress(_pc.getAddress());
-	advanceMoleculePosition(sizeof(QuarterAddress));
+	advanceMoleculePosition(2);
 	return k.i;
 }
 
@@ -663,7 +662,8 @@ void Core::jumpOperation(Operation op) {
 }
 void Core::conditionalBranch(Operation op) {
 	auto k = extractByteFromMolecule();
-	if (getRegister(TargetRegister(getDestinationRegister(k))).getTruth()) {
+	auto& cond = getRegister(TargetRegister(getDestinationRegister(k)));
+	if (cond.getTruth()) {
 		switch (op) {
 			case Operation::ConditionalBranch:
 				jumpOperation(Operation::Jump);
@@ -689,7 +689,7 @@ void Core::conditionalBranch(Operation op) {
 		switch (op) {
 			case Operation::ConditionalBranch:
 			case Operation::ConditionalCallSubroutine:
-                _pc.increment(2);
+				(void)extractQuarterAddressFromMolecule();
 				break;
 			case Operation::ConditionalBranchIndirect:
 			case Operation::ConditionalReturnSubroutine:
@@ -944,7 +944,7 @@ void Core::printString(Operation op) {
 	} else if (op == Operation::PrintChar) {
 		auto second = extractByteFromMolecule();
 		auto charReg = TargetRegister(getDestinationRegister(second));
-		std::cout << char(getRegister(charReg).getAddress());
+		std::cout << byte(getRegister(charReg).getAddress());
 	} else if (op == Operation::TypeDatum) {
 		auto second = extractByteFromMolecule();
 		auto charReg = TargetRegister(getDestinationRegister(second));

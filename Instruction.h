@@ -315,8 +315,14 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         case Operation::Load:
         case Operation::Store:
 		case Operation::NotFull:
+		case Operation::BooleanNotFull:
+		case Operation::UnsignedNotFull:
 		case Operation::MinusFull:
+		case Operation::FloatingPointMinusFull:
+		case Operation::UnsignedMinusFull:
 		case Operation::PowFull:
+		case Operation::UnsignedPowFull:
+		case Operation::FloatingPointPowFull:
         case Operation::JumpIndirect:
         case Operation::ConditionalBranchIndirect:
         case Operation::CallSubroutineIndirect:

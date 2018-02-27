@@ -717,7 +717,7 @@ loopRestart:
 				forth::conditionalBranch(TargetRegister::C, "done"),
 				label("loopRestart"),
 				forth::load(TargetRegister::A, TargetRegister::B),
-				increment(TargetRegister::B, 0),
+				forth::addiu(TargetRegister::B, TargetRegister::B, 8),
 				cmpeq(TargetRegister::C, TargetRegister::X, TargetRegister::B),
 				printChar("\t- "),
 				typeDatum(TargetRegister::A),

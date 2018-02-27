@@ -640,10 +640,6 @@ void Core::jumpOperation(Operation op) {
 	auto jumpRelativeToPC = [this]() {
 		auto offset = extractQuarterIntegerFromMolecule();
 		_pc.setValue(_pc.getInt() + offset);
-		// the offset is messed up right now and is ahead by two bytes so we
-		// have to move the address back two places as the address is computed
-		// relative to the _front_ of the instruction
-		_pc.decrement(2);
 	};
 	switch (op) {
 		case Operation::Jump:

@@ -949,7 +949,7 @@ constexpr QuarterAddress printString(TargetRegister start, TargetRegister length
 
 
 constexpr QuarterAddress printChar(TargetRegister src) noexcept {
-	return encodeTwoByte(Operation::PrintString, encodeDestinationRegister(src));
+	return encodeTwoByte(Operation::PrintChar, encodeDestinationRegister(src));
 }
 EagerInstruction printChar(char c);
 EagerInstruction printChar(const std::string& str);

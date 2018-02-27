@@ -52,9 +52,9 @@ namespace forth {
 		if (auto result = _names.find(name); result != _names.cend()) {
 			auto loc = result->second;
 			if (loc > from) {
-				return -(Integer(loc - from));
+				return Integer(loc - from);
 			} else if (loc < from) {
-				return Integer(from - loc);
+				return -Integer(from - loc);
 			} else {
 				return 0;
 			}

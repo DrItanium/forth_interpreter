@@ -637,9 +637,17 @@ void Core::jumpOperation(Operation op) {
         savePositionToSubroutineStack();
         _pc.setValue(getRegister((TargetRegister)getDestinationRegister(b)).getValue());
     };
+	auto jumpRelativeToPC = [this]() {
+		auto offset = extractQuarterIntegerFromMolecule();
+		_pc.setValue(_pc.getInt() + offset);
+		// the offset is messed up right now and is ahead by two bytes so we
+		// have to move the address back two places as the address is computed
+		// relative to the _front_ of the instruction
+		_pc.decrement(2);
+	};
 	switch (op) {
 		case Operation::Jump:
-			_pc.setValue(_pc.getInt() + extractQuarterIntegerFromMolecule());
+			jumpRelativeToPC();
 			break;
 		case Operation::JumpAbsolute: 
 			_pc.setValue((Address)makeImm24(extractQuarterIntegerFromMolecule(), extractByteFromMolecule()));
@@ -663,10 +671,20 @@ void Core::jumpOperation(Operation op) {
 void Core::conditionalBranch(Operation op) {
 	auto k = extractByteFromMolecule();
 	auto& cond = getRegister(TargetRegister(getDestinationRegister(k)));
+	auto jumpRelativeToPC = [this]() {
+		auto offset = extractQuarterIntegerFromMolecule();
+		std::cout << "offset: 0x" << std::hex << offset << std::endl;
+		std::cout << "before pc: 0x" << std::hex << _pc.getAddress() << std::endl;
+		_pc.setValue(_pc.getInt() + offset);
+		std::cout << "pc: 0x" << std::hex << _pc.getAddress() << std::endl;
+		// the offset is messed up right now and is ahead by two bytes so we
+		// have to move the address back three places as the address is computed
+		// relative to the _front_ of the instruction
+	};
 	if (cond.getTruth()) {
 		switch (op) {
 			case Operation::ConditionalBranch:
-				jumpOperation(Operation::Jump);
+				jumpRelativeToPC();
 				break;
 			case Operation::ConditionalBranchIndirect:
 				_pc.setValue(getRegister((TargetRegister)getSourceRegister(k)).getValue());
@@ -944,7 +962,8 @@ void Core::printString(Operation op) {
 	} else if (op == Operation::PrintChar) {
 		auto second = extractByteFromMolecule();
 		auto charReg = TargetRegister(getDestinationRegister(second));
-		std::cout << byte(getRegister(charReg).getAddress());
+		auto c = char(getRegister(charReg).getAddress());
+		std::cout << c;
 	} else if (op == Operation::TypeDatum) {
 		auto second = extractByteFromMolecule();
 		auto charReg = TargetRegister(getDestinationRegister(second));

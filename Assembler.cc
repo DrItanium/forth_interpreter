@@ -32,6 +32,7 @@ namespace forth {
 
 	void AssemblerBuilder::labelHere(const std::string& name) {
 		if (auto result = _names.find(name); result == _names.cend()) {
+			std::cout << "Added label: " << name << " at pos 0x" << std::hex << _currentLocation << std::endl;
 			_names.emplace(name, _currentLocation);
 		} else {
 			throw Problem("labelHere", "Requested label already registered!");
@@ -74,8 +75,9 @@ namespace forth {
 	}
 	void AssemblerBuilder::addInstruction(SizedResolvableLazyFunction op) {
 		// unpack and repack this with a new function
-		_operations.emplace(_currentLocation, [op, this]() { return std::get<1>(op)(*this, here()); });
+		auto start = _currentLocation;
 		_currentLocation += std::get<0>(op);
+		_operations.emplace(start, [from = _currentLocation, op, this]() { return std::get<1>(op)(*this, from); });
 	}
 	void AssemblerBuilder::addInstruction(SizedLazyInstruction op) {
 		_operations.emplace(_currentLocation, std::get<1>(op));
@@ -159,7 +161,9 @@ namespace forth {
 	SizedResolvableLazyFunction conditionalBranch(TargetRegister cond, const std::string& name) {
 		return std::make_tuple(getInstructionWidth(Operation::ConditionalBranch),
 					[name, cond](AssemblerBuilder& ab, Address from) {
+					std::cout << "from: 0x" << std::hex << from << std::endl;
 						auto addr = ab.relativeLabelAddress(name, from);
+					std::cout << "addr: 0x" << std::hex << addr << std::endl;
 						if (addr > 32767 || addr < -32768) {
 							throw Problem("conditionalBranch", "Can't encode label into a relative 16-bit offset!");
 						} else {

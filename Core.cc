@@ -2,6 +2,7 @@
 #include "Core.h"
 #include "Problem.h"
 #include "Datum.h"
+#include "DictionaryEntry.h"
 #include <sstream>
 #include <string>
 #include <cmath>
@@ -802,11 +803,30 @@ void Core::moveOrSwap(Operation op) {
 
 void Core::typeValue(Operation op) {
 	auto tr = TargetRegister(getDestinationRegister(extractByteFromMolecule()));
-	if (_output) {
-		_output(involvesDiscriminantType(op), tr, getRegister(tr));
-	} else {
-		throw Problem("typeValue", "no output function defined!");
+	auto flags = std::cout.flags();
+	auto value = getRegister(tr).getValue();
+	switch(involvesDiscriminantType(op)) {
+		case Discriminant::Number:
+			std::cout << std::dec << value.numValue;
+			break;
+		case Discriminant::FloatingPoint:
+			std::cout << value.fp;
+			break;
+		case Discriminant::MemoryAddress:
+			std::cout << std::hex << value.address << "#";
+			break;
+		case Discriminant::Boolean:
+			std::cout << std::boolalpha << value.truth << std::noboolalpha;
+			break;
+		case Discriminant::Word:
+			std::cout << std::hex << value.entry << ": " << std::dec << value.entry->getName();
+			break;
+		default:
+			throw Problem("typeValue", "BAD DISCRIMINANT!");
+
 	}
+	std::cout << ' ' << std::endl;
+	std::cout.setf(flags);
 }
 void Core::setOutputFunction(Core::OutputFunction output) {
 	_output = output;

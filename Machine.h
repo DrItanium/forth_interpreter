@@ -33,9 +33,7 @@ namespace forth {
 			void controlLoop() noexcept;
 			void handleError(const std::string& word, const std::string& msg) noexcept;
 			Datum load(Address addr);
-			void load();
 			void store(Address addr, const Datum& value);
-			void store();
             void pushWord(DictionaryEntry* entry);
 			void pushParameter(Datum value);
 			Datum popParameter();

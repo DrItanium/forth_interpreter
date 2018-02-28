@@ -655,12 +655,6 @@ endLoopTop:
 	void Machine::store(Address addr, const Datum& value) {
 		_core.store(addr, value);
 	}
-	void Machine::load() {
-		_core.getRegister(TargetRegister::C).setValue(load(_core.getRegister(TargetRegister::A).getAddress()));
-	}
-	void Machine::store() {
-		store(_core.getRegister(TargetRegister::A).getAddress(), _core.getRegister(TargetRegister::B).getValue());
-	}
 	void Machine::printStack() {
         // load the bottom of the stack
 		dispatchInstruction(loadImmediate64(TargetRegister::X, parameterStackEmptyLocation),

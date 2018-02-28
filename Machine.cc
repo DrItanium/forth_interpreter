@@ -648,13 +648,6 @@ endLoopTop:
 				forth::load(TargetRegister::SP2, TargetRegister::X));
 	}
 
-
-	Datum Machine::load(Address addr) {
-		return _core.loadWord(addr);
-	}
-	void Machine::store(Address addr, const Datum& value) {
-		_core.store(addr, value);
-	}
 	void Machine::printStack() {
         // load the bottom of the stack
 		dispatchInstruction(loadImmediate64(TargetRegister::X, parameterStackEmptyLocation),

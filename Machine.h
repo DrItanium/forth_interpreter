@@ -32,8 +32,6 @@ namespace forth {
 			const DictionaryEntry* lookupWord(const std::string& word) noexcept;
 			void controlLoop() noexcept;
 			void handleError(const std::string& word, const std::string& msg) noexcept;
-			Datum load(Address addr);
-			void store(Address addr, const Datum& value);
             void pushWord(DictionaryEntry* entry);
 			void pushParameter(Datum value);
 			Datum popParameter();

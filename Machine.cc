@@ -180,32 +180,24 @@ namespace forth {
 		return word;
 	}
 	void Machine::printRegisters() {
-		auto fn = [](const std::string& title) noexcept -> forth::EagerInstruction {
-			return [title](AssemblerBuilder& ab) {
+		auto printRegister = [](const std::string& title, TargetRegister reg) noexcept -> forth::EagerInstruction {
+			return [title, reg](AssemblerBuilder& ab) {
 				ab.addInstruction(printChar(title),
 								  printChar(": "),
-								  popRegister(TargetRegister::A, TargetRegister::SP),
-								  typeDatum(TargetRegister::A),
+								  typeDatum(reg),
 								  printChar("\n"));
 			};
 		};
 		dispatchInstruction(
-				printChar("SP: "), typeDatum(TargetRegister::SP), printChar("\n"),
-				printChar("SP2: "), typeDatum(TargetRegister::SP2), printChar("\n"),
-				pushRegister(TargetRegister::Index),
-				pushRegister(TargetRegister::DP),
-				pushRegister(TargetRegister::X),
-				pushRegister(TargetRegister::S),
-				pushRegister(TargetRegister::C),
-				pushRegister(TargetRegister::B),
-				pushRegister(TargetRegister::A),
-				fn("A"),
-				fn("B"),
-				fn("C"),
-				fn("S"),
-				fn("X"),
-				fn("DP"),
-				fn("Index"));
+				printRegister("SP", TargetRegister::SP),
+				printRegister("SP2", TargetRegister::SP2),
+				printRegister("A", TargetRegister::A),
+				printRegister("B", TargetRegister::B),
+				printRegister("C", TargetRegister::C),
+				printRegister("X", TargetRegister::X),
+				printRegister("S", TargetRegister::S),
+				printRegister("Index", TargetRegister::Index),
+				printRegister("DP", TargetRegister::DP));
 	}
 	void Machine::defineWord() {
 		if (inCompilationMode() || _compileTarget != nullptr) {

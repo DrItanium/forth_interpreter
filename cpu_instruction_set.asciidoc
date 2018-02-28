@@ -136,8 +136,6 @@ opcode):
 | less than | cmplt | cmpltu | cmpltf |  |  | C = A, B
 | equals | cmpeq | cmpequ | cmpeqf | cmpeqb |  | C = A, B
 | pow    | pow | powu | powf |  |  | C = A, B
-| increment | incr | incru | incrf |  |  | 
-| decrement | decr | decru | decrf |  |  | 
 | type value | type | typeu | typef | typeb |  | A
 | load |  |  |  |  | load |  
 | store |  |  |  |  | store |  

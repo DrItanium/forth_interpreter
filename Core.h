@@ -37,7 +37,6 @@ class Core {
 		static constexpr Address systemVariableSize = ((systemVariableEnd - systemVariableStart) + wordToByteOffset<1>) >> 3;
         static_assert(systemVariableSize == 0x10000, "System variable size is not 64 kwords");
         static_assert((byteSystemVariableEnd - byteSystemVariableStart) == 0x7FFFF, "System variable size is not 512k in size!");
-		using OutputFunction = std::function<void(Discriminant, TargetRegister, const Register&)>;
 		static constexpr Address getNearestWordAddress(Address input) noexcept {
 			return decodeBits<Address, Address, wordAddressMask, 0>(input);
 		}
@@ -65,10 +64,9 @@ class Core {
             } 
         }
 	public:
-		Core(OutputFunction output);
+		Core();
 		~Core() = default;
 		//void executionLoop();
-		void setOutputFunction(OutputFunction output);
 		void dispatchInstruction();
         /**
          * Returns the word closest to the target addres
@@ -148,7 +146,6 @@ class Core {
         Register _dp, _index;
 		Register _tmp0, _tmp1;
         ReadOnlyRegister _zero;
-		OutputFunction _output;
 		// mapped to 0xFFFFFFFFFFFF0000
 		std::unique_ptr<Datum[]> _memory, _systemVariables;
         bool _advancePC = false;

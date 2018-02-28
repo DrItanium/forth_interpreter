@@ -9,7 +9,7 @@
 #include <map>
 
 namespace forth {
-Core::Core(Core::OutputFunction output) : _output(output), _memory(new Datum[memoryCapacity]), _systemVariables(new Datum[systemVariableSize]) { }
+Core::Core() : _memory(new Datum[memoryCapacity]), _systemVariables(new Datum[systemVariableSize]) { }
 
 Register& Core::getRegister(TargetRegister reg) {
 	using Type = decltype(reg);
@@ -827,9 +827,6 @@ void Core::typeValue(Operation op) {
 	}
 	std::cout << ' ' << std::endl;
 	std::cout.setf(flags);
-}
-void Core::setOutputFunction(Core::OutputFunction output) {
-	_output = output;
 }
 enum class Immediate16Positions : byte {
 	Lowest = 0,

@@ -40,7 +40,6 @@ namespace forth {
 			void pushParameter(Datum value);
 			Datum popParameter();
 			bool numberRoutine(const std::string& word) noexcept;
-			void typeValue(Discriminant discriminant, const Datum& value);
 			void addWord(DictionaryEntry* entry);
 			void addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke = false);
 			std::function<void(Address, Address)> getMemoryInstallationFunction();

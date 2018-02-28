@@ -245,33 +245,7 @@ namespace forth {
 		}
 		_words = entry;
 	}
-	void Machine::typeValue(Discriminant discriminant, const Datum& value) {
-		auto flags = _output.flags();
-		switch(discriminant) {
-			case Discriminant::Number:
-				_output << std::dec << value.numValue;
-				break;
-			case Discriminant::FloatingPoint:
-				_output << value.fp;
-				break;
-			case Discriminant::MemoryAddress:
-				_output << std::dec << value.address;
-				break;
-			case Discriminant::Boolean:
-				_output << std::boolalpha << value.truth << std::noboolalpha;
-				break;
-			case Discriminant::Word:
-				_output << std::hex << value.entry << ": " << std::dec << value.entry->getName();
-			default:
-				throw Problem("type.a", "BAD DISCRIMINANT!");
-		}
-		// always type a space out after the number
-		_output << ' ' << std::endl;
-		_output.setf(flags);
-	}
-	Machine::Machine(std::ostream& output, std::istream& input) :  _output(output), _input(input), _words(nullptr), _core(nullptr) {
-		_core.setOutputFunction([this](Discriminant d, TargetRegister tr, const Register& reg) { typeValue(d, reg.getValue()); });
-	}
+	Machine::Machine(std::ostream& output, std::istream& input) :  _output(output), _input(input), _words(nullptr) { }
 
 	Datum Machine::popParameter() {
 		dispatchInstruction(forth::popRegister(TargetRegister::Temporary, TargetRegister::SP));

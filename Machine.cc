@@ -180,22 +180,32 @@ namespace forth {
 		return word;
 	}
 	void Machine::printRegisters() {
-		auto flags = _output.flags();
-		auto fn = [this](const std::string& title, auto value) noexcept {
-			_output << title << ": " << value << std::endl;
+		auto fn = [](const std::string& title) noexcept -> forth::EagerInstruction {
+			return [title](AssemblerBuilder& ab) {
+				ab.addInstruction(printChar(title),
+								  printChar(": "),
+								  popRegister(TargetRegister::A, TargetRegister::SP),
+								  typeDatum(TargetRegister::A),
+								  printChar("\n"));
+			};
 		};
-		fn("A", _core.getRegister(TargetRegister::A).getValue());
-		fn("B", _core.getRegister(TargetRegister::B).getValue());
-		fn("C", _core.getRegister(TargetRegister::C).getValue());
-		fn("S", _core.getRegister(TargetRegister::S).getValue());
-		fn("X", _core.getRegister(TargetRegister::X).getValue());
-		fn("SP", _core.getRegister(TargetRegister::SP).getValue());
-		fn("SP2", _core.getRegister(TargetRegister::SP2).getValue());
-		fn("DP", _core.getRegister(TargetRegister::DP).getValue());
-		fn("Index", _core.getRegister(TargetRegister::Index).getValue());
-		fn("Temp", _core.getRegister(TargetRegister::Temporary).getValue());
-        fn("Zero", _core.getRegister(TargetRegister::Zero).getValue());
-		_output.setf(flags); // restore after done
+		dispatchInstruction(
+				printChar("SP: "), typeDatum(TargetRegister::SP), printChar("\n"),
+				printChar("SP2: "), typeDatum(TargetRegister::SP2), printChar("\n"),
+				pushRegister(TargetRegister::Index),
+				pushRegister(TargetRegister::DP),
+				pushRegister(TargetRegister::X),
+				pushRegister(TargetRegister::S),
+				pushRegister(TargetRegister::C),
+				pushRegister(TargetRegister::B),
+				pushRegister(TargetRegister::A),
+				fn("A"),
+				fn("B"),
+				fn("C"),
+				fn("S"),
+				fn("X"),
+				fn("DP"),
+				fn("Index"));
 	}
 	void Machine::defineWord() {
 		if (inCompilationMode() || _compileTarget != nullptr) {

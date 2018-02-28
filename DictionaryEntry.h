@@ -41,12 +41,14 @@ namespace forth {
 			void setNext(DictionaryEntry* next) noexcept { _next = next; }
             template<typename T>
             void addSpaceEntry(T value) {
+                static_assert(!std::is_same<T, const DictionaryEntry*>::value, "not explicit enough for DictionaryEntries, use specific functions");
                 SpaceEntry se;
                 se._data = value;
                 _space.emplace_back(se);
             }
-			void addSpaceEntry(const DictionaryEntry* value);
             void addSpaceEntry(const std::string& value);
+            void wordToInvoke(const DictionaryEntry* entry);
+            void wordToPush(const DictionaryEntry* entry);
 			void operator()(Machine* machine) const;
             void markCompileTimeInvoke() noexcept { _compileTimeInvoke = true; }
             bool compileTimeInvoke() const noexcept { return _compileTimeInvoke; }

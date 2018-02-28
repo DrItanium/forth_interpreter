@@ -18,7 +18,13 @@ namespace forth {
 		}
 	}
 
-	void DictionaryEntry::addSpaceEntry(const DictionaryEntry* x) {
+	void DictionaryEntry::wordToInvoke(const DictionaryEntry* x) {
+		SpaceEntry se;
+        se._data = Invokable(x, [x](Machine* m) { x->operator()(m); });
+		_space.emplace_back(se);
+	}
+
+	void DictionaryEntry::wordToPush(const DictionaryEntry* x) {
 		SpaceEntry se;
         se._data = x;
 		_space.emplace_back(se);

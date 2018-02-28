@@ -27,48 +27,33 @@ namespace forth {
 			_output << "\tNative Operation!" << std::endl;
 		} else {
 			auto flags = _output.flags();
-			auto outputDictionaryEntry = [this](auto space) {
-                auto innerTarget = std::get<const DictionaryEntry*>(space->_data);
-				if (innerTarget->isFake()) {
-					seeWord(innerTarget);
-				} else {
-					_output << innerTarget->getName();
-				}
-			};
-			auto outputWord = [this](auto space) {
-                auto innerTarget = std::get<const DictionaryEntry*>(space->_data);
-				if (innerTarget->isFake()) {
-					_output << "0x" << std::hex << innerTarget;
-				} else {
-					_output << innerTarget->getName();
-				}
-			};
 			for (auto x = entry->begin(); x != entry->end(); ++x) {
-				using Type = decltype(x->_type);
 				_output << "\t";
-				switch (x->_type) {
-					case Type::Signed:
-						_output << std::dec << std::get<Integer>(x->_data);
-						break;
-					case Type::Unsigned:
-						_output << std::hex << "0x" << std::get<Address>(x->_data);
-						break;
-					case Type::FloatingPoint:
-						_output << std::dec << std::get<Floating>(x->_data);
-						break;
-					case Type::Boolean:
-						_output << std::boolalpha << std::get<bool>(x->_data);
-						break;
-					case Type::DictEntry:
-						outputDictionaryEntry(x);
-						break;
-					case Type::Word:
-						outputWord(x);
-						break;
-					default:
-						_output << std::endl;
-						throw Problem("see", "Unknown entry type!");
-				}
+                if (x->_data.valueless_by_exception()) {
+                    _output << std::endl;
+                    throw Problem("see", "variant is empty!");
+                } 
+                std::visit(overloaded {
+                            [this](Integer x) { _output << std::dec << x; },
+                            [this](Address x) { _output << std::hex << "0x" << x; },
+                            [this](Floating x) { _output << std::dec << x; },
+                            [this](bool x) { _output << std::boolalpha << x << std::noboolalpha; },
+                            [this](DictionaryEntry::Invokable x) { 
+                                  auto innerTarget = std::get<0>(x);
+                                  if (innerTarget->isFake()) {
+                                     seeWord(innerTarget);
+                                  } else {
+                                    _output << innerTarget->getName();
+                                  }
+                            },
+                            [this](const DictionaryEntry* x) {
+                                if (x->isFake()) {
+                                    _output << std::hex << "0x" << x;
+                                } else {
+                                    _output << x->getName(); 
+                                }
+                            }
+                        }, x->_data);
 				_output << std::endl;
 			}
 			_output.setf(flags);
@@ -132,13 +117,13 @@ namespace forth {
 		elseBlock->markFakeEntry();
 		pushSubroutine(elseBlock);
 
-		currentTarget->pushWord(_compileTarget);
-		currentTarget->pushWord(elseBlock);
+        currentTarget->wordToPush(_compileTarget);
+        currentTarget->wordToPush(elseBlock);
 		//compileMicrocodeInvoke(prepRegisters, currentTarget);
 	}
 	void Machine::compileMicrocodeInvoke(const Molecule& m, DictionaryEntry* current) {
 		current->addSpaceEntry(m._value);
-		current->addSpaceEntry(_microcodeInvoke);
+		current->wordToInvoke(_microcodeInvoke);
 	}
 	void Machine::elseCondition() {
 		if (!inCompilationMode()) {
@@ -167,8 +152,8 @@ namespace forth {
 		auto parent = popSubroutine();
 		addWord(_compileTarget);
 		_compileTarget = parent.subroutine;
-		_compileTarget->addSpaceEntry(lookupWord("choose.c"));
-		_compileTarget->addSpaceEntry(lookupWord("invoke.c"));
+		_compileTarget->wordToInvoke(lookupWord("choose.c"));
+		_compileTarget->wordToInvoke(lookupWord("invoke.c"));
 	}
 	std::string Machine::readWord(bool allowEscapedQuotes) {
 		std::string word;
@@ -346,7 +331,7 @@ namespace forth {
 							// add a new spaceEntry to push this value onto the data stack
 							entry->operator()(this);
 						} else {
-							_compileTarget->addSpaceEntry(entry);
+                            _compileTarget->wordToInvoke(entry);
 							if (finishedCompiling) {
 								endDefineWord();
 							}

@@ -17,51 +17,17 @@ namespace forth {
 			}
 		}
 	}
-	void DictionaryEntry::addSpaceEntry(SpaceEntry::Discriminant type, const DictionaryEntry* value) {
-		SpaceEntry se;
-		se._type = type;
-		se._data = value;
-		_space.emplace_back(se);
-	}
-
-	void DictionaryEntry::pushWord(const DictionaryEntry* value) {
-		addSpaceEntry(SpaceEntry::Discriminant::Word, value);
-	}
-
-	void DictionaryEntry::addSpaceEntry(Integer x) {
-		SpaceEntry se;
-		se._type = SpaceEntry::Discriminant::Signed;
-		se._data = x;
-		_space.emplace_back(se);
-	}
-
-	void DictionaryEntry::addSpaceEntry(Address x) {
-		SpaceEntry se;
-		se._type = SpaceEntry::Discriminant::Unsigned;
-		se._data = x;
-		_space.emplace_back(se);
-	}
-
-	void DictionaryEntry::addSpaceEntry(Floating x) {
-		SpaceEntry se;
-		se._type = SpaceEntry::Discriminant::FloatingPoint;
-		se._data = x;
-		_space.emplace_back(se);
-	}
-
-	void DictionaryEntry::addSpaceEntry(bool x) {
-		SpaceEntry se;
-		se._type = SpaceEntry::Discriminant::Boolean;
-		se._data = x;
-		_space.emplace_back(se);
-	}
 
 	void DictionaryEntry::addSpaceEntry(const DictionaryEntry* x) {
 		SpaceEntry se;
-		se._type = SpaceEntry::Discriminant::DictEntry;
-		se._data = x;
+        se._data = x;
 		_space.emplace_back(se);
 	}
+    void DictionaryEntry::addSpaceEntry(const std::string& value) {
+        SpaceEntry se;
+        se._data = &value;
+        _space.emplace_back(se);
+    }
 
 
 	DictionaryEntry::DictionaryEntry(const std::string& name, NativeMachineOperation code) : _name(name), _code(code), _next(nullptr) { }
@@ -69,37 +35,13 @@ namespace forth {
 		invoke(machine);
 	}
 	void DictionaryEntry::SpaceEntry::invoke(Machine* machine) const {
-		using Type = DictionaryEntry::SpaceEntry::Discriminant;
-		switch (_type) {
-			case Type::Signed:
-				machine->pushParameter(std::get<Integer>(_data));
-				break;
-			case Type::Unsigned:
-				machine->pushParameter(std::get<Address>(_data));
-				break;
-			case Type::FloatingPoint:
-				machine->pushParameter(std::get<Floating>(_data));
-				break;
-			case Type::Boolean:
-				machine->pushParameter(std::get<bool>(_data));
-				break;
-			case Type::DictEntry:
-				std::get<const DictionaryEntry*>(_data)->operator()(machine);
-				break;
-			case Type::Word:
-				machine->pushParameter(std::get<const DictionaryEntry*>(_data));
-				break;
-            case Type::String:
-                machine->pushParameter(std::get<const std::string*>(_data));
-                break;
-			default:
-				throw Problem("unknown", "UNKNOWN ENTRY KIND!");
-		}
+        if (_data.valueless_by_exception()) {
+            throw Problem("SpaceEntry::invoke", "variant is empty!");
+        } else {
+            std::visit(overloaded {
+                    [machine](auto arg) { machine->pushParameter(arg); },
+                    [machine](Invokable fn) { std::get<1>(fn)(machine); },
+                    }, _data);
+        }
 	}
-    void DictionaryEntry::addSpaceEntry(const std::string& value) {
-        SpaceEntry se;
-        se._type = SpaceEntry::Discriminant::String;
-        se._data = &value;
-        _space.emplace_back(se);
-    }
 } // end namespace forth

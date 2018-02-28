@@ -4,6 +4,7 @@
 #include "Types.h"
 #include "Datum.h"
 #include "Instruction.h"
+#include <tuple>
 #include <list>
 #include <string>
 #include <functional>
@@ -14,24 +15,18 @@ namespace forth {
 	using NativeMachineOperation = std::function<void(Machine*)>;
 	class DictionaryEntry {
 		public:
+            using InvokableFunction = std::function<void(Machine*)>;
+            using Invokable = std::pair<const DictionaryEntry*, InvokableFunction>;
 			struct SpaceEntry final {
                 SpaceEntry() = default;
                 ~SpaceEntry() = default;
-				enum class Discriminant {
-					Signed,
-					Unsigned,
-					FloatingPoint,
-					Boolean,
-					DictEntry,
-                    Word,
-                    String,
-				};
-				Discriminant _type;
-                std::variant<Integer, Address, Floating, bool, const DictionaryEntry*, const std::string*> _data;
-
+                std::variant<Integer, Address, Floating, bool, Invokable, const DictionaryEntry*, const std::string*> _data;
 				void invoke(Machine* machine) const;
                 void operator()(Machine* machine) const;
 			};
+            static Invokable makeInvokable(const DictionaryEntry* entry) noexcept {
+                return Invokable(entry, [entry](Machine* m) { entry->operator()(m);});
+            }
             using SpaceEntries = std::list<SpaceEntry>;
 		public:
 			DictionaryEntry() = default;
@@ -44,13 +39,13 @@ namespace forth {
 			const DictionaryEntry* getNext() const noexcept { return _next; }
 			bool hasNext() const noexcept { return getNext() != nullptr; }
 			void setNext(DictionaryEntry* next) noexcept { _next = next; }
-			void addSpaceEntry(Integer value);
-			void addSpaceEntry(Address value);
-			void addSpaceEntry(Floating value);
-			void addSpaceEntry(bool value);
+            template<typename T>
+            void addSpaceEntry(T value) {
+                SpaceEntry se;
+                se._data = value;
+                _space.emplace_back(se);
+            }
 			void addSpaceEntry(const DictionaryEntry* value);
-            void addSpaceEntry(SpaceEntry::Discriminant type, const DictionaryEntry* value);
-			void pushWord(const DictionaryEntry* value);
             void addSpaceEntry(const std::string& value);
 			void operator()(Machine* machine) const;
             void markCompileTimeInvoke() noexcept { _compileTimeInvoke = true; }

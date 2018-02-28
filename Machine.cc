@@ -242,8 +242,12 @@ namespace forth {
 	}
 
 	bool Machine::numberRoutine(const std::string& word) noexcept {
-        auto saveToStack = [this](Address value) {
-			dispatchInstruction(loadImmediate64(TargetRegister::C, value), pushC());
+        auto saveToStack = [this](const Datum& value) {
+            if (inCompilationMode()) {
+                _compileTarget->addSpaceEntry(value.address);
+            } else {
+			    dispatchInstruction(loadImmediate64(TargetRegister::C, value.address), pushC());
+            }
         };
 		if (word.empty()) { 
 			return false; 
@@ -253,11 +257,19 @@ namespace forth {
 		// first do some inspection first
 		// We need to load into c and then push it to the stack
 		if (word == "true") {
-			dispatchInstruction(addiu(TargetRegister::C, TargetRegister::Zero, 1), pushC());
+            if (inCompilationMode()) {
+                _compileTarget->addSpaceEntry(true);
+            } else {
+			    dispatchInstruction(addiu(TargetRegister::C, TargetRegister::Zero, 1), pushC());
+            }
 			return true;
 		}
 		if (word == "false") {
-			dispatchInstruction(zeroRegister(TargetRegister::C), pushC());
+            if (inCompilationMode()) {
+                _compileTarget->addSpaceEntry(false);
+            } else {
+			    dispatchInstruction(zeroRegister(TargetRegister::C), pushC());
+            }
 			return true;
 		}
 		std::istringstream parseAttempt(word);
@@ -285,8 +297,7 @@ namespace forth {
 			Floating tmpFloat;
 			parseAttempt >> tmpFloat;
 			if (!parseAttempt.fail() && parseAttempt.eof()) {
-				Datum a(tmpFloat);
-                saveToStack(a.address);
+                saveToStack(tmpFloat);
 				return true;
 			}
 			// get out of here early since we hit something that looks like
@@ -297,8 +308,7 @@ namespace forth {
 		parseAttempt.clear();
 		parseAttempt >> tmpInt;
 		if (!parseAttempt.fail() && parseAttempt.eof()) {
-			Datum a(tmpInt);
-            saveToStack(a.address);
+            saveToStack(tmpInt);
 			return true;
 		}
 		return false;

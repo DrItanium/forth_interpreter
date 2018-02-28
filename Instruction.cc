@@ -32,4 +32,28 @@ namespace forth {
 		return ((b5 << 40) | (b4 << 32) | (b3 << 24) | (b2 << 16) | (b1 << 8) | b0) & 0x00FF'FFFF'FFFF'FFFF;
 	}
 
+    InstructionWidth determineByteWidth(Operation op) {
+        InstructionWidth iw;
+        switch (getInstructionWidth(op)) {
+            case 1:
+                iw = OneByte();
+                break;
+            case 2:
+                iw = TwoByte();
+                break;
+            case 3:
+                iw = ThreeByte();
+                break;
+            case 4:
+                iw = FourByte();
+                break;
+            case 8:
+                iw = EightByte();
+                break;
+            default:
+                break;
+        }
+        return iw;
+    }
+
 } // end namespace forth

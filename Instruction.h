@@ -6,6 +6,7 @@
 #include <iostream>
 #include <list>
 #include <tuple>
+#include <variant>
 namespace forth {
 
 
@@ -53,7 +54,12 @@ constexpr byte encodeRegisterPair(TargetRegister dest, T src) noexcept {
 	return setLowerUpperHalves<byte>(byte(dest), byte(src));
 }
 
-
+struct OneByte final { };
+struct TwoByte final { };
+struct ThreeByte final { };
+struct FourByte final { };
+struct EightByte final { };
+using InstructionWidth = std::variant<OneByte, TwoByte, ThreeByte, FourByte, EightByte>;
 enum class Operation : byte {
 	Nop,
     Add,
@@ -209,7 +215,7 @@ enum class Operation : byte {
 
 static_assert(QuarterAddress(Operation::Count) <= 256, "Too many operations defined!");
 
-
+InstructionWidth determineInstructionWidth(Operation op);
 constexpr bool legalOperation(Operation op) noexcept {
     return static_cast<byte>(Operation::Count) > static_cast<byte>(op);
 }
@@ -471,6 +477,7 @@ constexpr byte getInstructionWidth(std::tuple<byte, T> value) noexcept {
 static_assert(static_cast<byte>(-1) >= static_cast<byte>(Operation::Count), "Too many operations defined!");
 
 static_assert(getInstructionWidth(byte(0x001274)) == 3, "FloatingPointMultiplyFull is not three bytes!");
+
 
 
 } // end namespace forth

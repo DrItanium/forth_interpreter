@@ -964,5 +964,10 @@ void Core::printString(Operation op) {
 	}
 }
 
+Core::DecodedInstruction Core::decode() {
+    auto b = Operation(extractByteFromMolecule());
+    return std::visit([b, this](auto&& type) { return Core::DecodedInstruction(b, decode(type)); }, determineInstructionWidth(b));
+}
+
 
 } // namespace forth

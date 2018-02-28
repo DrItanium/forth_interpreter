@@ -63,6 +63,58 @@ class Core {
                 return getByteOffset(addr) <= (sizeof(Address) - size);
             } 
         }
+
+        struct TwoRegister final {
+            TargetRegister destination;
+            TargetRegister source;
+        };
+        struct OneRegister final {
+            TargetRegister destination;
+        };
+        struct OneRegisterWithImmediate {
+            TargetRegister destination;
+            byte source;
+        };
+        struct FourRegister final {
+            TargetRegister destination;
+            TargetRegister source;
+            TargetRegister source2;
+            TargetRegister source3;
+        };
+        struct ThreeRegister final {
+            TargetRegister destination;
+            TargetRegister source;
+            TargetRegister source2;
+        };
+        struct TwoRegisterWithImm8 final {
+            TargetRegister destination;
+            TargetRegister source;
+            byte imm8;
+        };
+        struct OneRegisterWithImm8 final{
+            TargetRegister destination;
+            byte imm8;
+        };
+        struct ConditionalImm24 final {
+            TargetRegister cond;
+            HalfAddress value;
+        };
+        struct TwoRegisterWithImm16 final {
+            TargetRegister destination;
+            TargetRegister source;
+            QuarterAddress imm16;
+        };
+        struct OneRegisterWithImm16 final {
+            TargetRegister destination;
+            QuarterAddress imm16;
+        };
+        struct LoadImm48 final {
+            TargetRegister destination;
+            Address imm48;
+        };
+        using DecodedArguments = std::variant<OneRegister, TwoRegister, OneRegisterWithImmediate, byte, FourRegister, ThreeRegister, TwoRegisterWithImm8, OneRegisterWithImm8, QuarterInteger, QuarterAddress,
+              ConditionalImm24, TwoRegisterWithImm16, OneRegisterWithImm16, LoadImm48>;
+        using DecodedInstruction = std::tuple<Operation, DecodedArguments>;
 	public:
 		Core();
 		~Core() = default;
@@ -85,9 +137,9 @@ class Core {
 		std::function<void(Address, Address)> getMemoryInstallationFunction() noexcept;
 		std::function<void(Address, Address)> getInstructionInstallationFunction() noexcept;
 	private:
-		void returnToNative(Operation op);
 		void push(TargetRegister reg, TargetRegister sp);
 		void pop(TargetRegister dest, TargetRegister sp);
+		void returnToNative(Operation op);
 		void savePositionToSubroutineStack();
 		void numericCombine(Operation op);
 		void multiplyOperation(Operation op);
@@ -111,6 +163,15 @@ class Core {
         void encodeDecodeBits(Operation op);
 		void nop(Operation op);
 		void printString(Operation op);
+    private:
+        // from the current position, perform the entire decode process prior to 
+        // executing
+        DecodedInstruction decode();
+        DecodedArguments decode(const OneByte& b);
+        DecodedArguments decode(const TwoByte& b);
+        DecodedArguments decode(const ThreeByte& b);
+        DecodedArguments decode(const FourByte& b);
+        DecodedArguments decode(const EightByte& b);
 	private:
 		using ThreeRegisterForm = std::tuple<TargetRegister, TargetRegister, TargetRegister>;
 		using ThreeRegisterImmediateForm = std::tuple<TargetRegister, TargetRegister, QuarterAddress>;

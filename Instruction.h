@@ -153,10 +153,6 @@ enum class Operation : byte {
     ConditionalCallSubroutine,
     ConditionalCallSubroutineIndirect,
     ConditionalReturnSubroutine,
-    Increment,
-    FUVersion(Increment),
-    Decrement,
-    FUVersion(Decrement),
 	LoadImmediateLower48,
     // type field manipulation
 #define FullImmediate(x) FVersion(x ## Full) 
@@ -328,12 +324,6 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         case Operation::CallSubroutineIndirect:
         case Operation::ConditionalCallSubroutineIndirect:
         case Operation::ConditionalReturnSubroutine:
-        case Operation::Increment:
-        case Operation::FloatingPointIncrement:
-        case Operation::UnsignedIncrement:
-        case Operation::Decrement:
-        case Operation::FloatingPointDecrement:
-        case Operation::UnsignedDecrement:
 		case Operation::PrintString:
 		case Operation::PrintChar:
 		case Operation::TypeDatum:
@@ -480,7 +470,7 @@ constexpr byte getInstructionWidth(std::tuple<byte, T> value) noexcept {
 }
 static_assert(static_cast<byte>(-1) >= static_cast<byte>(Operation::Count), "Too many operations defined!");
 
-static_assert(getInstructionWidth(byte(0x001275)) == 3, "FloatingPointMultiplyFull is not three bytes!");
+static_assert(getInstructionWidth(byte(0x001274)) == 3, "FloatingPointMultiplyFull is not three bytes!");
 
 
 } // end namespace forth

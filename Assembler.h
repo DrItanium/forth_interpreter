@@ -13,6 +13,68 @@
 #include "Datum.h"
 
 namespace forth {
+class AssemblerBuilder;
+using ResolvableLazyFunction = std::function<Address(AssemblerBuilder&, Address from)>;
+using SizedResolvableLazyFunction = std::tuple<byte, ResolvableLazyFunction>;
+using LazyInstruction = std::function<Address()>;
+using SizedLazyInstruction = std::tuple<byte, LazyInstruction>;
+/**
+ * Used to denote a modifier to an instruction to be performed then and there
+ * useful for macros!
+ */
+using EagerInstruction = std::function<void(AssemblerBuilder&)>;
+class AssemblerBuilder {
+	public:
+		using AddressToMolecule = std::tuple<Address, Molecule>;
+		using NameToAddress = std::tuple<std::string, Address>;
+		using DelayedInstruction = std::variant<Address, LazyInstruction>;
+	public:
+		AssemblerBuilder(Address baseAddress);
+		~AssemblerBuilder();
+		void installIntoMemory(std::function<void(Address, Address)> fn);
+		void installMolecule(Address address, const Molecule& m);
+		void installMolecule(Address address, LazyInstruction op);
+		void installMolecule(AddressToMolecule tup);
+		void labelHere(const std::string& name);
+		Address absoluteLabelAddress(const std::string& name) const;
+		Integer relativeLabelAddress(const std::string& name) const;
+		Integer relativeLabelAddress(const std::string& name, Address from) const;
+		Address here() const noexcept { return _currentLocation; }
+		Address getBaseAddress() const noexcept { return _baseAddress; }
+		void addInstruction(const Molecule& m);
+		void addInstruction(LazyInstruction op, byte width = sizeof(Address));
+		void addInstruction(ResolvableLazyFunction op, byte width = sizeof(Address));
+		void addInstruction(SizedResolvableLazyFunction op);
+		void addInstruction(SizedLazyInstruction op);
+		void addInstruction(EagerInstruction op);
+		void addInstruction(const std::string& label);
+		template<typename T>
+		void addInstruction(T first) {
+            if constexpr (std::is_same<EagerInstruction, T>::value) {
+                addInstruction(EagerInstruction(first));
+            } else {
+			    if (auto width = getInstructionWidth(first); width == 0) {
+			    	throw Problem("AssemblerBuilder::addInstruction", "Got an instruction of width 0");
+			    } else if (width > sizeof(T)) {
+			    	throw Problem("AssemblerBuilder::addInstruction", "Got an instruction which is wider than the type provided!");
+			    } else {
+			    	_operations.emplace(_currentLocation, first);
+			    	_currentLocation += width;
+			    }
+            }
+		}
+		template<typename T, typename ... Rest>
+		void addInstruction(T first, Rest&& ... rest) {
+			addInstruction(first);
+			if constexpr (sizeof...(rest) > 0) {
+				addInstruction<Rest...>(std::move(rest)...);
+			}
+		}
+	private:
+		Address _baseAddress, _currentLocation;
+		std::map<std::string, Address> _names;
+		std::map<Address, DelayedInstruction> _operations;
+};
 constexpr byte encodeSingleByteOperation(Operation op) noexcept {
 	return static_cast<byte>(op);
 }
@@ -518,235 +580,6 @@ constexpr HalfAddress setImmediate64_Highest(TargetRegister dest, Address value)
 }
 static_assert(0xFFFF0519 == setImmediate64_Highest(TargetRegister::X, 0xFFFF'FFFF'FFFF'0001), "Encoding is wrong!");
 
-template<Address mask, Address shift>
-constexpr Address encodeByte(byte value, Address target = 0) noexcept {
-    return encodeBits<Address, byte, mask, shift>(target, value);
-}
-template<Address mask, Address shift>
-constexpr Address encodeQuarterAddress(QuarterAddress value, Address target = 0) noexcept {
-    return encodeBits<Address, QuarterAddress, mask, shift>(target, value);
-}
-template<Address mask, Address shift>
-constexpr Address encodeHalfAddress(HalfAddress value, Address target = 0) noexcept {
-	return encodeBits<Address, HalfAddress, mask, shift>(target, value);
-}
-template<Address mask, Address shift>
-constexpr Address encodeAddress(Address value, Address target = 0) noexcept {
-	return encodeBits<Address, Address, mask, shift>(target, value);
-}
-template<byte startOffset>
-constexpr Address encodeThreeByteAddress(HalfAddress value, Address target = 0) noexcept {
-	static_assert(startOffset < 6, "Illegal three byte address!");
-	return encodeHalfAddress<Address(0x0000'0000'00FF'FFFF) << (startOffset * 8), startOffset * 8>(value, target);
-}
-template<byte startOffset>
-constexpr Address encodeFourByteAddress(HalfAddress value, Address target = 0) noexcept {
-	static_assert(startOffset < 5, "Illegal half address start address");
-	return encodeHalfAddress<Address(0x0000'0000'FFFF'FFFF) << (startOffset * 8), startOffset * 8>(value, target);
-}
-template<byte startOffset>
-constexpr Address encodeFiveByteAddress(Address value, Address target = 0) noexcept {
-	static_assert(startOffset < 4, "Illegal address start address");
-	return encodeAddress<Address(0x0000'00FF'FFFF'FFFF) << (startOffset * 8), startOffset * 8>(value, target);
-}
-template<byte startOffset>
-constexpr Address encodeSixByteAddress(Address value, Address target = 0) noexcept {
-	static_assert(startOffset < 3, "Illegal address start address");
-	return encodeAddress<Address(0x0000'FFFF'FFFF'FFFF) << (startOffset * 8), startOffset * 8>(value, target);
-}
-template<byte startOffset>
-constexpr Address encodeSevenByteAddress(Address value, Address target = 0) noexcept {
-	static_assert(startOffset < 2, "Illegal address start address");
-	return encodeAddress<Address(0x00FF'FFFF'FFFF'FFFF) << (startOffset * 8), startOffset * 8>(value, target);
-}
-template<byte startOffset>
-constexpr Address encodeEightByteAddress(Address value, Address target = 0) noexcept {
-	static_assert(startOffset < 1, "Illegal address start address");
-	return encodeAddress<Address(0xFFFFFFFFFFFFFFFF) << (startOffset * 8), startOffset * 8>(value, target);
-}
-
-template<byte startOffset>
-constexpr Address encodeQuarterOperation(QuarterAddress value, Address target = 0) noexcept {
-    static_assert(startOffset < 7, "Illegal quarter address start address");
-    return encodeQuarterAddress<Address(0xFFFF)<< (startOffset * 8), startOffset * 8>(value, target);
-}
-template<byte startOffset>
-constexpr Address encodeByteOperation(byte value, Address target = 0) noexcept {
-	if constexpr (startOffset < 8) {
-    	return encodeByte<Address(0xFF) << Address (startOffset * 8), startOffset * 8>(value, target);
-	} else {
-    	static_assert(startOffset < 8, "Illegal byte offset start address!");
-		return target;
-	}
-}
-template<byte startOffset>
-constexpr Address encodeOperation(byte value, Address target = 0) noexcept {
-	return encodeByteOperation<startOffset>(value, target);
-}
-template<byte startOffset>
-constexpr Address encodeOperation(QuarterAddress value, Address target = 0) noexcept {
-	if (auto width = getInstructionWidth(value); width == 1) {
-		return encodeByteOperation<startOffset>(static_cast<byte>(value), target);
-	} else if (width == 2) {
-		return encodeQuarterOperation<startOffset>(value, target);
-	} else {
-		// skip the contents
-		return target;
-	}
-}
-template<byte startOffset>
-constexpr Address encodeOperation(QuarterAddressWrapper value, Address target = 0) noexcept {
-	return encodeOperation<startOffset>(value.get(), target);
-}
-template<byte startOffset>
-constexpr Address encodeOperation(HalfAddress value, Address target = 0) noexcept {
-	if (auto width = getInstructionWidth(value); width == 1) {
-		return encodeOperation<startOffset>((byte)value, target);
-	} else if (width == 2) {
-		return encodeOperation<startOffset>(static_cast<QuarterAddress>(value), target);
-	} else if (width == 3) {
-		return encodeThreeByteAddress<startOffset>(value, target);
-	} else if (width == 4) {
-		return encodeFourByteAddress<startOffset>(value, target);
-	} else {
-		// skip the contents
-		return target;
-	}
-}
-template<byte startOffset>
-constexpr Address encodeOperation(HalfAddressWrapper value, Address target = 0) noexcept {
-	return encodeOperation<startOffset>(value.get(), target);
-}
-
-template<byte startOffset, Address target, auto value>
-constexpr Address compileSingleOperation() noexcept {
-	if constexpr (std::is_same<decltype(value), QuarterAddressWrapper>::value ||
-			      std::is_same<decltype(value), HalfAddressWrapper>::value) {
-		return compileSingleOperation<startOffset, target, value.get()>();
-	} else {
-		if constexpr (constexpr auto width = getInstructionWidth(value); width == 1) {
-			return encodeOperation<startOffset>((byte)value, target);
-		} else if constexpr (width == 2) {
-			return encodeOperation<startOffset>(static_cast<QuarterAddress>(value), target);
-		} else if constexpr (width == 3) {
-			return encodeThreeByteAddress<startOffset>(value, target);
-		} else if constexpr (width == 4) {
-			return encodeFourByteAddress<startOffset>(value, target);
-		} else if constexpr (width == 5) {
-			return encodeFiveByteAddress<startOffset>(value, target);
-		} else if constexpr (width == 6) {
-			return encodeSixByteAddress<startOffset>(value, target);
-		} else if constexpr (width == 7) {
-			return encodeSevenByteAddress<startOffset>(value, target);
-		} else if constexpr (width == 8) {
-			return encodeEightByteAddress<startOffset>(value, target);
-		} else {
-			// skip
-			return target;
-		}
-	}
-}
-
-template<byte startOffset>
-constexpr Address encodeOperation(Address value, Address target = 0) noexcept {
-    if (auto width = getInstructionWidth(value); width < 5) {
-        return encodeOperation<startOffset>(HalfAddress(value), target);
-    } else if (width == 5) {
-        return encodeFiveByteAddress<startOffset>(value, target);
-    } else if (width == 6) {
-        return encodeSixByteAddress<startOffset>(value, target);
-    } else if (width == 7) {
-        return encodeSevenByteAddress<startOffset>(value, target);
-    } else if (width == 8) {
-        return encodeEightByteAddress<startOffset>(value, target);
-    } else {
-        // skip
-        return target;
-    }
-}
-
-
-
-template<byte offset, typename T>
-constexpr Address encodeOperation(Address curr, T first) noexcept {
-    static_assert(offset < 8, "Too many fields provided!");
-    return encodeOperation<offset>(first, curr);
-}
-template<byte offset, typename T, typename ... Args>
-constexpr Address encodeOperation(Address curr, T first, Args&& ... rest) noexcept {
-    static_assert(offset < 8, "Too many fields provided!");
-	auto encoded = encodeOperation<offset>(first, curr);
-	if constexpr (std::is_same<T, HalfAddress>::value || std::is_same<T, HalfAddressWrapper>::value) {
-		switch (getInstructionWidth(first)) {
-			case 1: return encodeOperation<offset + 1, Args...>(encoded, std::move(rest)...);
-			case 2: return encodeOperation<offset + 2, Args...>(encoded, std::move(rest)...);
-			case 3: return encodeOperation<offset + 3, Args...>(encoded, std::move(rest)...);
-			case 4: 
-					return encodeOperation<offset + 4, Args...>(encoded, std::move(rest)...);
-			default:
-				return encodeOperation<offset, Args...>(curr, std::move(rest)...);
-		}
-    } else if constexpr (std::is_same<T, Address>::value) {
-		switch (getInstructionWidth(first)) {
-			case 1: return encodeOperation<offset + 1, Args...>(encoded, std::move(rest)...);
-			case 2: return encodeOperation<offset + 2, Args...>(encoded, std::move(rest)...);
-			case 3: return encodeOperation<offset + 3, Args...>(encoded, std::move(rest)...);
-			case 4: return encodeOperation<offset + 4, Args...>(encoded, std::move(rest)...);
-			case 5: return encodeOperation<offset + 5, Args...>(encoded, std::move(rest)...);
-			case 6: return encodeOperation<offset + 6, Args...>(encoded, std::move(rest)...);
-			case 7: return encodeOperation<offset + 7, Args...>(encoded, std::move(rest)...);
-			case 8: return encodeOperation<offset + 8, Args...>(encoded, std::move(rest)...);
-			default:
-				return encodeOperation<offset, Args...>(curr, std::move(rest)...);
-		}
-	} else if constexpr (std::is_same<T, QuarterAddress>::value || std::is_same<T, QuarterAddressWrapper>::value) {
-		switch (getInstructionWidth(first)) {
-			case 1:
-				return encodeOperation<offset + 1, Args...>(encoded, std::move(rest)...);
-			case 2:
-				return encodeOperation<offset + 2, Args...>(encoded, std::move(rest)...);
-			default:
-				return encodeOperation<offset, Args...>(curr, std::move(rest)...);
-		} 
-	} else {
-		static_assert(sizeof(T) == 1, "Should only get bytes through here!");
-    	return encodeOperation<offset + sizeof(T), Args...>(encoded, std::move(rest)...);
-	}
-}
-template<byte offset, Address curr, auto first, auto ... rest>
-constexpr Address compileOperation() noexcept {
-    static_assert(offset < 8, "Too many fields provided!");
-	if constexpr (sizeof...(rest) > 0) {
-		return compileOperation<offset + getInstructionWidth(first), compileSingleOperation<offset, curr, first>(), rest...>();
-	} else {
-		return compileSingleOperation<offset, curr, first>();
-	}
-}
-template<auto first, auto ... rest>
-constexpr Address encodeOperation() noexcept {
-	return compileOperation<0, 0u, first, rest...>();
-}
-template<auto first, auto ... rest>
-constexpr Address preCompileOperation() noexcept {
-	return encodeOperation<first, rest...>();
-}
-template<typename T, typename ... Args>
-constexpr Address encodeOperation(T first, Args&& ... rest) noexcept {
-    return encodeOperation<0, T, Args...>(0, first, std::move(rest)...);
-}
-constexpr size_t operationLength(byte b) noexcept { return getInstructionWidth(static_cast<Operation>(b)); }
-constexpr size_t operationLength(QuarterAddress b) noexcept { return getInstructionWidth(byte(b & 0xFF)); }
-constexpr size_t operationLength(HalfAddress b) noexcept { return getInstructionWidth(byte(b & 0xFF)); }
-constexpr size_t operationLength(Address b) noexcept { return getInstructionWidth(byte(b & 0xFF)); }
-
-template<typename T, typename ... Rest>
-constexpr size_t operationLength(T first, Rest ... rest) noexcept {
-    if constexpr (sizeof...(rest) > 0) {
-        return operationLength(first) + operationLength(rest...);
-    } else {
-        return operationLength(first);
-    }
-}
 constexpr QuarterAddress notOp(TargetRegister dest, TargetRegister src) noexcept {
 	return encodeTwoByte(Operation::NotFull, dest, src);
 }
@@ -754,22 +587,6 @@ constexpr QuarterAddress minus(TargetRegister dest, TargetRegister src) noexcept
 	return encodeTwoByte(Operation::MinusFull, dest, src);
 }
 
-constexpr Address loadAddressLowerHalf(TargetRegister reg, Address value) noexcept {
-	return encodeOperation(
-			setImmediate64_Lowest(reg, value),
-			setImmediate64_Lower(reg, value));
-}
-constexpr Address loadAddressUpperHalf(TargetRegister reg, Address value) noexcept {
-	return encodeOperation(
-			setImmediate64_Higher(reg, value),
-			setImmediate64_Highest(reg, value));
-}
-constexpr QuarterAddress increment(TargetRegister reg, byte imm4) noexcept {
-    return encodeTwoByte(Operation::Increment, reg, imm4);
-}
-constexpr QuarterAddress decrement(TargetRegister reg, byte imm4) noexcept {
-    return encodeTwoByte(Operation::Decrement, reg, imm4);
-}
 constexpr HalfAddress jump(QuarterInteger offset) noexcept {
     return encodeFourByte(Operation::Jump,
             decodeBits<QuarterInteger, byte, 0x00FF, 0>(offset),
@@ -813,9 +630,8 @@ constexpr byte popC() noexcept { return popRegister(TargetRegister::C, TargetReg
 constexpr byte pushA() noexcept { return pushRegister(TargetRegister::A, TargetRegister::SP); }
 constexpr byte pushB() noexcept { return pushRegister(TargetRegister::B, TargetRegister::SP); }
 constexpr byte pushC() noexcept { return pushRegister(TargetRegister::C, TargetRegister::SP); }
-constexpr QuarterAddress popAB() noexcept {
-    return (QuarterAddress)encodeOperation(popA(), popB());
-}
+EagerInstruction popAB();
+
 constexpr QuarterAddress swapAB() noexcept {
     return swap(TargetRegister::B, TargetRegister::A);
 }
@@ -825,7 +641,6 @@ constexpr auto zeroRegister(TargetRegister reg) noexcept -> decltype(move(reg, T
 constexpr QuarterAddress imm16TestValue = 0xfded;
 static_assert(popA() == popRegister(TargetRegister::A, TargetRegister::SP), "Two different code paths for popA should yield the same result!");
 static_assert(getInstructionWidth(cmpeq()) == 1, "Compare eq should only be one byte if the args are defaulted");
-static_assert(operationLength(popA(), popB(), cmpeq(), notOp(TargetRegister::C, TargetRegister::C), pushC()) < 8, "This instruction sequence is incorrectly encoded!");
 static_assert(getInstructionWidth(cmpeq()) == 1, "Compare eq should only be one byte if the args are defaulted");
 static_assert(byte(0xFD) == getUpperHalf(imm16TestValue), "getUpperHalf is not working correctly!");
 static_assert(byte(0xED) == getLowerHalf(imm16TestValue), "getUpperHalf is not working correctly!");
@@ -839,68 +654,6 @@ static_assert(Address(0xFDED0119) == setImmediate16_Highest(TargetRegister::A, i
 static_assert(getInstructionWidth(mulf(TargetRegister::A, TargetRegister::A, TargetRegister::A)) == 3, "FloatingPointMultiplyFull is not three bytes!");
 static_assert(getInstructionWidth(mulf()) == 1, "FloatingPointMultiplyFull is not three bytes!");
 
-class AssemblerBuilder;
-using ResolvableLazyFunction = std::function<Address(AssemblerBuilder&, Address from)>;
-using SizedResolvableLazyFunction = std::tuple<byte, ResolvableLazyFunction>;
-using LazyInstruction = std::function<Address()>;
-using SizedLazyInstruction = std::tuple<byte, LazyInstruction>;
-/**
- * Used to denote a modifier to an instruction to be performed then and there
- * useful for macros!
- */
-using EagerInstruction = std::function<void(AssemblerBuilder&)>;
-class AssemblerBuilder {
-	public:
-		using AddressToMolecule = std::tuple<Address, Molecule>;
-		using NameToAddress = std::tuple<std::string, Address>;
-		using DelayedInstruction = std::variant<Address, LazyInstruction>;
-	public:
-		AssemblerBuilder(Address baseAddress);
-		~AssemblerBuilder();
-		void installIntoMemory(std::function<void(Address, Address)> fn);
-		void installMolecule(Address address, const Molecule& m);
-		void installMolecule(Address address, LazyInstruction op);
-		void installMolecule(AddressToMolecule tup);
-		void labelHere(const std::string& name);
-		Address absoluteLabelAddress(const std::string& name) const;
-		Integer relativeLabelAddress(const std::string& name) const;
-		Integer relativeLabelAddress(const std::string& name, Address from) const;
-		Address here() const noexcept { return _currentLocation; }
-		Address getBaseAddress() const noexcept { return _baseAddress; }
-		void addInstruction(const Molecule& m);
-		void addInstruction(LazyInstruction op, byte width = sizeof(Address));
-		void addInstruction(ResolvableLazyFunction op, byte width = sizeof(Address));
-		void addInstruction(SizedResolvableLazyFunction op);
-		void addInstruction(SizedLazyInstruction op);
-		void addInstruction(EagerInstruction op);
-		void addInstruction(const std::string& label);
-		template<typename T>
-		void addInstruction(T first) {
-            if constexpr (std::is_same<EagerInstruction, T>::value) {
-                addInstruction(EagerInstruction(first));
-            } else {
-			    if (auto width = getInstructionWidth(first); width == 0) {
-			    	throw Problem("AssemblerBuilder::addInstruction", "Got an instruction of width 0");
-			    } else if (width > sizeof(T)) {
-			    	throw Problem("AssemblerBuilder::addInstruction", "Got an instruction which is wider than the type provided!");
-			    } else {
-			    	_operations.emplace(_currentLocation, first);
-			    	_currentLocation += width;
-			    }
-            }
-		}
-		template<typename T, typename ... Rest>
-		void addInstruction(T first, Rest&& ... rest) {
-			addInstruction(first);
-			if constexpr (sizeof...(rest) > 0) {
-				addInstruction<Rest...>(std::move(rest)...);
-			}
-		}
-	private:
-		Address _baseAddress, _currentLocation;
-		std::map<std::string, Address> _names;
-		std::map<Address, DelayedInstruction> _operations;
-};
 SizedResolvableLazyFunction setImmediate16_Lowest(TargetRegister r, const std::string& name);
 SizedResolvableLazyFunction setImmediate16_Lower(TargetRegister r, const std::string& name);
 SizedResolvableLazyFunction setImmediate16_Higher(TargetRegister r, const std::string& name);

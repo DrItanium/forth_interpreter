@@ -225,10 +225,26 @@ void systemSetup(forth::Machine& machine) {
 }
 }
 
+template<auto op>
+void addBinaryOperation(forth::Machine& mach, const std::string& name) {
+	mach.addMachineCodeWord<
+		forth::popA(),
+		forth::popB(),
+		op,
+		forth::pushC()>(name);
+}
 int main() {
 	forth::Machine machine (std::cout, std::cin);
 	machine.initializeBaseDictionary();
-    machine.addMachineCodeWord<popA, popB, forth::add(), pushC>("+");
+	addBinaryOperation<forth::add()>(machine, "+");
+	addBinaryOperation<forth::addf()>(machine, "+f");
+	addBinaryOperation<forth::sub()>(machine, "-");
+	addBinaryOperation<forth::subf()>(machine, "-f");
+	machine.addMachineCodeWord<forth::addiu(forth::TargetRegister::C, forth::TargetRegister::Zero, 1), pushC>("true");
+	machine.addMachineCodeWord<forth::zeroRegister(forth::TargetRegister::C), pushC>("false");
+	machine.addMachineCodeWord<forth::popA()>("drop");
+	machine.addMachineCodeWord<forth::popA(), forth::popA()>("2drop");
+	machine.addMachineCodeWord<forth::popA(), forth::pushA(), forth::pushA()>("dup");
 	//microarchitectureWords(machine);
 	//arithmeticOperators(machine);
 	//stackOperators(machine);

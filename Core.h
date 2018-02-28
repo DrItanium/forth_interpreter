@@ -103,7 +103,6 @@ class Core {
 		void shiftOperation(Operation op);
 		void powOperation(Operation op);
 		void rangeChecks(Operation op);
-		void incrDecr(Operation op);
 		void jumpOperation(Operation op);
 		void conditionalBranch(Operation op);
 		void loadImm48(Operation op);

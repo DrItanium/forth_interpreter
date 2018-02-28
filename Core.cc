@@ -600,24 +600,6 @@ void Core::rangeChecks(Operation op) {
 	}
 }
 
-void Core::incrDecr(Operation op) {
-	auto tmp = extractByteFromMolecule();
-	auto d = static_cast<TargetRegister>(getDestinationRegister(tmp));
-	auto imm4 = getSourceRegister(tmp) + 1; // always increment by one since increment and decrementing by zero makes no sense
-	_tmp1.setValue(Address(imm4));
-	auto& dest = getRegister(d);
-    _imm.setValue(dest.getValue());
-	switch (op) {
-		case Operation::Increment:
-			numericOperation(op, "increment", dest, _imm, _tmp1, [](auto a, auto b) { return a + b; });
-			break;
-		case Operation::Decrement:
-			numericOperation(op, "decrement", dest, _imm, _tmp1, [](auto a, auto b) { return a - b; });
-			break;
-		default:
-			throw Problem("incrDecr", "Unknown increment decrement style operation!");
-	}
-}
 
 constexpr HalfAddress makeImm24(QuarterAddress lower16, byte upper8) noexcept {
 	return encodeBits<HalfAddress, QuarterAddress, 0x00FF0000, 16>(HalfAddress(lower16), static_cast<QuarterAddress>(upper8));
@@ -753,7 +735,6 @@ void Core::dispatchInstruction() {
 		DefEntrySUB(Equals, equalsOperation), DefEntrySUB(EqualsFull, equalsOperation), DefEntrySU(EqualsImmediate, equalsOperation),
 		DefEntrySUF(GreaterThan, rangeChecks), DefEntrySUF(GreaterThanFull, rangeChecks), DefEntrySU(GreaterThanImmediate, rangeChecks),
 		DefEntrySUF(LessThan, rangeChecks), DefEntrySUF(LessThanFull, rangeChecks), DefEntrySU(LessThanImmediate, rangeChecks),
-		DefEntrySUF(Increment, incrDecr), DefEntrySUF(Decrement, incrDecr),
 		DefEntry(LoadImmediateLower48, loadImm48),
 		DefEntry(PopRegister, pop), DefEntry(PopA, pop), DefEntry(PopB, pop), DefEntry(PopC, pop),
 		DefEntry(PushRegister, push), DefEntry(PushC, push), DefEntry(PushA, push), DefEntry(PushB, push),

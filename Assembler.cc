@@ -236,5 +236,10 @@ namespace forth {
 			}
 		};
 	}
+	EagerInstruction popAB() {
+		return [](AssemblerBuilder& ab) {
+			ab.addInstruction(popA(), popB());
+		};
+	}
 
 } // end namespace forth

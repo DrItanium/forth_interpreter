@@ -116,10 +116,10 @@ namespace forth {
         _core.getRegister(TargetRegister::C).getWord()->operator()(this);
 	}
 	void Machine::ifCondition() {
-		static constexpr auto prepRegisters = preCompileOperation<
-				popB(), 
-				popA(),
-				popC()>();
+		//static constexpr auto prepRegisters = preCompileOperation<
+		//		popB(), 
+		//		popA(),
+		//		popC()>();
 		// if we're not in compilation mode then error out
 		if (!inCompilationMode()) {
 			throw Problem("if", "must be defining a word!");
@@ -134,7 +134,7 @@ namespace forth {
 
 		currentTarget->pushWord(_compileTarget);
 		currentTarget->pushWord(elseBlock);
-		compileMicrocodeInvoke(prepRegisters, currentTarget);
+		//compileMicrocodeInvoke(prepRegisters, currentTarget);
 	}
 	void Machine::compileMicrocodeInvoke(const Molecule& m, DictionaryEntry* current) {
 		current->addSpaceEntry(m._value);
@@ -275,7 +275,7 @@ namespace forth {
 
 	Datum Machine::popParameter() {
 		dispatchInstruction(forth::popRegister(TargetRegister::Temporary, TargetRegister::SP));
-		return _core.pop(TargetRegister::SP);
+		return _core.getRegister(TargetRegister::Temporary).getValue();
 	}
 
 	void Machine::pushParameter(Datum value) {
@@ -424,7 +424,7 @@ namespace forth {
             addWord("raiseError", std::mem_fn(&Machine::raiseError));
             addWord("uc", std::mem_fn(&Machine::invokeCore));
             addWord("quit", std::mem_fn(&Machine::terminateControlLoop));
-            addWord("\"", std::mem_fn(&Machine::constructString));
+            addWord("\"", std::mem_fn(&Machine::constructString), true);
             addWord(",str", std::mem_fn(&Machine::printString));
             addWord(".CR", std::mem_fn(&Machine::printNewLine));
 			_microcodeInvoke = lookupWord("uc");
@@ -497,13 +497,9 @@ namespace forth {
 		auto parent = popSubroutine();
 		addWord(_compileTarget);
 		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
-				static constexpr auto performEqualityCheck = preCompileOperation<popA(), popB(), cmpeq()>();
-				static constexpr auto saveABToStack = preCompileOperation<pushB(), pushA()>();
-				static_assert(Address(0x111d1c) == performEqualityCheck, "Equality check operation failed!");
-				//static_assert(Address(0x2122) == saveABToStack, "Save AB to stack routine failed!");
-				microcodeInvoke(performEqualityCheck);
+				dispatchInstruction(popAB(), cmpeq());
 				if (_core.getRegister(TargetRegister::C).getTruth()) {
-					microcodeInvoke(saveABToStack); // put the values back on the stack
+					dispatchInstruction(pushB(), pushA());
                     // super gross but far more accurately models the underlying micro architecture
 loopTop:
 					body->operator()(m);
@@ -511,9 +507,9 @@ loopTop:
 					// popa
 					// popb
 					// eq
-					microcodeInvoke(performEqualityCheck);
+					dispatchInstruction(popAB(), cmpeq());
                     if (!_core.getRegister(TargetRegister::C).getTruth()) {
-						microcodeInvoke(saveABToStack); // put the values back on the stack
+						dispatchInstruction(pushB(), pushA()); // put the values back on the stack
                         goto loopTop;
                     }
 				}
@@ -544,14 +540,14 @@ loopTop:
 		auto parent = popSubroutine();
 		addWord(_compileTarget);
 		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
-				static constexpr auto checkCondition = preCompileOperation< popA(), notl()>();
-				static_assert(0x061c == checkCondition, "conditional operation failed!");
+				//static constexpr auto checkCondition = preCompileOperation< popA(), notl()>();
+				//static_assert(0x061c == checkCondition, "conditional operation failed!");
                 // super gross but far more accurately models the underlying micro architecture
 endLoopTop:
 				body->operator()(m);
 				// pop.a
 				// not
-				microcodeInvoke(checkCondition);
+				//microcodeInvoke(checkCondition);
                 if (!_core.getRegister(TargetRegister::C).getTruth()) {
                     goto endLoopTop;
                 }

@@ -32,7 +32,7 @@ namespace forth {
 		return ((b5 << 40) | (b4 << 32) | (b3 << 24) | (b2 << 16) | (b1 << 8) | b0) & 0x00FF'FFFF'FFFF'FFFF;
 	}
 
-    InstructionWidth determineByteWidth(Operation op) {
+    InstructionWidth determineInstructionWidth(Operation op) {
         InstructionWidth iw;
         switch (getInstructionWidth(op)) {
             case 1:

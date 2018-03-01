@@ -1102,6 +1102,18 @@ Core::FourByteVariant Core::getVariant(Operation op, const FourByte&) {
     return fb;
 }
 
+Core::EightByteVariant Core::getVariant(Operation op, const EightByte&) {
+    Core::EightByteVariant v;
+    switch (op) {
+        case Operation::LoadImmediateLower48:
+            v = Core::IsLoadImm48();
+            break;
+        default:
+            break;
+    }
+    return v;
+}
+
 Core::DecodedInstruction Core::decode(Operation op, const OneByte&) {
     return Core::DecodedInstruction(op, NoArguments());
 }
@@ -1191,6 +1203,27 @@ Core::DecodedInstruction Core::decode(Operation op, const FourByte& b) {
                 return da;
             }, Core::getVariant(op, b)));
 }
+
+Core::DecodedInstruction Core::decode(Operation op, const EightByte& b) {
+    auto byte2 = extractByteFromMolecule();
+    auto imm48 = extractImm48();
+    return Core::DecodedInstruction(op, 
+            std::visit([byte2, imm48](auto&& value) {
+                Core::DecodedArguments da;
+                using T = std::decay_t<decltype(value)>;
+                using K = typename T::Type;
+                K r;
+                if constexpr (std::is_same_v<T, Core::IsLoadImm48>) {
+                    r.destination = TargetRegister(getDestinationRegister(byte2));
+                    r.imm48 = imm48;
+                } else {
+                    static_assert(AlwaysFalse<T>::value, "Unimplemented four byte variant");
+                }
+                da = r;
+                return da;
+            }, Core::getVariant(op, b)));
+}
+
 
 
 } // namespace forth

@@ -89,8 +89,14 @@ class Core {
         };
         struct IsSignedImm16 final { using Type = QuarterInteger; };
         using ThreeByteVariant = std::variant<IsFourRegister, IsThreeRegister, IsSignedImm16>;
-        InstructionKind(ConditionalImm24) {
-            TargetRegister cond;
+        InstructionKind(FiveRegister) {
+            TargetRegister destination;
+            TargetRegister source0;
+            TargetRegister source1;
+            TargetRegister source2;
+            TargetRegister source3;
+        };
+        InstructionKind(Imm24) {
             HalfAddress value;
         };
         InstructionKind(TwoRegisterWithImm16) {
@@ -102,15 +108,14 @@ class Core {
             TargetRegister destination;
             QuarterAddress imm16;
         };
-        using FourByteVariant = std::variant<IsConditionalImm24, IsTwoRegisterWithImm16, IsOneRegisterWithImm16>;
+        using FourByteVariant = std::variant<IsFiveRegister, IsImm24, IsTwoRegisterWithImm16, IsOneRegisterWithImm16>;
         InstructionKind(LoadImm48) {
             TargetRegister destination;
             Address imm48;
         };
         using EightByteVariant = std::variant<IsLoadImm48>;
 #undef InstructionKind
-        using DecodedArguments = std::variant<NoArguments, OneRegister, TwoRegister, FourRegister, ThreeRegister, QuarterInteger,
-              ConditionalImm24, TwoRegisterWithImm16, OneRegisterWithImm16, LoadImm48>;
+        using DecodedArguments = std::variant<NoArguments, OneRegister, TwoRegister, FourRegister, FiveRegister , ThreeRegister, QuarterInteger, IsImm24, TwoRegisterWithImm16, OneRegisterWithImm16, LoadImm48, Imm24>;
         using DecodedInstruction = std::tuple<Operation, DecodedArguments>;
     public:
         static TwoByteVariant getVariant(Operation op, const TwoByte&);

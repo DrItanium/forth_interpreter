@@ -1060,6 +1060,48 @@ Core::ThreeByteVariant Core::getVariant(Operation op, const ThreeByte&) {
     return tb;
 }
 
+Core::FourByteVariant Core::getVariant(Operation op, const FourByte&) {
+    Core::FourByteVariant fb;
+    switch (op) {
+        case Operation::ConditionalBranch:
+        case Operation::ConditionalCallSubroutine:
+        case Operation::SetImmediate16_Lower:
+        case Operation::SetImmediate16_Lowest:
+        case Operation::SetImmediate16_Higher:
+        case Operation::SetImmediate16_Highest:
+            fb = Core::IsOneRegisterWithImm16();
+            break;
+#define FullImmediate(x) \
+        Operation:: x ## Immediate: \
+        case Operation:: Unsigned ## x ## Immediate
+		case FullImmediate(Add): 
+		case FullImmediate(Subtract): 
+		case FullImmediate(Multiply): 
+		case FullImmediate(Divide): 
+		case FullImmediate(Modulo): 
+		case FullImmediate(And): 
+		case FullImmediate(Or): 
+		case FullImmediate(GreaterThan): 
+		case FullImmediate(LessThan): 
+		case FullImmediate(Xor):
+		case FullImmediate(ShiftRight):
+		case FullImmediate(ShiftLeft):
+		case FullImmediate(Equals):
+#undef FullImmediate
+            fb = Core::IsTwoRegisterWithImm16();
+            break;
+		case Operation::JumpAbsolute:
+            fb = Core::IsImm24();
+            break;
+        case Operation::EncodeBits:
+            fb = Core::IsFiveRegister();
+            break;
+        default: 
+            break;
+    }
+    return fb;
+}
+
 Core::DecodedInstruction Core::decode(Operation op, const OneByte&) {
     return Core::DecodedInstruction(op, NoArguments());
 }
@@ -1103,14 +1145,51 @@ Core::DecodedInstruction Core::decode(Operation op, const ThreeByte& b) {
                     r.source2 = TargetRegister(getDestinationRegister(byte3));
                     r.source3 = TargetRegister(getSourceRegister(byte3));
                 } else if constexpr (std::is_same_v<T, Core::IsSignedImm16>) {
-                    r = quarter;
+                    union {
+                     QuarterAddress a;
+                     QuarterInteger i;
+                    } tmp;
+                    tmp.a = quarter;
+                    r = tmp.i;
                 } else {
                     static_assert(AlwaysFalse<T>::value, "Unimplemented three byte variant");
                 }
                 da = r;
                 return da;
             }, Core::getVariant(op, b)));
+}
 
+Core::DecodedInstruction Core::decode(Operation op, const FourByte& b) {
+    auto byte2 = extractByteFromMolecule();
+    auto byte3 = extractByteFromMolecule();
+    auto byte4 = extractByteFromMolecule();
+    return Core::DecodedInstruction(op, 
+            std::visit([byte2, byte3, byte4, quarter = setLowerUpperHalves<QuarterAddress>(byte3, byte4)](auto&& value) {
+                Core::DecodedArguments da;
+                using T = std::decay_t<decltype(value)>;
+                using K = typename T::Type;
+                K r;
+                if constexpr (std::is_same_v<T, Core::IsFiveRegister>) {
+                    r.destination = TargetRegister(getDestinationRegister(byte2));
+                    r.source0 = TargetRegister(getSourceRegister(byte2));
+                    r.source1 = TargetRegister(getDestinationRegister(byte3));
+                    r.source2 = TargetRegister(getSourceRegister(byte3));
+                    r.source3 = TargetRegister(getDestinationRegister(byte4));
+                } else if constexpr (std::is_same_v<T, Core::IsImm24>) {
+                    r.value = setFourQuarters<HalfAddress>(byte2, byte3, byte4, 0);
+                } else if constexpr (std::is_same_v<T, Core::IsTwoRegisterWithImm16>) {
+                    r.destination = TargetRegister(getDestinationRegister(byte2));
+                    r.source = TargetRegister(getSourceRegister(byte2));
+                    r.imm16 = quarter;
+                } else if constexpr (std::is_same_v<T, Core::IsOneRegisterWithImm16>) {
+                    r.destination = TargetRegister(getDestinationRegister(byte2));
+                    r.imm16 = quarter;
+                } else {
+                    static_assert(AlwaysFalse<T>::value, "Unimplemented four byte variant");
+                }
+                da = r;
+                return da;
+            }, Core::getVariant(op, b)));
 }
 
 

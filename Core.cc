@@ -915,12 +915,7 @@ void Core::printString(Operation op, DecodedArguments args) {
 
 Core::DecodedInstruction Core::decode() {
     auto b = Operation(extractByteFromMolecule());
-    auto iw = determineInstructionWidth(b);
-    if (iw.valueless_by_exception()) {
-        throw Problem("Core::decode()", "no type specified in the variant!");
-    } else {
-        return std::visit([b, this](auto&& type) { return decode(b, type); }, iw);
-    }
+    return std::visit([b, this](auto&& type) { return decode(b, type); }, determineInstructionWidth(b));
 }
 
 
@@ -1146,7 +1141,7 @@ Core::DecodedInstruction Core::decode(Operation op, const EightByte& b) {
                     r.destination = getDestinationRegister(byte2);
                     r.imm48 = imm48;
                 } else {
-                    static_assert(AlwaysFalse<T>::value, "Unimplemented four byte variant");
+                    static_assert(AlwaysFalse<T>::value, "Unimplemented eight byte variant");
                 }
                 da = r;
                 return da;

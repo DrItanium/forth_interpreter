@@ -63,58 +63,75 @@ class Core {
                 return getByteOffset(addr) <= (sizeof(Address) - size);
             } 
         }
-
-        struct TwoRegister final {
+        struct NoArguments final { };
+#define InstructionKind(x) \
+        struct x ; \
+        struct Is ## x final { using Type = x ; }; \
+        struct x final
+        InstructionKind(TwoRegister) {
             TargetRegister destination;
             TargetRegister source;
         };
-        struct OneRegister final {
+        InstructionKind(OneRegister) {
             TargetRegister destination;
         };
-        struct OneRegisterWithImmediate {
+        InstructionKind(OneRegisterWithImmediate4) {
             TargetRegister destination;
             byte source;
         };
-        struct FourRegister final {
+        struct IsImm8 final { using Type = byte; };
+        using TwoByteVariant = std::variant<IsTwoRegister, IsOneRegister, IsOneRegisterWithImmediate4, IsImm8>;
+        InstructionKind(FourRegister) {
             TargetRegister destination;
             TargetRegister source;
             TargetRegister source2;
             TargetRegister source3;
         };
-        struct ThreeRegister final {
+        InstructionKind(ThreeRegister) {
             TargetRegister destination;
             TargetRegister source;
             TargetRegister source2;
         };
-        struct TwoRegisterWithImm8 final {
+        InstructionKind(TwoRegisterWithImm8) {
             TargetRegister destination;
             TargetRegister source;
             byte imm8;
         };
-        struct OneRegisterWithImm8 final{
+        InstructionKind(OneRegisterWithImm8) {
             TargetRegister destination;
             byte imm8;
         };
-        struct ConditionalImm24 final {
+        struct IsSignedImm16 final { using Type = QuarterInteger; };
+        struct IsUnsignedImm16 final { using Type = QuarterAddress; };
+        using ThreeByteVariant = std::variant<IsFourRegister, IsThreeRegister, IsTwoRegisterWithImm8, IsOneRegisterWithImm8, IsSignedImm16, IsUnsignedImm16>;
+        InstructionKind(ConditionalImm24) {
             TargetRegister cond;
             HalfAddress value;
         };
-        struct TwoRegisterWithImm16 final {
+        InstructionKind(TwoRegisterWithImm16) {
             TargetRegister destination;
             TargetRegister source;
             QuarterAddress imm16;
         };
-        struct OneRegisterWithImm16 final {
+        InstructionKind(OneRegisterWithImm16) {
             TargetRegister destination;
             QuarterAddress imm16;
         };
-        struct LoadImm48 final {
+        using FourByteVariant = std::variant<IsConditionalImm24, IsTwoRegisterWithImm16, IsOneRegisterWithImm16>;
+        InstructionKind(LoadImm48) {
             TargetRegister destination;
             Address imm48;
         };
-        using DecodedArguments = std::variant<OneRegister, TwoRegister, OneRegisterWithImmediate, byte, FourRegister, ThreeRegister, TwoRegisterWithImm8, OneRegisterWithImm8, QuarterInteger, QuarterAddress,
+        using EightByteVariant = std::variant<IsLoadImm48>;
+#undef InstructionKind
+        using DecodedArguments = std::variant<NoArguments, OneRegister, TwoRegister, OneRegisterWithImmediate4, byte, FourRegister, ThreeRegister, TwoRegisterWithImm8, OneRegisterWithImm8, QuarterInteger, QuarterAddress,
               ConditionalImm24, TwoRegisterWithImm16, OneRegisterWithImm16, LoadImm48>;
         using DecodedInstruction = std::tuple<Operation, DecodedArguments>;
+    public:
+        static TwoByteVariant getVariant(Operation op, const TwoByte&);
+        static ThreeByteVariant getVariant(Operation op, const ThreeByte&);
+        static FourByteVariant getVariant(Operation op, const FourByte&);
+        static EightByteVariant getVariant(Operation op, const EightByte&);
 	public:
 		Core();
 		~Core() = default;
@@ -167,11 +184,11 @@ class Core {
         // from the current position, perform the entire decode process prior to 
         // executing
         DecodedInstruction decode();
-        DecodedArguments decode(const OneByte& b);
-        DecodedArguments decode(const TwoByte& b);
-        DecodedArguments decode(const ThreeByte& b);
-        DecodedArguments decode(const FourByte& b);
-        DecodedArguments decode(const EightByte& b);
+        DecodedInstruction decode(Operation op, const OneByte& b);
+        DecodedInstruction decode(Operation op, const TwoByte& b);
+        DecodedInstruction decode(Operation op, const ThreeByte& b);
+        DecodedInstruction decode(Operation op, const FourByte& b);
+        DecodedInstruction decode(Operation op, const EightByte& b);
 	private:
 		using ThreeRegisterForm = std::tuple<TargetRegister, TargetRegister, TargetRegister>;
 		using ThreeRegisterImmediateForm = std::tuple<TargetRegister, TargetRegister, QuarterAddress>;

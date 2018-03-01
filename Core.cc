@@ -966,7 +966,97 @@ void Core::printString(Operation op) {
 
 Core::DecodedInstruction Core::decode() {
     auto b = Operation(extractByteFromMolecule());
-    return std::visit([b, this](auto&& type) { return Core::DecodedInstruction(b, decode(type)); }, determineInstructionWidth(b));
+    auto iw = determineInstructionWidth(b);
+    if (iw.valueless_by_exception()) {
+        throw Problem("Core::decode()", "no type specified in the variant!");
+    } else {
+        return std::visit([b, this](auto&& type) { return decode(b, type); }, iw);
+    }
+}
+
+
+Core::TwoByteVariant Core::getVariant(Operation op, const TwoByte&) {
+    Core::TwoByteVariant tb;
+    switch (op) {
+		case Operation::FloatingPointTypeValue:
+		case Operation::BooleanTypeValue:
+		case Operation::UnsignedTypeValue:
+		case Operation::TypeValue:
+		case Operation::TypeDatum:
+		case Operation::PrintChar:
+        case Operation::JumpIndirect:
+            tb = IsOneRegister();
+            break;
+        case Operation::PopRegister:
+        case Operation::PushRegister:
+        case Operation::Move:
+        case Operation::Swap:
+        case Operation::Load:
+        case Operation::Store:
+		case Operation::NotFull:
+		case Operation::BooleanNotFull:
+		case Operation::UnsignedNotFull:
+		case Operation::MinusFull:
+		case Operation::FloatingPointMinusFull:
+		case Operation::UnsignedMinusFull:
+		case Operation::PowFull:
+		case Operation::UnsignedPowFull:
+		case Operation::FloatingPointPowFull:
+        case Operation::ConditionalBranchIndirect:
+        case Operation::CallSubroutineIndirect:
+        case Operation::ConditionalCallSubroutineIndirect:
+        case Operation::ConditionalReturnSubroutine:
+		case Operation::PrintString:
+            tb = IsTwoRegister();
+            break;
+        default:
+            break;
+    }
+    return tb;
+}
+
+Core::DecodedInstruction Core::decode(Operation op, const OneByte&) {
+    return Core::DecodedInstruction(op, NoArguments());
+}
+
+Core::DecodedInstruction Core::decode(Operation op, const TwoByte& b) {
+    auto byte2 = extractByteFromMolecule();
+    return Core::DecodedInstruction(op, std::visit([byte2](auto&& value) {
+                Core::DecodedArguments da;
+                using T = std::decay_t<decltype(value)>;
+                using K = typename T::Type;
+                K r;
+                if constexpr (std::is_same_v<T, Core::IsOneRegister>) {
+                    r.destination = TargetRegister(getDestinationRegister(byte2));
+                } else if constexpr (std::is_same_v<T, Core::IsTwoRegister>) {
+                    r.destination = TargetRegister(getDestinationRegister(byte2));
+                    r.source = TargetRegister(getSourceRegister(byte2));
+                } else {
+                    throw Problem("Core::decode(TwoByte)", "Unimplemented two byte variant!");
+                }
+                da = r;
+                return da;
+            }, Core::getVariant(op, b)));
+}
+
+Core::DecodedInstruction Core::decode(Operation op, const ThreeByte& b) {
+    auto byte2 = extractByteFromMolecule();
+    auto byte3 = extractByteFromMolecule();
+    return Core::DecodedInstruction(op, 
+            std::visit([byte2, byte3, quarter = setLowerUpperHalves<QuarterAddress>(byte2, byte3)](auto&& value) {
+                Core::DecodedArguments da;
+                using T = std::decay_t<decltype(value)>;
+                using K = typename T::Type;
+                K r;
+                if constexpr (std::is_same_v<T, Core::IsThreeRegister>) {
+                    r.destination = TargetRegister(getDestinationRegister(byte2));
+                    r.source = TargetRegister(getSourceRegister(byte2));
+                    r.source2 = TargetRegister(getDestinationRegister(byte3));
+                }
+                da = r;
+                return da;
+            }, Core::getVariant(op, b)));
+
 }
 
 

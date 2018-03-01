@@ -70,7 +70,8 @@ class Core {
         struct Is ## x final { using Type = x ; }; \
         struct x final
 		OperationKind(NoArguments) { };
-		using OneByteVariant = std::variant<IsNoArguments>;
+		using OneByteSelector = std::variant<IsNoArguments>;
+		using OneByteVariant = std::variant<NoArguments>;
         OperationKind(TwoRegister) {
             DestinationRegister destination;
             SourceRegister source;
@@ -78,7 +79,8 @@ class Core {
         OperationKind(OneRegister) {
             DestinationRegister destination;
         };
-        using TwoByteVariant = std::variant<IsTwoRegister, IsOneRegister>;
+        using TwoByteSelector = std::variant<IsTwoRegister, IsOneRegister>;
+		using TwoByteVariant = std::variant<OneRegister, TwoRegister>;
         OperationKind(FourRegister) {
             DestinationRegister destination;
             SourceRegister source;
@@ -93,7 +95,8 @@ class Core {
 		OperationKind(SignedImm16) {
 			QuarterInteger value;
 		};
-        using ThreeByteVariant = std::variant<IsFourRegister, IsThreeRegister, IsSignedImm16>;
+        using ThreeByteSelector = std::variant<IsFourRegister, IsThreeRegister, IsSignedImm16>;
+		using ThreeByteVariant = std::variant<ThreeRegister, FourRegister, SignedImm16>;
         OperationKind(FiveRegister) {
             DestinationRegister destination;
 			SourceRegister source0;
@@ -113,21 +116,23 @@ class Core {
             DestinationRegister destination;
             QuarterAddress imm16;
         };
-        using FourByteVariant = std::variant<IsFiveRegister, IsImm24, IsTwoRegisterWithImm16, IsOneRegisterWithImm16>;
+        using FourByteSelector = std::variant<IsFiveRegister, IsImm24, IsTwoRegisterWithImm16, IsOneRegisterWithImm16>;
+        using FourByteVariant = std::variant<FiveRegister, Imm24, TwoRegisterWithImm16, OneRegisterWithImm16>;
         OperationKind(LoadImm48) {
             DestinationRegister destination;
             Address imm48;
         };
-        using EightByteVariant = std::variant<IsLoadImm48>;
+        using EightByteSelector = std::variant<IsLoadImm48>;
+		using EightByteVariant = std::variant<LoadImm48>;
 #undef OperationKind
-        using DecodedArguments = std::variant<NoArguments, OneRegister, TwoRegister, FourRegister, FiveRegister , ThreeRegister, QuarterInteger, IsImm24, TwoRegisterWithImm16, OneRegisterWithImm16, LoadImm48, Imm24, SignedImm16>;
+		using DecodedArguments = std::variant<OneByteVariant, TwoByteVariant, ThreeByteVariant, FourByteVariant, EightByteVariant>;
         using DecodedInstruction = std::tuple<Operation, DecodedArguments>;
     public:
-        static std::optional<OneByteVariant> getVariant(Operation op, const OneByte&);
-        static std::optional<TwoByteVariant> getVariant(Operation op, const TwoByte&);
-        static std::optional<ThreeByteVariant> getVariant(Operation op, const ThreeByte&);
-        static std::optional<FourByteVariant> getVariant(Operation op, const FourByte&);
-        static std::optional<EightByteVariant> getVariant(Operation op, const EightByte&);
+        static std::optional<OneByteSelector> getVariant(Operation op, const OneByte&);
+        static std::optional<TwoByteSelector> getVariant(Operation op, const TwoByte&);
+        static std::optional<ThreeByteSelector> getVariant(Operation op, const ThreeByte&);
+        static std::optional<FourByteSelector> getVariant(Operation op, const FourByte&);
+        static std::optional<EightByteSelector> getVariant(Operation op, const EightByte&);
 	public:
 		Core();
 		~Core() = default;

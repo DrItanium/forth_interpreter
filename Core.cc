@@ -919,8 +919,8 @@ Core::DecodedInstruction Core::decode() {
 }
 
 
-std::optional<Core::TwoByteVariant> Core::getVariant(Operation op, const TwoByte&) {
-    std::optional<Core::TwoByteVariant> tb;
+std::optional<Core::TwoByteSelector> Core::getVariant(Operation op, const TwoByte&) {
+    std::optional<Core::TwoByteSelector> tb;
     switch (op) {
 #define XTwo(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
 #define XOne(title, b, c) 
@@ -941,8 +941,8 @@ std::optional<Core::TwoByteVariant> Core::getVariant(Operation op, const TwoByte
     return tb;
 }
 
-std::optional<Core::ThreeByteVariant> Core::getVariant(Operation op, const ThreeByte&) {
-    std::optional<Core::ThreeByteVariant> tb;
+std::optional<Core::ThreeByteSelector> Core::getVariant(Operation op, const ThreeByte&) {
+    std::optional<Core::ThreeByteSelector> tb;
     switch(op) {
 #define XThree(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
 #define XOne(title, b, c) 
@@ -963,8 +963,8 @@ std::optional<Core::ThreeByteVariant> Core::getVariant(Operation op, const Three
     return tb;
 }
 
-std::optional<Core::FourByteVariant> Core::getVariant(Operation op, const FourByte&) {
-    std::optional<Core::FourByteVariant> tb;
+std::optional<Core::FourByteSelector> Core::getVariant(Operation op, const FourByte&) {
+    std::optional<Core::FourByteSelector> tb;
     switch (op) {
 #define XFour(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
 #define XOne(title, b, c) 
@@ -985,8 +985,8 @@ std::optional<Core::FourByteVariant> Core::getVariant(Operation op, const FourBy
     return tb;
 }
 
-std::optional<Core::EightByteVariant> Core::getVariant(Operation op, const EightByte&) {
-    std::optional<Core::EightByteVariant> tb;
+std::optional<Core::EightByteSelector> Core::getVariant(Operation op, const EightByte&) {
+    std::optional<Core::EightByteSelector> tb;
     switch (op) {
 #define XFour(title, b, c) 
 #define XOne(title, b, c) 
@@ -1007,8 +1007,8 @@ std::optional<Core::EightByteVariant> Core::getVariant(Operation op, const Eight
     return tb;
 }
 
-std::optional<Core::OneByteVariant> Core::getVariant(Operation op, const OneByte&) {
-    std::optional<Core::OneByteVariant> tb;
+std::optional<Core::OneByteSelector> Core::getVariant(Operation op, const OneByte&) {
+    std::optional<Core::OneByteSelector> tb;
     switch (op) {
 #define XFour(title, b, c) 
 #define XEight(title, b, c) 

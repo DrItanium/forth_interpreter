@@ -65,57 +65,59 @@ class Core {
         }
 		using DestinationRegister = std::optional<std::reference_wrapper<Register>>;
 		using SourceRegister = std::optional<std::reference_wrapper<const Register>>;
-#define InstructionKind(x) \
+#define OperationKind(x) \
         struct x ; \
         struct Is ## x final { using Type = x ; }; \
         struct x final
-        InstructionKind(TwoRegister) {
+        OperationKind(TwoRegister) {
             DestinationRegister destination;
             SourceRegister source;
         };
-        InstructionKind(OneRegister) {
+        OperationKind(OneRegister) {
             DestinationRegister destination;
         };
         using TwoByteVariant = std::variant<IsTwoRegister, IsOneRegister>;
-        InstructionKind(FourRegister) {
+        OperationKind(FourRegister) {
             DestinationRegister destination;
             SourceRegister source;
             SourceRegister source2;
             SourceRegister source3;
         };
-        InstructionKind(ThreeRegister) {
+        OperationKind(ThreeRegister) {
             DestinationRegister destination;
             SourceRegister source;
             SourceRegister source2;
         };
-        struct IsSignedImm16 final { using Type = QuarterInteger; };
+		OperationKind(SignedImm16) {
+			QuarterInteger value;
+		};
         using ThreeByteVariant = std::variant<IsFourRegister, IsThreeRegister, IsSignedImm16>;
-        InstructionKind(FiveRegister) {
+        OperationKind(FiveRegister) {
             DestinationRegister destination;
 			SourceRegister source0;
 			SourceRegister source1;
 			SourceRegister source2;
 			SourceRegister source3;
         };
-        InstructionKind(Imm24) {
+        OperationKind(Imm24) {
             HalfAddress value;
         };
-        InstructionKind(TwoRegisterWithImm16) {
+        OperationKind(TwoRegisterWithImm16) {
             DestinationRegister destination;
             SourceRegister source;
             QuarterAddress imm16;
         };
-        InstructionKind(OneRegisterWithImm16) {
+        OperationKind(OneRegisterWithImm16) {
             DestinationRegister destination;
             QuarterAddress imm16;
         };
         using FourByteVariant = std::variant<IsFiveRegister, IsImm24, IsTwoRegisterWithImm16, IsOneRegisterWithImm16>;
-        InstructionKind(LoadImm48) {
+        OperationKind(LoadImm48) {
             DestinationRegister destination;
             Address imm48;
         };
         using EightByteVariant = std::variant<IsLoadImm48>;
-#undef InstructionKind
+#undef OperationKind
         using DecodedArguments = std::variant<OneRegister, TwoRegister, FourRegister, FiveRegister , ThreeRegister, QuarterInteger, IsImm24, TwoRegisterWithImm16, OneRegisterWithImm16, LoadImm48, Imm24>;
         using DecodedInstruction = std::tuple<Operation, DecodedArguments>;
     public:
@@ -148,9 +150,34 @@ class Core {
 		void push(TargetRegister reg, TargetRegister sp);
 		void pop(TargetRegister dest, TargetRegister sp);
 		void savePositionToSubroutineStack();
+	private:
 		void returnToNative(Operation op, DecodedArguments args);
-		void numericCombine(Operation op, DecodedArguments args);
-		void multiplyOperation(Operation op, DecodedArguments args);
+#define OperationKind(name, args) \
+		struct name ; \
+		struct Is ## name final { using Type = name ; }; \
+		struct name final { \
+			static constexpr auto operation = Operation:: name ; \
+			using Arguments = args; \
+		}
+
+		OperationKind(AddFull, ThreeRegister);
+		OperationKind(SubtractFull, ThreeRegister);
+		OperationKind(UnsignedAddFull, ThreeRegister);
+		OperationKind(UnsignedSubtractFull, ThreeRegister);
+		OperationKind(FloatingPointAddFull, ThreeRegister);
+		OperationKind(FloatingPointSubtractFull, ThreeRegister);
+		using NumericOperation = std::variant<IsAdd, IsSubtract, IsUnsignedAdd, IsUnsignedSubtract, IsFloatingPointAdd, IsFloatingPointSubtract, IsAddFull, IsSubtractFull, IsUnsignedAddFull, IsUnsignedSubtractFull, IsFloatingPointAddFull, IsFloatingPointSubtractFull>;
+		OperationKind(Multiply, ThreeRegister);
+		OperationKind(UnsignedMultiply, ThreeRegister);
+		OperationKind(FloatingPointMultiply, ThreeRegister);
+		OperationKind(MultiplyFull, ThreeRegister);
+		OperationKind(UnsignedMultiplyFull, ThreeRegister);
+		OperationKind(FloatingPointMultiplyFull, ThreeRegister);
+		using MultiplyOperation = std::variant<IsMultiply, IsUnsignedMultiply, IsUnsignedMultiplyFull, IsFloatingPointMultiply, IsFloatingPointMultiplyFull>;
+		OperationKind(Divide, ThreeRegister);
+		OperationKind(Modulo, ThreeRegister);
+		void dispatchInstruction(NumericOperation op, DecodedArguments args);
+		void dispatchInstruction(MultiplyOperation op, DecodedArguments args);
 		void divideOperation(Operation op, DecodedArguments args);
 		void equalsOperation(Operation op, DecodedArguments args);
 		void push(Operation op, DecodedArguments args);

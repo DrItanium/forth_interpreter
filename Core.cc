@@ -823,8 +823,27 @@ void Core::executionCycle(Address startAddress) {
 }
 
 void Core::encodeDecodeBits(Operation op, DecodedArguments args) {
-    if (op == Operation::DecodeBits) {
+	std::visit([op, this](auto&& value) {
+				using T = std::decay_t<decltype(value)>;
+				if constexpr (std::is_same_v<T, FourRegister>) {
+					if (op == Operation::DecodeBits) {
+						value.destination.value().get().setValue(
+								decodeBits<Address, Address>(value.source.value().get().getAddress(),
+															 value.source1.value().get().getAddress(),
+															 value.source2.value().get().getAddress()));
+					} else {
+						throw Problem("encodeDecodeBits", "Unexpected four argument operation!");
+					}
+				} else if constexpr (std::is_same_v<T, FiveRegister>) {
+					if (op == Operation::EncodeBits) {
 
+					} else {
+					}
+				} else {
+        			throw Problem("encodeDecodeBits", "unknown encode-decode operation!");
+				}
+			}, args);
+    if (op == Operation::DecodeBits) {
         auto t = extractArguments4(op);
         auto& [dest, value, mask, shift] = t;
         dest.setValue(decodeBits<Address, Address>(value.getAddress(), mask.getAddress(), shift.getAddress()));
@@ -833,7 +852,6 @@ void Core::encodeDecodeBits(Operation op, DecodedArguments args) {
         auto& [dest, src, value, mask, shift] = t;
         dest.setValue(encodeBits<Address, Address>(src.getAddress(), value.getAddress(), mask.getAddress(), shift.getAddress()));
     } else {
-        throw Problem("encodeDecodeBits", "unknown encode-decode operation!");
     }
 }
 
@@ -866,29 +884,31 @@ void Core::returnToNative(Operation op, DecodedArguments) {
 }
 
 void Core::printString(Operation op, DecodedArguments args) {
-	if (op == Operation::PrintString) {
-		auto second = extractByteFromMolecule();
-		auto startReg = TargetRegister(getDestinationRegister(second));
-		auto lengthReg = TargetRegister(getSourceRegister(second));
-		// collect the data up into a string
-		auto begin = getRegister(startReg).getAddress();
-		auto length = getRegister(lengthReg).getAddress();
-		auto end = length + begin;
-		for (auto loc = begin; loc < end; ++loc) {
-			std::cout << char(loadByte(loc));
-		}
-	} else if (op == Operation::PrintChar) {
-		auto second = extractByteFromMolecule();
-		auto charReg = TargetRegister(getDestinationRegister(second));
-		auto c = char(getRegister(charReg).getAddress());
-		std::cout << c;
-	} else if (op == Operation::TypeDatum) {
-		auto second = extractByteFromMolecule();
-		auto charReg = TargetRegister(getDestinationRegister(second));
-		std::cout << getRegister(charReg).getValue();
-	} else {
-		throw Problem("printString", "Illegal operation!");
-	}
+	std::visit([this,op](auto&& value) {
+				using T = std::decay_t<decltype(value)>;
+				if constexpr (std::is_same_v<T, OneRegister>) {
+					auto& dest = value.destination.value().get();
+					if (op == Operation::PrintChar) {
+						auto c = char(dest.getAddress());
+						std::cout << c;
+					} else if (op == Operation::TypeDatum) {
+						std::cout << dest.getValue();
+					}
+				} else if constexpr (std::is_same_v<T, TwoRegister>) {
+					if (op == Operation::PrintString) {
+						auto begin = value.destination.value().get().getAddress();
+						auto length = value.destination.value().get().getAddress();
+						auto end = begin + length;
+						for (auto loc = begin; loc < end; ++loc) {
+							std::cout << char(loadByte(loc));
+						}
+					} else {
+						throw Problem("Core::printString", "Unexpected Two Register operation provided!");
+					}
+				} else {
+					throw Problem("Core::printString", "Undefined operations provided!");
+				}
+			}, args);
 }
 
 Core::DecodedInstruction Core::decode() {

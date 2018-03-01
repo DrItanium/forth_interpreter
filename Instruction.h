@@ -54,180 +54,38 @@ constexpr byte encodeRegisterPair(TargetRegister dest, T src) noexcept {
 	return setLowerUpperHalves<byte>(byte(dest), byte(src));
 }
 
-struct OneByte final { };
-struct TwoByte final { };
-struct ThreeByte final { };
-struct FourByte final { };
-struct EightByte final { };
+struct OneByte final { static constexpr auto size = 1; };
+struct TwoByte final { static constexpr auto size = 2; };
+struct ThreeByte final { static constexpr auto size = 3; };
+struct FourByte final { static constexpr auto size = 4; };
+struct EightByte final { static constexpr auto sie = 8; };
 using InstructionWidth = std::variant<OneByte, TwoByte, ThreeByte, FourByte, EightByte>;
 enum class Operation : byte {
-	Nop,
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
-    Modulo,
-    Not,
-    Minus,
-    And,
-    Or,
-    GreaterThan,
-    LessThan,
-    Xor,
-    ShiftRight,
-    ShiftLeft,
-    PopRegister,
-    PushRegister,
-    Equals,
-    TypeValue,
-    Load,
-    Store,
-    Pow,
-    SetImmediate16_Lowest,
-    SetImmediate16_Lower,
-    SetImmediate16_Higher,
-    SetImmediate16_Highest,
-    Move,
-    Swap,
-    // common operations
-    PopA,
-    PopB,
-    PushC,
-	PopC,
-	PushA,
-	PushB,
-#define FVersion(x) FloatingPoint ## x 
-#define UVersion(x) Unsigned ## x
-#define BVersion(x) Boolean ## x
-#define FUVersion(x) FVersion(x) , UVersion(x)
-#define BUVersion(x) BVersion(x) , UVersion(x)
-#define FUBVersion(x) FVersion(x), UVersion(x), BVersion(x)
-    FUVersion(Add),
-    FUVersion(Subtract),
-    FUVersion(Multiply),
-    FUVersion(Divide),
-    FUVersion(Modulo),
-    BUVersion(Not),
-    FUVersion(Minus),
-    BUVersion(And),
-    BUVersion(Or),
-    FUVersion(GreaterThan),
-    FUVersion(LessThan),
-    BUVersion(Xor),
-    UVersion(ShiftRight),
-    UVersion(ShiftLeft),
-    FUBVersion(Equals),
-    FUVersion(Pow),
-    FUBVersion(TypeValue),
-
-	// full versions of operations
-	// these forms are:
-	// ?op ?dest = ?src0, ?src1   // full
-	// or
-	// ?op ?dest = ?src0, ?imm16 // immediate16
-	// For the the two operand forms some of the other immediate forms don't
-	// make total sense so something like the and operator will have immediate
-	// mode be an 8 bit immediate instead.
-#define FullImmediate(x) \
-	x ## Full ,  \
-	x ## Immediate
-	FullImmediate(Add),
-	FullImmediate(Subtract),
-	FullImmediate(Multiply),
-	FullImmediate(Divide),
-	FullImmediate(Modulo),
-	NotFull,
-	MinusFull,
-	FullImmediate(And),
-	FullImmediate(Or),
-	FullImmediate(GreaterThan),
-	FullImmediate(LessThan),
-	FullImmediate(Xor),
-	FullImmediate(ShiftRight),
-	FullImmediate(ShiftLeft),
-	FullImmediate(Equals),
-	PowFull,
-#undef FullImmediate
-    Jump,
-    JumpIndirect,
-	JumpAbsolute,
-    CallSubroutine,
-    CallSubroutineIndirect,
-    ReturnSubroutine,
-    ConditionalBranch,
-    ConditionalBranchIndirect,
-    ConditionalCallSubroutine,
-    ConditionalCallSubroutineIndirect,
-    ConditionalReturnSubroutine,
-	LoadImmediateLower48,
-    // type field manipulation
-#define FullImmediate(x) FVersion(x ## Full) 
-	FullImmediate(Add),
-	FullImmediate(Subtract),
-	FullImmediate(Multiply),
-	FullImmediate(Divide),
-	FloatingPointMinusFull,
-	FullImmediate(GreaterThan),
-	FullImmediate(LessThan),
-	FullImmediate(Equals),
-    FloatingPointPowFull,
-#undef FullImmediate
-#define FullImmediate(x) UVersion(x ## Full) , UVersion(x ## Immediate)
-	FullImmediate(Add),
-	FullImmediate(Subtract),
-	FullImmediate(Multiply),
-	FullImmediate(Divide),
-	FullImmediate(Modulo),
-	UnsignedNotFull,
-	UnsignedMinusFull,
-	FullImmediate(And),
-	FullImmediate(Or),
-	FullImmediate(GreaterThan),
-	FullImmediate(LessThan),
-	FullImmediate(Xor),
-	FullImmediate(ShiftRight),
-	FullImmediate(ShiftLeft),
-	FullImmediate(Equals),
-	UnsignedPowFull,
-#undef FullImmediate
-    BVersion(NotFull),
-    BVersion(AndFull),
-    BVersion(OrFull),
-    BVersion(XorFull),
-    BVersion(EqualsFull),
-    DecodeBits,
-    EncodeBits,
-    //LoadHalfAddress,
-    //LoadQuarterAddress,
-    //LoadByte,
-    //StoreByte,
-    //StoreHalfAddress,
-    //StoreQuarterAddress,
-    LeaveExecutionLoop, // a hack to support returning to native code
-	PrintString, // read two registers to get start and length in memory
-	PrintChar, // print a character stored in a register
-	TypeDatum, // print the register with all of its contents
+#define X(title, a, b) title,
+#include "InstructionData.def"
     Count,
+#undef X
 };
-#undef FUBVersion
-#undef BUVersion
-#undef FUVersion
+
+
+
 
 static_assert(QuarterAddress(Operation::Count) <= 256, "Too many operations defined!");
 
+
 InstructionWidth determineInstructionWidth(Operation op);
+
+
+
 constexpr bool legalOperation(Operation op) noexcept {
     return static_cast<byte>(Operation::Count) > static_cast<byte>(op);
 }
 constexpr bool subtractOperation(Operation op) noexcept {
 	switch(op) {
 		case Operation::Subtract:
-		case Operation::SubtractFull:
 		case Operation::SubtractImmediate:
 		case Operation::FloatingPointSubtract:
-		case Operation::FloatingPointSubtractFull:
 		case Operation::UnsignedSubtract:
-		case Operation::UnsignedSubtractFull:
 		case Operation::UnsignedSubtractImmediate:
 			return true;
 		default:
@@ -238,7 +96,6 @@ constexpr bool isModuloOperation(Operation op) noexcept {
 	switch (op) {
 		case Operation::Modulo:
 		case Operation::ModuloImmediate:
-		case Operation::ModuloFull:
 			return true;
 		default:
 			return false;
@@ -249,32 +106,38 @@ constexpr byte getInstructionWidth(Operation op) noexcept {
         return 0;
     }
     switch (op) {
+		case Operation::Add:
+		case Operation::Subtract:
+		case Operation::Multiply:
+		case Operation::Divide:
+		case Operation::Modulo:
+		case Operation::And:
+		case Operation::Or:
 #define FullImmediate(x) \
-        case Operation:: x ## Full: \
-        case Operation:: Unsigned ## x ## Full
-		FullImmediate(Add):
-		FullImmediate(Subtract):
-		FullImmediate(Multiply):
-		FullImmediate(Divide): 
-		FullImmediate(Modulo): 
-		FullImmediate(And): 
-		FullImmediate(Or): 
-		FullImmediate(GreaterThan): 
-		FullImmediate(LessThan): 
-		FullImmediate(Xor):
-		FullImmediate(ShiftRight):
-		FullImmediate(ShiftLeft):
-		FullImmediate(Equals):
+        Operation:: Unsigned ## x 
+		case FullImmediate(Add):
+		case FullImmediate(Subtract):
+		case FullImmediate(Multiply):
+		case FullImmediate(Divide): 
+		case FullImmediate(Modulo): 
+		case FullImmediate(And): 
+		case FullImmediate(Or): 
+		case FullImmediate(GreaterThan): 
+		case FullImmediate(LessThan): 
+		case FullImmediate(Xor):
+		case FullImmediate(ShiftRight):
+		case FullImmediate(ShiftLeft):
+		case FullImmediate(Equals):
 #undef FullImmediate
 #define FullImmediate(x) \
-        case Operation:: FloatingPoint ## x ## Full
-		FullImmediate(Add):
-		FullImmediate(Subtract):
-		FullImmediate(Multiply):
-		FullImmediate(Divide): 
-		FullImmediate(GreaterThan): 
-		FullImmediate(LessThan): 
-		FullImmediate(Equals):
+        Operation:: FloatingPoint ## x
+		case FullImmediate(Add):
+		case FullImmediate(Subtract):
+		case FullImmediate(Multiply):
+		case FullImmediate(Divide): 
+		case FullImmediate(GreaterThan): 
+		case FullImmediate(LessThan): 
+		case FullImmediate(Equals):
 #undef FullImmediate
         case Operation::CallSubroutine:
         case Operation::Jump:
@@ -397,6 +260,7 @@ static_assert(getInstructionWidth(Operation::FloatingPointMultiplyFull) == 3, "F
 #undef Full
 		}
 	}
+
 constexpr bool andForm(Operation op) noexcept {
 	switch (op) {
 		case Operation::And:

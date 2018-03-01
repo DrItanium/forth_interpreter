@@ -152,32 +152,8 @@ class Core {
 		void savePositionToSubroutineStack();
 	private:
 		void returnToNative(Operation op, DecodedArguments args);
-#define OperationKind(name, args) \
-		struct name ; \
-		struct Is ## name final { using Type = name ; }; \
-		struct name final { \
-			static constexpr auto operation = Operation:: name ; \
-			using Arguments = args; \
-		}
-
-		OperationKind(AddFull, ThreeRegister);
-		OperationKind(SubtractFull, ThreeRegister);
-		OperationKind(UnsignedAddFull, ThreeRegister);
-		OperationKind(UnsignedSubtractFull, ThreeRegister);
-		OperationKind(FloatingPointAddFull, ThreeRegister);
-		OperationKind(FloatingPointSubtractFull, ThreeRegister);
-		using NumericOperation = std::variant<IsAdd, IsSubtract, IsUnsignedAdd, IsUnsignedSubtract, IsFloatingPointAdd, IsFloatingPointSubtract, IsAddFull, IsSubtractFull, IsUnsignedAddFull, IsUnsignedSubtractFull, IsFloatingPointAddFull, IsFloatingPointSubtractFull>;
-		OperationKind(Multiply, ThreeRegister);
-		OperationKind(UnsignedMultiply, ThreeRegister);
-		OperationKind(FloatingPointMultiply, ThreeRegister);
-		OperationKind(MultiplyFull, ThreeRegister);
-		OperationKind(UnsignedMultiplyFull, ThreeRegister);
-		OperationKind(FloatingPointMultiplyFull, ThreeRegister);
-		using MultiplyOperation = std::variant<IsMultiply, IsUnsignedMultiply, IsUnsignedMultiplyFull, IsFloatingPointMultiply, IsFloatingPointMultiplyFull>;
-		OperationKind(Divide, ThreeRegister);
-		OperationKind(Modulo, ThreeRegister);
-		void dispatchInstruction(NumericOperation op, DecodedArguments args);
-		void dispatchInstruction(MultiplyOperation op, DecodedArguments args);
+		void numericCombine(Operation op, DecodedArguments args);
+		void multiplyOperation(Operation op, DecodedArguments args);
 		void divideOperation(Operation op, DecodedArguments args);
 		void equalsOperation(Operation op, DecodedArguments args);
 		void push(Operation op, DecodedArguments args);

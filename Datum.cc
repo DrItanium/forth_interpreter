@@ -108,124 +108,14 @@ namespace forth {
     QuarterAddress Datum::lowestQuarterAddress() const noexcept { return getLowerHalf(lowerHalfAddress()); }
     std::optional<forth::Discriminant> involvesDiscriminantType(Operation op) {
         std::optional<forth::Discriminant> r;
-#define FVersion(x) FloatingPoint ## x 
-#define UVersion(x) Unsigned ## x
-#define BVersion(x) Boolean ## x
         switch (op) {
-            case Operation::UnsignedPowFull:
-            case Operation::UnsignedNotFull:
-            case Operation::UnsignedMinusFull:
-            case Operation:: UVersion(Add):
-            case Operation:: UVersion(Subtract):
-            case Operation:: UVersion(Multiply):
-            case Operation:: UVersion(Divide):
-            case Operation:: UVersion(Modulo):
-            case Operation:: UVersion(Not):
-            case Operation:: UVersion(Minus):
-            case Operation:: UVersion(And):
-            case Operation:: UVersion(Or):
-            case Operation:: UVersion(GreaterThan):
-            case Operation:: UVersion(LessThan):
-            case Operation:: UVersion(Xor):
-            case Operation:: UVersion(ShiftRight):
-            case Operation:: UVersion(ShiftLeft):
-            case Operation:: UVersion(Equals):
-            case Operation:: UVersion(Pow):
-#define FullImmediate(x) Operation:: UVersion(x ## Full): case Operation:: UVersion(x ## Immediate) 
-            case FullImmediate(Add):
-            case FullImmediate(Subtract):
-            case FullImmediate(Multiply):
-            case FullImmediate(Divide):
-            case FullImmediate(Modulo):
-            case FullImmediate(And):
-            case FullImmediate(Or):
-            case FullImmediate(GreaterThan):
-            case FullImmediate(LessThan):
-            case FullImmediate(Xor):
-            case FullImmediate(ShiftRight):
-            case FullImmediate(ShiftLeft):
-            case FullImmediate(Equals):
-#undef FullImmediate
-            case Operation:: UVersion(TypeValue):
-                r = Discriminant::MemoryAddress;
-                break;
-            case Operation:: FloatingPointPowFull:
-            case Operation:: FloatingPointMinusFull:
-            case Operation:: FVersion(Add):
-            case Operation:: FVersion(Subtract):
-            case Operation:: FVersion(Multiply):
-            case Operation:: FVersion(Divide):
-            case Operation:: FVersion(Minus):
-            case Operation:: FVersion(GreaterThan):
-            case Operation:: FVersion(LessThan):
-            case Operation:: FVersion(Equals):
-            case Operation:: FVersion(Pow):
-            case Operation:: FVersion(TypeValue):
-#define FullImmediate(x) Operation:: FVersion(x ## Full)
-            case FullImmediate(Add):
-            case FullImmediate(Subtract):
-            case FullImmediate(Multiply):
-            case FullImmediate(Divide):
-            case FullImmediate(GreaterThan):
-            case FullImmediate(LessThan):
-            case FullImmediate(Equals):
-#undef FullImmediate
-                r = Discriminant::FloatingPoint;
-                break;
-            case Operation:: BVersion(Not):
-            case Operation:: BVersion(And):
-            case Operation:: BVersion(Or):
-            case Operation:: BVersion(Xor):
-            case Operation:: BVersion(Equals):
-            case Operation:: BVersion(TypeValue):
-            case Operation:: BVersion(NotFull):
-            case Operation:: BVersion(AndFull):
-            case Operation:: BVersion(OrFull):
-            case Operation:: BVersion(XorFull):
-            case Operation:: BVersion(EqualsFull):
-                r = Discriminant::Boolean;
-                break;
-#define FullImmediate(x) Operation:: x ## Full: case Operation:: x ## Immediate
-            case FullImmediate(Add):
-            case FullImmediate(Subtract):
-            case FullImmediate(Multiply):
-            case FullImmediate(Divide): 
-            case FullImmediate(Modulo): 
-            case FullImmediate(And): 
-            case FullImmediate(Or): 
-            case FullImmediate(GreaterThan): 
-            case FullImmediate(LessThan): 
-            case FullImmediate(Xor):
-            case FullImmediate(ShiftRight):
-            case FullImmediate(ShiftLeft):
-            case FullImmediate(Equals):
-#undef FullImmediate
-            case Operation::Add:
-            case Operation::Subtract:
-            case Operation::Multiply:
-            case Operation::Divide:
-            case Operation::Modulo:
-            case Operation::Not:
-            case Operation::Minus:
-            case Operation::And:
-            case Operation::Or:
-            case Operation::GreaterThan:
-            case Operation::LessThan:
-            case Operation::Xor:
-            case Operation::ShiftRight:
-            case Operation::ShiftLeft:
-            case Operation::Equals:
-            case Operation::TypeValue:
-            case Operation::Pow:
-                r = Discriminant::Number;
-                break;
+#define X(title, sz, arg, disc) case Operation :: title : { if constexpr (Discriminant:: disc != Discriminant::Count) { r = Discriminant:: disc ; } break; } 
+#include "InstructionData.def"
+#undef X
             default:
                 break;
 
         }
-#undef FVersion
-#undef UVersion
-#undef BVersion
         return r;
     }
 

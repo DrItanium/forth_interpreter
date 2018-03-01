@@ -34,25 +34,13 @@ namespace forth {
 
     InstructionWidth determineInstructionWidth(Operation op) {
         InstructionWidth iw;
-        switch (getInstructionWidth(op)) {
-            case 1:
-                iw = OneByte();
-                break;
-            case 2:
-                iw = TwoByte();
-                break;
-            case 3:
-                iw = ThreeByte();
-                break;
-            case 4:
-                iw = FourByte();
-                break;
-            case 8:
-                iw = EightByte();
-                break;
-            default:
-                break;
-        }
+		switch (op) {
+#define X(title, sz, a, c) case Operation:: title : iw = sz ## Byte ();  break;
+#include "InstructionData.def"
+#undef X
+			default:
+				break;
+		}
         return iw;
     }
 

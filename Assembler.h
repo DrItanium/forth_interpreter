@@ -124,165 +124,96 @@ constexpr HalfAddress encodeFourByte(Operation first, TargetRegister dest, Targe
 								 getUpperHalf(offset));
 }
 
-constexpr bool argumentsImplyCompactedForm(TargetRegister dest, TargetRegister src0, TargetRegister src1 = TargetRegister::B) noexcept {
-	return (dest == TargetRegister::C && src0 == TargetRegister::A && src1 == TargetRegister::B);
-}
 constexpr HalfAddress xorl(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::Xor);
-	} 
-	return encodeThreeByte(Operation::XorFull, dest, src0, src1);
+	return encodeThreeByte(Operation::Xor, dest, src0, src1);
 }
 constexpr HalfAddress xorl(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::XorImmediate, dest, src0, value);
 }
 constexpr HalfAddress xoru(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::UnsignedXor);
-	} 
-	return encodeThreeByte(Operation::UnsignedXorFull, dest, src0, src1);
+	return encodeThreeByte(Operation::UnsignedXor, dest, src0, src1);
 }
 constexpr HalfAddress xoriu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::UnsignedXorImmediate, dest, src0, value);
 }
 constexpr HalfAddress xorb(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::BooleanXor);
-	} 
-	return encodeThreeByte(Operation::BooleanXorFull, dest, src0, src1);
+	return encodeThreeByte(Operation::BooleanXor, dest, src0, src1);
 }
 constexpr HalfAddress orl(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::Or);
-	} 
-	return encodeThreeByte(Operation::OrFull, dest, src0, src1);
+	return encodeThreeByte(Operation::Or, dest, src0, src1);
 }
 constexpr HalfAddress orl(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::OrImmediate, dest, src0, value);
 }
 constexpr HalfAddress oru(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::UnsignedOr);
-	} 
-	return encodeThreeByte(Operation::UnsignedOrFull, dest, src0, src1);
+	return encodeThreeByte(Operation::UnsignedOr, dest, src0, src1);
 }
 constexpr HalfAddress oriu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::UnsignedOrImmediate, dest, src0, value);
 }
 constexpr HalfAddress orb(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::BooleanOr);
-	} 
-	return encodeThreeByte(Operation::BooleanOrFull, dest, src0, src1);
+	return encodeThreeByte(Operation::BooleanOr, dest, src0, src1);
 }
 constexpr HalfAddress andl(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::And);
-	} 
-	return encodeThreeByte(Operation::AndFull, dest, src0, src1);
+	return encodeThreeByte(Operation::And, dest, src0, src1);
 }
 constexpr HalfAddress andl(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::AndImmediate, dest, src0, value);
 }
 constexpr HalfAddress andu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::UnsignedAnd);
-	} 
-	return encodeThreeByte(Operation::UnsignedAndFull, dest, src0, src1);
+	return encodeThreeByte(Operation::UnsignedAnd, dest, src0, src1);
 }
 constexpr HalfAddress andiu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::UnsignedAndImmediate, dest, src0, value);
 }
 constexpr HalfAddress andb(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::BooleanAnd);
-	} 
-	return encodeThreeByte(Operation::BooleanAndFull, dest, src0, src1);
+	return encodeThreeByte(Operation::BooleanAnd, dest, src0, src1);
 }
 constexpr QuarterAddress minusl(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0)) {
-		return encodeSingleByteOperation(Operation::Minus);
-	} 
-	return encodeTwoByte(Operation::MinusFull, dest, src0);
+	return encodeTwoByte(Operation::Minus, dest, src0);
 }
 constexpr QuarterAddress minuslu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0)) {
-		return encodeSingleByteOperation(Operation::UnsignedMinus);
-	} 
-	return encodeTwoByte(Operation::UnsignedMinusFull, dest, src0);
+	return encodeTwoByte(Operation::UnsignedMinus, dest, src0);
 }
 constexpr QuarterAddress minusf(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0)) {
-		return encodeSingleByteOperation(Operation::FloatingPointMinus);
-	} 
-	return encodeTwoByte(Operation::FloatingPointMinusFull, dest, src0);
+	return encodeTwoByte(Operation::FloatingPointMinus, dest, src0);
 }
 constexpr QuarterAddress notl(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0)) {
-		return encodeSingleByteOperation(Operation::Not);
-	} 
-	return encodeTwoByte(Operation::NotFull, dest, src0);
+	return encodeTwoByte(Operation::Not, dest, src0);
 }
 constexpr QuarterAddress notlu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0)) {
-		return encodeSingleByteOperation(Operation::UnsignedNot);
-	} 
-	return encodeTwoByte(Operation::UnsignedNotFull, dest, src0);
+	return encodeTwoByte(Operation::UnsignedNot, dest, src0);
 }
 constexpr QuarterAddress notb(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0)) {
-		return encodeSingleByteOperation(Operation::BooleanNot);
-	} 
-	return encodeTwoByte(Operation::BooleanNotFull, dest, src0);
+	return encodeTwoByte(Operation::BooleanNot, dest, src0);
 }
 constexpr HalfAddress pow(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::Pow);
-	}
-	return encodeThreeByte(Operation::PowFull, dest, src0, src1);
+	return encodeThreeByte(Operation::Pow, dest, src0, src1);
 }
 constexpr HalfAddress powf(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::FloatingPointPow);
-	}
-	return encodeThreeByte(Operation::FloatingPointPowFull, dest, src0, src1);
+	return encodeThreeByte(Operation::FloatingPointPow, dest, src0, src1);
 }
 constexpr HalfAddress powu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::UnsignedPow);
-	}
-	return encodeThreeByte(Operation::UnsignedPowFull, dest, src0, src1);
+	return encodeThreeByte(Operation::UnsignedPow, dest, src0, src1);
 }
 
 constexpr HalfAddress cmpeq(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::Equals);
-	} 
-	return encodeThreeByte(Operation::EqualsFull, dest, src0, src1);
+	return encodeThreeByte(Operation::Equals, dest, src0, src1);
 }
 constexpr HalfAddress cmpeq(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::EqualsImmediate, dest, src0, value);
 }
 constexpr HalfAddress cmpeqf(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::FloatingPointEquals);
-	} 
-	return encodeThreeByte(Operation::FloatingPointEqualsFull, dest, src0, src1);
+	return encodeThreeByte(Operation::FloatingPointEquals, dest, src0, src1);
 }
 constexpr HalfAddress cmpequ(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::UnsignedEquals);
-	} 
-	return encodeThreeByte(Operation::UnsignedEqualsFull, dest, src0, src1);
+	return encodeThreeByte(Operation::UnsignedEquals, dest, src0, src1);
 }
 constexpr HalfAddress cmpeqiu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::UnsignedEqualsImmediate, dest, src0, value);
 }
 constexpr HalfAddress cmpeqb(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::BooleanEquals);
-	} 
-	return encodeThreeByte(Operation::BooleanEqualsFull, dest, src0, src1);
+	return encodeThreeByte(Operation::BooleanEquals, dest, src0, src1);
 }
 
 constexpr QuarterAddress typeval(TargetRegister dest = TargetRegister::A) noexcept {
@@ -299,25 +230,16 @@ constexpr QuarterAddress typevalu(TargetRegister dest = TargetRegister::A) noexc
 }
 
 constexpr HalfAddress cmplt(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::LessThan);
-	} 
-	return encodeThreeByte(Operation::LessThanFull, dest, src0, src1);
+	return encodeThreeByte(Operation::LessThan, dest, src0, src1);
 }
 constexpr HalfAddress cmplt(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::LessThanImmediate, dest, src0, value);
 }
 constexpr HalfAddress cmpltf(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::FloatingPointLessThan);
-	} 
-	return encodeThreeByte(Operation::FloatingPointLessThanFull, dest, src0, src1);
+	return encodeThreeByte(Operation::FloatingPointLessThan, dest, src0, src1);
 }
 constexpr HalfAddress cmpltu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::UnsignedLessThan);
-	} 
-	return encodeThreeByte(Operation::UnsignedLessThanFull, dest, src0, src1);
+	return encodeThreeByte(Operation::UnsignedLessThan, dest, src0, src1);
 }
 constexpr HalfAddress cmpltiu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::UnsignedLessThanImmediate, dest, src0, value);
@@ -325,210 +247,121 @@ constexpr HalfAddress cmpltiu(TargetRegister dest, TargetRegister src0, QuarterA
 
 
 constexpr HalfAddress cmpgt(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::GreaterThan);
-	} 
-	return encodeThreeByte(Operation::GreaterThanFull, dest, src0, src1);
+	return encodeThreeByte(Operation::GreaterThan, dest, src0, src1);
 }
 constexpr HalfAddress cmpgt(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::GreaterThanImmediate, dest, src0, value);
 }
 constexpr HalfAddress cmpgtf(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::FloatingPointGreaterThan);
-	} 
-	return encodeThreeByte(Operation::FloatingPointGreaterThanFull, dest, src0, src1);
+	return encodeThreeByte(Operation::FloatingPointGreaterThan, dest, src0, src1);
 }
 constexpr HalfAddress cmpgtu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::UnsignedGreaterThan);
-	} 
-	return encodeThreeByte(Operation::UnsignedGreaterThanFull, dest, src0, src1);
+	return encodeThreeByte(Operation::UnsignedGreaterThan, dest, src0, src1);
 }
 constexpr HalfAddress cmpgtiu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::UnsignedGreaterThanImmediate, dest, src0, value);
 }
 constexpr HalfAddress shr(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::ShiftRight);
-	} 
-	return encodeThreeByte(Operation::ShiftRightFull, dest, src0, src1);
+	return encodeThreeByte(Operation::ShiftRight, dest, src0, src1);
 }
 constexpr HalfAddress shr(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::ShiftRightImmediate, dest, src0, value);
 }
 constexpr HalfAddress shru(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::UnsignedShiftRight);
-	} 
-	return encodeThreeByte(Operation::UnsignedShiftRightFull, dest, src0, src1);
+	return encodeThreeByte(Operation::UnsignedShiftRight, dest, src0, src1);
 }
 constexpr HalfAddress shriu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::UnsignedShiftRightImmediate, dest, src0, value);
 }
 constexpr HalfAddress shl(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::ShiftLeft);
-	} 
-	return encodeThreeByte(Operation::ShiftLeftFull, dest, src0, src1);
+	return encodeThreeByte(Operation::ShiftLeft, dest, src0, src1);
 }
 constexpr HalfAddress shl(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::ShiftLeftImmediate, dest, src0, value);
 }
 constexpr HalfAddress shlu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::UnsignedShiftLeft);
-	} 
-	return encodeThreeByte(Operation::UnsignedShiftLeftFull, dest, src0, src1);
+	return encodeThreeByte(Operation::UnsignedShiftLeft, dest, src0, src1);
 }
 constexpr HalfAddress shliu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::UnsignedShiftLeftImmediate, dest, src0, value);
 }
 constexpr HalfAddress add(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::Add);
-	} 
-	return encodeThreeByte(Operation::AddFull, dest, src0, src1);
+	return encodeThreeByte(Operation::Add, dest, src0, src1);
 }
 constexpr HalfAddress add(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::AddImmediate, dest, src0, value);
 }
 constexpr HalfAddress addf(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::FloatingPointAdd);
-	} 
-	return encodeThreeByte(Operation::FloatingPointAddFull, dest, src0, src1);
+	return encodeThreeByte(Operation::FloatingPointAdd, dest, src0, src1);
 }
 constexpr HalfAddress addu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::UnsignedAdd);
-	} 
-	return encodeThreeByte(Operation::UnsignedAddFull, dest, src0, src1);
+	return encodeThreeByte(Operation::UnsignedAdd, dest, src0, src1);
 }
 constexpr HalfAddress addiu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::UnsignedAddImmediate, dest, src0, value);
 }
 constexpr HalfAddress sub(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::Subtract);
-	} 
-	return encodeThreeByte(Operation::SubtractFull, dest, src0, src1);
+	return encodeThreeByte(Operation::Subtract, dest, src0, src1);
 }
 constexpr HalfAddress sub(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::SubtractImmediate, dest, src0, value);
 }
 constexpr HalfAddress subf(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::FloatingPointSubtract);
-	} 
-	return encodeThreeByte(Operation::FloatingPointSubtractFull, dest, src0, src1);
+	return encodeThreeByte(Operation::FloatingPointSubtract, dest, src0, src1);
 }
 constexpr HalfAddress subu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::UnsignedSubtract);
-	} 
-	return encodeThreeByte(Operation::UnsignedSubtractFull, dest, src0, src1);
+	return encodeThreeByte(Operation::UnsignedSubtract, dest, src0, src1);
 }
 constexpr HalfAddress subiu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::UnsignedSubtractImmediate, dest, src0, value);
 }
 constexpr HalfAddress mul(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::Multiply);
-	} 
-	return encodeThreeByte(Operation::MultiplyFull, dest, src0, src1);
+	return encodeThreeByte(Operation::Multiply, dest, src0, src1);
 }
 constexpr HalfAddress mul(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::MultiplyImmediate, dest, src0, value);
 }
 constexpr HalfAddress mulf(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::FloatingPointMultiply);
-	} 
-	return encodeThreeByte(Operation::FloatingPointMultiplyFull, dest, src0, src1);
+	return encodeThreeByte(Operation::FloatingPointMultiply, dest, src0, src1);
 }
 constexpr HalfAddress mulu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::UnsignedMultiply);
-	} 
-	return encodeThreeByte(Operation::UnsignedMultiplyFull, dest, src0, src1);
+	return encodeThreeByte(Operation::UnsignedMultiply, dest, src0, src1);
 }
 constexpr HalfAddress muliu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::UnsignedMultiplyImmediate, dest, src0, value);
 }
 constexpr HalfAddress div(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::Divide);
-	} 
-	return encodeThreeByte(Operation::DivideFull, dest, src0, src1);
+	return encodeThreeByte(Operation::Divide, dest, src0, src1);
 }
 constexpr HalfAddress div(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::DivideImmediate, dest, src0, value);
 }
 constexpr HalfAddress divf(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::FloatingPointDivide);
-	} 
-	return encodeThreeByte(Operation::FloatingPointDivideFull, dest, src0, src1);
+	return encodeThreeByte(Operation::FloatingPointDivide, dest, src0, src1);
 }
 constexpr HalfAddress divu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::UnsignedDivide);
-	} 
-	return encodeThreeByte(Operation::UnsignedDivideFull, dest, src0, src1);
+	return encodeThreeByte(Operation::UnsignedDivide, dest, src0, src1);
 }
 constexpr HalfAddress diviu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::UnsignedDivideImmediate, dest, src0, value);
 }
 constexpr HalfAddress mod(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::Modulo);
-	} 
-	return encodeThreeByte(Operation::ModuloFull, dest, src0, src1);
+	return encodeThreeByte(Operation::Modulo, dest, src0, src1);
 }
 constexpr HalfAddress mod(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::ModuloImmediate, dest, src0, value);
 }
 constexpr HalfAddress modu(TargetRegister dest = TargetRegister::C, TargetRegister src0 = TargetRegister::A, TargetRegister src1 = TargetRegister::B) noexcept {
-	if (argumentsImplyCompactedForm(dest, src0, src1)) {
-		return encodeSingleByteOperation(Operation::UnsignedModulo);
-	} 
-	return encodeThreeByte(Operation::UnsignedModuloFull, dest, src0, src1);
+	return encodeThreeByte(Operation::UnsignedModulo, dest, src0, src1);
 }
 constexpr HalfAddress modiu(TargetRegister dest, TargetRegister src0, QuarterAddress value) noexcept {
 	return encodeFourByte(Operation::UnsignedModuloImmediate, dest, src0, value);
 }
 constexpr QuarterAddress popRegister(TargetRegister destination, TargetRegister sp = TargetRegister::SP) noexcept {
-	if (sp == TargetRegister::SP) {
-		switch(destination) {
-			case TargetRegister::A:
-				return QuarterAddress(encodeSingleByteOperation(Operation::PopA));
-			case TargetRegister::B:
-				return QuarterAddress(encodeSingleByteOperation(Operation::PopB));
-			case TargetRegister::C:
-				return QuarterAddress(encodeSingleByteOperation(Operation::PopC));
-			default:
-				return encodeTwoByte(Operation::PopRegister, encodeRegisterPair(destination, sp));
-		}
-	} else {
-    	return encodeTwoByte(Operation::PopRegister, encodeRegisterPair(destination, sp));
-	}
+	return encodeTwoByte(Operation::PopRegister, encodeRegisterPair(destination, sp));
 }
 constexpr QuarterAddress pushRegister(TargetRegister value, TargetRegister sp = TargetRegister::SP) noexcept {
-	if (sp == TargetRegister::SP) {
-		switch(value) {
-			case TargetRegister::A:
-				return QuarterAddress(encodeSingleByteOperation(Operation::PushA));
-			case TargetRegister::B:
-				return QuarterAddress(encodeSingleByteOperation(Operation::PushB));
-			case TargetRegister::C:
-				return QuarterAddress(encodeSingleByteOperation(Operation::PushC));
-			default:
-				return encodeTwoByte(Operation::PushRegister, encodeRegisterPair(sp, value));
-		}
-	} else {
     	return encodeTwoByte(Operation::PushRegister, encodeRegisterPair(sp, value));
-	}
 }
 constexpr QuarterAddress load(TargetRegister dest, TargetRegister src) noexcept { 
 	return encodeTwoByte(Operation::Load, dest, src); 
@@ -581,10 +414,10 @@ constexpr HalfAddress setImmediate64_Highest(TargetRegister dest, Address value)
 static_assert(0xFFFF0519 == setImmediate64_Highest(TargetRegister::X, 0xFFFF'FFFF'FFFF'0001), "Encoding is wrong!");
 
 constexpr QuarterAddress notOp(TargetRegister dest, TargetRegister src) noexcept {
-	return encodeTwoByte(Operation::NotFull, dest, src);
+	return encodeTwoByte(Operation::Not, dest, src);
 }
 constexpr QuarterAddress minus(TargetRegister dest, TargetRegister src) noexcept {
-	return encodeTwoByte(Operation::MinusFull, dest, src);
+	return encodeTwoByte(Operation::Minus, dest, src);
 }
 
 constexpr HalfAddress jump(QuarterInteger offset) noexcept {
@@ -624,12 +457,12 @@ constexpr Address loadLowerImmediate48(TargetRegister dest, Address value) noexc
 	auto op = Address(byte(Operation::LoadImmediateLower48));
 	return imm48 | edest | op;
 }
-constexpr byte popA() noexcept { return popRegister(TargetRegister::A, TargetRegister::SP); }
-constexpr byte popB() noexcept { return popRegister(TargetRegister::B, TargetRegister::SP); }
-constexpr byte popC() noexcept { return popRegister(TargetRegister::C, TargetRegister::SP); }
-constexpr byte pushA() noexcept { return pushRegister(TargetRegister::A, TargetRegister::SP); }
-constexpr byte pushB() noexcept { return pushRegister(TargetRegister::B, TargetRegister::SP); }
-constexpr byte pushC() noexcept { return pushRegister(TargetRegister::C, TargetRegister::SP); }
+constexpr QuarterAddress popA() noexcept { return popRegister(TargetRegister::A, TargetRegister::SP); }
+constexpr QuarterAddress popB() noexcept { return popRegister(TargetRegister::B, TargetRegister::SP); }
+constexpr QuarterAddress popC() noexcept { return popRegister(TargetRegister::C, TargetRegister::SP); }
+constexpr QuarterAddress pushA() noexcept { return pushRegister(TargetRegister::A, TargetRegister::SP); }
+constexpr QuarterAddress pushB() noexcept { return pushRegister(TargetRegister::B, TargetRegister::SP); }
+constexpr QuarterAddress pushC() noexcept { return pushRegister(TargetRegister::C, TargetRegister::SP); }
 EagerInstruction popAB();
 
 constexpr QuarterAddress swapAB() noexcept {
@@ -640,8 +473,8 @@ constexpr auto zeroRegister(TargetRegister reg) noexcept -> decltype(move(reg, T
 }
 constexpr QuarterAddress imm16TestValue = 0xfded;
 static_assert(popA() == popRegister(TargetRegister::A, TargetRegister::SP), "Two different code paths for popA should yield the same result!");
-static_assert(getInstructionWidth(cmpeq()) == 1, "Compare eq should only be one byte if the args are defaulted");
-static_assert(getInstructionWidth(cmpeq()) == 1, "Compare eq should only be one byte if the args are defaulted");
+static_assert(getInstructionWidth(cmpeq()) == 3, "Compare eq should only be one byte if the args are defaulted");
+static_assert(getInstructionWidth(cmpeq()) == 3, "Compare eq should only be one byte if the args are defaulted");
 static_assert(byte(0xFD) == getUpperHalf(imm16TestValue), "getUpperHalf is not working correctly!");
 static_assert(byte(0xED) == getLowerHalf(imm16TestValue), "getUpperHalf is not working correctly!");
 static_assert(byte(0x01) == byte(TargetRegister::A), "register cast assumptions broken!");
@@ -652,7 +485,7 @@ static_assert(Address(0xFDED0117) == setImmediate16_Lower(TargetRegister::A, imm
 static_assert(Address(0xFDED0118) == setImmediate16_Higher(TargetRegister::A, imm16TestValue), "setImmediate16_Higher is broken!");
 static_assert(Address(0xFDED0119) == setImmediate16_Highest(TargetRegister::A, imm16TestValue), "setImmediate16_Highest is broken!");
 static_assert(getInstructionWidth(mulf(TargetRegister::A, TargetRegister::A, TargetRegister::A)) == 3, "FloatingPointMultiplyFull is not three bytes!");
-static_assert(getInstructionWidth(mulf()) == 1, "FloatingPointMultiplyFull is not three bytes!");
+static_assert(getInstructionWidth(mulf()) == 3, "FloatingPointMultiplyFull is not three bytes!");
 
 SizedResolvableLazyFunction setImmediate16_Lowest(TargetRegister r, const std::string& name);
 SizedResolvableLazyFunction setImmediate16_Lower(TargetRegister r, const std::string& name);

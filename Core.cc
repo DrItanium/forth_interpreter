@@ -40,6 +40,12 @@ Register& Core::getRegister(TargetRegister reg) {
 			throw Problem("getRegister", "Undefined register!");
 	}
 }
+Register& Core::getDestinationRegister(byte value) {
+	return getRegister(forth::getDestinationRegister(value));
+}
+Register& Core::getSourceRegister(byte value) {
+	return getRegister(forth::getSourceRegister(value));
+}
 Datum& Core::getSystemVariable(Address index) {
     if (getByteOffset(index) != 0) {
         throw Problem("getSystemVariable", "System variables are 8-bytes wide and must be accessed on 8-byte boundaries!");
@@ -279,7 +285,7 @@ void numericOperationIntegerOnly(Operation op, const std::string& name, Register
         }
     }
 }
-void Core::numericCombine(DecodedInstruction op) {
+void Core::numericCombine(Operation op, DecodedArguments args) {
 
 	auto subtract = subtractOperation(std::get<Operation>(op));
     auto value = std::get<DecodedArguments>(op);
@@ -297,14 +303,14 @@ void Core::numericCombine(DecodedInstruction op) {
 	numericOperation(op, subtract ? "-" : "+", dest, src0, src1, fn);
 }
 
-void Core::multiplyOperation(DecodedInstruction op) {
+void Core::multiplyOperation(Operation op, DecodedArguments args) {
 	auto t = extractArguments(op, nullptr);
 	auto& [dest, src0, src1] = t;
 	auto fn = [](auto a, auto b) { return a * b; };
 	numericOperation(op, "*", dest, src0, src1, fn);
 }
 
-void Core::divideOperation(DecodedInstruction op) {
+void Core::divideOperation(Operation op, DecodedArguments args) {
 
 	auto t = extractArguments(op);
 	auto& [dest, src0, src1] = t;
@@ -319,13 +325,13 @@ void Core::divideOperation(DecodedInstruction op) {
 	}
 }
 
-void Core::equalsOperation(DecodedInstruction op) {
+void Core::equalsOperation(Operation op, DecodedArguments args) {
 	auto t = extractArguments(op);
 	auto& [dest, src0, src1] = t;
 	numericOperationAndBool(op, "eq", dest, src0, src1, [](auto a, auto b) { return a == b; });
 }
 
-void Core::push(DecodedInstruction op) {
+void Core::push(Operation op, DecodedArguments args) {
 	switch (op) {
 		case Operation::PushA:
 			push(TargetRegister::A, TargetRegister::SP);
@@ -345,7 +351,7 @@ void Core::push(DecodedInstruction op) {
 	}
 }
 
-void Core::pop(DecodedInstruction op) {
+void Core::pop(Operation op, DecodedArguments args) {
 	switch (op) {
 		case Operation::PopA:
 			pop(TargetRegister::A, TargetRegister::SP);
@@ -399,7 +405,7 @@ void numericBoolAndInteger(Operation op, const std::string& name, Register& dest
 	}
 }
 
-void Core::notOperation(DecodedInstruction op) {
+void Core::notOperation(Operation op, DecodedArguments args) {
     std::tuple<TargetRegister, TargetRegister> tup;
     switch (op) {
 		case Operation::BooleanNot:
@@ -432,7 +438,7 @@ void Core::notOperation(DecodedInstruction op) {
 	}
 }
 
-void Core::minusOperation(DecodedInstruction op) {
+void Core::minusOperation(Operation op, DecodedArguments args) {
 	switch (involvesDiscriminantType(op)) {
 		case Discriminant::Number:
 			dest.setValue(-src.getInt());
@@ -445,7 +451,7 @@ void Core::minusOperation(DecodedInstruction op) {
 	}
 }
 
-void Core::booleanAlgebra(DecodedInstruction op) {
+void Core::booleanAlgebra(Operation op, DecodedArguments args) {
 	auto tup = extractArguments(op);
 	auto& [dest, src0, src1] = tup;
 	if (andForm(op)) {
@@ -459,7 +465,7 @@ void Core::booleanAlgebra(DecodedInstruction op) {
 	}
 }
 
-void Core::shiftOperation(DecodedInstruction op) {
+void Core::shiftOperation(Operation op, DecodedArguments args) {
 	auto tup = extractArguments(op);
 	auto& [dest, src0, src1] = tup;
 	switch (op) {
@@ -485,13 +491,13 @@ void Core::shiftOperation(DecodedInstruction op) {
 	}
 }
 
-void Core::powOperation(DecodedInstruction op) {
+void Core::powOperation(Operation op, DecodedArguments args) {
 	auto tup = extractArguments(op);
 	auto& [dest, src0, src1] = tup;
 	numericOperation(op, "pow", dest, src0, src1, [](auto a, auto b) { return static_cast<decltype(a)>(std::pow(Floating(a), Floating(b))); });
 }
 
-void Core::rangeChecks(DecodedInstruction op) {
+void Core::rangeChecks(Operation op, DecodedArguments args) {
 	auto tup = extractArguments(op);
 	auto& [dest, src0, src1] = tup;
 	switch (op) {
@@ -527,7 +533,7 @@ constexpr HalfAddress makeImm24(QuarterAddress lower16, byte upper8) noexcept {
 void Core::savePositionToSubroutineStack() {
     push(_pc.getValue(), TargetRegister::SP2);
 }
-void Core::jumpOperation(DecodedInstruction op) {
+void Core::jumpOperation(Operation op, DecodedArguments args) {
     auto callSubroutine = [this]() {
         auto lower16 = extractQuarterIntegerFromMolecule();
         auto upper8 = extractByteFromMolecule();
@@ -566,7 +572,7 @@ void Core::jumpOperation(DecodedInstruction op) {
 			throw Problem("jumpOperation", "unknown jump operation!");
 	}
 }
-void Core::conditionalBranch(DecodedInstruction op) {
+void Core::conditionalBranch(Operation op, DecodedArguments args) {
 	auto k = extractByteFromMolecule();
 	auto& cond = getRegister(TargetRegister(getDestinationRegister(k)));
 	auto jumpRelativeToPC = [this]() {
@@ -621,12 +627,12 @@ Address Core::extractImm48() {
     return lowest16 | lower16 | higher16;
 }
 
-void Core::loadImm48(DecodedInstruction op) {
+void Core::loadImm48(Operation op, DecodedArguments args) {
     auto tr = TargetRegister(getDestinationRegister(extractByteFromMolecule()));
     auto imm48 = extractImm48();
     getRegister(tr).setValue(imm48);
 }
-void Core::nop(DecodedInstruction op) { }
+void Core::nop(Operation op, DecodedArguments args) { }
 
 void Core::dispatchInstruction() {
 	static std::map<Operation, decltype(std::mem_fn(&Core::numericCombine))> dispatchTable = {
@@ -686,7 +692,7 @@ void Core::dispatchInstruction() {
     }
 }
 
-void Core::loadStore(DecodedInstruction op) {
+void Core::loadStore(Operation op, DecodedArguments args) {
     auto k = extractByteFromMolecule();
     auto trd = TargetRegister(getDestinationRegister(k));
     auto trs = TargetRegister(getSourceRegister(k));
@@ -701,7 +707,7 @@ void Core::loadStore(DecodedInstruction op) {
 	}
 }
 
-void Core::moveOrSwap(DecodedInstruction op) {
+void Core::moveOrSwap(Operation op, DecodedArguments args) {
     auto k = extractByteFromMolecule();
     auto trd = TargetRegister(getDestinationRegister(k));
     auto trs = TargetRegister(getSourceRegister(k));
@@ -721,7 +727,7 @@ void Core::moveOrSwap(DecodedInstruction op) {
 	}
 }
 
-void Core::typeValue(DecodedInstruction op) {
+void Core::typeValue(Operation op, DecodedArguments args) {
 	auto tr = TargetRegister(getDestinationRegister(extractByteFromMolecule()));
 	auto flags = std::cout.flags();
 	auto value = getRegister(tr).getValue();
@@ -764,7 +770,7 @@ constexpr Address computeImmediate16(Address base, QuarterAddress value) noexcep
 	return encodeBits<Address, QuarterAddress, Immediate16Mask<pos>, Immediate16ShiftIndex<pos>>(base, value);
 }
 
-void Core::setImm16(DecodedInstruction op) {
+void Core::setImm16(Operation op, DecodedArguments args) {
 	auto k = extractByteFromMolecule();
 	auto tr = static_cast<TargetRegister>(getDestinationRegister(k));
     auto& dest = getRegister(tr);
@@ -816,8 +822,9 @@ void Core::executionCycle(Address startAddress) {
     // we've halted at this point
 }
 
-void Core::encodeDecodeBits(DecodedInstruction op) {
+void Core::encodeDecodeBits(Operation op, DecodedArguments args) {
     if (op == Operation::DecodeBits) {
+
         auto t = extractArguments4(op);
         auto& [dest, value, mask, shift] = t;
         dest.setValue(decodeBits<Address, Address>(value.getAddress(), mask.getAddress(), shift.getAddress()));
@@ -848,7 +855,7 @@ std::function<void(Address, Address)> Core::getInstructionInstallationFunction()
 	};
 }
 
-void Core::returnToNative(DecodedInstruction op) {
+void Core::returnToNative(Operation op, DecodedArguments) {
 	switch (op) {
 		case Operation::LeaveExecutionLoop:
 			store(Core::returnToMicrocode, Address(1));
@@ -858,7 +865,7 @@ void Core::returnToNative(DecodedInstruction op) {
 	}
 }
 
-void Core::printString(DecodedInstruction op) {
+void Core::printString(Operation op, DecodedArguments args) {
 	if (op == Operation::PrintString) {
 		auto second = extractByteFromMolecule();
 		auto startReg = TargetRegister(getDestinationRegister(second));
@@ -1035,7 +1042,7 @@ Core::EightByteVariant Core::getVariant(Operation op, const EightByte&) {
 }
 
 Core::DecodedInstruction Core::decode(Operation op, const OneByte&) {
-    Core::NoArguments x;
+    Core::ThreeRegister x;
     x.destination = getRegister(TargetRegister::C);
     x.source = getRegister(TargetRegister::A);
     x.source2 = getRegister(TargetRegister::B);
@@ -1044,16 +1051,16 @@ Core::DecodedInstruction Core::decode(Operation op, const OneByte&) {
 
 Core::DecodedInstruction Core::decode(Operation op, const TwoByte& b) {
     auto byte2 = extractByteFromMolecule();
-    return Core::DecodedInstruction(op, std::visit([byte2](auto&& value) {
+    return Core::DecodedInstruction(op, std::visit([this, byte2](auto&& value) {
                 Core::DecodedArguments da;
                 using T = std::decay_t<decltype(value)>;
                 using K = typename T::Type;
                 K r;
                 if constexpr (std::is_same_v<T, Core::IsOneRegister>) {
-                    r.destination = getRegister(TargetRegister(getDestinationRegister(byte2)));
+                    r.destination = getDestinationRegister(byte2);
                 } else if constexpr (std::is_same_v<T, Core::IsTwoRegister>) {
-                    r.destination = getRegister(TargetRegister(getDestinationRegister(byte2)));
-                    r.source = getRegister(TargetRegister(getSourceRegister(byte2)));
+                    r.destination = getDestinationRegister(byte2);
+                    r.source = getSourceRegister(byte2);
                 } else {
                     static_assert(AlwaysFalse<T>::value, "Unimplemented two byte variant!");
                 }
@@ -1066,20 +1073,20 @@ Core::DecodedInstruction Core::decode(Operation op, const ThreeByte& b) {
     auto byte2 = extractByteFromMolecule();
     auto byte3 = extractByteFromMolecule();
     return Core::DecodedInstruction(op, 
-            std::visit([byte2, byte3, quarter = setLowerUpperHalves<QuarterAddress>(byte2, byte3)](auto&& value) {
+            std::visit([this, byte2, byte3, quarter = setLowerUpperHalves<QuarterAddress>(byte2, byte3)](auto&& value) {
                 Core::DecodedArguments da;
                 using T = std::decay_t<decltype(value)>;
                 using K = typename T::Type;
                 K r;
                 if constexpr (std::is_same_v<T, Core::IsThreeRegister>) {
-                    r.destination = getRegister(TargetRegister(getDestinationRegister(byte2)));
-                    r.source = getRegister(TargetRegister(getSourceRegister(byte2)));
-                    r.source2 = getRegister(TargetRegister(getDestinationRegister(byte3)));
+                    r.destination = getDestinationRegister(byte2);
+                    r.source = getSourceRegister(byte2);
+                    r.source2 = getDestinationRegister(byte3);
                 } else if constexpr (std::is_same_v<T, Core::IsFourRegister>) {
-                    r.destination = getRegister(TargetRegister(getDestinationRegister(byte2)));
-                    r.source = getRegister(TargetRegister(getSourceRegister(byte2)));
-                    r.source2 = getRegister(TargetRegister(getDestinationRegister(byte3)));
-                    r.source3 = getRegister(TargetRegister(getSourceRegister(byte3)));
+                    r.destination = getDestinationRegister(byte2);
+                    r.source = getSourceRegister(byte2);
+                    r.source2 = getDestinationRegister(byte3);
+                    r.source3 = getSourceRegister(byte3);
                 } else if constexpr (std::is_same_v<T, Core::IsSignedImm16>) {
                     union {
                      QuarterAddress a;
@@ -1100,25 +1107,25 @@ Core::DecodedInstruction Core::decode(Operation op, const FourByte& b) {
     auto byte3 = extractByteFromMolecule();
     auto byte4 = extractByteFromMolecule();
     return Core::DecodedInstruction(op, 
-            std::visit([byte2, byte3, byte4, quarter = setLowerUpperHalves<QuarterAddress>(byte3, byte4)](auto&& value) {
+            std::visit([this, byte2, byte3, byte4, quarter = setLowerUpperHalves<QuarterAddress>(byte3, byte4)](auto&& value) {
                 Core::DecodedArguments da;
                 using T = std::decay_t<decltype(value)>;
                 using K = typename T::Type;
                 K r;
                 if constexpr (std::is_same_v<T, Core::IsFiveRegister>) {
-                    r.destination = TargetRegister(getDestinationRegister(byte2));
-                    r.source0 = TargetRegister(getSourceRegister(byte2));
-                    r.source1 = TargetRegister(getDestinationRegister(byte3));
-                    r.source2 = TargetRegister(getSourceRegister(byte3));
-                    r.source3 = TargetRegister(getDestinationRegister(byte4));
+                    r.destination = getDestinationRegister(byte2);
+                    r.source0 = getSourceRegister(byte2);
+                    r.source1 = getDestinationRegister(byte3);
+                    r.source2 = getSourceRegister(byte3);
+                    r.source3 = getDestinationRegister(byte4);
                 } else if constexpr (std::is_same_v<T, Core::IsImm24>) {
                     r.value = setFourQuarters<HalfAddress>(byte2, byte3, byte4, 0);
                 } else if constexpr (std::is_same_v<T, Core::IsTwoRegisterWithImm16>) {
-                    r.destination = TargetRegister(getDestinationRegister(byte2));
-                    r.source = TargetRegister(getSourceRegister(byte2));
+                    r.destination = getDestinationRegister(byte2);
+                    r.source = getSourceRegister(byte2);
                     r.imm16 = quarter;
                 } else if constexpr (std::is_same_v<T, Core::IsOneRegisterWithImm16>) {
-                    r.destination = TargetRegister(getDestinationRegister(byte2));
+                    r.destination = getDestinationRegister(byte2);
                     r.imm16 = quarter;
                 } else {
                     static_assert(AlwaysFalse<T>::value, "Unimplemented four byte variant");
@@ -1132,13 +1139,13 @@ Core::DecodedInstruction Core::decode(Operation op, const EightByte& b) {
     auto byte2 = extractByteFromMolecule();
     auto imm48 = extractImm48();
     return Core::DecodedInstruction(op, 
-            std::visit([byte2, imm48](auto&& value) {
+            std::visit([this, byte2, imm48](auto&& value) {
                 Core::DecodedArguments da;
                 using T = std::decay_t<decltype(value)>;
                 using K = typename T::Type;
                 K r;
                 if constexpr (std::is_same_v<T, Core::IsLoadImm48>) {
-                    r.destination = TargetRegister(getDestinationRegister(byte2));
+                    r.destination = getDestinationRegister(byte2);
                     r.imm48 = imm48;
                 } else {
                     static_assert(AlwaysFalse<T>::value, "Unimplemented four byte variant");

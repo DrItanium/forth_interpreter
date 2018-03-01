@@ -460,11 +460,11 @@ constexpr byte getInstructionWidth(QuarterAddressWrapper w) noexcept {
 constexpr byte getInstructionWidth(HalfAddressWrapper w) noexcept {
 	return getInstructionWidth(w.get());
 }
-constexpr byte getDestinationRegister(byte field) noexcept { 
-	return getLowerHalf(field);
+constexpr TargetRegister getDestinationRegister(byte field) noexcept { 
+	return TargetRegister(getLowerHalf(field));
 }
-constexpr byte getSourceRegister(byte field) noexcept { 
-	return getUpperHalf(field);
+constexpr TargetRegister getSourceRegister(byte field) noexcept { 
+	return TargetRegister(getUpperHalf(field));
 }
 constexpr Operation getOperation(byte i) noexcept {
     return static_cast<Operation>(i);

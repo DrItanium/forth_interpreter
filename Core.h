@@ -63,63 +63,60 @@ class Core {
                 return getByteOffset(addr) <= (sizeof(Address) - size);
             } 
         }
-        struct NoArguments final { 
-            Register& destination;
-            const Register& source;
-            const Register& source2;
-        };
+		using DestinationRegister = std::optional<std::reference_wrapper<Register>>;
+		using SourceRegister = std::optional<std::reference_wrapper<const Register>>;
 #define InstructionKind(x) \
         struct x ; \
         struct Is ## x final { using Type = x ; }; \
         struct x final
         InstructionKind(TwoRegister) {
-            Register& destination;
-            const Register& source;
+            DestinationRegister destination;
+            SourceRegister source;
         };
         InstructionKind(OneRegister) {
-            Register& destination;
+            DestinationRegister destination;
         };
         using TwoByteVariant = std::variant<IsTwoRegister, IsOneRegister>;
         InstructionKind(FourRegister) {
-            Register& destination;
-            const Register& source;
-            const Register& source2;
-            const Register& source3;
+            DestinationRegister destination;
+            SourceRegister source;
+            SourceRegister source2;
+            SourceRegister source3;
         };
         InstructionKind(ThreeRegister) {
-            Register& destination;
-            const Register& source;
-            const Register& source2;
+            DestinationRegister destination;
+            SourceRegister source;
+            SourceRegister source2;
         };
         struct IsSignedImm16 final { using Type = QuarterInteger; };
         using ThreeByteVariant = std::variant<IsFourRegister, IsThreeRegister, IsSignedImm16>;
         InstructionKind(FiveRegister) {
-            Register& destination;
-            const Register& source0;
-            const Register& source1;
-            const Register& source2;
-            const Register& source3;
+            DestinationRegister destination;
+			SourceRegister source0;
+			SourceRegister source1;
+			SourceRegister source2;
+			SourceRegister source3;
         };
         InstructionKind(Imm24) {
             HalfAddress value;
         };
         InstructionKind(TwoRegisterWithImm16) {
-            Register& destination;
-            const Register& source;
+            DestinationRegister destination;
+            SourceRegister source;
             QuarterAddress imm16;
         };
         InstructionKind(OneRegisterWithImm16) {
-            Register& destination;
+            DestinationRegister destination;
             QuarterAddress imm16;
         };
         using FourByteVariant = std::variant<IsFiveRegister, IsImm24, IsTwoRegisterWithImm16, IsOneRegisterWithImm16>;
         InstructionKind(LoadImm48) {
-            Register& destination;
+            DestinationRegister destination;
             Address imm48;
         };
         using EightByteVariant = std::variant<IsLoadImm48>;
 #undef InstructionKind
-        using DecodedArguments = std::variant<NoArguments, OneRegister, TwoRegister, FourRegister, FiveRegister , ThreeRegister, QuarterInteger, IsImm24, TwoRegisterWithImm16, OneRegisterWithImm16, LoadImm48, Imm24>;
+        using DecodedArguments = std::variant<OneRegister, TwoRegister, FourRegister, FiveRegister , ThreeRegister, QuarterInteger, IsImm24, TwoRegisterWithImm16, OneRegisterWithImm16, LoadImm48, Imm24>;
         using DecodedInstruction = std::tuple<Operation, DecodedArguments>;
     public:
         static TwoByteVariant getVariant(Operation op, const TwoByte&);
@@ -151,30 +148,32 @@ class Core {
 		void push(TargetRegister reg, TargetRegister sp);
 		void pop(TargetRegister dest, TargetRegister sp);
 		void savePositionToSubroutineStack();
-		void returnToNative(DecodedInstruction op);
-		void numericCombine(DecodedInstruction op);
-		void multiplyOperation(DecodedInstruction op);
-		void divideOperation(DecodedInstruction op);
-		void equalsOperation(DecodedInstruction op);
-		void push(DecodedInstruction op);
-		void pop(DecodedInstruction op);
-		void notOperation(DecodedInstruction op);
-		void minusOperation(DecodedInstruction op);
-		void booleanAlgebra(DecodedInstruction op);
-		void shiftOperation(DecodedInstruction op);
-		void powOperation(DecodedInstruction op);
-		void rangeChecks(DecodedInstruction op);
-		void jumpOperation(DecodedInstruction op);
-		void conditionalBranch(DecodedInstruction op);
-		void loadImm48(DecodedInstruction op);
-		void moveOrSwap(DecodedInstruction op);
-		void typeValue(DecodedInstruction op);
-		void loadStore(DecodedInstruction op);
-		void setImm16(DecodedInstruction op);
-        void encodeDecodeBits(DecodedInstruction op);
-		void nop(DecodedInstruction op);
-		void printString(DecodedInstruction op);
+		void returnToNative(Operation op, DecodedArguments args);
+		void numericCombine(Operation op, DecodedArguments args);
+		void multiplyOperation(Operation op, DecodedArguments args);
+		void divideOperation(Operation op, DecodedArguments args);
+		void equalsOperation(Operation op, DecodedArguments args);
+		void push(Operation op, DecodedArguments args);
+		void pop(Operation op, DecodedArguments args);
+		void notOperation(Operation op, DecodedArguments args);
+		void minusOperation(Operation op, DecodedArguments args);
+		void booleanAlgebra(Operation op, DecodedArguments args);
+		void shiftOperation(Operation op, DecodedArguments args);
+		void powOperation(Operation op, DecodedArguments args);
+		void rangeChecks(Operation op, DecodedArguments args);
+		void jumpOperation(Operation op, DecodedArguments args);
+		void conditionalBranch(Operation op, DecodedArguments args);
+		void loadImm48(Operation op, DecodedArguments args);
+		void moveOrSwap(Operation op, DecodedArguments args);
+		void typeValue(Operation op, DecodedArguments args);
+		void loadStore(Operation op, DecodedArguments args);
+		void setImm16(Operation op, DecodedArguments args);
+        void encodeDecodeBits(Operation op, DecodedArguments args);
+		void nop(Operation op, DecodedArguments args);
+		void printString(Operation op, DecodedArguments args);
     private:
+		Register& getDestinationRegister(byte value);
+		Register& getSourceRegister(byte value);
         // from the current position, perform the entire decode process prior to 
         // executing
         DecodedInstruction decode();

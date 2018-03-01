@@ -75,12 +75,7 @@ class Core {
         InstructionKind(OneRegister) {
             TargetRegister destination;
         };
-        InstructionKind(OneRegisterWithImmediate4) {
-            TargetRegister destination;
-            byte source;
-        };
-        struct IsImm8 final { using Type = byte; };
-        using TwoByteVariant = std::variant<IsTwoRegister, IsOneRegister, IsOneRegisterWithImmediate4, IsImm8>;
+        using TwoByteVariant = std::variant<IsTwoRegister, IsOneRegister>;
         InstructionKind(FourRegister) {
             TargetRegister destination;
             TargetRegister source;
@@ -92,18 +87,8 @@ class Core {
             TargetRegister source;
             TargetRegister source2;
         };
-        InstructionKind(TwoRegisterWithImm8) {
-            TargetRegister destination;
-            TargetRegister source;
-            byte imm8;
-        };
-        InstructionKind(OneRegisterWithImm8) {
-            TargetRegister destination;
-            byte imm8;
-        };
         struct IsSignedImm16 final { using Type = QuarterInteger; };
-        struct IsUnsignedImm16 final { using Type = QuarterAddress; };
-        using ThreeByteVariant = std::variant<IsFourRegister, IsThreeRegister, IsTwoRegisterWithImm8, IsOneRegisterWithImm8, IsSignedImm16, IsUnsignedImm16>;
+        using ThreeByteVariant = std::variant<IsFourRegister, IsThreeRegister, IsSignedImm16>;
         InstructionKind(ConditionalImm24) {
             TargetRegister cond;
             HalfAddress value;
@@ -124,7 +109,7 @@ class Core {
         };
         using EightByteVariant = std::variant<IsLoadImm48>;
 #undef InstructionKind
-        using DecodedArguments = std::variant<NoArguments, OneRegister, TwoRegister, OneRegisterWithImmediate4, byte, FourRegister, ThreeRegister, TwoRegisterWithImm8, OneRegisterWithImm8, QuarterInteger, QuarterAddress,
+        using DecodedArguments = std::variant<NoArguments, OneRegister, TwoRegister, FourRegister, ThreeRegister, QuarterInteger,
               ConditionalImm24, TwoRegisterWithImm16, OneRegisterWithImm16, LoadImm48>;
         using DecodedInstruction = std::tuple<Operation, DecodedArguments>;
     public:
@@ -226,8 +211,6 @@ class Core {
         ReadOnlyRegister _zero;
 		// mapped to 0xFFFFFFFFFFFF0000
 		std::unique_ptr<Datum[]> _memory, _systemVariables;
-        bool _advancePC = false;
-
 };
 } // end namespace forth
 #endif // end CORE_H__

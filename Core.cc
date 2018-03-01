@@ -1015,6 +1015,51 @@ Core::TwoByteVariant Core::getVariant(Operation op, const TwoByte&) {
     return tb;
 }
 
+Core::ThreeByteVariant Core::getVariant(Operation op, const ThreeByte&) {
+    Core::ThreeByteVariant tb;
+    switch(op) {
+#define FullImmediate(x) \
+        Operation:: FloatingPoint ## x ## Full
+		case FullImmediate(Add):
+		case FullImmediate(Subtract):
+		case FullImmediate(Multiply):
+		case FullImmediate(Divide): 
+		case FullImmediate(GreaterThan): 
+		case FullImmediate(LessThan): 
+		case FullImmediate(Equals):
+#undef FullImmediate
+#define FullImmediate(x) \
+        Operation:: x ## Full: \
+        case Operation:: Unsigned ## x ## Full
+		case FullImmediate(Add):
+		case FullImmediate(Subtract):
+		case FullImmediate(Multiply):
+		case FullImmediate(Divide): 
+		case FullImmediate(Modulo): 
+		case FullImmediate(And): 
+		case FullImmediate(Or): 
+		case FullImmediate(GreaterThan): 
+		case FullImmediate(LessThan): 
+		case FullImmediate(Xor):
+		case FullImmediate(ShiftRight):
+		case FullImmediate(ShiftLeft):
+		case FullImmediate(Equals):
+#undef FullImmediate
+            tb = IsThreeRegister();
+            break;
+        case Operation::DecodeBits:
+            tb = IsFourRegister();
+            break;
+        case Operation::Jump:
+        case Operation::CallSubroutine:
+            tb = IsSignedImm16();
+            break;
+        default:
+            break;
+    }
+    return tb;
+}
+
 Core::DecodedInstruction Core::decode(Operation op, const OneByte&) {
     return Core::DecodedInstruction(op, NoArguments());
 }
@@ -1032,7 +1077,7 @@ Core::DecodedInstruction Core::decode(Operation op, const TwoByte& b) {
                     r.destination = TargetRegister(getDestinationRegister(byte2));
                     r.source = TargetRegister(getSourceRegister(byte2));
                 } else {
-                    throw Problem("Core::decode(TwoByte)", "Unimplemented two byte variant!");
+                    static_assert(AlwaysFalse<T>::value, "Unimplemented two byte variant!");
                 }
                 da = r;
                 return da;
@@ -1052,6 +1097,15 @@ Core::DecodedInstruction Core::decode(Operation op, const ThreeByte& b) {
                     r.destination = TargetRegister(getDestinationRegister(byte2));
                     r.source = TargetRegister(getSourceRegister(byte2));
                     r.source2 = TargetRegister(getDestinationRegister(byte3));
+                } else if constexpr (std::is_same_v<T, Core::IsFourRegister>) {
+                    r.destination = TargetRegister(getDestinationRegister(byte2));
+                    r.source = TargetRegister(getSourceRegister(byte2));
+                    r.source2 = TargetRegister(getDestinationRegister(byte3));
+                    r.source3 = TargetRegister(getSourceRegister(byte3));
+                } else if constexpr (std::is_same_v<T, Core::IsSignedImm16>) {
+                    r = quarter;
+                } else {
+                    static_assert(AlwaysFalse<T>::value, "Unimplemented three byte variant");
                 }
                 da = r;
                 return da;

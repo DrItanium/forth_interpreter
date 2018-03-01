@@ -1012,12 +1012,39 @@ Core::EightByteVariant Core::getVariant(Operation op, const EightByte&) {
     return tb;
 }
 
-Core::DecodedInstruction Core::decode(Operation op, const OneByte&) {
-    Core::ThreeRegister x;
-    x.destination = getRegister(TargetRegister::C);
-    x.source = getRegister(TargetRegister::A);
-    x.source2 = getRegister(TargetRegister::B);
-    return Core::DecodedInstruction(op, x);
+Core::OneByteVariant Core::getVariant(Operation op, const OneByte&) {
+    Core::OneByteVariant tb;
+    switch (op) {
+#define XFour(title, b, c) 
+#define XEight(title, b, c) 
+#define XTwo(title, b, c) 
+#define XThree(title, b, c) 
+#define XOne(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
+#define X(title, sz, typ, discriminant) INDIRECTION(X, sz)(title, typ, discriminant)
+#include "InstructionData.def"
+#undef XEight
+#undef XFour
+#undef XOne
+#undef XTwo
+#undef XThree
+#undef X
+        default:
+            break;
+    }
+    return tb;
+}
+
+Core::DecodedInstruction Core::decode(Operation op, const OneByte& b) {
+	return Core::DecodedInstruction(op, std::visit([](auto&& value) {
+					Core::DecodedArguments da;
+					using T = std::decay_t<decltype(value)>;
+					if constexpr (std::is_same_v<T, Core::IsNoArguments>) {
+						da = Core::NoArguments();
+					} else {
+						static_assert(AlwaysFalse<T>::value, "Unimplemented one byte variant!");
+					}
+					return da;
+				}, Core::getVariant(op, b)));
 }
 
 Core::DecodedInstruction Core::decode(Operation op, const TwoByte& b) {

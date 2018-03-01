@@ -69,6 +69,8 @@ class Core {
         struct x ; \
         struct Is ## x final { using Type = x ; }; \
         struct x final
+		OperationKind(NoArguments) { };
+		using OneByteVariant = std::variant<IsNoArguments>;
         OperationKind(TwoRegister) {
             DestinationRegister destination;
             SourceRegister source;
@@ -118,9 +120,10 @@ class Core {
         };
         using EightByteVariant = std::variant<IsLoadImm48>;
 #undef OperationKind
-        using DecodedArguments = std::variant<OneRegister, TwoRegister, FourRegister, FiveRegister , ThreeRegister, QuarterInteger, IsImm24, TwoRegisterWithImm16, OneRegisterWithImm16, LoadImm48, Imm24, SignedImm16>;
+        using DecodedArguments = std::variant<OneRegister, TwoRegister, FourRegister, FiveRegister , ThreeRegister, QuarterInteger, IsImm24, TwoRegisterWithImm16, OneRegisterWithImm16, LoadImm48, Imm24, SignedImm16, NoArguments>;
         using DecodedInstruction = std::tuple<Operation, DecodedArguments>;
     public:
+        static OneByteVariant getVariant(Operation op, const OneByte&);
         static TwoByteVariant getVariant(Operation op, const TwoByte&);
         static ThreeByteVariant getVariant(Operation op, const ThreeByte&);
         static FourByteVariant getVariant(Operation op, const FourByte&);

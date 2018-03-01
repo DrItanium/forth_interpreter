@@ -123,11 +123,11 @@ class Core {
         using DecodedArguments = std::variant<NoArguments, OneRegister, TwoRegister, FourRegister, FiveRegister , ThreeRegister, QuarterInteger, IsImm24, TwoRegisterWithImm16, OneRegisterWithImm16, LoadImm48, Imm24, SignedImm16>;
         using DecodedInstruction = std::tuple<Operation, DecodedArguments>;
     public:
-        static OneByteVariant getVariant(Operation op, const OneByte&);
-        static TwoByteVariant getVariant(Operation op, const TwoByte&);
-        static ThreeByteVariant getVariant(Operation op, const ThreeByte&);
-        static FourByteVariant getVariant(Operation op, const FourByte&);
-        static EightByteVariant getVariant(Operation op, const EightByte&);
+        static std::optional<OneByteVariant> getVariant(Operation op, const OneByte&);
+        static std::optional<TwoByteVariant> getVariant(Operation op, const TwoByte&);
+        static std::optional<ThreeByteVariant> getVariant(Operation op, const ThreeByte&);
+        static std::optional<FourByteVariant> getVariant(Operation op, const FourByte&);
+        static std::optional<EightByteVariant> getVariant(Operation op, const EightByte&);
 	public:
 		Core();
 		~Core() = default;

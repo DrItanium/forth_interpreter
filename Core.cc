@@ -919,8 +919,8 @@ Core::DecodedInstruction Core::decode() {
 }
 
 
-Core::TwoByteVariant Core::getVariant(Operation op, const TwoByte&) {
-    Core::TwoByteVariant tb;
+std::optional<Core::TwoByteVariant> Core::getVariant(Operation op, const TwoByte&) {
+    std::optional<Core::TwoByteVariant> tb;
     switch (op) {
 #define XTwo(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
 #define XOne(title, b, c) 
@@ -941,8 +941,8 @@ Core::TwoByteVariant Core::getVariant(Operation op, const TwoByte&) {
     return tb;
 }
 
-Core::ThreeByteVariant Core::getVariant(Operation op, const ThreeByte&) {
-    Core::ThreeByteVariant tb;
+std::optional<Core::ThreeByteVariant> Core::getVariant(Operation op, const ThreeByte&) {
+    std::optional<Core::ThreeByteVariant> tb;
     switch(op) {
 #define XThree(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
 #define XOne(title, b, c) 
@@ -963,8 +963,8 @@ Core::ThreeByteVariant Core::getVariant(Operation op, const ThreeByte&) {
     return tb;
 }
 
-Core::FourByteVariant Core::getVariant(Operation op, const FourByte&) {
-    Core::FourByteVariant tb;
+std::optional<Core::FourByteVariant> Core::getVariant(Operation op, const FourByte&) {
+    std::optional<Core::FourByteVariant> tb;
     switch (op) {
 #define XFour(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
 #define XOne(title, b, c) 
@@ -985,8 +985,8 @@ Core::FourByteVariant Core::getVariant(Operation op, const FourByte&) {
     return tb;
 }
 
-Core::EightByteVariant Core::getVariant(Operation op, const EightByte&) {
-    Core::EightByteVariant tb;
+std::optional<Core::EightByteVariant> Core::getVariant(Operation op, const EightByte&) {
+    std::optional<Core::EightByteVariant> tb;
     switch (op) {
 #define XFour(title, b, c) 
 #define XOne(title, b, c) 
@@ -1007,8 +1007,8 @@ Core::EightByteVariant Core::getVariant(Operation op, const EightByte&) {
     return tb;
 }
 
-Core::OneByteVariant Core::getVariant(Operation op, const OneByte&) {
-    Core::OneByteVariant tb;
+std::optional<Core::OneByteVariant> Core::getVariant(Operation op, const OneByte&) {
+    std::optional<Core::OneByteVariant> tb;
     switch (op) {
 #define XFour(title, b, c) 
 #define XEight(title, b, c) 
@@ -1030,6 +1030,10 @@ Core::OneByteVariant Core::getVariant(Operation op, const OneByte&) {
 }
 
 Core::DecodedInstruction Core::decode(Operation op, const OneByte& b) {
+    auto v = Core::getVariant(op, b);
+    if (!v) {
+        throw Problem("Core::decode", "Illegal one byte variant!");
+    }
 	return Core::DecodedInstruction(op, std::visit([](auto&& value) {
 					Core::DecodedArguments da;
 					using T = std::decay_t<decltype(value)>;
@@ -1039,11 +1043,15 @@ Core::DecodedInstruction Core::decode(Operation op, const OneByte& b) {
 						static_assert(AlwaysFalse<T>::value, "Unimplemented one byte variant!");
 					}
 					return da;
-				}, Core::getVariant(op, b)));
+				}, v.value()));
 }
 
 Core::DecodedInstruction Core::decode(Operation op, const TwoByte& b) {
     auto byte2 = extractByteFromMolecule();
+    auto v = Core::getVariant(op, b);
+    if (!v) {
+        throw Problem("Core::decode", "Illegal two byte variant!");
+    }
     return Core::DecodedInstruction(op, std::visit([this, byte2](auto&& value) {
                 Core::DecodedArguments da;
                 using T = std::decay_t<decltype(value)>;
@@ -1059,12 +1067,16 @@ Core::DecodedInstruction Core::decode(Operation op, const TwoByte& b) {
                 }
                 da = r;
                 return da;
-            }, Core::getVariant(op, b)));
+            }, v.value()));
 }
 
 Core::DecodedInstruction Core::decode(Operation op, const ThreeByte& b) {
     auto byte2 = extractByteFromMolecule();
     auto byte3 = extractByteFromMolecule();
+    auto v = Core::getVariant(op, b);
+    if (!v) {
+        throw Problem("Core::decode", "Illegal three byte variant!");
+    }
     return Core::DecodedInstruction(op, 
             std::visit([this, byte2, byte3, quarter = setLowerUpperHalves<QuarterAddress>(byte2, byte3)](auto&& value) {
                 Core::DecodedArguments da;
@@ -1092,13 +1104,17 @@ Core::DecodedInstruction Core::decode(Operation op, const ThreeByte& b) {
                 }
                 da = r;
                 return da;
-            }, Core::getVariant(op, b)));
+            }, v.value()));
 }
 
 Core::DecodedInstruction Core::decode(Operation op, const FourByte& b) {
     auto byte2 = extractByteFromMolecule();
     auto byte3 = extractByteFromMolecule();
     auto byte4 = extractByteFromMolecule();
+    auto v = Core::getVariant(op, b);
+    if (!v) {
+        throw Problem("Core::decode", "Illegal four byte variant");
+    }
     return Core::DecodedInstruction(op, 
             std::visit([this, byte2, byte3, byte4, quarter = setLowerUpperHalves<QuarterAddress>(byte3, byte4)](auto&& value) {
                 Core::DecodedArguments da;
@@ -1125,12 +1141,16 @@ Core::DecodedInstruction Core::decode(Operation op, const FourByte& b) {
                 }
                 da = r;
                 return da;
-            }, Core::getVariant(op, b)));
+            }, v.value()));
 }
 
 Core::DecodedInstruction Core::decode(Operation op, const EightByte& b) {
     auto byte2 = extractByteFromMolecule();
     auto imm48 = extractImm48();
+    auto v = Core::getVariant(op, b);
+    if (!v) {
+        throw Problem("Core::decode", "Illegal eight byte variant");
+    }
     return Core::DecodedInstruction(op, 
             std::visit([this, byte2, imm48](auto&& value) {
                 Core::DecodedArguments da;
@@ -1145,7 +1165,7 @@ Core::DecodedInstruction Core::decode(Operation op, const EightByte& b) {
                 }
                 da = r;
                 return da;
-            }, Core::getVariant(op, b)));
+            }, v.value()));
 }
 
 

@@ -645,22 +645,24 @@ void Core::dispatchInstruction() {
 #define DefEntrySU(t, fn) DefEntryS(t, fn) , DefEntryU(t, fn) 
 #define DefEntrySUB(t, fn) DefEntrySU(t, fn) , DefEntryB(t, fn)
 #define DefEntrySUFB(t, fn) DefEntrySUF(t, fn) , DefEntryB(t, fn)
-		DefEntrySUF(Add,numericCombine),          DefEntrySUF(AddFull, numericCombine),         DefEntrySU(AddImmediate, numericCombine),
-		DefEntrySUF(Subtract,numericCombine),     DefEntrySUF(SubtractFull, numericCombine),    DefEntrySU(SubtractImmediate, numericCombine),
-		DefEntrySUF(Multiply, multiplyOperation), DefEntrySUF(MultiplyFull, multiplyOperation), DefEntrySU(MultiplyImmediate, multiplyOperation),
-		DefEntrySUF(Divide, divideOperation),     DefEntrySUF(DivideFull, divideOperation),     DefEntrySU(DivideImmediate, divideOperation),
-		DefEntrySU(Modulo, divideOperation),      DefEntrySU(ModuloFull, divideOperation),      DefEntrySU(ModuloImmediate, divideOperation),
-		DefEntrySUB(Not, notOperation),           DefEntrySUB(NotFull, notOperation),
-		DefEntrySUF(Minus, minusOperation),       DefEntrySUF(MinusFull, minusOperation),
-		DefEntrySU(ShiftRight, shiftOperation),   DefEntrySU(ShiftRightFull, shiftOperation),   DefEntrySU(ShiftRightImmediate, shiftOperation),
-		DefEntrySU(ShiftLeft, shiftOperation),    DefEntrySU(ShiftLeftFull, shiftOperation),   DefEntrySU(ShiftLeftImmediate, shiftOperation),
-		DefEntrySUF(Pow, powOperation),           DefEntrySUF(PowFull, powOperation),
-		DefEntrySUB(And, booleanAlgebra), DefEntrySUB(AndFull, booleanAlgebra), DefEntrySU(AndImmediate, booleanAlgebra),
-		DefEntrySUB(Or, booleanAlgebra), DefEntrySUB(OrFull, booleanAlgebra), DefEntrySU(OrImmediate, booleanAlgebra),
-		DefEntrySUB(Xor, booleanAlgebra), DefEntrySUB(XorFull, booleanAlgebra), DefEntrySU(XorImmediate, booleanAlgebra),
-		DefEntrySUB(Equals, equalsOperation), DefEntrySUB(EqualsFull, equalsOperation), DefEntrySU(EqualsImmediate, equalsOperation),
-		DefEntrySUF(GreaterThan, rangeChecks), DefEntrySUF(GreaterThanFull, rangeChecks), DefEntrySU(GreaterThanImmediate, rangeChecks),
-		DefEntrySUF(LessThan, rangeChecks), DefEntrySUF(LessThanFull, rangeChecks), DefEntrySU(LessThanImmediate, rangeChecks),
+		DefEntrySUF(Add,numericCombine),          DefEntrySU(AddImmediate, numericCombine),
+		DefEntrySUF(Subtract,numericCombine),     DefEntrySU(SubtractImmediate, numericCombine),
+		DefEntrySUF(Multiply, multiplyOperation), DefEntrySU(MultiplyImmediate, multiplyOperation),
+		DefEntrySUF(Divide, divideOperation),     DefEntrySU(DivideImmediate, divideOperation),
+		DefEntrySU(Modulo, divideOperation),      DefEntrySU(ModuloImmediate, divideOperation),
+		DefEntrySUB(Not, notOperation),           
+		DefEntrySUF(Minus, minusOperation),       
+		DefEntrySU(ShiftRight, shiftOperation),   DefEntrySU(ShiftRightImmediate, shiftOperation),
+		DefEntrySU(ShiftLeft, shiftOperation),    DefEntrySU(ShiftLeftImmediate, shiftOperation),
+		DefEntrySUF(Pow, powOperation),           
+		DefEntrySUB(And, booleanAlgebra), DefEntrySU(AndImmediate, booleanAlgebra),
+		DefEntrySUB(Or, booleanAlgebra), DefEntrySU(OrImmediate, booleanAlgebra),
+		DefEntrySUB(Xor, booleanAlgebra), DefEntrySU(XorImmediate, booleanAlgebra),
+		DefEntrySUB(Equals, equalsOperation), DefEntrySU(EqualsImmediate, equalsOperation),
+		DefEntrySUF(GreaterThan, rangeChecks), 
+		DefEntrySU(GreaterThanImmediate, rangeChecks),
+		DefEntrySUF(LessThan, rangeChecks), 
+		DefEntrySU(LessThanImmediate, rangeChecks),
 		DefEntry(LoadImmediateLower48, loadImm48),
 		DefEntry(PopRegister, pop), DefEntry(PopA, pop), DefEntry(PopB, pop), DefEntry(PopC, pop),
 		DefEntry(PushRegister, push), DefEntry(PushC, push), DefEntry(PushA, push), DefEntry(PushB, push),
@@ -925,37 +927,19 @@ Core::DecodedInstruction Core::decode() {
 Core::TwoByteVariant Core::getVariant(Operation op, const TwoByte&) {
     Core::TwoByteVariant tb;
     switch (op) {
-		case Operation::FloatingPointTypeValue:
-		case Operation::BooleanTypeValue:
-		case Operation::UnsignedTypeValue:
-		case Operation::TypeValue:
-		case Operation::TypeDatum:
-		case Operation::PrintChar:
-        case Operation::JumpIndirect:
-            tb = IsOneRegister();
-            break;
-        case Operation::PopRegister:
-        case Operation::PushRegister:
-        case Operation::Move:
-        case Operation::Swap:
-        case Operation::Load:
-        case Operation::Store:
-		case Operation::NotFull:
-		case Operation::BooleanNotFull:
-		case Operation::UnsignedNotFull:
-		case Operation::MinusFull:
-		case Operation::FloatingPointMinusFull:
-		case Operation::UnsignedMinusFull:
-		case Operation::PowFull:
-		case Operation::UnsignedPowFull:
-		case Operation::FloatingPointPowFull:
-        case Operation::ConditionalBranchIndirect:
-        case Operation::CallSubroutineIndirect:
-        case Operation::ConditionalCallSubroutineIndirect:
-        case Operation::ConditionalReturnSubroutine:
-		case Operation::PrintString:
-            tb = IsTwoRegister();
-            break;
+#define XTwo(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
+#define XOne(title, b, c) 
+#define XFour(title, b, c) 
+#define XThree(title, b, c) 
+#define XEight(title, b, c) 
+#define X(title, sz, typ, discriminant) INDIRECTION(X, sz)(title, typ, discriminant)
+#include "InstructionData.def"
+#undef XEight
+#undef XFour
+#undef XOne
+#undef XTwo
+#undef XThree
+#undef X
         default:
             break;
     }
@@ -965,42 +949,19 @@ Core::TwoByteVariant Core::getVariant(Operation op, const TwoByte&) {
 Core::ThreeByteVariant Core::getVariant(Operation op, const ThreeByte&) {
     Core::ThreeByteVariant tb;
     switch(op) {
-#define FullImmediate(x) \
-        Operation:: FloatingPoint ## x ## Full
-		case FullImmediate(Add):
-		case FullImmediate(Subtract):
-		case FullImmediate(Multiply):
-		case FullImmediate(Divide): 
-		case FullImmediate(GreaterThan): 
-		case FullImmediate(LessThan): 
-		case FullImmediate(Equals):
-#undef FullImmediate
-#define FullImmediate(x) \
-        Operation:: x ## Full: \
-        case Operation:: Unsigned ## x ## Full
-		case FullImmediate(Add):
-		case FullImmediate(Subtract):
-		case FullImmediate(Multiply):
-		case FullImmediate(Divide): 
-		case FullImmediate(Modulo): 
-		case FullImmediate(And): 
-		case FullImmediate(Or): 
-		case FullImmediate(GreaterThan): 
-		case FullImmediate(LessThan): 
-		case FullImmediate(Xor):
-		case FullImmediate(ShiftRight):
-		case FullImmediate(ShiftLeft):
-		case FullImmediate(Equals):
-#undef FullImmediate
-            tb = IsThreeRegister();
-            break;
-        case Operation::DecodeBits:
-            tb = IsFourRegister();
-            break;
-        case Operation::Jump:
-        case Operation::CallSubroutine:
-            tb = IsSignedImm16();
-            break;
+#define XThree(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
+#define XOne(title, b, c) 
+#define XTwo(title, b, c) 
+#define XFour(title, b, c) 
+#define XEight(title, b, c) 
+#define X(title, sz, typ, discriminant) INDIRECTION(X, sz)(title, typ, discriminant)
+#include "InstructionData.def"
+#undef XEight
+#undef XFour
+#undef XOne
+#undef XTwo
+#undef XThree
+#undef X
         default:
             break;
     }
@@ -1008,57 +969,47 @@ Core::ThreeByteVariant Core::getVariant(Operation op, const ThreeByte&) {
 }
 
 Core::FourByteVariant Core::getVariant(Operation op, const FourByte&) {
-    Core::FourByteVariant fb;
+    Core::FourByteVariant tb;
     switch (op) {
-        case Operation::ConditionalBranch:
-        case Operation::ConditionalCallSubroutine:
-        case Operation::SetImmediate16_Lower:
-        case Operation::SetImmediate16_Lowest:
-        case Operation::SetImmediate16_Higher:
-        case Operation::SetImmediate16_Highest:
-            fb = Core::IsOneRegisterWithImm16();
-            break;
-#define FullImmediate(x) \
-        Operation:: x ## Immediate: \
-        case Operation:: Unsigned ## x ## Immediate
-		case FullImmediate(Add): 
-		case FullImmediate(Subtract): 
-		case FullImmediate(Multiply): 
-		case FullImmediate(Divide): 
-		case FullImmediate(Modulo): 
-		case FullImmediate(And): 
-		case FullImmediate(Or): 
-		case FullImmediate(GreaterThan): 
-		case FullImmediate(LessThan): 
-		case FullImmediate(Xor):
-		case FullImmediate(ShiftRight):
-		case FullImmediate(ShiftLeft):
-		case FullImmediate(Equals):
-#undef FullImmediate
-            fb = Core::IsTwoRegisterWithImm16();
-            break;
-		case Operation::JumpAbsolute:
-            fb = Core::IsImm24();
-            break;
-        case Operation::EncodeBits:
-            fb = Core::IsFiveRegister();
-            break;
+#define XFour(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
+#define XOne(title, b, c) 
+#define XTwo(title, b, c) 
+#define XThree(title, b, c) 
+#define XEight(title, b, c) 
+#define X(title, sz, typ, discriminant) INDIRECTION(X, sz)(title, typ, discriminant)
+#include "InstructionData.def"
+#undef XEight
+#undef XFour
+#undef XOne
+#undef XTwo
+#undef XThree
+#undef X
         default: 
             break;
     }
-    return fb;
+    return tb;
 }
 
 Core::EightByteVariant Core::getVariant(Operation op, const EightByte&) {
-    Core::EightByteVariant v;
+    Core::EightByteVariant tb;
     switch (op) {
-        case Operation::LoadImmediateLower48:
-            v = Core::IsLoadImm48();
-            break;
+#define XFour(title, b, c) 
+#define XOne(title, b, c) 
+#define XTwo(title, b, c) 
+#define XThree(title, b, c) 
+#define XEight(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
+#define X(title, sz, typ, discriminant) INDIRECTION(X, sz)(title, typ, discriminant)
+#include "InstructionData.def"
+#undef XEight
+#undef XFour
+#undef XOne
+#undef XTwo
+#undef XThree
+#undef X
         default:
             break;
     }
-    return v;
+    return tb;
 }
 
 Core::DecodedInstruction Core::decode(Operation op, const OneByte&) {
@@ -1113,7 +1064,7 @@ Core::DecodedInstruction Core::decode(Operation op, const ThreeByte& b) {
                      QuarterInteger i;
                     } tmp;
                     tmp.a = quarter;
-                    r = tmp.i;
+					r.value = tmp.i;
                 } else {
                     static_assert(AlwaysFalse<T>::value, "Unimplemented three byte variant");
                 }

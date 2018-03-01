@@ -118,7 +118,7 @@ class Core {
         };
         using EightByteVariant = std::variant<IsLoadImm48>;
 #undef OperationKind
-        using DecodedArguments = std::variant<OneRegister, TwoRegister, FourRegister, FiveRegister , ThreeRegister, QuarterInteger, IsImm24, TwoRegisterWithImm16, OneRegisterWithImm16, LoadImm48, Imm24>;
+        using DecodedArguments = std::variant<OneRegister, TwoRegister, FourRegister, FiveRegister , ThreeRegister, QuarterInteger, IsImm24, TwoRegisterWithImm16, OneRegisterWithImm16, LoadImm48, Imm24, SignedImm16>;
         using DecodedInstruction = std::tuple<Operation, DecodedArguments>;
     public:
         static TwoByteVariant getVariant(Operation op, const TwoByte&);

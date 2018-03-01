@@ -3,6 +3,8 @@
 #include <climits>
 #include <cstdint>
 #include <type_traits>
+#define INDIRECTION0(x, y) x ## y
+#define INDIRECTION(x, y) INDIRECTION0(x, y)
 namespace forth {
     using Address = uint64_t;
     using HalfAddress = uint32_t;

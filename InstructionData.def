@@ -3,7 +3,8 @@
 // Odd opcodes are typed 
 // even opcodes are untyped
 // when the opcodes are typed then they will automatically be a minimum of two bytes in this new design 
-// with some previously two byte ops now being three bytes
+// with some previously two byte ops now being three bytes.
+// The immediate combine operations now 
 // Typed opcodes look like this { 1 | op: 7 | imm:1 | type:2 | unused:1 | dest:4 }
 // Typed opcodes with the immediate bit set will be longer, they will be 
 // Untyped opcodes look like this { 0 | op:7 }

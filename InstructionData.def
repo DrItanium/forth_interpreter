@@ -51,7 +51,7 @@ GrabBag(Minus, ExtendedTwoRegister0) // minus unsigned makes no sense
 GrabBag(MinusUnsigned, ExtendedTwoRegister0)
 GrabBag(MinusFloatingPoint, ExtendedTwoRegister0)
 //         ExtendedTwoRegister0 [ variant: 3 [6] | kind:3 [1] | op: 2 | dest: 4 | src: 4 
-TwoByte(Not, ExtendedTwoRegister1) // not is implicitly unsigned and works for boolean ops as well
+GrabBag(Not, ExtendedTwoRegister1) // not is implicitly unsigned and works for boolean ops as well
 GrabBag(NotBoolean, ExtendedTwoRegister1)
 GrabBag(NotSigned, ExtendedTwoRegister1)
 // code 7: ExtendedVariant [ variant: 3 [8] | subvariant: 3 | ... ]

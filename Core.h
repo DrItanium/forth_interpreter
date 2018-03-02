@@ -199,11 +199,11 @@ class Core {
 			std::variant<Signed, Unsigned, FloatingPoint> type;
 			RegisterImmediate args;
 		};
-		struct Subtract { 
+		struct Subtract {
 			std::variant<Signed, Unsigned, FloatingPoint> type;
 			RegisterImmediate args;
 		};
-		struct Multiply {
+		struct Multiply { 
 			std::variant<Signed, Unsigned, FloatingPoint> type;
 			RegisterImmediate args;
 		};
@@ -215,7 +215,6 @@ class Core {
 			std::variant<Signed, Unsigned, FloatingPoint> type;
 			RegisterImmediate args;
 		};
-		using MathOperation = std::variant<Add, Subtract, Multiply, Divide, Pow>;
 		struct ModuloOperation {
 			std::variant<Signed, Unsigned> type;
 			RegisterImmediate args;
@@ -228,7 +227,6 @@ class Core {
 			RegisterImmediate args;
 			std::variant<Signed, Unsigned> type;
 		};
-		using ShiftOperation = std::variant<ShiftLeft, ShiftRight>;
 		struct Jump { };
 		struct JumpIndirect { };
 		struct JumpAbsolute { };
@@ -259,13 +257,14 @@ class Core {
 		struct PrintChar { };
 		struct TypeDatum { };
 		struct TypeValue {
+			std::variant<Register> args;
 			std::variant<Signed, Unsigned, FloatingPoint, Boolean> type;
 		};
-		using PrintRoutines = std::variant<PrintString, PrintChar, TypeDatum, TypeValue>;
+		using PrintRoutines = std::variant<PrintString, PrintChar, TypeDatum>;
 		using ImmediateManipulators = std::variant<SetImmediate16, LoadImmediateLower48>;
 		using ComparisonOperation = std::variant<RangeCheckOperation, EqualityOperation>;
 		using LogicalOperation = std::variant<Logical, Not>;
-		using ALUOperation = std::variant<MinusOperation, MathOperation, ModuloOperation, ShiftOperation>;
+		using ALUOperation = std::variant<MinusOperation, Add, Subtract, Multiply, Divide, Pow, ModuloOperation, ShiftLeft, ShiftRight>;
 		using ConditionalJumpOperation = std::variant< ConditionalBranch, ConditionalBranchIndirect, ConditionalCallSubroutine, ConditionalCallSubroutineIndirect, ConditionalReturnSubroutine>;
 
 		using BranchOperation = std::variant<JumpOperation, ConditionalJumpOperation>;
@@ -302,7 +301,7 @@ class Core {
 		Register& getSourceRegister(byte value);
         // from the current position, perform the entire decode process prior to 
         // executing
-		DecodedOpcode decode(Operation op);
+		std::optional<DecodedOpcode> decodeOpcode(Operation op);
         DecodedInstruction decode();
         DecodedInstruction decode(Operation op, const OneByte& b);
         DecodedInstruction decode(Operation op, const TwoByte& b);

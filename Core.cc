@@ -1168,18 +1168,59 @@ Core::DecodedInstruction Core::decode(Operation op, const EightByte& b) {
             }, v.value()));
 }
 
-Core::DecodedOpcode Core::decode(Operation op) {
-	Core::DecodedOpcode c;
-	switch (op) {
-		case Operation::Nop:
-			c = Core::Nop();
-			break;
-		case Operation::LeaveExecutionLoop:
-			c = Core::LeaveExecutionLoop();
-			break;
-		default:
-			break;
+std::optional<Core::DecodedOpcode> Core::decode(Operation op) {
+	std::optional<Core::DecodedOpcode> c;
+#define XOneRegister(_) Core::Register
+#define XTwoRegister(_) Core::Register
+#define XThreeRegister(_) Core::Register
+#define XFourRegister(_) Core::Register
+#define XFiveRegister(_) Core::Register
+#define XCount(title, sz, typ) \
+	if (op == Operation:: title) { \
+		Core:: title v; \
+		c = v; \
+		return c; \
 	}
+#define XNumber(title, sz, typ) \
+	if (op == Operation:: title) {  \
+		Core:: title v; \
+		v.type = Signed(); \
+		v.args = INDIRECTION(X, typ)(title) (); \
+		c = v; \
+		return c; \
+	}
+#define XMemoryAddress(title, sz, typ) \
+	if (op == Operation:: title) {  \
+		Core:: title v; \
+		v.type = Unsigned(); \
+		v.args = INDIRECTION(X, typ)(title) (); \
+		c = v; \
+		return c; \
+	}
+#define XFloatingPoint(title, sz, typ) \
+	if (op == Operation:: title) {  \
+		Core:: title v; \
+		v.type = FloatingPoint(); \
+		v.args = INDIRECTION(X, typ)(title) (); \
+		c = v; \
+		return c; \
+	}
+#define XBoolean(title, sz, typ) \
+	if (op == Operation:: title) {  \
+		Core:: title v; \
+		v.type = Boolean(); \
+		v.args = INDIRECTION(X, typ)(title) (); \
+		c = v; \
+		return c; \
+	}
+#define X(title, sz, typ, discriminant) INDIRECTION(X, discriminant)(title, sz, typ); 
+#include "InstructionData.def"
+#undef X
+#undef XCount
+#undef XNumber
+#undef XMemoryAddress
+#undef XBoolean
+#undef XFloatingPoint
 	return c;
 }
 

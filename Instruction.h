@@ -90,12 +90,12 @@ struct ExtendedVariant final {
 using InstructionWidth = std::variant<OneByte, TwoByte, ThreeByte, FourByte, EightByte, FiveByte, GrabBag, ExtendedVariant>;
 enum class OneByteOperation : byte {
 #define OneByte(title) title,
-#define TwoByte(a, b) 
-#define ThreeByte(a, b)
-#define FourByte(a, b)
-#define FiveByte(a, b)
-#define EightByte(a, b)
-#define GrabBag(a, b)
+#define TwoByte(title, b) 
+#define ThreeByte(title, b)
+#define FourByte(title, b)
+#define FiveByte(title, b)
+#define EightByte(title, b)
+#define GrabBag(title, b)
 #define ExtendedVariant(a, b, c)
 #include "InstructionData.def"
 #undef OneByte
@@ -111,12 +111,12 @@ Count,
 
 enum class TwoByteOperation : byte {
 #define OneByte(title) 
-#define TwoByte(a, b) title,
-#define ThreeByte(a, b)
-#define FourByte(a, b)
-#define FiveByte(a, b)
-#define EightByte(a, b)
-#define GrabBag(a, b)
+#define TwoByte(title, b) title,
+#define ThreeByte(title, b)
+#define FourByte(title, b)
+#define FiveByte(title, b)
+#define EightByte(title, b)
+#define GrabBag(title, b)
 #define ExtendedVariant(a, b, c)
 #include "InstructionData.def"
 #undef OneByte
@@ -132,12 +132,12 @@ Count,
 
 enum class ThreeByteOperation : byte {
 #define OneByte(title) 
-#define TwoByte(a, b) 
-#define ThreeByte(a, b) title,
-#define FourByte(a, b)
-#define FiveByte(a, b)
-#define EightByte(a, b)
-#define GrabBag(a, b)
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) title,
+#define FourByte(title, b)
+#define FiveByte(title, b)
+#define EightByte(title, b)
+#define GrabBag(title, b)
 #define ExtendedVariant(a, b, c)
 #include "InstructionData.def"
 #undef OneByte
@@ -153,13 +153,13 @@ Count,
 
 enum class FourByteOperation : byte {
 #define OneByte(title) 
-#define TwoByte(a, b) 
-#define ThreeByte(a, b) 
-#define FourByte(a, b) title,
-#define FiveByte(a, b)
-#define EightByte(a, b)
-#define GrabBag(a, b)
-#define ExtendedVariant(a, b, c)
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b) title,
+#define FiveByte(title, b)
+#define EightByte(title, b)
+#define GrabBag(title, b)
+#define ExtendedVariant(title, b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -174,13 +174,13 @@ Count,
 
 enum class FiveByteOperation : byte {
 #define OneByte(title) 
-#define TwoByte(a, b) 
-#define ThreeByte(a, b) 
-#define FourByte(a, b)
-#define FiveByte(a, b) title,
-#define EightByte(a, b)
-#define GrabBag(a, b)
-#define ExtendedVariant(a, b, c)
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b)
+#define FiveByte(title, b) title,
+#define EightByte(title, b)
+#define GrabBag(title, b)
+#define ExtendedVariant(title, b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -195,13 +195,13 @@ Count,
 
 enum class EightByteOperation : byte {
 #define OneByte(title) 
-#define TwoByte(a, b) 
-#define ThreeByte(a, b) 
-#define FourByte(a, b)
-#define FiveByte(a, b) 
-#define EightByte(a, b) title,
-#define GrabBag(a, b)
-#define ExtendedVariant(a, b, c)
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b)
+#define FiveByte(title, b) 
+#define EightByte(title, b) title,
+#define GrabBag(title, b)
+#define ExtendedVariant(title, b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -213,22 +213,98 @@ enum class EightByteOperation : byte {
 #undef ExtendedVariant
 Count,
 };
-//enum class Operation : byte {
-//#define X(title, a, b, c, d) title,
-//#include "InstructionData.def"
-//    Count,
-//#undef X
-//};
 
-//template<Operation op>
-//constexpr byte instructionWidth = 0;
-//
-//#define X(title, sz, a, c, d) template<> constexpr auto instructionWidth < Operation :: title > = sz ## Byte :: size ;
-//#include "InstructionData.def"
-//#undef X
+enum class GrabBagOperation : byte {
+#define OneByte(title) 
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b)
+#define FiveByte(title, b) 
+#define EightByte(title, b) 
+#define GrabBag(title, cl) cl ## _ ## title,
+#define ExtendedVariant(title, b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+    Count,
+};
 
+enum class ExtendedVariantOperation : byte {
+#define OneByte(title) 
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b)
+#define FiveByte(title, b) 
+#define EightByte(title, b) 
+#define GrabBag(title, b) 
+#define ExtendedVariant(st, title, c) st ## _ ## title,
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+    Count,
+};
 
-//static_assert(QuarterAddress(Operation::Count) <= 256, "Too many operations defined!");
+enum class TenByteOperation : byte {
+#define OneByte(title) 
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b)
+#define FiveByte(title, b) 
+#define EightByte(title, b) 
+#define GrabBag(title, b) 
+#define ExtendedVariantTenByte(title, b) title,
+#define ExtendedVariantSixByte(title, b)
+#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
+    Count,
+};
+
+enum class SixByteOperation : byte {
+#define OneByte(title) 
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b)
+#define FiveByte(title, b) 
+#define EightByte(title, b) 
+#define GrabBag(title, b) 
+#define ExtendedVariantTenByte(title, b) 
+#define ExtendedVariantSixByte(title, b) title,
+#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
+    Count,
+};
 
 
 InstructionWidth determineInstructionWidth(OneByteOperation op);
@@ -237,23 +313,16 @@ InstructionWidth determineInstructionWidth(ThreeByteOperation op);
 InstructionWidth determineInstructionWidth(FourByteOperation op);
 InstructionWidth determineInstructionWidth(FiveByteOperation op);
 InstructionWidth determineInstructionWidth(EightByteOperation op);
-//InstructionWidth determineInstructionWidth(GrabBagOperation op);
-//InstructionWidth determineInstructionWidth(ExtendedVariantOperation op);
-//InstructionWidth determineInstructionWidth(TenByteOperation op);
-//InstructionWidth determineInstructionWidth(SixByteOperation op);
-//InstructionWidth determineInstructionWidth(Operation op);
+InstructionWidth determineInstructionWidth(GrabBagOperation op);
+InstructionWidth determineInstructionWidth(ExtendedVariantOperation op);
+InstructionWidth determineInstructionWidth(TenByteOperation op);
+InstructionWidth determineInstructionWidth(SixByteOperation op);
 
-constexpr byte getInstructionWidth(HalfAddressWrapper w) noexcept {
-	return getInstructionWidth(w.get());
-}
 constexpr TargetRegister getDestinationRegister(byte field) noexcept { 
 	return TargetRegister(getLowerHalf(field));
 }
 constexpr TargetRegister getSourceRegister(byte field) noexcept { 
 	return TargetRegister(getUpperHalf(field));
-}
-constexpr Operation getOperation(byte i) noexcept {
-    return static_cast<Operation>(i);
 }
 
 

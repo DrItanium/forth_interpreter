@@ -32,16 +32,5 @@ namespace forth {
 		return ((b5 << 40) | (b4 << 32) | (b3 << 24) | (b2 << 16) | (b1 << 8) | b0) & 0x00FF'FFFF'FFFF'FFFF;
 	}
 
-    InstructionWidth determineInstructionWidth(Operation op) {
-        InstructionWidth iw;
-		switch (op) {
-#define X(title, sz, a, c, d) case Operation:: title : iw = sz ## Byte ();  break;
-#include "InstructionData.def"
-#undef X
-			default:
-				break;
-		}
-        return iw;
-    }
 
 } // end namespace forth

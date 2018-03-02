@@ -35,6 +35,7 @@ namespace forth {
         Datum(const Datum& other);
         Datum(const std::string& other);
         Datum(const std::string* other);
+        Datum(Datum&& other);
         bool truth;
         Integer numValue;
         Address address;

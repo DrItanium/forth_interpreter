@@ -17,13 +17,8 @@ namespace forth {
 		out.setf(flags);
 		return out;
 	}
-	Datum::Datum(const Datum& other) {
-		for (auto k = 0; k < sizeof(Integer); ++k) {
-			// make sure that the compiler won't do something goofy when doing
-			// copying
-			backingStore[k] = other.backingStore[k];
-		}
-	}
+	Datum::Datum(const Datum& other) : address(other.address) { }
+    Datum::Datum(Datum&& other) : address(std::move(other.address)) { }
 
     Datum::Datum(const std::string* value) : _string(value) { }
     Datum::Datum(const std::string& value) : _string(&value) { }

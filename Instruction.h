@@ -58,7 +58,7 @@ struct FourByte final { static constexpr byte size = 4; };
 struct EightByte final { static constexpr byte size = 8; };
 using InstructionWidth = std::variant<OneByte, TwoByte, ThreeByte, FourByte, EightByte>;
 enum class Operation : byte {
-#define X(title, a, b, c) title,
+#define X(title, a, b, c, d) title,
 #include "InstructionData.def"
     Count,
 #undef X
@@ -67,7 +67,7 @@ enum class Operation : byte {
 template<Operation op>
 constexpr byte instructionWidth = 0;
 
-#define X(title, sz, a, c) template<> constexpr auto instructionWidth < Operation :: title > = sz ## Byte :: size ;
+#define X(title, sz, a, c, d) template<> constexpr auto instructionWidth < Operation :: title > = sz ## Byte :: size ;
 #include "InstructionData.def"
 #undef X
 
@@ -79,7 +79,7 @@ InstructionWidth determineInstructionWidth(Operation op);
 
 constexpr byte getInstructionWidth(Operation op) noexcept {
     switch (op) {
-#define X(title, sz, a, c) case Operation :: title : return sz ## Byte :: size ;
+#define X(title, sz, a, c, d) case Operation :: title : return sz ## Byte :: size ;
 #include "InstructionData.def"
 #undef X
 		default:

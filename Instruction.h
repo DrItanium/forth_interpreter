@@ -32,6 +32,7 @@ enum class TargetRegister : byte {
     DP, // Dictionary Pointer 
     Index, // Index Pointer
     Temporary, // used to store temporary data we requested
+    Temporary2, // for the cases where the assembler needs another temporary register
     Count,
 };
 static_assert(byte(TargetRegister::Count) <= 16, "Too many registers defined!");

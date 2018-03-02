@@ -108,32 +108,32 @@ namespace forth {
 									}
 							   });
 	}
-	SizedResolvableLazyFunction setImmediate16_Lowest(TargetRegister r, const std::string& name) {
-		return std::make_tuple(getInstructionWidth(Operation::SetImmediate16_Lowest),
-				[name, r](AssemblerBuilder& ab, Address _) {
-						return forth::setImmediate64_Lowest(r, ab.absoluteLabelAddress(name));
-				});
-	}
-	SizedResolvableLazyFunction setImmediate16_Lower(TargetRegister r, const std::string& name) {
-		return std::make_tuple(getInstructionWidth(Operation::SetImmediate16_Lower),
-				[name, r](AssemblerBuilder& ab, Address _) {
-						return forth::setImmediate64_Lower(r, ab.absoluteLabelAddress(name));
-				});
-	}
-	SizedResolvableLazyFunction setImmediate16_Higher(TargetRegister r, const std::string& name) {
-		return std::make_tuple(getInstructionWidth(Operation::SetImmediate16_Higher),
-				[name, r](AssemblerBuilder& ab, Address _) {
-						return forth::setImmediate64_Higher(r, ab.absoluteLabelAddress(name));
-				});
-	}
-	SizedResolvableLazyFunction setImmediate16_Highest(TargetRegister r, const std::string& name) {
-		return std::make_tuple(getInstructionWidth(Operation::SetImmediate16_Highest),
-				[name, r](AssemblerBuilder& ab, Address _) {
-						return forth::setImmediate64_Highest(r, ab.absoluteLabelAddress(name));
-				});
-	}
+	//SizedResolvableLazyFunction setImmediate16_Lowest(TargetRegister r, const std::string& name) {
+	//	return std::make_tuple(getInstructionWidth(Operation::SetImmediate16_Lowest),
+	//			[name, r](AssemblerBuilder& ab, Address _) {
+	//					return forth::setImmediate64_Lowest(r, ab.absoluteLabelAddress(name));
+	//			});
+	//}
+	//SizedResolvableLazyFunction setImmediate16_Lower(TargetRegister r, const std::string& name) {
+	//	return std::make_tuple(getInstructionWidth(Operation::SetImmediate16_Lower),
+	//			[name, r](AssemblerBuilder& ab, Address _) {
+	//					return forth::setImmediate64_Lower(r, ab.absoluteLabelAddress(name));
+	//			});
+	//}
+	//SizedResolvableLazyFunction setImmediate16_Higher(TargetRegister r, const std::string& name) {
+	//	return std::make_tuple(getInstructionWidth(Operation::SetImmediate16_Higher),
+	//			[name, r](AssemblerBuilder& ab, Address _) {
+	//					return forth::setImmediate64_Higher(r, ab.absoluteLabelAddress(name));
+	//			});
+	//}
+	//SizedResolvableLazyFunction setImmediate16_Highest(TargetRegister r, const std::string& name) {
+	//	return std::make_tuple(getInstructionWidth(Operation::SetImmediate16_Highest),
+	//			[name, r](AssemblerBuilder& ab, Address _) {
+	//					return forth::setImmediate64_Highest(r, ab.absoluteLabelAddress(name));
+	//			});
+	//}
 	SizedResolvableLazyFunction loadLowerImmediate48(TargetRegister r, const std::string& name) {
-		return std::make_tuple(getInstructionWidth(Operation::LoadImmediateLower48),
+		return std::make_tuple(getInstructionWidth(Operation::ImmediateLower48),
 				[name, r](AssemblerBuilder& ab, Address _) {
 					return forth::loadLowerImmediate48(r, ab.absoluteLabelAddress(name));
 				});

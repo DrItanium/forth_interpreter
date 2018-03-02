@@ -375,42 +375,42 @@ constexpr QuarterAddress move(TargetRegister dest, TargetRegister src) noexcept 
 constexpr QuarterAddress swap(TargetRegister dest, TargetRegister src) noexcept { 
 	return encodeTwoByte(Operation::Swap, dest, src); 
 }
-constexpr HalfAddress setImmediate16_Lower(TargetRegister dest, QuarterAddress value) noexcept {
-	return encodeFourByte(Operation::SetImmediate16_Lower, dest, value);  
-}
-constexpr HalfAddress setImmediate16_Lower(TargetRegister dest, QuarterAddressWrapper value) noexcept {
-	return encodeFourByte(Operation::SetImmediate16_Lower, dest, value.get());  
-}
-constexpr HalfAddress setImmediate16_Lowest(TargetRegister dest, QuarterAddress value) noexcept {
-	return encodeFourByte(Operation::SetImmediate16_Lowest, dest, value); 
-}
-constexpr HalfAddress setImmediate16_Lowest(TargetRegister dest, QuarterAddressWrapper value) noexcept {
-	return encodeFourByte(Operation::SetImmediate16_Lowest, dest, value.get()); 
-}
-constexpr HalfAddress setImmediate16_Higher(TargetRegister dest, QuarterAddress value) noexcept { 
-	return encodeFourByte(Operation::SetImmediate16_Higher, dest, value); 
-}
-constexpr HalfAddress setImmediate16_Higher(TargetRegister dest, QuarterAddressWrapper value) noexcept {
-	return encodeFourByte(Operation::SetImmediate16_Lowest, dest, value.get()); 
-}
-constexpr HalfAddress setImmediate16_Highest(TargetRegister dest, QuarterAddress value) noexcept { 
-	return encodeFourByte(Operation::SetImmediate16_Highest, dest, value); 
-}
-constexpr HalfAddress setImmediate16_Highest(TargetRegister dest, QuarterAddressWrapper value) noexcept { 
-	return encodeFourByte(Operation::SetImmediate16_Highest, dest, value.get()); 
-}
-constexpr HalfAddress setImmediate64_Lowest(TargetRegister dest, Address value) noexcept { 
-    return setImmediate16_Lowest(dest, getLowestQuarter(value));
-}
-constexpr HalfAddress setImmediate64_Lower(TargetRegister dest, Address value) noexcept { 
-    return setImmediate16_Lower(dest, getLowerQuarter(value));
-}
-constexpr HalfAddress setImmediate64_Higher(TargetRegister dest, Address value) noexcept { 
-    return setImmediate16_Higher(dest, getHigherQuarter(value));
-}
-constexpr HalfAddress setImmediate64_Highest(TargetRegister dest, Address value) noexcept { 
-    return setImmediate16_Highest(dest, getHighestQuarter(value));
-}
+//constexpr HalfAddress setImmediate16_Lower(TargetRegister dest, QuarterAddress value) noexcept {
+//	return encodeFourByte(Operation::SetImmediate16_Lower, dest, value);  
+//}
+//constexpr HalfAddress setImmediate16_Lower(TargetRegister dest, QuarterAddressWrapper value) noexcept {
+//	return encodeFourByte(Operation::SetImmediate16_Lower, dest, value.get());  
+//}
+//constexpr HalfAddress setImmediate16_Lowest(TargetRegister dest, QuarterAddress value) noexcept {
+//	return encodeFourByte(Operation::SetImmediate16_Lowest, dest, value); 
+//}
+//constexpr HalfAddress setImmediate16_Lowest(TargetRegister dest, QuarterAddressWrapper value) noexcept {
+//	return encodeFourByte(Operation::SetImmediate16_Lowest, dest, value.get()); 
+//}
+//constexpr HalfAddress setImmediate16_Higher(TargetRegister dest, QuarterAddress value) noexcept { 
+//	return encodeFourByte(Operation::SetImmediate16_Higher, dest, value); 
+//}
+//constexpr HalfAddress setImmediate16_Higher(TargetRegister dest, QuarterAddressWrapper value) noexcept {
+//	return encodeFourByte(Operation::SetImmediate16_Lowest, dest, value.get()); 
+//}
+//constexpr HalfAddress setImmediate16_Highest(TargetRegister dest, QuarterAddress value) noexcept { 
+//	return encodeFourByte(Operation::SetImmediate16_Highest, dest, value); 
+//}
+//constexpr HalfAddress setImmediate16_Highest(TargetRegister dest, QuarterAddressWrapper value) noexcept { 
+//	return encodeFourByte(Operation::SetImmediate16_Highest, dest, value.get()); 
+//}
+//constexpr HalfAddress setImmediate64_Lowest(TargetRegister dest, Address value) noexcept { 
+//    return setImmediate16_Lowest(dest, getLowestQuarter(value));
+//}
+//constexpr HalfAddress setImmediate64_Lower(TargetRegister dest, Address value) noexcept { 
+//    return setImmediate16_Lower(dest, getLowerQuarter(value));
+//}
+//constexpr HalfAddress setImmediate64_Higher(TargetRegister dest, Address value) noexcept { 
+//    return setImmediate16_Higher(dest, getHigherQuarter(value));
+//}
+//constexpr HalfAddress setImmediate64_Highest(TargetRegister dest, Address value) noexcept { 
+//    return setImmediate16_Highest(dest, getHighestQuarter(value));
+//}
 //static_assert(0xFFFF0519 == setImmediate64_Highest(TargetRegister::X, 0xFFFF'FFFF'FFFF'0001), "Encoding is wrong!");
 
 constexpr QuarterAddress notOp(TargetRegister dest, TargetRegister src) noexcept {

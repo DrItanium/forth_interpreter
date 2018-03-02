@@ -1034,7 +1034,7 @@ Core::DecodedInstruction Core::decode(Operation op, const OneByte& b) {
     if (!v) {
         throw Problem("Core::decode", "Illegal one byte variant!");
     }
-	return Core::DecodedInstruction(decode(op), std::visit([](auto&& value) {
+	return Core::DecodedInstruction(decodeOpcode(op), std::visit([](auto&& value) {
 					Core::DecodedArguments da;
 					using T = std::decay_t<decltype(value)>;
 					if constexpr (std::is_same_v<T, Core::IsNoArguments>) {
@@ -1052,7 +1052,7 @@ Core::DecodedInstruction Core::decode(Operation op, const TwoByte& b) {
     if (!v) {
         throw Problem("Core::decode", "Illegal two byte variant!");
     }
-    return Core::DecodedInstruction(decode(op), std::visit([this, byte2](auto&& value) {
+    return Core::DecodedInstruction(decodeOpcode(op), std::visit([this, byte2](auto&& value) {
                 Core::DecodedArguments da;
                 using T = std::decay_t<decltype(value)>;
                 using K = typename T::Type;
@@ -1077,7 +1077,7 @@ Core::DecodedInstruction Core::decode(Operation op, const ThreeByte& b) {
     if (!v) {
         throw Problem("Core::decode", "Illegal three byte variant!");
     }
-    return Core::DecodedInstruction(decode(op),
+    return Core::DecodedInstruction(decodeOpcode(op),
             std::visit([this, byte2, byte3, quarter = setLowerUpperHalves<QuarterAddress>(byte2, byte3)](auto&& value) {
                 Core::DecodedArguments da;
                 using T = std::decay_t<decltype(value)>;
@@ -1115,7 +1115,7 @@ Core::DecodedInstruction Core::decode(Operation op, const FourByte& b) {
     if (!v) {
         throw Problem("Core::decode", "Illegal four byte variant");
     }
-    return Core::DecodedInstruction(decode(op),
+    return Core::DecodedInstruction(decodeOpcode(op),
             std::visit([this, byte2, byte3, byte4, quarter = setLowerUpperHalves<QuarterAddress>(byte3, byte4)](auto&& value) {
                 Core::DecodedArguments da;
                 using T = std::decay_t<decltype(value)>;
@@ -1151,7 +1151,7 @@ Core::DecodedInstruction Core::decode(Operation op, const EightByte& b) {
     if (!v) {
         throw Problem("Core::decode", "Illegal eight byte variant");
     }
-    return Core::DecodedInstruction(decode(op),
+    return Core::DecodedInstruction(decodeOpcode(op),
             std::visit([this, byte2, imm48](auto&& value) {
                 Core::DecodedArguments da;
                 using T = std::decay_t<decltype(value)>;
@@ -1168,59 +1168,39 @@ Core::DecodedInstruction Core::decode(Operation op, const EightByte& b) {
             }, v.value()));
 }
 
-std::optional<Core::DecodedOpcode> Core::decode(Operation op) {
+std::optional<Core::DecodedOpcode> Core::decodeOpcode(Operation op) {
 	std::optional<Core::DecodedOpcode> c;
-#define XOneRegister(_) Core::Register
-#define XTwoRegister(_) Core::Register
-#define XThreeRegister(_) Core::Register
-#define XFourRegister(_) Core::Register
-#define XFiveRegister(_) Core::Register
-#define XCount(title, sz, typ) \
-	if (op == Operation:: title) { \
-		Core:: title v; \
-		c = v; \
-		return c; \
+	if (op == Operation::Add) {
+		Core::Add v;
+		v.type = Core::Signed();
+		v.args = Core::RegisterType();
+		c = v;
+	} else if (op == Operation::UnsignedAdd) {
+		Core::Add v;
+		v.type = Core::Unsigned();
+		v.args = Core::RegisterType();
+		c = v;
+	} else if (op == Operation::FloatingPointAdd) {
+		Core::Add v;
+		v.type = Core::FloatingPoint();
+		v.args = Core::RegisterType();
+		c = v;
+	} else if (op == Operation::Subtract) {
+		Core::Subtract v;
+		v.type = Core::Signed();
+		v.args = Core::RegisterType();
+		c = v;
+	} else if (op == Operation::UnsignedSubtract) {
+		Core::Subtract v;
+		v.type = Core::Unsigned();
+		v.args = Core::RegisterType();
+		c = v;
+	} else if (op == Operation::FloatingPointSubtract) {
+		Core::Subtract v;
+		v.type = Core::FloatingPoint();
+		v.args = Core::RegisterType();
+		c = v;
 	}
-#define XNumber(title, sz, typ) \
-	if (op == Operation:: title) {  \
-		Core:: title v; \
-		v.type = Signed(); \
-		v.args = INDIRECTION(X, typ)(title) (); \
-		c = v; \
-		return c; \
-	}
-#define XMemoryAddress(title, sz, typ) \
-	if (op == Operation:: title) {  \
-		Core:: title v; \
-		v.type = Unsigned(); \
-		v.args = INDIRECTION(X, typ)(title) (); \
-		c = v; \
-		return c; \
-	}
-#define XFloatingPoint(title, sz, typ) \
-	if (op == Operation:: title) {  \
-		Core:: title v; \
-		v.type = FloatingPoint(); \
-		v.args = INDIRECTION(X, typ)(title) (); \
-		c = v; \
-		return c; \
-	}
-#define XBoolean(title, sz, typ) \
-	if (op == Operation:: title) {  \
-		Core:: title v; \
-		v.type = Boolean(); \
-		v.args = INDIRECTION(X, typ)(title) (); \
-		c = v; \
-		return c; \
-	}
-#define X(title, sz, typ, discriminant) INDIRECTION(X, discriminant)(title, sz, typ); 
-#include "InstructionData.def"
-#undef X
-#undef XCount
-#undef XNumber
-#undef XMemoryAddress
-#undef XBoolean
-#undef XFloatingPoint
 	return c;
 }
 

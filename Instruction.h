@@ -87,7 +87,27 @@ struct ExtendedVariant final {
         }
     }
 };
-using InstructionWidth = std::variant<OneByte, TwoByte, ThreeByte, FourByte, EightByte, FiveByte, GrabBag, TenByte>;
+using InstructionWidth = std::variant<OneByte, TwoByte, ThreeByte, FourByte, EightByte, FiveByte, GrabBag, ExtendedVariant>;
+enum class OneByteOperation : byte {
+#define OneByte(title) title,
+#define TwoByte(a, b) 
+#define ThreeByte(a, b)
+#define FourByte(a, b)
+#define FiveByte(a, b)
+#define EightByte(a, b)
+#define GrabBag(a, b)
+#define ExtendedVariant(a, b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+Count,
+};
 enum class Operation : byte {
 #define X(title, a, b, c, d) title,
 #include "InstructionData.def"
@@ -106,34 +126,18 @@ constexpr byte instructionWidth = 0;
 static_assert(QuarterAddress(Operation::Count) <= 256, "Too many operations defined!");
 
 
+InstructionWidth determineInstructionWidth(OneByteOperation op);
+InstructionWidth determineInstructionWidth(TwoByteOperation op);
+InstructionWidth determineInstructionWidth(ThreeByteOperation op);
+InstructionWidth determineInstructionWidth(FourByteOperation op);
+InstructionWidth determineInstructionWidth(FiveByteOperation op);
+InstructionWidth determineInstructionWidth(EightByteOperation op);
+InstructionWidth determineInstructionWidth(GrabBagOperation op);
+InstructionWidth determineInstructionWidth(ExtendedVariantOperation op);
+InstructionWidth determineInstructionWidth(TenByteOperation op);
+InstructionWidth determineInstructionWidth(SixByteOperation op);
 InstructionWidth determineInstructionWidth(Operation op);
 
-constexpr byte getInstructionWidth(Operation op) noexcept {
-    switch (op) {
-#define X(title, sz, a, c, d) case Operation :: title : return sz ## Byte :: size ;
-#include "InstructionData.def"
-#undef X
-		default:
-			return 0;
-    }
-}
-static_assert(getInstructionWidth(Operation::FloatingPointMultiply) == 3, "FloatingPointMultiplyFull is not 3 bytes wide!");
-
-constexpr byte getInstructionWidth(byte value) noexcept {
-    return getInstructionWidth(static_cast<Operation>(value));
-}
-constexpr byte getInstructionWidth(QuarterAddress value) noexcept {
-    return getInstructionWidth(byte(value));
-}
-constexpr byte getInstructionWidth(HalfAddress value) noexcept {
-    return getInstructionWidth(byte(value));
-}
-constexpr byte getInstructionWidth(Address value) noexcept {
-    return getInstructionWidth(byte(value));
-}
-constexpr byte getInstructionWidth(QuarterAddressWrapper w) noexcept {
-	return getInstructionWidth(w.get());
-}
 constexpr byte getInstructionWidth(HalfAddressWrapper w) noexcept {
 	return getInstructionWidth(w.get());
 }
@@ -147,11 +151,6 @@ constexpr Operation getOperation(byte i) noexcept {
     return static_cast<Operation>(i);
 }
 
-template<typename T>
-constexpr byte getInstructionWidth(std::tuple<byte, T> value) noexcept {
-	return std::get<0>(value);
-}
-static_assert(static_cast<byte>(-1) >= static_cast<byte>(Operation::Count), "Too many operations defined!");
 
 } // end namespace forth
 #endif // end INSTRUCTION_H__

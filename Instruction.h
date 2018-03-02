@@ -52,14 +52,33 @@ template<typename T>
 constexpr byte encodeRegisterPair(TargetRegister dest, T src) noexcept {
 	return setLowerUpperHalves<byte>(byte(dest), byte(src));
 }
-struct OneByte final { static constexpr byte size = 1; };
-struct TwoByte final { static constexpr byte size = 2; };
-struct ThreeByte final { static constexpr byte size = 3; };
-struct FourByte final { static constexpr byte size = 4; };
+template<byte c>
+struct SizedType {
+    constexpr SizedType() { }
+    constexpr byte size() noexcept { return c; }
+};
+struct OneByte final : SizedType<1> { };
+struct TwoByte final : SizedType<2> { };
+struct ThreeByte final : SizedType<3> { };
+struct FourByte final : SizedType<4> { };
+struct FiveByte final : SizedType<5> { };
+struct EightByte final : SizedType<8> { };
+struct GrabBag final {
+    std::variant<TwoByte, TwoByte> kind;
+    constexpr byte size() noexcept {
+        switch (kind.index()) {
+            case 0:
+                return std::get<0>(kind).size();
+            case 1:
+                return std::get<1>(kind).size();
+            default:
+                return 0;
+        }
+    }
+};
 struct SixByte final { static constexpr byte size = 6; };
-struct EightByte final { static constexpr byte size = 8; };
 struct TenByte final { static constexpr byte size = 10; };
-using InstructionWidth = std::variant<OneByte, TwoByte, ThreeByte, FourByte, SixByte, EightByte, TenByte>;
+using InstructionWidth = std::variant<OneByte, TwoByte, ThreeByte, FourByte, EightByte, FiveByte, GrabBag, TenByte>;
 enum class Operation : byte {
 #define X(title, a, b, c, d) title,
 #include "InstructionData.def"

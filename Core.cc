@@ -1170,37 +1170,59 @@ Core::DecodedInstruction Core::decode(Operation op, const EightByte& b) {
 
 std::optional<Core::DecodedOpcode> Core::decodeOpcode(Operation op) {
 	std::optional<Core::DecodedOpcode> c;
-	if (op == Operation::Add) {
-		Core::Add v;
-		v.type = Core::Signed();
-		v.args = Core::RegisterType();
-		c = v;
-	} else if (op == Operation::UnsignedAdd) {
-		Core::Add v;
-		v.type = Core::Unsigned();
-		v.args = Core::RegisterType();
-		c = v;
-	} else if (op == Operation::FloatingPointAdd) {
-		Core::Add v;
-		v.type = Core::FloatingPoint();
-		v.args = Core::RegisterType();
-		c = v;
-	} else if (op == Operation::Subtract) {
-		Core::Subtract v;
-		v.type = Core::Signed();
-		v.args = Core::RegisterType();
-		c = v;
-	} else if (op == Operation::UnsignedSubtract) {
-		Core::Subtract v;
-		v.type = Core::Unsigned();
-		v.args = Core::RegisterType();
-		c = v;
-	} else if (op == Operation::FloatingPointSubtract) {
-		Core::Subtract v;
-		v.type = Core::FloatingPoint();
-		v.args = Core::RegisterType();
-		c = v;
+#define XTwoRegisterWithImm16(_) Core::ImmediateType
+#define XOneRegisterWithImm16(_) Core::ImmediateType
+#define XOneRegister(_) Core::RegisterType
+#define XTwoRegister(_) Core::RegisterType
+#define XThreeRegister(_) Core::RegisterType
+#define XFourRegister(_) Core::RegisterType
+#define XFiveRegister(_) Core::RegisterType
+#define XCount(title, sz, typ, t2) \
+	if (op == Operation:: title) { \
+		Core:: t2 v; \
+		c = v; \
+		return c; \
 	}
+#define XNumber(title, sz, typ, t2) \
+	if (op == Operation:: title) {  \
+		Core:: t2 v; \
+		v.type = Core::Signed(); \
+		v.args = INDIRECTION(X, typ)(title) (); \
+		c = v; \
+		return c; \
+	}
+#define XMemoryAddress(title, sz, typ, t2) \
+	if (op == Operation:: title) {  \
+		Core:: t2 v; \
+		v.type = Core::Unsigned(); \
+		v.args = INDIRECTION(X, typ)(title) (); \
+		c = v; \
+		return c; \
+	}
+#define XFloatingPoint(title, sz, typ, t2) \
+	if (op == Operation:: title) {  \
+		Core:: t2 v; \
+		v.type = Core::FloatingPoint(); \
+		v.args = INDIRECTION(X, typ)(title) (); \
+		c = v; \
+		return c; \
+	}
+#define XBoolean(title, sz, typ, t2) \
+	if (op == Operation:: title) {  \
+		Core:: t2 v; \
+		v.type = Core::Boolean(); \
+		v.args = INDIRECTION(X, typ)(title) (); \
+		c = v; \
+		return c; \
+	}
+#define X(title, sz, typ, discriminant) INDIRECTION(X, discriminant)(title, sz, typ); 
+#include "InstructionData.def"
+#undef X
+#undef XCount
+#undef XNumber
+#undef XMemoryAddress
+#undef XBoolean
+#undef XFloatingPoint
 	return c;
 }
 

@@ -1,13 +1,22 @@
-// Instruction opcodes are 8 or 16 bits wide
-// the lowest bit denotes if it is typed or not
-// Odd opcodes are typed 
-// even opcodes are untyped
-// when the opcodes are typed then they will automatically be a minimum of two bytes in this new design 
-// with some previously two byte ops now being three bytes.
-// The immediate combine operations now 
-// Typed opcodes look like this { 1 | op: 7 | imm:1 | type:2 | unused:1 | dest:4 }
-// Typed opcodes with the immediate bit set will be longer, they will be 
-// Untyped opcodes look like this { 0 | op:7 }
+// The variant layout is modeled into the bit pattern
+// the lowest four bits are the instruction width [variant] (maximum of 16 different widths, not 1-16 but variable based off of need)
+// the remaining layout is dependent on the variant id
+// code 0: OneByte [ variant:3 | op: 5 ] // maximum of 32 ops in this class
+// code 1: TwoByte [ variant:3 | kind: 1 | group: 3 | control: 8] // multiple layouts
+//          OneRegister [ variant:3 | kind: 1 [is zero] | op: 8 | dest: 4 ]
+//          TwoRegister [ variant:3 | kind: 1 [is one] | op: 3 | dest: 4 | src: 4 ] // not as many allowed here
+// code 2: ThreeByte [ variant:3 | kind: 2 | control:18 ]
+//          ThreeRegister [ variant:3 [2] | kind: 2 [0] | op: 6 | dest: 4 | src0: 4 | src1: 4] 
+//          FourRegister  [ variant:3 [2] | kind: 2 [1] | op: 3 | dest: 4 | src0: 4 | src1: 4 | src2: 4] // compact version
+//          SignedImm16   [ variant:3 [2] | kind: 2 [2] | op: 3 | imm16 ] 
+// code 3: FourByte [ variant:3 | kind:2 | control: 27 ]
+//          FiveRegister         [ variant:3 [3] | kind: 2 [0] | op: 7 | dest: 4 | src0: 4 | src1: 4 | src2: 4 | src3: 4 ]
+//          Immediate24          [ variant:3 [3] | kind: 2 [1] | op: 3 | imm24] 
+//          OneRegisterWithImm16 [ variant:3 [3] | kind: 2 [2] | op: 7  | dest: 4 | imm16 ]
+// code 4: FiveByte [ variant:3 | kind:2 | control: 35 ]
+//         TwoRegisterWithImm16 [ variant: 3 [4] | kind:2 [0] | op: 6 | unused: 5 | dest:4 | src0:4 | imm16 ]
+// code 5: 
+
 UntypedOpcode(Nop, One, NoArguments)
 TypedOpcode(Add, Three, ThreeRegister, Number)
 TypedOpcode(Subtract, Three, ThreeRegister, Number)
@@ -55,19 +64,19 @@ TypedOpcode(Pow, Three, ThreeRegister, Number)
 //TypedOpcode(OrBoolean, Three, ThreeRegister, Boolean)
 //TypedOpcode(XorBoolean, Three, ThreeRegister, Boolean)
 //TypedOpcode(EqualsBoolean, Three, ThreeRegister, Boolean)
-TypedOpcode(AddImmediate, Four, TwoRegisterWithImm16, Number)
-TypedOpcode(SubtractImmediate, Four, TwoRegisterWithImm16, Number)
-TypedOpcode(MultiplyImmediate, Four, TwoRegisterWithImm16, Number)
-TypedOpcode(DivideImmediate, Four, TwoRegisterWithImm16, Number)
-TypedOpcode(ModuloImmediate, Four, TwoRegisterWithImm16, Number)
-TypedOpcode(AndImmediate, Four, TwoRegisterWithImm16, Number)
-TypedOpcode(OrImmediate, Four, TwoRegisterWithImm16, Number)
-TypedOpcode(GreaterThanImmediate, Four, TwoRegisterWithImm16, Number)
-TypedOpcode(LessThanImmediate, Four, TwoRegisterWithImm16, Number)
-TypedOpcode(XorImmediate, Four, TwoRegisterWithImm16, Number)
-TypedOpcode(ShiftRightImmediate, Four, TwoRegisterWithImm16, Number)
-TypedOpcode(ShiftLeftImmediate, Four, TwoRegisterWithImm16, Number)
-TypedOpcode(EqualsImmediate, Four, TwoRegisterWithImm16, Number)
+TypedOpcode(AddImmediate, Five, TwoRegisterWithImm16, Number)
+TypedOpcode(SubtractImmediate, Five, TwoRegisterWithImm16, Number)
+TypedOpcode(MultiplyImmediate, Five, TwoRegisterWithImm16, Number)
+TypedOpcode(DivideImmediate, Five, TwoRegisterWithImm16, Number)
+TypedOpcode(ModuloImmediate, Five, TwoRegisterWithImm16, Number)
+TypedOpcode(AndImmediate, Five, TwoRegisterWithImm16, Number)
+TypedOpcode(OrImmediate, Five, TwoRegisterWithImm16, Number)
+TypedOpcode(GreaterThanImmediate, Five, TwoRegisterWithImm16, Number)
+TypedOpcode(LessThanImmediate, Five, TwoRegisterWithImm16, Number)
+TypedOpcode(XorImmediate, Five, TwoRegisterWithImm16, Number)
+TypedOpcode(ShiftRightImmediate, Five, TwoRegisterWithImm16, Number)
+TypedOpcode(ShiftLeftImmediate, Five, TwoRegisterWithImm16, Number)
+TypedOpcode(EqualsImmediate, Five, TwoRegisterWithImm16, Number)
 //TypedOpcode(UnsignedAddImmediate, Four, TwoRegisterWithImm16, MemoryAddress)
 //TypedOpcode(UnsignedSubtractImmediate, Four, TwoRegisterWithImm16, MemoryAddress)
 //TypedOpcode(UnsignedMultiplyImmediate, Four, TwoRegisterWithImm16, MemoryAddress)
@@ -81,10 +90,10 @@ TypedOpcode(EqualsImmediate, Four, TwoRegisterWithImm16, Number)
 //TypedOpcode(UnsignedShiftRightImmediate, Four, TwoRegisterWithImm16, MemoryAddress)
 //TypedOpcode(UnsignedShiftLeftImmediate, Four, TwoRegisterWithImm16, MemoryAddress)
 //TypedOpcode(UnsignedEqualsImmediate, Four, TwoRegisterWithImm16, MemoryAddress)
-TypedOpcode(TypeValue, Two, TwoRegister, Number)
-//TypedOpcode(UnsignedTypeValue, Two, TwoRegister, MemoryAddress)
-//TypedOpcode(FloatingPointTypeValue, Three, ThreeRegister, FloatingPoint)
-//TypedOpcode(BooleanTypeValue, Two, TwoRegister, Boolean)
+TypedOpcode(TypeValue, Two, OneRegister, Number)
+//TypedOpcode(UnsignedTypeValue, Two, OneRegister, MemoryAddress)
+//TypedOpcode(FloatingPointTypeValue, Two, OneRegister, FloatingPoint)
+//TypedOpcode(BooleanTypeValue, Two, OneRegister, Boolean)
 UntypedOpcode(Jump, Three, SignedImm16)
 UntypedOpcode(JumpIndirect, Two, TwoRegister)
 UntypedOpcode(JumpAbsolute, Four, Imm24)
@@ -107,8 +116,8 @@ UntypedOpcode(EncodeBits, Four, FiveRegister)
 //UntypedOpcode(StoreQuarterAddress, Two, TwoRegister)
 UntypedOpcode(Load, Two, TwoRegister)
 UntypedOpcode(Store, Two, TwoRegister)
-UntypedOpcode(LoadImmediate16, Four, LoadImm16)
-UntypedOpcode(LoadImmediate32, Six, LoadImm32)
+UntypedOpcode(LoadImmediate16, Four, OneRegisterWithImm16)
+UntypedOpcode(LoadImmediate32, Six, OneRegisterWithImm32)
 UntypedOpcode(LoadImmediate48, Eight, LoadImm48)
 UntypedOpcode(LoadImmediate64, Ten, LoadImm64)
 UntypedOpcode(Move, Two, TwoRegister)

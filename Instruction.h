@@ -55,8 +55,10 @@ struct OneByte final { static constexpr byte size = 1; };
 struct TwoByte final { static constexpr byte size = 2; };
 struct ThreeByte final { static constexpr byte size = 3; };
 struct FourByte final { static constexpr byte size = 4; };
+struct SixByte final { static constexpr byte size = 6; };
 struct EightByte final { static constexpr byte size = 8; };
-using InstructionWidth = std::variant<OneByte, TwoByte, ThreeByte, FourByte, EightByte>;
+struct TenByte final { static constexpr byte size = 10; };
+using InstructionWidth = std::variant<OneByte, TwoByte, ThreeByte, FourByte, SixByte, EightByte, TenByte>;
 enum class Operation : byte {
 #define X(title, a, b, c, d) title,
 #include "InstructionData.def"

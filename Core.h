@@ -63,6 +63,32 @@ class Core {
                 return getByteOffset(addr) <= (sizeof(Address) - size);
             } 
         }
+	public:
+		Core();
+		~Core() = default;
+		//void executionLoop();
+		void dispatchInstruction();
+        /**
+         * Returns the word closest to the target addres
+         */
+		Datum loadWord(Address addr);
+        byte loadByte(Address addr);
+        QuarterAddress loadQuarterAddress(Address addr);
+        HalfAddress loadHalfAddress(Address addr);
+        Address loadLower48(Address addr);
+		void store(Address addr, const Datum& value);
+        void storeByte(Address addr, byte value);
+		Register& getRegister(TargetRegister reg);
+		void push(const Datum& d, TargetRegister sp);
+		Datum pop(TargetRegister sp);
+        void executionCycle(Address startAddress = 0);
+		std::function<void(Address, Address)> getMemoryInstallationFunction() noexcept;
+		std::function<void(Address, Address)> getInstructionInstallationFunction() noexcept;
+	private:
+		void push(TargetRegister reg, TargetRegister sp);
+		void pop(TargetRegister dest, TargetRegister sp);
+		void savePositionToSubroutineStack();
+	private:
 		using DestinationRegister = std::optional<std::reference_wrapper<Register>>;
 		using SourceRegister = std::optional<std::reference_wrapper<const Register>>;
 #define OperationKind(x) \
@@ -126,38 +152,6 @@ class Core {
 		using EightByteVariant = std::variant<LoadImm48>;
 #undef OperationKind
 		using DecodedArguments = std::variant<OneByteVariant, TwoByteVariant, ThreeByteVariant, FourByteVariant, EightByteVariant>;
-        using DecodedInstruction = std::tuple<Operation, DecodedArguments>;
-    public:
-        static std::optional<OneByteSelector> getVariant(Operation op, const OneByte&);
-        static std::optional<TwoByteSelector> getVariant(Operation op, const TwoByte&);
-        static std::optional<ThreeByteSelector> getVariant(Operation op, const ThreeByte&);
-        static std::optional<FourByteSelector> getVariant(Operation op, const FourByte&);
-        static std::optional<EightByteSelector> getVariant(Operation op, const EightByte&);
-	public:
-		Core();
-		~Core() = default;
-		//void executionLoop();
-		void dispatchInstruction();
-        /**
-         * Returns the word closest to the target addres
-         */
-		Datum loadWord(Address addr);
-        byte loadByte(Address addr);
-        QuarterAddress loadQuarterAddress(Address addr);
-        HalfAddress loadHalfAddress(Address addr);
-        Address loadLower48(Address addr);
-		void store(Address addr, const Datum& value);
-        void storeByte(Address addr, byte value);
-		Register& getRegister(TargetRegister reg);
-		void push(const Datum& d, TargetRegister sp);
-		Datum pop(TargetRegister sp);
-        void executionCycle(Address startAddress = 0);
-		std::function<void(Address, Address)> getMemoryInstallationFunction() noexcept;
-		std::function<void(Address, Address)> getInstructionInstallationFunction() noexcept;
-	private:
-		void push(TargetRegister reg, TargetRegister sp);
-		void pop(TargetRegister dest, TargetRegister sp);
-		void savePositionToSubroutineStack();
 	private:
 		struct FloatingPoint { };
 		struct Signed { };
@@ -173,7 +167,6 @@ class Core {
 		struct Highest { };
 		using SetImmediate16 = std::variant<Lowest, Lower, Higher, Highest>;
 		struct LoadImmediateLower48 { };
-		using ImmediateManipulators = std::variant<SetImmediate16, LoadImmediateLower48>;
 		struct LessThan { };
 		struct GreaterThan { };
 		struct RangeCheckOperation {
@@ -185,7 +178,6 @@ class Core {
 			std::variant<Signed, Unsigned, FloatingPoint, Boolean> type;
 			RegisterImmediate args;
 		};
-		using ComparisonOperation = std::variant<RangeCheckOperation, EqualityOperation>;
 		struct And { };
 		struct Or { };
 		struct Xor { };
@@ -199,7 +191,6 @@ class Core {
 			std::variant<Signed, Unsigned, Boolean> type;
 		};
 
-		using LogicalOperation = std::variant<Logical, Not>;
 
 		struct MinusOperation {
 			std::variant<Signed, Unsigned, FloatingPoint> type;
@@ -225,7 +216,6 @@ class Core {
 			std::variant<ShiftLeft, ShiftRight> direction;
 			std::variant<Signed, Unsigned> type;
 		};
-		using ALUOperation = std::variant<MinusOperation, MathOperation, ModuloOperation, ShiftOperation>;
 		struct Jump { };
 		struct JumpIndirect { };
 		struct JumpAbsolute { };
@@ -238,21 +228,17 @@ class Core {
 		struct ConditionalCallSubroutine { };
 		struct ConditionalCallSubroutineIndirect { };
 		struct ConditionalReturnSubroutine { };
-		using ConditionalJumpOperation = std::variant< ConditionalBranch, ConditionalBranchIndirect, ConditionalCallSubroutine, ConditionalCallSubroutineIndirect, ConditionalReturnSubroutine>;
-
-		using BranchOperation = std::variant<JumpOperation, ConditionalJumpOperation>;
 
 		struct Move { };
 		struct Swap { };
 		struct Load { };
 		struct Store { };
-		using RegisterManipulator = std::variant<Move, Swap>;
+		using RegisterManipulator = std::variant<Move, Swap, Load, Store>;
 		struct Push { };
 		struct Pop { };
 		using StackModifiers = std::variant<Push, Pop>;
 		struct Nop { };
 		struct ReturnToNative { };
-		using MiscOperations = std::variant<Nop, ReturnToNative>;
 		struct EncodeBits { };
 		struct DecodeBits { };
 		using EncodeDecodeOps = std::variant<EncodeBits, DecodeBits>;
@@ -263,35 +249,47 @@ class Core {
 			std::variant<Signed, Unsigned, FloatingPoint, Boolean> type;
 		};
 		using PrintRoutines = std::variant<PrintString, PrintChar, TypeDatum, TypeValue>;
+		using ImmediateManipulators = std::variant<SetImmediate16, LoadImmediateLower48>;
+		using ComparisonOperation = std::variant<RangeCheckOperation, EqualityOperation>;
+		using LogicalOperation = std::variant<Logical, Not>;
+		using ALUOperation = std::variant<MinusOperation, MathOperation, ModuloOperation, ShiftOperation>;
+		using ConditionalJumpOperation = std::variant< ConditionalBranch, ConditionalBranchIndirect, ConditionalCallSubroutine, ConditionalCallSubroutineIndirect, ConditionalReturnSubroutine>;
+
+		using BranchOperation = std::variant<JumpOperation, ConditionalJumpOperation>;
+		using MiscOperations = std::variant<Nop, ReturnToNative>;
+		using DecodedOpcode = std::variant<PrintRoutines, 
+			  EncodeDecodeOps, 
+			  MiscOperations, 
+			  StackModifiers, 
+			  RegisterManipulator, 
+			  BranchOperation, 
+			  ALUOperation, 
+			  LogicalOperation, 
+			  ImmediateManipulators>;
+        using DecodedInstruction = std::tuple<DecodedOpcode, DecodedArguments>;
 	private:
-		void returnToNative(Operation op, DecodedArguments args);
-		void numericCombine(Operation op, DecodedArguments args);
-		void multiplyOperation(Operation op, DecodedArguments args);
-		void divideOperation(Operation op, DecodedArguments args);
-		void equalsOperation(Operation op, DecodedArguments args);
-		void push(Operation op, DecodedArguments args);
-		void pop(Operation op, DecodedArguments args);
-		void notOperation(Operation op, DecodedArguments args);
-		void minusOperation(Operation op, DecodedArguments args);
-		void booleanAlgebra(Operation op, DecodedArguments args);
-		void shiftOperation(Operation op, DecodedArguments args);
-		void powOperation(Operation op, DecodedArguments args);
-		void rangeChecks(Operation op, DecodedArguments args);
-		void jumpOperation(Operation op, DecodedArguments args);
-		void conditionalBranch(Operation op, DecodedArguments args);
-		void loadImm48(Operation op, DecodedArguments args);
-		void moveOrSwap(Operation op, DecodedArguments args);
-		void typeValue(Operation op, DecodedArguments args);
-		void loadStore(Operation op, DecodedArguments args);
-		void setImm16(Operation op, DecodedArguments args);
-        void encodeDecodeBits(Operation op, DecodedArguments args);
-		void nop(Operation op, DecodedArguments args);
-		void printString(Operation op, DecodedArguments args);
+		void dispatchInstruction(PrintRoutines op, DecodedArguments args);
+		void dispatchInstruction(EncodeDecodeOps op, DecodedArguments args);
+		void dispatchInstruction(MiscOperations op, DecodedArguments args);
+		void dispatchInstruction(StackModifiers op, DecodedArguments args);
+		void dispatchInstruction(ALUOperation op, DecodedArguments args);
+		void dispatchInstruction(BranchOperation op, DecodedArguments args);
+		void dispatchInstruction(ComparisonOperation op, DecodedArguments args);
+		void dispatchInstruction(RegisterManipulator op, DecodedArguments args);
+		void dispatchInstruction(ImmediateManipulators op, DecodedArguments args);
+    private:
+        static std::optional<OneByteSelector> getVariant(Operation op, const OneByte&);
+        static std::optional<TwoByteSelector> getVariant(Operation op, const TwoByte&);
+        static std::optional<ThreeByteSelector> getVariant(Operation op, const ThreeByte&);
+        static std::optional<FourByteSelector> getVariant(Operation op, const FourByte&);
+        static std::optional<EightByteSelector> getVariant(Operation op, const EightByte&);
+
     private:
 		Register& getDestinationRegister(byte value);
 		Register& getSourceRegister(byte value);
         // from the current position, perform the entire decode process prior to 
         // executing
+		DecodedOpcode decode(Operation op);
         DecodedInstruction decode();
         DecodedInstruction decode(Operation op, const OneByte& b);
         DecodedInstruction decode(Operation op, const TwoByte& b);

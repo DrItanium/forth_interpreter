@@ -229,300 +229,300 @@ void Core::pop(TargetRegister reg, TargetRegister sp) {
     dest.setValue(result);
 }
 
-template<typename T>
-void numericOperation(Operation op, const std::string& name, Register& dest, const Register& src0, const Register& src1, T fn) {
-    if (auto k = involvesDiscriminantType(op); k) {
-        switch (k.value()) {
-            case Discriminant::Number:
-                dest.setValue(fn(src0.getInt(), src1.getInt()));
-                break;
-            case Discriminant::MemoryAddress:
-                dest.setValue(fn(src0.getAddress(), src1.getAddress()));
-                break;
-            case Discriminant::FloatingPoint:
-                dest.setValue(fn(src0.getFP(), src1.getFP()));
-                break;
-            default:
-                throw Problem(name, "ILLEGAL DISCRIMINANT!");
-        }
-    }
-}
-
-template<typename T>
-void numericOperationAndBool(Operation op, const std::string& name, Register& dest, const Register& src0, const Register& src1, T fn) {
-    if (auto k = involvesDiscriminantType(op); k) {
-        switch(k.value()) {
-            case Discriminant::Number:
-                dest.setValue(fn(src0.getInt(), src1.getInt()));
-                break;
-            case Discriminant::MemoryAddress:
-                dest.setValue(fn(src0.getAddress(), src1.getAddress()));
-                break;
-            case Discriminant::FloatingPoint:
-                dest.setValue(fn(src0.getFP(), src1.getFP()));
-                break;
-            case Discriminant::Boolean:
-                dest.setValue(fn(src0.getTruth(), src1.getTruth()));
-                break;
-            default:
-                throw Problem(name, "ILLEGAL DISCRIMINANT!");
-        }
-    }
-}
-
-template<typename T>
-void numericOperationIntegerOnly(Operation op, const std::string& name, Register& dest, const Register& src0, const Register& src1, T fn) {
-    if (auto k = involvesDiscriminantType(op)) {
-        switch(k.value()) {
-            case Discriminant::Number:
-                dest.setValue(fn(src0.getInt(), src1.getInt()));
-                break;
-            case Discriminant::MemoryAddress:
-                dest.setValue(fn(src0.getAddress(), src1.getAddress()));
-                break;
-            default:
-                throw Problem(name, "ILLEGAL DISCRIMINANT!");
-        }
-    }
-}
-void Core::numericCombine(Operation op, DecodedArguments args) {
-	//auto subtract = subtractOperation(std::get<Operation>(op));
-    //auto value = std::get<DecodedArguments>(op);
-	//auto fn = [subtract](auto a, auto b) { 
-	//	return subtract ? (a - b) : (a + b );
-	//};
-    //if (std::holds_alternative<ThreeRegister>(value)) {
-
-    //} else if (std::holds_alternative<NoArguments>(value)) {
-
-    //} else {
-    //    throw Problem(__FUNCTION__, "ILLEGAL OPERATION VARIANT!");
-    //}
-	//auto& [dest, src0, src1] = result;
-	//numericOperation(op, subtract ? "-" : "+", dest, src0, src1, fn);
-}
-
-void Core::multiplyOperation(Operation op, DecodedArguments args) {
-	//auto t = extractArguments(op, nullptr);
-	//auto& [dest, src0, src1] = t;
-	//auto fn = [](auto a, auto b) { return a * b; };
-	//numericOperation(op, "*", dest, src0, src1, fn);
-}
-
-void Core::divideOperation(Operation op, DecodedArguments args) {
-	//auto t = extractArguments(op);
-	//auto& [dest, src0, src1] = t;
-	//auto isModulo = isModuloOperation(op);
-	//if (src1.getAddress() == 0) {
-	//	throw Problem(isModulo ? "mod" : "/", "DIVIDE BY ZERO!");
-	//}
-	//if (isModulo) {
-	//	numericOperationIntegerOnly(op, "mod", dest, src0, src1, [](auto a, auto b) { return a % b; });
-	//} else {
-	//	numericOperation(op, "/", dest, src0, src1, [](auto a, auto b) { return a / b; });
-	//}
-}
-
-void Core::equalsOperation(Operation op, DecodedArguments args) {
-	//auto t = extractArguments(op);
-	//auto& [dest, src0, src1] = t;
-	//numericOperationAndBool(op, "eq", dest, src0, src1, [](auto a, auto b) { return a == b; });
-}
-
-void Core::push(Operation op, DecodedArguments args) {
-	//switch (op) {
-	//	case Operation::PushA:
-	//		push(TargetRegister::A, TargetRegister::SP);
-	//		break;
-	//	case Operation::PushB:
-	//		push(TargetRegister::B, TargetRegister::SP);
-	//		break;
-	//	case Operation::PushC:
-	//		push(TargetRegister::C, TargetRegister::SP);
-	//		break;
-	//	default: {
-	//				 auto args = extractTwoRegisterForm();
-	//				 // push sp, src
-	//				 push(std::get<1>(args), std::get<0>(args));
-	//				 break;
-	//			 }
-	//}
-}
-
-void Core::pop(Operation op, DecodedArguments args) {
-	//switch (op) {
-	//	case Operation::PopA:
-	//		pop(TargetRegister::A, TargetRegister::SP);
-	//		break;
-	//	case Operation::PopB:
-	//		pop(TargetRegister::B, TargetRegister::SP);
-	//		break;
-	//	case Operation::PopC:
-	//		pop(TargetRegister::C, TargetRegister::SP);
-	//		break;
-	//	default: {
-	//				 auto args = extractTwoRegisterForm();
-	//				 // pop dest, sp
-	//				 pop(std::get<0>(args), std::get<1>(args));
-	//				 break;
-	//			 }
-	//}
-}
-
-template<typename T>
-void numericBoolAndInteger(Operation op, const std::string& name, Register& dest, const Register& src0, T fn) {
-	//switch(involvesDiscriminantType(op)) {
-	//	case Discriminant::Number:
-	//		dest.setValue(fn(src0.getInt()));
-	//		break;
-	//	case Discriminant::MemoryAddress:
-	//		dest.setValue(fn(src0.getAddress()));
-	//		break;
-	//	case Discriminant::Boolean:
-	//		dest.setValue(fn(src0.getTruth()));
-	//		break;
-	//	default:
-	//		throw Problem(name, "ILLEGAL DISCRIMINANT!");
-	//}
-}
-
-template<typename T>
-void numericBoolAndInteger(Operation op, const std::string& name, Register& dest, const Register& src0, const Register& src1, T fn) {
-	//switch(involvesDiscriminantType(op)) {
-	//	case Discriminant::Number:
-	//		dest.setValue(fn(src0.getInt(), src1.getInt()));
-	//		break;
-	//	case Discriminant::MemoryAddress:
-	//		dest.setValue(fn(src0.getAddress(), src1.getAddress()));
-	//		break;
-	//	case Discriminant::Boolean:
-	//		dest.setValue(fn(src0.getTruth(), src1.getTruth()));
-	//		break;
-	//	default:
-	//		throw Problem(name, "ILLEGAL DISCRIMINANT!");
-	//}
-}
-
-void Core::notOperation(Operation op, DecodedArguments args) {
-    //std::tuple<TargetRegister, TargetRegister> tup;
-    //switch (op) {
-	//	case Operation::BooleanNot:
-	//	case Operation::UnsignedNot:
-    //    case Operation::Not:
-    //        tup = std::make_tuple(TargetRegister::C, TargetRegister::A);
-    //        break;
-    //    case Operation::BooleanNotFull:
-	//	case Operation::UnsignedNotFull:
-    //    case Operation::NotFull:
-    //        tup = extractTwoRegisterForm();
-    //        break;
-    //    default:
-    //        throw Problem("not", "ILLEGAL OPERATION!");
-    //}
-	//auto& dest = getRegister(std::get<0>(tup));
-	//auto& src = getRegister(std::get<1>(tup));
-	//switch (involvesDiscriminantType(op)) {
-	//	case Discriminant::Number:
-	//		dest.setValue(~src.getInt());
-	//		break;
-	//	case Discriminant::MemoryAddress:
-	//		dest.setValue(~src.getAddress());
-	//		break;
-	//	case Discriminant::Boolean:
-	//		dest.setValue(!src.getTruth());
-	//		break;
-	//	default:
-	//		throw Problem("not", "ILLEGAL DISCRIMINANT");
-	//}
-}
-
-void Core::minusOperation(Operation op, DecodedArguments args) {
-	//switch (involvesDiscriminantType(op)) {
-	//	case Discriminant::Number:
-	//		dest.setValue(-src.getInt());
-	//		break;
-	//	case Discriminant::FloatingPoint:
-	//		dest.setValue(-src.getFP());
-	//		break;
-	//	default:
-	//		throw Problem("minus", "ILLEGAL DISCRIMINANT");
-	//}
-}
-
-void Core::booleanAlgebra(Operation op, DecodedArguments args) {
-	//auto tup = extractArguments(op);
-	//auto& [dest, src0, src1] = tup;
-	//if (andForm(op)) {
-	//	numericBoolAndInteger(op, "and", dest, src0, src1, [](auto a, auto b) { if constexpr (std::is_same<decltype(a), bool>::value) { return a && b; } else { return a & b; }});
-	//} else if (orForm(op)) {
-	//	numericBoolAndInteger(op, "or", dest, src0, src1, [](auto a, auto b) { if constexpr (std::is_same<decltype(a), bool>::value) { return a || b; } else { return a | b; }});
-	//} else if (xorForm(op)) {
-	//	numericBoolAndInteger(op, "xor", dest, src0, src1, [](auto a, auto b) { if constexpr (std::is_same<decltype(a), bool>::value) { return a != b; } else { return a ^ b; }});
-	//} else {
-	//	throw Problem("booleanAlgebra", "UNKNOWN OPERATION GROUP!");
-	//}
-}
-
-void Core::shiftOperation(Operation op, DecodedArguments args) {
-	//auto tup = extractArguments(op);
-	//auto& [dest, src0, src1] = tup;
-	//switch (op) {
-	//	case Operation::ShiftLeft:
-	//	case Operation::ShiftLeftImmediate:
-	//	case Operation::ShiftLeftFull:
-	//	case Operation::UnsignedShiftLeft:
-	//	case Operation::UnsignedShiftLeftImmediate:
-	//	case Operation::UnsignedShiftLeftFull:
-	//		numericOperationIntegerOnly(op, "<<", dest, src0, src1, [](auto a, auto b) { return a << b; });
-	//		break;
-	//	case Operation::ShiftRight:
-	//	case Operation::ShiftRightImmediate:
-	//	case Operation::ShiftRightFull:
-	//	case Operation::UnsignedShiftRight:
-	//	case Operation::UnsignedShiftRightImmediate:
-	//	case Operation::UnsignedShiftRightFull:
-	//		numericOperationIntegerOnly(op, ">>", dest, src0, src1, [](auto a, auto b) { return a >> b; });
-	//		break;
-	//	default:
-	//		throw Problem("shiftOperation", "Unknown shift operation!");
-	//		
-	//}
-}
-
-void Core::powOperation(Operation op, DecodedArguments args) {
-	//auto tup = extractArguments(op);
-	//auto& [dest, src0, src1] = tup;
-	//numericOperation(op, "pow", dest, src0, src1, [](auto a, auto b) { return static_cast<decltype(a)>(std::pow(Floating(a), Floating(b))); });
-}
-
-void Core::rangeChecks(Operation op, DecodedArguments args) {
-	//auto tup = extractArguments(op);
-	//auto& [dest, src0, src1] = tup;
-	//switch (op) {
-	//	case Operation::GreaterThan:
-	//	case Operation::GreaterThanImmediate:
-	//	case Operation::GreaterThanFull:
-	//	case Operation::FloatingPointGreaterThan:
-	//	case Operation::FloatingPointGreaterThanFull:
-	//	case Operation::UnsignedGreaterThan:
-	//	case Operation::UnsignedGreaterThanImmediate:
-	//	case Operation::UnsignedGreaterThanFull:
-	//		numericOperation(op, ">", dest, src0, src1, [](auto a, auto b) { return a > b; });
-	//		break;
-	//	case Operation::LessThan:
-	//	case Operation::LessThanImmediate:
-	//	case Operation::LessThanFull:
-	//	case Operation::FloatingPointLessThan:
-	//	case Operation::FloatingPointLessThanFull:
-	//	case Operation::UnsignedLessThan:
-	//	case Operation::UnsignedLessThanImmediate:
-	//	case Operation::UnsignedLessThanFull:
-	//		numericOperation(op, "<", dest, src0, src1, [](auto a, auto b) { return a < b; });
-	//		break;
-	//	default:
-	//		throw Problem("rangeChecks", "Unknown range check operation!");
-	//}
-}
+//template<typename T>
+//void numericOperation(Operation op, const std::string& name, Register& dest, const Register& src0, const Register& src1, T fn) {
+//    if (auto k = involvesDiscriminantType(op); k) {
+//        switch (k.value()) {
+//            case Discriminant::Number:
+//                dest.setValue(fn(src0.getInt(), src1.getInt()));
+//                break;
+//            case Discriminant::MemoryAddress:
+//                dest.setValue(fn(src0.getAddress(), src1.getAddress()));
+//                break;
+//            case Discriminant::FloatingPoint:
+//                dest.setValue(fn(src0.getFP(), src1.getFP()));
+//                break;
+//            default:
+//                throw Problem(name, "ILLEGAL DISCRIMINANT!");
+//        }
+//    }
+//}
+//
+//template<typename T>
+//void numericOperationAndBool(Operation op, const std::string& name, Register& dest, const Register& src0, const Register& src1, T fn) {
+//    if (auto k = involvesDiscriminantType(op); k) {
+//        switch(k.value()) {
+//            case Discriminant::Number:
+//                dest.setValue(fn(src0.getInt(), src1.getInt()));
+//                break;
+//            case Discriminant::MemoryAddress:
+//                dest.setValue(fn(src0.getAddress(), src1.getAddress()));
+//                break;
+//            case Discriminant::FloatingPoint:
+//                dest.setValue(fn(src0.getFP(), src1.getFP()));
+//                break;
+//            case Discriminant::Boolean:
+//                dest.setValue(fn(src0.getTruth(), src1.getTruth()));
+//                break;
+//            default:
+//                throw Problem(name, "ILLEGAL DISCRIMINANT!");
+//        }
+//    }
+//}
+//
+//template<typename T>
+//void numericOperationIntegerOnly(Operation op, const std::string& name, Register& dest, const Register& src0, const Register& src1, T fn) {
+//    if (auto k = involvesDiscriminantType(op)) {
+//        switch(k.value()) {
+//            case Discriminant::Number:
+//                dest.setValue(fn(src0.getInt(), src1.getInt()));
+//                break;
+//            case Discriminant::MemoryAddress:
+//                dest.setValue(fn(src0.getAddress(), src1.getAddress()));
+//                break;
+//            default:
+//                throw Problem(name, "ILLEGAL DISCRIMINANT!");
+//        }
+//    }
+//}
+//void Core::numericCombine(Operation op, DecodedArguments args) {
+//	//auto subtract = subtractOperation(std::get<Operation>(op));
+//    //auto value = std::get<DecodedArguments>(op);
+//	//auto fn = [subtract](auto a, auto b) { 
+//	//	return subtract ? (a - b) : (a + b );
+//	//};
+//    //if (std::holds_alternative<ThreeRegister>(value)) {
+//
+//    //} else if (std::holds_alternative<NoArguments>(value)) {
+//
+//    //} else {
+//    //    throw Problem(__FUNCTION__, "ILLEGAL OPERATION VARIANT!");
+//    //}
+//	//auto& [dest, src0, src1] = result;
+//	//numericOperation(op, subtract ? "-" : "+", dest, src0, src1, fn);
+//}
+//
+//void Core::multiplyOperation(Operation op, DecodedArguments args) {
+//	//auto t = extractArguments(op, nullptr);
+//	//auto& [dest, src0, src1] = t;
+//	//auto fn = [](auto a, auto b) { return a * b; };
+//	//numericOperation(op, "*", dest, src0, src1, fn);
+//}
+//
+//void Core::divideOperation(Operation op, DecodedArguments args) {
+//	//auto t = extractArguments(op);
+//	//auto& [dest, src0, src1] = t;
+//	//auto isModulo = isModuloOperation(op);
+//	//if (src1.getAddress() == 0) {
+//	//	throw Problem(isModulo ? "mod" : "/", "DIVIDE BY ZERO!");
+//	//}
+//	//if (isModulo) {
+//	//	numericOperationIntegerOnly(op, "mod", dest, src0, src1, [](auto a, auto b) { return a % b; });
+//	//} else {
+//	//	numericOperation(op, "/", dest, src0, src1, [](auto a, auto b) { return a / b; });
+//	//}
+//}
+//
+//void Core::equalsOperation(Operation op, DecodedArguments args) {
+//	//auto t = extractArguments(op);
+//	//auto& [dest, src0, src1] = t;
+//	//numericOperationAndBool(op, "eq", dest, src0, src1, [](auto a, auto b) { return a == b; });
+//}
+//
+//void Core::push(Operation op, DecodedArguments args) {
+//	//switch (op) {
+//	//	case Operation::PushA:
+//	//		push(TargetRegister::A, TargetRegister::SP);
+//	//		break;
+//	//	case Operation::PushB:
+//	//		push(TargetRegister::B, TargetRegister::SP);
+//	//		break;
+//	//	case Operation::PushC:
+//	//		push(TargetRegister::C, TargetRegister::SP);
+//	//		break;
+//	//	default: {
+//	//				 auto args = extractTwoRegisterForm();
+//	//				 // push sp, src
+//	//				 push(std::get<1>(args), std::get<0>(args));
+//	//				 break;
+//	//			 }
+//	//}
+//}
+//
+//void Core::pop(Operation op, DecodedArguments args) {
+//	//switch (op) {
+//	//	case Operation::PopA:
+//	//		pop(TargetRegister::A, TargetRegister::SP);
+//	//		break;
+//	//	case Operation::PopB:
+//	//		pop(TargetRegister::B, TargetRegister::SP);
+//	//		break;
+//	//	case Operation::PopC:
+//	//		pop(TargetRegister::C, TargetRegister::SP);
+//	//		break;
+//	//	default: {
+//	//				 auto args = extractTwoRegisterForm();
+//	//				 // pop dest, sp
+//	//				 pop(std::get<0>(args), std::get<1>(args));
+//	//				 break;
+//	//			 }
+//	//}
+//}
+//
+//template<typename T>
+//void numericBoolAndInteger(Operation op, const std::string& name, Register& dest, const Register& src0, T fn) {
+//	//switch(involvesDiscriminantType(op)) {
+//	//	case Discriminant::Number:
+//	//		dest.setValue(fn(src0.getInt()));
+//	//		break;
+//	//	case Discriminant::MemoryAddress:
+//	//		dest.setValue(fn(src0.getAddress()));
+//	//		break;
+//	//	case Discriminant::Boolean:
+//	//		dest.setValue(fn(src0.getTruth()));
+//	//		break;
+//	//	default:
+//	//		throw Problem(name, "ILLEGAL DISCRIMINANT!");
+//	//}
+//}
+//
+//template<typename T>
+//void numericBoolAndInteger(Operation op, const std::string& name, Register& dest, const Register& src0, const Register& src1, T fn) {
+//	//switch(involvesDiscriminantType(op)) {
+//	//	case Discriminant::Number:
+//	//		dest.setValue(fn(src0.getInt(), src1.getInt()));
+//	//		break;
+//	//	case Discriminant::MemoryAddress:
+//	//		dest.setValue(fn(src0.getAddress(), src1.getAddress()));
+//	//		break;
+//	//	case Discriminant::Boolean:
+//	//		dest.setValue(fn(src0.getTruth(), src1.getTruth()));
+//	//		break;
+//	//	default:
+//	//		throw Problem(name, "ILLEGAL DISCRIMINANT!");
+//	//}
+//}
+//
+//void Core::notOperation(Operation op, DecodedArguments args) {
+//    //std::tuple<TargetRegister, TargetRegister> tup;
+//    //switch (op) {
+//	//	case Operation::BooleanNot:
+//	//	case Operation::UnsignedNot:
+//    //    case Operation::Not:
+//    //        tup = std::make_tuple(TargetRegister::C, TargetRegister::A);
+//    //        break;
+//    //    case Operation::BooleanNotFull:
+//	//	case Operation::UnsignedNotFull:
+//    //    case Operation::NotFull:
+//    //        tup = extractTwoRegisterForm();
+//    //        break;
+//    //    default:
+//    //        throw Problem("not", "ILLEGAL OPERATION!");
+//    //}
+//	//auto& dest = getRegister(std::get<0>(tup));
+//	//auto& src = getRegister(std::get<1>(tup));
+//	//switch (involvesDiscriminantType(op)) {
+//	//	case Discriminant::Number:
+//	//		dest.setValue(~src.getInt());
+//	//		break;
+//	//	case Discriminant::MemoryAddress:
+//	//		dest.setValue(~src.getAddress());
+//	//		break;
+//	//	case Discriminant::Boolean:
+//	//		dest.setValue(!src.getTruth());
+//	//		break;
+//	//	default:
+//	//		throw Problem("not", "ILLEGAL DISCRIMINANT");
+//	//}
+//}
+//
+//void Core::minusOperation(Operation op, DecodedArguments args) {
+//	//switch (involvesDiscriminantType(op)) {
+//	//	case Discriminant::Number:
+//	//		dest.setValue(-src.getInt());
+//	//		break;
+//	//	case Discriminant::FloatingPoint:
+//	//		dest.setValue(-src.getFP());
+//	//		break;
+//	//	default:
+//	//		throw Problem("minus", "ILLEGAL DISCRIMINANT");
+//	//}
+//}
+//
+//void Core::booleanAlgebra(Operation op, DecodedArguments args) {
+//	//auto tup = extractArguments(op);
+//	//auto& [dest, src0, src1] = tup;
+//	//if (andForm(op)) {
+//	//	numericBoolAndInteger(op, "and", dest, src0, src1, [](auto a, auto b) { if constexpr (std::is_same<decltype(a), bool>::value) { return a && b; } else { return a & b; }});
+//	//} else if (orForm(op)) {
+//	//	numericBoolAndInteger(op, "or", dest, src0, src1, [](auto a, auto b) { if constexpr (std::is_same<decltype(a), bool>::value) { return a || b; } else { return a | b; }});
+//	//} else if (xorForm(op)) {
+//	//	numericBoolAndInteger(op, "xor", dest, src0, src1, [](auto a, auto b) { if constexpr (std::is_same<decltype(a), bool>::value) { return a != b; } else { return a ^ b; }});
+//	//} else {
+//	//	throw Problem("booleanAlgebra", "UNKNOWN OPERATION GROUP!");
+//	//}
+//}
+//
+//void Core::shiftOperation(Operation op, DecodedArguments args) {
+//	//auto tup = extractArguments(op);
+//	//auto& [dest, src0, src1] = tup;
+//	//switch (op) {
+//	//	case Operation::ShiftLeft:
+//	//	case Operation::ShiftLeftImmediate:
+//	//	case Operation::ShiftLeftFull:
+//	//	case Operation::UnsignedShiftLeft:
+//	//	case Operation::UnsignedShiftLeftImmediate:
+//	//	case Operation::UnsignedShiftLeftFull:
+//	//		numericOperationIntegerOnly(op, "<<", dest, src0, src1, [](auto a, auto b) { return a << b; });
+//	//		break;
+//	//	case Operation::ShiftRight:
+//	//	case Operation::ShiftRightImmediate:
+//	//	case Operation::ShiftRightFull:
+//	//	case Operation::UnsignedShiftRight:
+//	//	case Operation::UnsignedShiftRightImmediate:
+//	//	case Operation::UnsignedShiftRightFull:
+//	//		numericOperationIntegerOnly(op, ">>", dest, src0, src1, [](auto a, auto b) { return a >> b; });
+//	//		break;
+//	//	default:
+//	//		throw Problem("shiftOperation", "Unknown shift operation!");
+//	//		
+//	//}
+//}
+//
+//void Core::powOperation(Operation op, DecodedArguments args) {
+//	//auto tup = extractArguments(op);
+//	//auto& [dest, src0, src1] = tup;
+//	//numericOperation(op, "pow", dest, src0, src1, [](auto a, auto b) { return static_cast<decltype(a)>(std::pow(Floating(a), Floating(b))); });
+//}
+//
+//void Core::rangeChecks(Operation op, DecodedArguments args) {
+//	//auto tup = extractArguments(op);
+//	//auto& [dest, src0, src1] = tup;
+//	//switch (op) {
+//	//	case Operation::GreaterThan:
+//	//	case Operation::GreaterThanImmediate:
+//	//	case Operation::GreaterThanFull:
+//	//	case Operation::FloatingPointGreaterThan:
+//	//	case Operation::FloatingPointGreaterThanFull:
+//	//	case Operation::UnsignedGreaterThan:
+//	//	case Operation::UnsignedGreaterThanImmediate:
+//	//	case Operation::UnsignedGreaterThanFull:
+//	//		numericOperation(op, ">", dest, src0, src1, [](auto a, auto b) { return a > b; });
+//	//		break;
+//	//	case Operation::LessThan:
+//	//	case Operation::LessThanImmediate:
+//	//	case Operation::LessThanFull:
+//	//	case Operation::FloatingPointLessThan:
+//	//	case Operation::FloatingPointLessThanFull:
+//	//	case Operation::UnsignedLessThan:
+//	//	case Operation::UnsignedLessThanImmediate:
+//	//	case Operation::UnsignedLessThanFull:
+//	//		numericOperation(op, "<", dest, src0, src1, [](auto a, auto b) { return a < b; });
+//	//		break;
+//	//	default:
+//	//		throw Problem("rangeChecks", "Unknown range check operation!");
+//	//}
+//}
 
 
 constexpr HalfAddress makeImm24(QuarterAddress lower16, byte upper8) noexcept {
@@ -531,94 +531,94 @@ constexpr HalfAddress makeImm24(QuarterAddress lower16, byte upper8) noexcept {
 void Core::savePositionToSubroutineStack() {
     push(_pc.getValue(), TargetRegister::SP2);
 }
-void Core::jumpOperation(Operation op, DecodedArguments args) {
-	/*
-    auto callSubroutine = [this]() {
-        auto lower16 = extractQuarterIntegerFromMolecule();
-        auto upper8 = extractByteFromMolecule();
-        savePositionToSubroutineStack();
-        _pc.setValue(Address(makeImm24(lower16, upper8)));
-    };
-    auto callSubroutineIndirect = [this]() {
-        auto b = extractByteFromMolecule();
-        savePositionToSubroutineStack();
-        _pc.setValue(getRegister((TargetRegister)getDestinationRegister(b)).getValue());
-    };
-	auto jumpRelativeToPC = [this]() {
-		auto offset = extractQuarterIntegerFromMolecule();
-		_pc.setValue(_pc.getInt() + offset);
-	};
-	switch (op) {
-		case Operation::Jump:
-			jumpRelativeToPC();
-			break;
-		case Operation::JumpAbsolute: 
-			_pc.setValue((Address)makeImm24(extractQuarterIntegerFromMolecule(), extractByteFromMolecule()));
-			break;
-		case Operation::JumpIndirect: 
-			_pc.setValue(getRegister((TargetRegister)getDestinationRegister(extractByteFromMolecule())).getValue());
-			break;
-		case Operation::CallSubroutine: 
-            callSubroutine();
-            break;
-		case Operation::CallSubroutineIndirect: 
-            callSubroutineIndirect();
-			break;
-		case Operation::ReturnSubroutine: 
-			_pc.setValue(pop(TargetRegister::SP2));
-			break;
-		default:
-			throw Problem("jumpOperation", "unknown jump operation!");
-	}
-	*/
-}
-void Core::conditionalBranch(Operation op, DecodedArguments args) {
-	//auto k = extractByteFromMolecule();
-	//auto& cond = getRegister(TargetRegister(getDestinationRegister(k)));
-	//auto jumpRelativeToPC = [this]() {
-	//	auto offset = extractQuarterIntegerFromMolecule();
-	//	_pc.setValue(_pc.getInt() + offset);
-	//	// the offset is messed up right now and is ahead by two bytes so we
-	//	// have to move the address back three places as the address is computed
-	//	// relative to the _front_ of the instruction
-	//};
-	//if (cond.getTruth()) {
-	//	switch (op) {
-	//		case Operation::ConditionalBranch:
-	//			jumpRelativeToPC();
-	//			break;
-	//		case Operation::ConditionalBranchIndirect:
-	//			_pc.setValue(getRegister((TargetRegister)getSourceRegister(k)).getValue());
-	//			break;
-	//		case Operation::ConditionalCallSubroutine:
-	//			savePositionToSubroutineStack();
-	//			_pc.setValue(_pc.getInt() + extractQuarterIntegerFromMolecule());
-	//			break;
-	//		case Operation::ConditionalCallSubroutineIndirect:
-	//			savePositionToSubroutineStack();
-	//			_pc.setValue(getRegister((TargetRegister)getSourceRegister(k)).getAddress());
-	//			break;
-	//		case Operation::ConditionalReturnSubroutine:
-	//			_pc.setValue(pop(TargetRegister::SP2));
-	//			break;
-	//		default:
-	//			throw Problem("conditionalBranch", "unknown conditional branch operation!");
-	//	}
-	//} else {
-	//	switch (op) {
-	//		case Operation::ConditionalBranch:
-	//		case Operation::ConditionalCallSubroutine:
-	//			(void)extractQuarterAddressFromMolecule();
-	//			break;
-	//		case Operation::ConditionalBranchIndirect:
-	//		case Operation::ConditionalReturnSubroutine:
-	//		case Operation::ConditionalCallSubroutineIndirect:
-	//			break;
-	//		default:
-	//			throw Problem("conditionalBranch", "unknown conditional branch operation!");
-	//	}
-	//}
-}
+//void Core::jumpOperation(Operation op, DecodedArguments args) {
+//	/*
+//    auto callSubroutine = [this]() {
+//        auto lower16 = extractQuarterIntegerFromMolecule();
+//        auto upper8 = extractByteFromMolecule();
+//        savePositionToSubroutineStack();
+//        _pc.setValue(Address(makeImm24(lower16, upper8)));
+//    };
+//    auto callSubroutineIndirect = [this]() {
+//        auto b = extractByteFromMolecule();
+//        savePositionToSubroutineStack();
+//        _pc.setValue(getRegister((TargetRegister)getDestinationRegister(b)).getValue());
+//    };
+//	auto jumpRelativeToPC = [this]() {
+//		auto offset = extractQuarterIntegerFromMolecule();
+//		_pc.setValue(_pc.getInt() + offset);
+//	};
+//	switch (op) {
+//		case Operation::Jump:
+//			jumpRelativeToPC();
+//			break;
+//		case Operation::JumpAbsolute: 
+//			_pc.setValue((Address)makeImm24(extractQuarterIntegerFromMolecule(), extractByteFromMolecule()));
+//			break;
+//		case Operation::JumpIndirect: 
+//			_pc.setValue(getRegister((TargetRegister)getDestinationRegister(extractByteFromMolecule())).getValue());
+//			break;
+//		case Operation::CallSubroutine: 
+//            callSubroutine();
+//            break;
+//		case Operation::CallSubroutineIndirect: 
+//            callSubroutineIndirect();
+//			break;
+//		case Operation::ReturnSubroutine: 
+//			_pc.setValue(pop(TargetRegister::SP2));
+//			break;
+//		default:
+//			throw Problem("jumpOperation", "unknown jump operation!");
+//	}
+//	*/
+//}
+//void Core::conditionalBranch(Operation op, DecodedArguments args) {
+//	//auto k = extractByteFromMolecule();
+//	//auto& cond = getRegister(TargetRegister(getDestinationRegister(k)));
+//	//auto jumpRelativeToPC = [this]() {
+//	//	auto offset = extractQuarterIntegerFromMolecule();
+//	//	_pc.setValue(_pc.getInt() + offset);
+//	//	// the offset is messed up right now and is ahead by two bytes so we
+//	//	// have to move the address back three places as the address is computed
+//	//	// relative to the _front_ of the instruction
+//	//};
+//	//if (cond.getTruth()) {
+//	//	switch (op) {
+//	//		case Operation::ConditionalBranch:
+//	//			jumpRelativeToPC();
+//	//			break;
+//	//		case Operation::ConditionalBranchIndirect:
+//	//			_pc.setValue(getRegister((TargetRegister)getSourceRegister(k)).getValue());
+//	//			break;
+//	//		case Operation::ConditionalCallSubroutine:
+//	//			savePositionToSubroutineStack();
+//	//			_pc.setValue(_pc.getInt() + extractQuarterIntegerFromMolecule());
+//	//			break;
+//	//		case Operation::ConditionalCallSubroutineIndirect:
+//	//			savePositionToSubroutineStack();
+//	//			_pc.setValue(getRegister((TargetRegister)getSourceRegister(k)).getAddress());
+//	//			break;
+//	//		case Operation::ConditionalReturnSubroutine:
+//	//			_pc.setValue(pop(TargetRegister::SP2));
+//	//			break;
+//	//		default:
+//	//			throw Problem("conditionalBranch", "unknown conditional branch operation!");
+//	//	}
+//	//} else {
+//	//	switch (op) {
+//	//		case Operation::ConditionalBranch:
+//	//		case Operation::ConditionalCallSubroutine:
+//	//			(void)extractQuarterAddressFromMolecule();
+//	//			break;
+//	//		case Operation::ConditionalBranchIndirect:
+//	//		case Operation::ConditionalReturnSubroutine:
+//	//		case Operation::ConditionalCallSubroutineIndirect:
+//	//			break;
+//	//		default:
+//	//			throw Problem("conditionalBranch", "unknown conditional branch operation!");
+//	//	}
+//	//}
+//}
 
 Address Core::extractImm48() {
     auto lowest16 = Address(extractQuarterAddressFromMolecule());
@@ -627,12 +627,12 @@ Address Core::extractImm48() {
     return lowest16 | lower16 | higher16;
 }
 
-void Core::loadImm48(Operation op, DecodedArguments args) {
-    //auto tr = TargetRegister(getDestinationRegister(extractByteFromMolecule()));
-    //auto imm48 = extractImm48();
-    //getRegister(tr).setValue(imm48);
-}
-void Core::nop(Operation op, DecodedArguments args) { }
+//void Core::loadImm48(Operation op, DecodedArguments args) {
+//    //auto tr = TargetRegister(getDestinationRegister(extractByteFromMolecule()));
+//    //auto imm48 = extractImm48();
+//    //getRegister(tr).setValue(imm48);
+//}
+//void Core::nop(Operation op, DecodedArguments args) { }
 
 void Core::dispatchInstruction() {
 	/*
@@ -696,124 +696,124 @@ void Core::dispatchInstruction() {
 	*/
 }
 
-void Core::loadStore(Operation op, DecodedArguments args) {
-	/*
-    auto k = extractByteFromMolecule();
-    auto trd = TargetRegister(getDestinationRegister(k));
-    auto trs = TargetRegister(getSourceRegister(k));
-    auto& dest = getRegister(trd);
-    auto& src = getRegister(trs);
-	if (op == Operation::Load) {
-         dest.setValue(loadWord(src.getAddress()));
-	} else if (op == Operation::Store) {
-         store(dest.getAddress(), src.getValue());
-	} else {
-		throw Problem("loadStore", "Unknown load/store operation!");
-	}
-	*/
-}
-
-void Core::moveOrSwap(Operation op, DecodedArguments args) {
-	/*
-    auto k = extractByteFromMolecule();
-    auto trd = TargetRegister(getDestinationRegister(k));
-    auto trs = TargetRegister(getSourceRegister(k));
-    if (trd == trs) {
-        return;
-    }
-    auto& dest = getRegister(trd);
-    auto& src = getRegister(trs);
-	if (op == Operation::Move) {
-        dest.setValue(src.getAddress());
-	} else if (op == Operation::Swap) {
-        _tmp1.setValue(src.getValue());
-        src.setValue(dest.getValue());
-        dest.setValue(_tmp1.getValue());
-	} else {
-		throw Problem("moveOrSwap", "Unknown move/swap operation!");
-	}
-	*/
-}
-
-void Core::typeValue(Operation op, DecodedArguments args) {
-	/*
-	auto tr = TargetRegister(getDestinationRegister(extractByteFromMolecule()));
-	auto flags = std::cout.flags();
-	auto value = getRegister(tr).getValue();
-	switch(involvesDiscriminantType(op)) {
-		case Discriminant::Number:
-			std::cout << std::dec << value.numValue;
-			break;
-		case Discriminant::FloatingPoint:
-			std::cout << value.fp;
-			break;
-		case Discriminant::MemoryAddress:
-			std::cout << std::hex << value.address << "#";
-			break;
-		case Discriminant::Boolean:
-			std::cout << std::boolalpha << value.truth << std::noboolalpha;
-			break;
-		case Discriminant::Word:
-			std::cout << std::hex << value.entry << ": " << std::dec << value.entry->getName();
-			break;
-		default:
-			throw Problem("typeValue", "BAD DISCRIMINANT!");
-
-	}
-	std::cout << ' ' << std::endl;
-	std::cout.setf(flags);
-	*/
-}
-enum class Immediate16Positions : byte {
-	Lowest = 0,
-	Lower,
-	Higher,
-	Highest,
-};
-template<Immediate16Positions pos>
-constexpr auto Immediate16ShiftIndex = static_cast<Address>(pos) << 4;
-template<Immediate16Positions pos>
-constexpr auto Immediate16Mask = static_cast<Address>(0xFFFF) << Immediate16ShiftIndex<pos>;
-
-template<Immediate16Positions pos>
-constexpr Address computeImmediate16(Address base, QuarterAddress value) noexcept {
-	return encodeBits<Address, QuarterAddress, Immediate16Mask<pos>, Immediate16ShiftIndex<pos>>(base, value);
-}
-
-void Core::setImm16(Operation op, DecodedArguments args) {
-	/*
-	auto k = extractByteFromMolecule();
-	auto tr = static_cast<TargetRegister>(getDestinationRegister(k));
-    auto& dest = getRegister(tr);
-	auto oldPC = _pc.getAddress();
-	auto q = extractQuarterAddressFromMolecule();
-	if (oldPC != (_pc.getAddress() - 2)) {
-		throw Problem("setImm16", "PC is not being correctly updated!");
-	}
-	auto addr = dest.getAddress();
-    switch (op) {
-        case Operation::SetImmediate16_Lowest:
-            dest.setValue(computeImmediate16<Immediate16Positions::Lowest>(addr, q)); 
-            break;
-        case Operation::SetImmediate16_Lower:
-            dest.setValue(computeImmediate16<Immediate16Positions::Lower>(addr, q));
-            break;
-        case Operation::SetImmediate16_Higher:
-            dest.setValue(computeImmediate16<Immediate16Positions::Higher>(addr, q));
-            break;
-        case Operation::SetImmediate16_Highest:
-            dest.setValue(computeImmediate16<Immediate16Positions::Highest>(addr, q));
-            break;
-        default:
-            throw Problem("setImm16", "unknown set imm16 operation!");
-    }
-	if (op == Operation::SetImmediate16_Highest) {
-		if (dest.getAddress() != (addr | (Address(q) << 48))) {
-			throw Problem("setImm16", "Corruption of destination by setImm16");
-		}
-	}
-	*/
-}
+//void Core::loadStore(Operation op, DecodedArguments args) {
+//	/*
+//    auto k = extractByteFromMolecule();
+//    auto trd = TargetRegister(getDestinationRegister(k));
+//    auto trs = TargetRegister(getSourceRegister(k));
+//    auto& dest = getRegister(trd);
+//    auto& src = getRegister(trs);
+//	if (op == Operation::Load) {
+//         dest.setValue(loadWord(src.getAddress()));
+//	} else if (op == Operation::Store) {
+//         store(dest.getAddress(), src.getValue());
+//	} else {
+//		throw Problem("loadStore", "Unknown load/store operation!");
+//	}
+//	*/
+//}
+//
+//void Core::moveOrSwap(Operation op, DecodedArguments args) {
+//	/*
+//    auto k = extractByteFromMolecule();
+//    auto trd = TargetRegister(getDestinationRegister(k));
+//    auto trs = TargetRegister(getSourceRegister(k));
+//    if (trd == trs) {
+//        return;
+//    }
+//    auto& dest = getRegister(trd);
+//    auto& src = getRegister(trs);
+//	if (op == Operation::Move) {
+//        dest.setValue(src.getAddress());
+//	} else if (op == Operation::Swap) {
+//        _tmp1.setValue(src.getValue());
+//        src.setValue(dest.getValue());
+//        dest.setValue(_tmp1.getValue());
+//	} else {
+//		throw Problem("moveOrSwap", "Unknown move/swap operation!");
+//	}
+//	*/
+//}
+//
+//void Core::typeValue(Operation op, DecodedArguments args) {
+//	/*
+//	auto tr = TargetRegister(getDestinationRegister(extractByteFromMolecule()));
+//	auto flags = std::cout.flags();
+//	auto value = getRegister(tr).getValue();
+//	switch(involvesDiscriminantType(op)) {
+//		case Discriminant::Number:
+//			std::cout << std::dec << value.numValue;
+//			break;
+//		case Discriminant::FloatingPoint:
+//			std::cout << value.fp;
+//			break;
+//		case Discriminant::MemoryAddress:
+//			std::cout << std::hex << value.address << "#";
+//			break;
+//		case Discriminant::Boolean:
+//			std::cout << std::boolalpha << value.truth << std::noboolalpha;
+//			break;
+//		case Discriminant::Word:
+//			std::cout << std::hex << value.entry << ": " << std::dec << value.entry->getName();
+//			break;
+//		default:
+//			throw Problem("typeValue", "BAD DISCRIMINANT!");
+//
+//	}
+//	std::cout << ' ' << std::endl;
+//	std::cout.setf(flags);
+//	*/
+//}
+//enum class Immediate16Positions : byte {
+//	Lowest = 0,
+//	Lower,
+//	Higher,
+//	Highest,
+//};
+//template<Immediate16Positions pos>
+//constexpr auto Immediate16ShiftIndex = static_cast<Address>(pos) << 4;
+//template<Immediate16Positions pos>
+//constexpr auto Immediate16Mask = static_cast<Address>(0xFFFF) << Immediate16ShiftIndex<pos>;
+//
+//template<Immediate16Positions pos>
+//constexpr Address computeImmediate16(Address base, QuarterAddress value) noexcept {
+//	return encodeBits<Address, QuarterAddress, Immediate16Mask<pos>, Immediate16ShiftIndex<pos>>(base, value);
+//}
+//
+//void Core::setImm16(Operation op, DecodedArguments args) {
+//	/*
+//	auto k = extractByteFromMolecule();
+//	auto tr = static_cast<TargetRegister>(getDestinationRegister(k));
+//    auto& dest = getRegister(tr);
+//	auto oldPC = _pc.getAddress();
+//	auto q = extractQuarterAddressFromMolecule();
+//	if (oldPC != (_pc.getAddress() - 2)) {
+//		throw Problem("setImm16", "PC is not being correctly updated!");
+//	}
+//	auto addr = dest.getAddress();
+//    switch (op) {
+//        case Operation::SetImmediate16_Lowest:
+//            dest.setValue(computeImmediate16<Immediate16Positions::Lowest>(addr, q)); 
+//            break;
+//        case Operation::SetImmediate16_Lower:
+//            dest.setValue(computeImmediate16<Immediate16Positions::Lower>(addr, q));
+//            break;
+//        case Operation::SetImmediate16_Higher:
+//            dest.setValue(computeImmediate16<Immediate16Positions::Higher>(addr, q));
+//            break;
+//        case Operation::SetImmediate16_Highest:
+//            dest.setValue(computeImmediate16<Immediate16Positions::Highest>(addr, q));
+//            break;
+//        default:
+//            throw Problem("setImm16", "unknown set imm16 operation!");
+//    }
+//	if (op == Operation::SetImmediate16_Highest) {
+//		if (dest.getAddress() != (addr | (Address(q) << 48))) {
+//			throw Problem("setImm16", "Corruption of destination by setImm16");
+//		}
+//	}
+//	*/
+//}
 
 void Core::executionCycle(Address startAddress) {
     auto& value = getSystemVariable(Core::terminateExecutionVariable);
@@ -834,28 +834,28 @@ void Core::executionCycle(Address startAddress) {
     // we've halted at this point
 }
 
-void Core::encodeDecodeBits(Operation op, DecodedArguments args) {
-	std::visit([op, this](auto&& value) {
-				using T = std::decay_t<decltype(value)>;
-				if constexpr (std::is_same_v<T, FourRegister>) {
-					if (op == Operation::DecodeBits) {
-						value.destination.value().get().setValue(
-								decodeBits<Address, Address>(value.source.value().get().getAddress(),
-															 value.source2.value().get().getAddress(),
-															 value.source3.value().get().getAddress()));
-					} else {
-						throw Problem("encodeDecodeBits", "Unexpected four argument operation!");
-					}
-				} else if constexpr (std::is_same_v<T, FiveRegister>) {
-					if (op == Operation::EncodeBits) {
-
-					} else {
-					}
-				} else {
-        			throw Problem("encodeDecodeBits", "unknown encode-decode operation!");
-				}
-			}, args);
-}
+//void Core::encodeDecodeBits(Operation op, DecodedArguments args) {
+//	std::visit([op, this](auto&& value) {
+//				using T = std::decay_t<decltype(value)>;
+//				if constexpr (std::is_same_v<T, FourRegister>) {
+//					if (op == Operation::DecodeBits) {
+//						value.destination.value().get().setValue(
+//								decodeBits<Address, Address>(value.source.value().get().getAddress(),
+//															 value.source2.value().get().getAddress(),
+//															 value.source3.value().get().getAddress()));
+//					} else {
+//						throw Problem("encodeDecodeBits", "Unexpected four argument operation!");
+//					}
+//				} else if constexpr (std::is_same_v<T, FiveRegister>) {
+//					if (op == Operation::EncodeBits) {
+//
+//					} else {
+//					}
+//				} else {
+//        			throw Problem("encodeDecodeBits", "unknown encode-decode operation!");
+//				}
+//			}, args);
+//}
 
 std::function<void(Address, Address)> Core::getMemoryInstallationFunction() noexcept {
 	return [this](Address location, Address value) { store(location, value); };
@@ -875,43 +875,43 @@ std::function<void(Address, Address)> Core::getInstructionInstallationFunction()
 	};
 }
 
-void Core::returnToNative(Operation op, DecodedArguments) {
-	switch (op) {
-		case Operation::LeaveExecutionLoop:
-			store(Core::returnToMicrocode, Address(1));
-			break;
-		default:
-			throw Problem("returnToNative", "Illegal operation provided!");
-	}
-}
-
-void Core::printString(Operation op, DecodedArguments args) {
-	std::visit([this,op](auto&& value) {
-				using T = std::decay_t<decltype(value)>;
-				if constexpr (std::is_same_v<T, OneRegister>) {
-					auto& dest = value.destination.value().get();
-					if (op == Operation::PrintChar) {
-						auto c = char(dest.getAddress());
-						std::cout << c;
-					} else if (op == Operation::TypeDatum) {
-						std::cout << dest.getValue();
-					}
-				} else if constexpr (std::is_same_v<T, TwoRegister>) {
-					if (op == Operation::PrintString) {
-						auto begin = value.destination.value().get().getAddress();
-						auto length = value.destination.value().get().getAddress();
-						auto end = begin + length;
-						for (auto loc = begin; loc < end; ++loc) {
-							std::cout << char(loadByte(loc));
-						}
-					} else {
-						throw Problem("Core::printString", "Unexpected Two Register operation provided!");
-					}
-				} else {
-					throw Problem("Core::printString", "Undefined operations provided!");
-				}
-			}, args);
-}
+//void Core::returnToNative(Operation op, DecodedArguments) {
+//	switch (op) {
+//		case Operation::LeaveExecutionLoop:
+//			store(Core::returnToMicrocode, Address(1));
+//			break;
+//		default:
+//			throw Problem("returnToNative", "Illegal operation provided!");
+//	}
+//}
+//
+//void Core::printString(Operation op, DecodedArguments args) {
+//	std::visit([this,op](auto&& value) {
+//				using T = std::decay_t<decltype(value)>;
+//				if constexpr (std::is_same_v<T, OneRegister>) {
+//					auto& dest = value.destination.value().get();
+//					if (op == Operation::PrintChar) {
+//						auto c = char(dest.getAddress());
+//						std::cout << c;
+//					} else if (op == Operation::TypeDatum) {
+//						std::cout << dest.getValue();
+//					}
+//				} else if constexpr (std::is_same_v<T, TwoRegister>) {
+//					if (op == Operation::PrintString) {
+//						auto begin = value.destination.value().get().getAddress();
+//						auto length = value.destination.value().get().getAddress();
+//						auto end = begin + length;
+//						for (auto loc = begin; loc < end; ++loc) {
+//							std::cout << char(loadByte(loc));
+//						}
+//					} else {
+//						throw Problem("Core::printString", "Unexpected Two Register operation provided!");
+//					}
+//				} else {
+//					throw Problem("Core::printString", "Undefined operations provided!");
+//				}
+//			}, args);
+//}
 
 Core::DecodedInstruction Core::decode() {
     auto b = Operation(extractByteFromMolecule());
@@ -1034,7 +1034,7 @@ Core::DecodedInstruction Core::decode(Operation op, const OneByte& b) {
     if (!v) {
         throw Problem("Core::decode", "Illegal one byte variant!");
     }
-	return Core::DecodedInstruction(op, std::visit([](auto&& value) {
+	return Core::DecodedInstruction(decode(op), std::visit([](auto&& value) {
 					Core::DecodedArguments da;
 					using T = std::decay_t<decltype(value)>;
 					if constexpr (std::is_same_v<T, Core::IsNoArguments>) {
@@ -1052,7 +1052,7 @@ Core::DecodedInstruction Core::decode(Operation op, const TwoByte& b) {
     if (!v) {
         throw Problem("Core::decode", "Illegal two byte variant!");
     }
-    return Core::DecodedInstruction(op, std::visit([this, byte2](auto&& value) {
+    return Core::DecodedInstruction(decode(op), std::visit([this, byte2](auto&& value) {
                 Core::DecodedArguments da;
                 using T = std::decay_t<decltype(value)>;
                 using K = typename T::Type;
@@ -1077,7 +1077,7 @@ Core::DecodedInstruction Core::decode(Operation op, const ThreeByte& b) {
     if (!v) {
         throw Problem("Core::decode", "Illegal three byte variant!");
     }
-    return Core::DecodedInstruction(op, 
+    return Core::DecodedInstruction(decode(op),
             std::visit([this, byte2, byte3, quarter = setLowerUpperHalves<QuarterAddress>(byte2, byte3)](auto&& value) {
                 Core::DecodedArguments da;
                 using T = std::decay_t<decltype(value)>;
@@ -1115,7 +1115,7 @@ Core::DecodedInstruction Core::decode(Operation op, const FourByte& b) {
     if (!v) {
         throw Problem("Core::decode", "Illegal four byte variant");
     }
-    return Core::DecodedInstruction(op, 
+    return Core::DecodedInstruction(decode(op),
             std::visit([this, byte2, byte3, byte4, quarter = setLowerUpperHalves<QuarterAddress>(byte3, byte4)](auto&& value) {
                 Core::DecodedArguments da;
                 using T = std::decay_t<decltype(value)>;
@@ -1151,7 +1151,7 @@ Core::DecodedInstruction Core::decode(Operation op, const EightByte& b) {
     if (!v) {
         throw Problem("Core::decode", "Illegal eight byte variant");
     }
-    return Core::DecodedInstruction(op, 
+    return Core::DecodedInstruction(decode(op),
             std::visit([this, byte2, imm48](auto&& value) {
                 Core::DecodedArguments da;
                 using T = std::decay_t<decltype(value)>;
@@ -1166,6 +1166,21 @@ Core::DecodedInstruction Core::decode(Operation op, const EightByte& b) {
                 da = r;
                 return da;
             }, v.value()));
+}
+
+Core::DecodedOpcode Core::decode(Operation op) {
+	Core::DecodedOpcode c;
+	switch (op) {
+		case Operation::Nop:
+			c = Core::Nop();
+			break;
+		case Operation::LeaveExecutionLoop:
+			c = Core::ReturnToNative();
+			break;
+		default:
+			break;
+	}
+	return c;
 }
 
 

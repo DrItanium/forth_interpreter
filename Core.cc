@@ -1175,7 +1175,7 @@ Core::DecodedOpcode Core::decode(Operation op) {
 			c = Core::Nop();
 			break;
 		case Operation::LeaveExecutionLoop:
-			c = Core::ReturnToNative();
+			c = Core::LeaveExecutionLoop();
 			break;
 		default:
 			break;

@@ -195,27 +195,40 @@ class Core {
 		struct MinusOperation {
 			std::variant<Signed, Unsigned, FloatingPoint> type;
 		};
-		struct Add { };
-		struct Subtract { };
-		struct Multiply { };
-		struct Divide { };
-		struct Pow { };
-		struct MathOperation {
-			std::variant<Add, Subtract, Multiply, Divide, Pow> kind;
+		struct Add { 
 			std::variant<Signed, Unsigned, FloatingPoint> type;
 			RegisterImmediate args;
 		};
+		struct Subtract { 
+			std::variant<Signed, Unsigned, FloatingPoint> type;
+			RegisterImmediate args;
+		};
+		struct Multiply {
+			std::variant<Signed, Unsigned, FloatingPoint> type;
+			RegisterImmediate args;
+		};
+		struct Divide { 
+			std::variant<Signed, Unsigned, FloatingPoint> type;
+			RegisterImmediate args;
+		};
+		struct Pow { 
+			std::variant<Signed, Unsigned, FloatingPoint> type;
+			RegisterImmediate args;
+		};
+		using MathOperation = std::variant<Add, Subtract, Multiply, Divide, Pow>;
 		struct ModuloOperation {
 			std::variant<Signed, Unsigned> type;
 			RegisterImmediate args;
 		};
-		struct ShiftLeft { };
-		struct ShiftRight { };
-		struct ShiftOperation {
+		struct ShiftLeft { 
 			RegisterImmediate args;
-			std::variant<ShiftLeft, ShiftRight> direction;
 			std::variant<Signed, Unsigned> type;
 		};
+		struct ShiftRight { 
+			RegisterImmediate args;
+			std::variant<Signed, Unsigned> type;
+		};
+		using ShiftOperation = std::variant<ShiftLeft, ShiftRight>;
 		struct Jump { };
 		struct JumpIndirect { };
 		struct JumpAbsolute { };
@@ -234,11 +247,11 @@ class Core {
 		struct Load { };
 		struct Store { };
 		using RegisterManipulator = std::variant<Move, Swap, Load, Store>;
-		struct Push { };
-		struct Pop { };
-		using StackModifiers = std::variant<Push, Pop>;
+		struct PushRegister { };
+		struct PopRegister { };
+		using StackModifiers = std::variant<PushRegister, PopRegister>;
 		struct Nop { };
-		struct ReturnToNative { };
+		struct LeaveExecutionLoop { };
 		struct EncodeBits { };
 		struct DecodeBits { };
 		using EncodeDecodeOps = std::variant<EncodeBits, DecodeBits>;
@@ -256,7 +269,7 @@ class Core {
 		using ConditionalJumpOperation = std::variant< ConditionalBranch, ConditionalBranchIndirect, ConditionalCallSubroutine, ConditionalCallSubroutineIndirect, ConditionalReturnSubroutine>;
 
 		using BranchOperation = std::variant<JumpOperation, ConditionalJumpOperation>;
-		using MiscOperations = std::variant<Nop, ReturnToNative>;
+		using MiscOperations = std::variant<Nop, LeaveExecutionLoop>;
 		using DecodedOpcode = std::variant<PrintRoutines, 
 			  EncodeDecodeOps, 
 			  MiscOperations, 

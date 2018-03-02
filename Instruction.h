@@ -71,13 +71,22 @@ struct GrabBag final {
                 return std::get<0>(kind).size();
             case 1:
                 return std::get<1>(kind).size();
-            default:
-                return 0;
         }
     }
 };
-struct SixByte final { static constexpr byte size = 6; };
-struct TenByte final { static constexpr byte size = 10; };
+struct SixByte final : SizedType<6> { };
+struct TenByte final : SizedType<10> {  };
+struct ExtendedVariant final {
+    std::variant<TenByte, SixByte> kind;
+    constexpr byte size() noexcept {
+        switch (kind.index()) {
+            case 0:
+                return std::get<0>(kind).size();
+            case 1:
+                return std::get<1>(kind).size();
+        }
+    }
+};
 using InstructionWidth = std::variant<OneByte, TwoByte, ThreeByte, FourByte, EightByte, FiveByte, GrabBag, TenByte>;
 enum class Operation : byte {
 #define X(title, a, b, c, d) title,

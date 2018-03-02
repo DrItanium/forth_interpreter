@@ -108,22 +108,127 @@ enum class OneByteOperation : byte {
 #undef ExtendedVariant
 Count,
 };
-enum class Operation : byte {
-#define X(title, a, b, c, d) title,
+
+enum class TwoByteOperation : byte {
+#define OneByte(title) 
+#define TwoByte(a, b) title,
+#define ThreeByte(a, b)
+#define FourByte(a, b)
+#define FiveByte(a, b)
+#define EightByte(a, b)
+#define GrabBag(a, b)
+#define ExtendedVariant(a, b, c)
 #include "InstructionData.def"
-    Count,
-#undef X
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+Count,
 };
 
-template<Operation op>
-constexpr byte instructionWidth = 0;
-
-#define X(title, sz, a, c, d) template<> constexpr auto instructionWidth < Operation :: title > = sz ## Byte :: size ;
+enum class ThreeByteOperation : byte {
+#define OneByte(title) 
+#define TwoByte(a, b) 
+#define ThreeByte(a, b) title,
+#define FourByte(a, b)
+#define FiveByte(a, b)
+#define EightByte(a, b)
+#define GrabBag(a, b)
+#define ExtendedVariant(a, b, c)
 #include "InstructionData.def"
-#undef X
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+Count,
+};
+
+enum class FourByteOperation : byte {
+#define OneByte(title) 
+#define TwoByte(a, b) 
+#define ThreeByte(a, b) 
+#define FourByte(a, b) title,
+#define FiveByte(a, b)
+#define EightByte(a, b)
+#define GrabBag(a, b)
+#define ExtendedVariant(a, b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+Count,
+};
+
+enum class FiveByteOperation : byte {
+#define OneByte(title) 
+#define TwoByte(a, b) 
+#define ThreeByte(a, b) 
+#define FourByte(a, b)
+#define FiveByte(a, b) title,
+#define EightByte(a, b)
+#define GrabBag(a, b)
+#define ExtendedVariant(a, b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+Count,
+};
+
+enum class EightByteOperation : byte {
+#define OneByte(title) 
+#define TwoByte(a, b) 
+#define ThreeByte(a, b) 
+#define FourByte(a, b)
+#define FiveByte(a, b) 
+#define EightByte(a, b) title,
+#define GrabBag(a, b)
+#define ExtendedVariant(a, b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+Count,
+};
+//enum class Operation : byte {
+//#define X(title, a, b, c, d) title,
+//#include "InstructionData.def"
+//    Count,
+//#undef X
+//};
+
+//template<Operation op>
+//constexpr byte instructionWidth = 0;
+//
+//#define X(title, sz, a, c, d) template<> constexpr auto instructionWidth < Operation :: title > = sz ## Byte :: size ;
+//#include "InstructionData.def"
+//#undef X
 
 
-static_assert(QuarterAddress(Operation::Count) <= 256, "Too many operations defined!");
+//static_assert(QuarterAddress(Operation::Count) <= 256, "Too many operations defined!");
 
 
 InstructionWidth determineInstructionWidth(OneByteOperation op);
@@ -132,11 +237,11 @@ InstructionWidth determineInstructionWidth(ThreeByteOperation op);
 InstructionWidth determineInstructionWidth(FourByteOperation op);
 InstructionWidth determineInstructionWidth(FiveByteOperation op);
 InstructionWidth determineInstructionWidth(EightByteOperation op);
-InstructionWidth determineInstructionWidth(GrabBagOperation op);
-InstructionWidth determineInstructionWidth(ExtendedVariantOperation op);
-InstructionWidth determineInstructionWidth(TenByteOperation op);
-InstructionWidth determineInstructionWidth(SixByteOperation op);
-InstructionWidth determineInstructionWidth(Operation op);
+//InstructionWidth determineInstructionWidth(GrabBagOperation op);
+//InstructionWidth determineInstructionWidth(ExtendedVariantOperation op);
+//InstructionWidth determineInstructionWidth(TenByteOperation op);
+//InstructionWidth determineInstructionWidth(SixByteOperation op);
+//InstructionWidth determineInstructionWidth(Operation op);
 
 constexpr byte getInstructionWidth(HalfAddressWrapper w) noexcept {
 	return getInstructionWidth(w.get());

@@ -159,6 +159,111 @@ class Core {
 		void pop(TargetRegister dest, TargetRegister sp);
 		void savePositionToSubroutineStack();
 	private:
+		struct FloatingPoint { };
+		struct Signed { };
+		struct Unsigned { };
+		struct Boolean { };
+		struct RegisterType { };
+		struct ImmediateType { };
+		using RegisterImmediate = std::variant<RegisterType, ImmediateType>;
+		// Begin Types
+		struct Lowest { };
+		struct Lower { };
+		struct Higher { };
+		struct Highest { };
+		using SetImmediate16 = std::variant<Lowest, Lower, Higher, Highest>;
+		struct LoadImmediateLower48 { };
+		using ImmediateManipulators = std::variant<SetImmediate16, LoadImmediateLower48>;
+		struct LessThan { };
+		struct GreaterThan { };
+		struct RangeCheckOperation {
+			std::variant<LessThan, GreaterThan> kind;
+			std::variant<Signed, Unsigned, FloatingPoint> type;
+			RegisterImmediate args;
+		};
+		struct EqualityOperation {
+			std::variant<Signed, Unsigned, FloatingPoint, Boolean> type;
+			RegisterImmediate args;
+		};
+		using ComparisonOperation = std::variant<RangeCheckOperation, EqualityOperation>;
+		struct And { };
+		struct Or { };
+		struct Xor { };
+		struct Logical {
+			std::variant<And, Or, Xor> kind;
+			std::variant<Signed, Unsigned, Boolean> type;
+			RegisterImmediate args;
+		};
+
+		struct Not {
+			std::variant<Signed, Unsigned, Boolean> type;
+		};
+
+		using LogicalOperation = std::variant<Logical, Not>;
+
+		struct MinusOperation {
+			std::variant<Signed, Unsigned, FloatingPoint> type;
+		};
+		struct Add { };
+		struct Subtract { };
+		struct Multiply { };
+		struct Divide { };
+		struct Pow { };
+		struct MathOperation {
+			std::variant<Add, Subtract, Multiply, Divide, Pow> kind;
+			std::variant<Signed, Unsigned, FloatingPoint> type;
+			RegisterImmediate args;
+		};
+		struct ModuloOperation {
+			std::variant<Signed, Unsigned> type;
+			RegisterImmediate args;
+		};
+		struct ShiftLeft { };
+		struct ShiftRight { };
+		struct ShiftOperation {
+			RegisterImmediate args;
+			std::variant<ShiftLeft, ShiftRight> direction;
+			std::variant<Signed, Unsigned> type;
+		};
+		using ALUOperation = std::variant<MinusOperation, MathOperation, ModuloOperation, ShiftOperation>;
+		struct Jump { };
+		struct JumpIndirect { };
+		struct JumpAbsolute { };
+		struct CallSubroutine { };
+		struct CallSubroutineIndirect { };
+		struct ReturnSubroutine { };
+		using JumpOperation = std::variant<Jump, JumpIndirect, JumpAbsolute, CallSubroutine, CallSubroutineIndirect, ReturnSubroutine> ;
+		struct ConditionalBranch { };
+		struct ConditionalBranchIndirect { };
+		struct ConditionalCallSubroutine { };
+		struct ConditionalCallSubroutineIndirect { };
+		struct ConditionalReturnSubroutine { };
+		using ConditionalJumpOperation = std::variant< ConditionalBranch, ConditionalBranchIndirect, ConditionalCallSubroutine, ConditionalCallSubroutineIndirect, ConditionalReturnSubroutine>;
+
+		using BranchOperation = std::variant<JumpOperation, ConditionalJumpOperation>;
+
+		struct Move { };
+		struct Swap { };
+		struct Load { };
+		struct Store { };
+		using RegisterManipulator = std::variant<Move, Swap>;
+		struct Push { };
+		struct Pop { };
+		using StackModifiers = std::variant<Push, Pop>;
+		struct Nop { };
+		struct ReturnToNative { };
+		using MiscOperations = std::variant<Nop, ReturnToNative>;
+		struct EncodeBits { };
+		struct DecodeBits { };
+		using EncodeDecodeOps = std::variant<EncodeBits, DecodeBits>;
+		struct PrintString { };
+		struct PrintChar { };
+		struct TypeDatum { };
+		struct TypeValue {
+			std::variant<Signed, Unsigned, FloatingPoint, Boolean> type;
+		};
+		using PrintRoutines = std::variant<PrintString, PrintChar, TypeDatum, TypeValue>;
+	private:
 		void returnToNative(Operation op, DecodedArguments args);
 		void numericCombine(Operation op, DecodedArguments args);
 		void multiplyOperation(Operation op, DecodedArguments args);

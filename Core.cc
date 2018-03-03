@@ -913,121 +913,13 @@ std::function<void(Address, Address)> Core::getInstructionInstallationFunction()
 //			}, args);
 //}
 
+/*
 Core::DecodedInstruction Core::decode() {
     auto b = Operation(extractByteFromMolecule());
     return std::visit([b, this](auto&& type) { return decode(b, type); }, determineInstructionWidth(b));
 }
 
 
-std::optional<Core::TwoByteSelector> Core::getVariant(Operation op, const TwoByte&) {
-    std::optional<Core::TwoByteSelector> tb;
-    switch (op) {
-#define XTwo(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
-#define XOne(title, b, c) 
-#define XFour(title, b, c) 
-#define XThree(title, b, c) 
-#define XEight(title, b, c) 
-#define X(title, sz, typ, discriminant) INDIRECTION(X, sz)(title, typ, discriminant)
-#include "InstructionData.def"
-#undef XEight
-#undef XFour
-#undef XOne
-#undef XTwo
-#undef XThree
-#undef X
-        default:
-            break;
-    }
-    return tb;
-}
-
-std::optional<Core::ThreeByteSelector> Core::getVariant(Operation op, const ThreeByte&) {
-    std::optional<Core::ThreeByteSelector> tb;
-    switch(op) {
-#define XThree(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
-#define XOne(title, b, c) 
-#define XTwo(title, b, c) 
-#define XFour(title, b, c) 
-#define XEight(title, b, c) 
-#define X(title, sz, typ, discriminant) INDIRECTION(X, sz)(title, typ, discriminant)
-#include "InstructionData.def"
-#undef XEight
-#undef XFour
-#undef XOne
-#undef XTwo
-#undef XThree
-#undef X
-        default:
-            break;
-    }
-    return tb;
-}
-
-std::optional<Core::FourByteSelector> Core::getVariant(Operation op, const FourByte&) {
-    std::optional<Core::FourByteSelector> tb;
-    switch (op) {
-#define XFour(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
-#define XOne(title, b, c) 
-#define XTwo(title, b, c) 
-#define XThree(title, b, c) 
-#define XEight(title, b, c) 
-#define X(title, sz, typ, discriminant) INDIRECTION(X, sz)(title, typ, discriminant)
-#include "InstructionData.def"
-#undef XEight
-#undef XFour
-#undef XOne
-#undef XTwo
-#undef XThree
-#undef X
-        default: 
-            break;
-    }
-    return tb;
-}
-
-std::optional<Core::EightByteSelector> Core::getVariant(Operation op, const EightByte&) {
-    std::optional<Core::EightByteSelector> tb;
-    switch (op) {
-#define XFour(title, b, c) 
-#define XOne(title, b, c) 
-#define XTwo(title, b, c) 
-#define XThree(title, b, c) 
-#define XEight(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
-#define X(title, sz, typ, discriminant) INDIRECTION(X, sz)(title, typ, discriminant)
-#include "InstructionData.def"
-#undef XEight
-#undef XFour
-#undef XOne
-#undef XTwo
-#undef XThree
-#undef X
-        default:
-            break;
-    }
-    return tb;
-}
-
-std::optional<Core::OneByteSelector> Core::getVariant(Operation op, const OneByte&) {
-    std::optional<Core::OneByteSelector> tb;
-    switch (op) {
-#define XFour(title, b, c) 
-#define XEight(title, b, c) 
-#define XTwo(title, b, c) 
-#define XThree(title, b, c) 
-#define XOne(title, typ, c) case Operation:: title : tb = Core:: Is ## typ (); break;
-#define X(title, sz, typ, discriminant) INDIRECTION(X, sz)(title, typ, discriminant)
-#include "InstructionData.def"
-#undef XEight
-#undef XFour
-#undef XOne
-#undef XTwo
-#undef XThree
-#undef X
-        default:
-            break;
-    }
-    return tb;
-}
 
 Core::DecodedInstruction Core::decode(Operation op, const OneByte& b) {
     auto v = Core::getVariant(op, b);
@@ -1167,7 +1059,6 @@ Core::DecodedInstruction Core::decode(Operation op, const EightByte& b) {
                 return da;
             }, v.value()));
 }
-
 std::optional<Core::DecodedOpcode> Core::decodeOpcode(Operation op) {
 	std::optional<Core::DecodedOpcode> c;
 #define XTwoRegisterWithImm16(_) Core::ImmediateType
@@ -1225,7 +1116,40 @@ std::optional<Core::DecodedOpcode> Core::decodeOpcode(Operation op) {
 #undef XFloatingPoint
 	return c;
 }
+*/
 
 
+std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
+    std::optional<Core::DecodedOperation> op;
+    switch(decodeVariant(control)) {
+        case VariantKind::OneByte: 
+            op = decodeInstruction(control, OneByteInstruction()); 
+            break;
+        case VariantKind::TwoByte: 
+            op = decodeInstruction(control, TwoByteInstruction()); 
+            break;
+        case VariantKind::ThreeByte: 
+            op = decodeInstruction(control, ThreeByteInstruction()); 
+            break;
+        case VariantKind::FourByte: 
+            op = decodeInstruction(control, FourByteInstruction()); 
+            break;
+        case VariantKind::FiveByte: 
+            op = decodeInstruction(control, FiveByteInstruction()); 
+            break;
+        case VariantKind::EightByte:
+            op = decodeInstruction(control, EightByteInstruction()); 
+            break;
+        case VariantKind::GrabBag:
+            op = decodeInstruction(control, GrabBagInstruction());
+            break;
+        case VariantKind::ExtendedVariant:
+            op = decodeInstruction(control, ExtendedVariantInstruction());
+            break;
+        default:
+            break;
+    }
+    return op;
+}
 
 } // namespace forth

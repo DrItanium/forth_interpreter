@@ -1149,23 +1149,14 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, OneB
 }
 
 std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, TwoByteInstruction) {
-    // code 1: TwoByte [ variant:3 | kind: 1 | group: 3 | control: 8] // multiple layouts
-    //          OneRegister [ variant:3 | kind: 1 [is zero] | op: 8 | dest: 4 ]
-    //          TwoRegister [ variant:3 | kind: 1 [is one] | op: 4 | dest: 4 | src: 4 ] // not as many allowed here
+    // code 1: TwoByte [ variant:3 | control: 13 ] // multiple layouts
+    //          OneRegister [ variant:3 | op: 5 | dest: 4 | unused: 4 ]
+    //          TwoRegister [ variant:3 | op: 5 | dest: 4 | src: 4 ] // not as many allowed here
     std::optional<Core::DecodedOperation> op;
     
-    if (decodeBits<byte, bool, 0b00001000, 3>(control)) {
-        // if it is true then TwoRegister variety
-    } else {
-       auto nextByte = extractByteFromMolecule();
-       auto code = setLowerUpperHalves
-
-       // this one gets a little more complex
-       // one register variety 
-    }
-    switch (decodeBits<byte, TwoByteOpcode, 0b11110000, 3>(control)) {
-#define OneByte(title) case OneByteOpcode:: title : op = title () ; break;
-#define TwoByte(title, b) 
+    switch (decodeBits<byte, TwoByteOpcode, 0b11111000, 3>(control)) {
+#define OneByte(title) 
+#define TwoByte(title, b) case TwoByteOpcode :: title : op = Core:: title () ; decodeArguments(std::get< Core:: title > ( op.value())); break;
 #define ThreeByte(title, b) 
 #define FourByte(title, b) 
 #define FiveByte(title, b) 

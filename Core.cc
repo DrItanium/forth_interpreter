@@ -1315,6 +1315,41 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Five
 	return std::optional<Core::DecodedOperation>(op);
 }
 
+std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, GrabBagInstruction) {
+	// code 6: GrabBag [ variant:3 | op: 5 | ... ] 
+	//         TwoRegister          [ variant: 3 [6] | op: 5 | dest: 4 | src: 4 ]
+	//         OneRegisterWithImm64 [ variant: 3 [6] | op: 5 | dest: 4 | unused: 4 | imm64 ]
+	//         OneRegisterWithImm32 [ variant: 3 [6] | op: 5 | dest: 4 | unused: 4 | imm32 ]
+	Core::GrabBagOperation op;
+	switch (decodeBits<byte, GrabBagOpcode, 0b11111000, 3>(control)) {
+#define OneByte(title) 
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title , b) 
+#define FiveByte(title, b) 
+#define EightByte(title, b) 
+#define GrabBag(title, b) \
+		case GrabBagOpcode :: title : \
+		op = Core:: title () ; \
+		decodeArguments(control, std::get< Core:: title > (op).args); \
+		break; 
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+
+		default:
+			break;
+	}
+
+
+	return std::optional<Core::DecodedOperation>(op);
+}
+
 std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
     switch(decodeVariant(control)) {
         case VariantKind::OneByte: 

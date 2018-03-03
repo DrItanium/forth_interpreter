@@ -66,13 +66,15 @@ struct EightByteInstruction final : SizedType<8> { };
 struct SixByteInstruction final : SizedType<6> { };
 struct TenByteInstruction final : SizedType<10> {  };
 struct GrabBagInstruction final {
-    std::variant<TwoByteInstruction, TwoByteInstruction, SixByteInstruction, TenByteInstruction> kind;
+    std::variant<TwoByteInstruction, SixByteInstruction, TenByteInstruction> kind;
     constexpr byte size() noexcept {
         switch (kind.index()) {
             case 0:
                 return std::get<0>(kind).size();
 			case 1:
 				return std::get<1>(kind).size();
+			case 2:
+				return std::get<2>(kind).size();
         }
     }
 };
@@ -213,7 +215,7 @@ enum class GrabBagOpcode : byte {
 #define FourByte(title, b)
 #define FiveByte(title, b) 
 #define EightByte(title, b) 
-#define GrabBag(title, cl) cl ## _ ## title,
+#define GrabBag(title, cl) title,
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte

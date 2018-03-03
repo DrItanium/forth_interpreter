@@ -47,62 +47,25 @@ InstructionWidth determineInstructionWidth(EightByteOpcode op) { return EightByt
 InstructionWidth determineInstructionWidth(GrabBagOpcode op){
     GrabBagInstruction gb;
     switch (op) {
-        case GrabBagOpcode::ExtendedTwoRegister0_Minus:
-        case GrabBagOpcode::ExtendedTwoRegister0_MinusUnsigned:
-        case GrabBagOpcode::ExtendedTwoRegister0_MinusFloatingPoint:
-        case GrabBagOpcode::ExtendedTwoRegister0_PrintString:
-            gb.kind.emplace<0>(TwoByteInstruction());
+        case GrabBagOpcode::Minus:
+        case GrabBagOpcode::MinusUnsigned:
+        case GrabBagOpcode::MinusFloatingPoint:
+        case GrabBagOpcode::PrintString:
+        case GrabBagOpcode::NotBoolean:
+        case GrabBagOpcode::NotSigned:
+        case GrabBagOpcode::Not:
+            gb.kind = TwoByteInstruction();
             break;
-        case GrabBagOpcode::ExtendedTwoRegister1_NotBoolean:
-        case GrabBagOpcode::ExtendedTwoRegister1_NotSigned:
-        case GrabBagOpcode::ExtendedTwoRegister1_Not:
-            gb.kind.emplace<1>(TwoByteInstruction());
-            break;
+		case GrabBagOpcode::LoadImmediate32:
+			gb.kind = SixByteInstruction();
+			break;
+		case GrabBagOpcode::LoadImmediate64:
+			gb.kind = TenByteInstruction();
+			break;
         default:
             throw Problem("determineInstructionWidth", "Illegal grab bag operation specified!");
     }
     return gb;
-}
-
-InstructionWidth determineInstructionWidth(ExtendedVariantOpcode op){
-    switch(op) {
-#define OneByte(title) 
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b)
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
-#define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b) case ExtendedVariantOpcode :: TenByte ## _ ## title : determineInstructionWidth(ExtendedVariantToSubVariant< ExtendedVariantOpcode :: TenByte ## _ ## title > ); break;
-#define ExtendedVariantSixByte(title, b) case ExtendedVariantOpcode :: SixByte ## _ ## title : determineInstructionWidth(ExtendedVariantToSubVariant< ExtendedVariantOpcode :: SixByte ## _ ## title > ); break;
-#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
-        default:
-            throw Problem("determineInstructionWidth", "Illegal ExtendedVariantOpcode specified!");
-    }
-
-}
-
-InstructionWidth determineInstructionWidth(TenByteOpcode op) {
-    ExtendedVariantInstruction ev;
-    ev.kind = TenByteInstruction();
-    return ev;
-}
-
-InstructionWidth determineInstructionWidth(SixByteOpcode op){
-    ExtendedVariantInstruction ev;
-    ev.kind = SixByteInstruction();
-    return ev;
 }
 
 

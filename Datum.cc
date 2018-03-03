@@ -101,6 +101,7 @@ namespace forth {
     QuarterAddress Datum::higherQuarterAddress() const noexcept { return getLowerHalf(upperHalfAddress()); }
     QuarterAddress Datum::lowerQuarterAddress() const noexcept { return getUpperHalf(lowerHalfAddress()); }
     QuarterAddress Datum::lowestQuarterAddress() const noexcept { return getLowerHalf(lowerHalfAddress()); }
+    /*
     std::optional<forth::Discriminant> involvesDiscriminantType(Operation op) {
         std::optional<forth::Discriminant> r;
         switch (op) {
@@ -113,5 +114,6 @@ namespace forth {
         }
         return r;
     }
+    */
 
 } // end namespace forth

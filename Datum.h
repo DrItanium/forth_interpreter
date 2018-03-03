@@ -21,7 +21,7 @@ namespace forth {
     constexpr bool legalValue(Discriminant value) noexcept {
 		return legalValue<Discriminant, Address>(value);
     }
-    std::optional<forth::Discriminant> involvesDiscriminantType(Operation op);
+    //std::optional<forth::Discriminant> involvesDiscriminantType(Operation op);
 
     union Datum {
         Datum() = default;

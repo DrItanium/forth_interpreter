@@ -633,8 +633,8 @@ Address Core::extractImm48() {
 //    //getRegister(tr).setValue(imm48);
 //}
 //void Core::nop(Operation op, DecodedArguments args) { }
-
 void Core::dispatchInstruction() {
+    // okay now we start with the variant kind
 	/*
 	static std::map<Operation, decltype(std::mem_fn(&Core::numericCombine))> dispatchTable = {
 #define DefEntry(t, fn) { Operation :: t , std::mem_fn<void(Operation)>(&Core:: fn ) }

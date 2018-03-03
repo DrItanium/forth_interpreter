@@ -32,31 +32,31 @@ namespace forth {
 		return ((b5 << 40) | (b4 << 32) | (b3 << 24) | (b2 << 16) | (b1 << 8) | b0) & 0x00FF'FFFF'FFFF'FFFF;
 	}
 
-InstructionWidth determineInstructionWidth(OneByteOperation op) { return OneByte(); }
+InstructionWidth determineInstructionWidth(OneByteOpcode op) { return OneByteInstruction(); }
 
-InstructionWidth determineInstructionWidth(TwoByteOperation op) { return TwoByte(); }
+InstructionWidth determineInstructionWidth(TwoByteOpcode op) { return TwoByteInstruction(); }
 
-InstructionWidth determineInstructionWidth(ThreeByteOperation op) { return ThreeByte(); }
+InstructionWidth determineInstructionWidth(ThreeByteOpcode op) { return ThreeByteInstruction(); }
 
-InstructionWidth determineInstructionWidth(FourByteOperation op) { return FourByte(); }
+InstructionWidth determineInstructionWidth(FourByteOpcode op) { return FourByteInstruction(); }
 
-InstructionWidth determineInstructionWidth(FiveByteOperation op) { return FiveByte(); }
+InstructionWidth determineInstructionWidth(FiveByteOpcode op) { return FiveByteInstruction(); }
 
-InstructionWidth determineInstructionWidth(EightByteOperation op) { return EightByte(); }
+InstructionWidth determineInstructionWidth(EightByteOpcode op) { return EightByteInstruction(); }
 
-InstructionWidth determineInstructionWidth(GrabBagOperation op){
-    GrabBag gb;
+InstructionWidth determineInstructionWidth(GrabBagOpcode op){
+    GrabBagInstruction gb;
     switch (op) {
-        case GrabBagOperation::ExtendedTwoRegister0_Minus:
-        case GrabBagOperation::ExtendedTwoRegister0_MinusUnsigned:
-        case GrabBagOperation::ExtendedTwoRegister0_MinusFloatingPoint:
-        case GrabBagOperation::ExtendedTwoRegister0_PrintString:
-            gb.kind.emplace<0>(TwoByte());
+        case GrabBagOpcode::ExtendedTwoRegister0_Minus:
+        case GrabBagOpcode::ExtendedTwoRegister0_MinusUnsigned:
+        case GrabBagOpcode::ExtendedTwoRegister0_MinusFloatingPoint:
+        case GrabBagOpcode::ExtendedTwoRegister0_PrintString:
+            gb.kind.emplace<0>(TwoByteInstruction());
             break;
-        case GrabBagOperation::ExtendedTwoRegister1_NotBoolean:
-        case GrabBagOperation::ExtendedTwoRegister1_NotSigned:
-        case GrabBagOperation::ExtendedTwoRegister1_Not:
-            gb.kind.emplace<1>(TwoByte());
+        case GrabBagOpcode::ExtendedTwoRegister1_NotBoolean:
+        case GrabBagOpcode::ExtendedTwoRegister1_NotSigned:
+        case GrabBagOpcode::ExtendedTwoRegister1_Not:
+            gb.kind.emplace<1>(TwoByteInstruction());
             break;
         default:
             throw Problem("determineInstructionWidth", "Illegal grab bag operation specified!");
@@ -64,7 +64,7 @@ InstructionWidth determineInstructionWidth(GrabBagOperation op){
     return gb;
 }
 
-InstructionWidth determineInstructionWidth(ExtendedVariantOperation op){
+InstructionWidth determineInstructionWidth(ExtendedVariantOpcode op){
     switch(op) {
 #define OneByte(title) 
 #define TwoByte(title, b) 
@@ -73,8 +73,8 @@ InstructionWidth determineInstructionWidth(ExtendedVariantOperation op){
 #define FiveByte(title, b) 
 #define EightByte(title, b) 
 #define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b) case ExtendedVariantOperation :: TenByte ## _ ## title : determineInstructionWidth(ExtendedVariantToSubVariant< ExtendedVariantOperation :: TenByte ## _ ## title > ); break;
-#define ExtendedVariantSixByte(title, b) case ExtendedVariantOperation :: SixByte ## _ ## title : determineInstructionWidth(ExtendedVariantToSubVariant< ExtendedVariantOperation :: SixByte ## _ ## title > ); break;
+#define ExtendedVariantTenByte(title, b) case ExtendedVariantOpcode :: TenByte ## _ ## title : determineInstructionWidth(ExtendedVariantToSubVariant< ExtendedVariantOpcode :: TenByte ## _ ## title > ); break;
+#define ExtendedVariantSixByte(title, b) case ExtendedVariantOpcode :: SixByte ## _ ## title : determineInstructionWidth(ExtendedVariantToSubVariant< ExtendedVariantOpcode :: SixByte ## _ ## title > ); break;
 #define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
 #include "InstructionData.def"
 #undef OneByte
@@ -88,20 +88,20 @@ InstructionWidth determineInstructionWidth(ExtendedVariantOperation op){
 #undef ExtendedVariantSixByte
 #undef ExtendedVariantTenByte
         default:
-            throw Problem("determineInstructionWidth", "Illegal ExtendedVariantOperation specified!");
+            throw Problem("determineInstructionWidth", "Illegal ExtendedVariantOpcode specified!");
     }
 
 }
 
-InstructionWidth determineInstructionWidth(TenByteOperation op) {
-    ExtendedVariant ev;
-    ev.kind = TenByte();
+InstructionWidth determineInstructionWidth(TenByteOpcode op) {
+    ExtendedVariantInstruction ev;
+    ev.kind = TenByteInstruction();
     return ev;
 }
 
-InstructionWidth determineInstructionWidth(SixByteOperation op){
-    ExtendedVariant ev;
-    ev.kind = SixByte();
+InstructionWidth determineInstructionWidth(SixByteOpcode op){
+    ExtendedVariantInstruction ev;
+    ev.kind = SixByteInstruction();
     return ev;
 }
 

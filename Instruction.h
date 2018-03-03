@@ -57,14 +57,14 @@ struct SizedType {
     constexpr SizedType() { }
     constexpr byte size() noexcept { return c; }
 };
-struct OneByte final : SizedType<1> { };
-struct TwoByte final : SizedType<2> { };
-struct ThreeByte final : SizedType<3> { };
-struct FourByte final : SizedType<4> { };
-struct FiveByte final : SizedType<5> { };
-struct EightByte final : SizedType<8> { };
-struct GrabBag final {
-    std::variant<TwoByte, TwoByte> kind;
+struct OneByteInstruction final : SizedType<1> { };
+struct TwoByteInstruction final : SizedType<2> { };
+struct ThreeByteInstruction final : SizedType<3> { };
+struct FourByteInstruction final : SizedType<4> { };
+struct FiveByteInstruction final : SizedType<5> { };
+struct EightByteInstruction final : SizedType<8> { };
+struct GrabBagInstruction final {
+    std::variant<TwoByteInstruction, TwoByteInstruction> kind;
     constexpr byte size() noexcept {
         switch (kind.index()) {
             case 0:
@@ -74,10 +74,10 @@ struct GrabBag final {
         }
     }
 };
-struct SixByte final : SizedType<6> { };
-struct TenByte final : SizedType<10> {  };
-struct ExtendedVariant final {
-    std::variant<TenByte, SixByte> kind;
+struct SixByteInstruction final : SizedType<6> { };
+struct TenByteInstruction final : SizedType<10> {  };
+struct ExtendedVariantInstruction final {
+    std::variant<TenByteInstruction, SixByteInstruction> kind;
     constexpr byte size() noexcept {
         switch (kind.index()) {
             case 0:
@@ -87,8 +87,23 @@ struct ExtendedVariant final {
         }
     }
 };
-using InstructionWidth = std::variant<OneByte, TwoByte, ThreeByte, FourByte, EightByte, FiveByte, GrabBag, ExtendedVariant>;
-enum class OneByteOperation : byte {
+using InstructionWidth = std::variant<OneByteInstruction, TwoByteInstruction, ThreeByteInstruction, FourByteInstruction, EightByteInstruction, FiveByteInstruction, GrabBagInstruction, ExtendedVariantInstruction>;
+enum class VariantKind : byte {
+    OneByte,
+    TwoByte,
+    ThreeByte,
+    FourByte,
+    EightByte,
+    FiveByte,
+    GrabBag,
+    ExtendedVariant,
+    Count,
+};
+static_assert(byte(VariantKind::Count) <= 8, "Too many variants specified!");
+constexpr VariantKind decodeVariant(byte input) noexcept {
+    return decodeBits<byte, VariantKind, 0b00000111, 0>(input);
+}
+enum class OneByteOpcode : byte {
 #define OneByte(title) title,
 #define TwoByte(title, b) 
 #define ThreeByte(title, b)
@@ -109,7 +124,7 @@ enum class OneByteOperation : byte {
 Count,
 };
 
-enum class TwoByteOperation : byte {
+enum class TwoByteOpcode : byte {
 #define OneByte(title) 
 #define TwoByte(title, b) title,
 #define ThreeByte(title, b)
@@ -130,7 +145,7 @@ enum class TwoByteOperation : byte {
 Count,
 };
 
-enum class ThreeByteOperation : byte {
+enum class ThreeByteOpcode : byte {
 #define OneByte(title) 
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) title,
@@ -151,7 +166,7 @@ enum class ThreeByteOperation : byte {
 Count,
 };
 
-enum class FourByteOperation : byte {
+enum class FourByteOpcode : byte {
 #define OneByte(title) 
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
@@ -172,7 +187,7 @@ enum class FourByteOperation : byte {
 Count,
 };
 
-enum class FiveByteOperation : byte {
+enum class FiveByteOpcode : byte {
 #define OneByte(title) 
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
@@ -193,7 +208,7 @@ enum class FiveByteOperation : byte {
 Count,
 };
 
-enum class EightByteOperation : byte {
+enum class EightByteOpcode : byte {
 #define OneByte(title) 
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
@@ -214,7 +229,7 @@ enum class EightByteOperation : byte {
 Count,
 };
 
-enum class GrabBagOperation : byte {
+enum class GrabBagOpcode : byte {
 #define OneByte(title) 
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
@@ -235,7 +250,7 @@ enum class GrabBagOperation : byte {
     Count,
 };
 
-enum class ExtendedVariantOperation : byte {
+enum class ExtendedVariantOpcode : byte {
 #define OneByte(title) 
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
@@ -256,7 +271,7 @@ enum class ExtendedVariantOperation : byte {
     Count,
 };
 
-enum class TenByteOperation : byte {
+enum class TenByteOpcode : byte {
 #define OneByte(title) 
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
@@ -285,7 +300,7 @@ enum class TenByteOperation : byte {
 
 
 
-enum class SixByteOperation : byte {
+enum class SixByteOpcode : byte {
 #define OneByte(title) 
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
@@ -310,10 +325,10 @@ enum class SixByteOperation : byte {
     Count,
 };
 
-struct UndefinedOperation final { constexpr UndefinedOperation() { } };
+struct UndefinedOpcode final { constexpr UndefinedOpcode() { } };
 
-template<ExtendedVariantOperation op>
-constexpr auto ExtendedVariantToSubVariant = UndefinedOperation();
+template<ExtendedVariantOpcode op>
+constexpr auto ExtendedVariantToSubVariant = UndefinedOpcode();
 
 #define OneByte(title) 
 #define TwoByte(title, b) 
@@ -324,10 +339,10 @@ constexpr auto ExtendedVariantToSubVariant = UndefinedOperation();
 #define GrabBag(title, b) 
 #define ExtendedVariantTenByte(title, b) \
     template<> \
-    constexpr auto ExtendedVariantToSubVariant < ExtendedVariantOperation :: TenByte ## _ ## title > = TenByteOperation :: title  ;
+    constexpr auto ExtendedVariantToSubVariant < ExtendedVariantOpcode :: TenByte ## _ ## title > = TenByteOpcode :: title  ;
 #define ExtendedVariantSixByte(title, b) \
     template<> \
-    constexpr auto ExtendedVariantToSubVariant < ExtendedVariantOperation :: SixByte ## _ ## title > = SixByteOperation :: title ;
+    constexpr auto ExtendedVariantToSubVariant < ExtendedVariantOpcode :: SixByte ## _ ## title > = SixByteOpcode :: title ;
 #define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
 #include "InstructionData.def"
 #undef OneByte
@@ -342,16 +357,16 @@ constexpr auto ExtendedVariantToSubVariant = UndefinedOperation();
 #undef ExtendedVariantTenByte
 
 
-InstructionWidth determineInstructionWidth(OneByteOperation op);
-InstructionWidth determineInstructionWidth(TwoByteOperation op);
-InstructionWidth determineInstructionWidth(ThreeByteOperation op);
-InstructionWidth determineInstructionWidth(FourByteOperation op);
-InstructionWidth determineInstructionWidth(FiveByteOperation op);
-InstructionWidth determineInstructionWidth(EightByteOperation op);
-InstructionWidth determineInstructionWidth(GrabBagOperation op);
-InstructionWidth determineInstructionWidth(ExtendedVariantOperation op);
-InstructionWidth determineInstructionWidth(TenByteOperation op);
-InstructionWidth determineInstructionWidth(SixByteOperation op);
+InstructionWidth determineInstructionWidth(OneByteOpcode op);
+InstructionWidth determineInstructionWidth(TwoByteOpcode op);
+InstructionWidth determineInstructionWidth(ThreeByteOpcode op);
+InstructionWidth determineInstructionWidth(FourByteOpcode op);
+InstructionWidth determineInstructionWidth(FiveByteOpcode op);
+InstructionWidth determineInstructionWidth(EightByteOpcode op);
+InstructionWidth determineInstructionWidth(GrabBagOpcode op);
+InstructionWidth determineInstructionWidth(ExtendedVariantOpcode op);
+InstructionWidth determineInstructionWidth(TenByteOpcode op);
+InstructionWidth determineInstructionWidth(SixByteOpcode op);
 
 constexpr TargetRegister getDestinationRegister(byte field) noexcept { 
 	return TargetRegister(getLowerHalf(field));

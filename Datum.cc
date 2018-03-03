@@ -18,7 +18,6 @@ namespace forth {
 		return out;
 	}
 	Datum::Datum(const Datum& other) : address(other.address) { }
-    Datum::Datum(Datum&& other) : address(std::move(other.address)) { }
 
     Datum::Datum(const std::string* value) : _string(value) { }
     Datum::Datum(const std::string& value) : _string(&value) { }

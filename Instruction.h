@@ -69,8 +69,8 @@ struct GrabBagInstruction final {
         switch (kind.index()) {
             case 0:
                 return std::get<0>(kind).size();
-            case 1:
-                return std::get<1>(kind).size();
+			case 1:
+				return std::get<1>(kind).size();
         }
     }
 };
@@ -81,7 +81,7 @@ struct ExtendedVariantInstruction final {
     constexpr byte size() noexcept {
         switch (kind.index()) {
             case 0:
-                return std::get<0>(kind).size();
+                return std::get<TenByteInstruction>(kind).size();
             case 1:
                 return std::get<1>(kind).size();
         }

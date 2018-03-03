@@ -144,12 +144,24 @@ class Core {
         };
         using FourByteSelector = std::variant<IsFiveRegister, IsImmediate24, IsTwoRegisterWithImm16, IsOneRegisterWithImm16>;
         using FourByteVariant = std::variant<FiveRegister, Immediate24, TwoRegisterWithImm16, OneRegisterWithImm16>;
-        OperationKind(LoadImm48) {
+        OperationKind(OneRegisterWithImm48) {
             DestinationRegister destination;
             Address imm48;
         };
-        using EightByteSelector = std::variant<IsLoadImm48>;
-		using EightByteVariant = std::variant<LoadImm48>;
+        using EightByteSelector = std::variant<IsOneRegisterWithImm48>;
+		using EightByteVariant = std::variant<OneRegisterWithImm48>;
+        OperationKind(OneRegisterWithImm32) {
+            DestinationRegister destination;
+            HalfAddress imm32;
+        };
+        using SixByteSelector = std::variant<IsOneRegisterWithImm32>;
+		using SixByteVariant = std::variant<OneRegisterWithImm32>;
+        OperationKind(OneRegisterWithImm64) {
+            DestinationRegister destination;
+            HalfAddress imm64;
+        };
+        using TenByteSelector = std::variant<IsOneRegisterWithImm64>;
+		using TenByteVariant = std::variant<OneRegisterWithImm64>;
 #undef OperationKind
 		using DecodedArguments = std::variant<OneByteVariant, TwoByteVariant, ThreeByteVariant, FourByteVariant, EightByteVariant>;
 	private:
@@ -177,9 +189,8 @@ class Core {
 #undef ExtendedVariant
 #undef ExtendedVariantSixByte
 #undef ExtendedVariantTenByte
-        struct OneByteOperation {
 
-        std::variant<
+        using OneByteOperation = std::variant<
 #define OneByte(title) Core::title,
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
@@ -202,9 +213,8 @@ class Core {
 #undef ExtendedVariantSixByte
 #undef ExtendedVariantTenByte
             UndefinedOpcode
-            > kind;
-        };
-        struct TwoByteOperation {
+            >;
+        using TwoByteOperation = 
             std::variant<
 #define OneByte(title)
 #define TwoByte(title, b) Core:: title,
@@ -227,9 +237,8 @@ class Core {
 #undef ExtendedVariant
 #undef ExtendedVariantSixByte
 #undef ExtendedVariantTenByte
-                UndefinedOpcode> kind;
-        };
-        struct ThreeByteOperation {
+                UndefinedOpcode>;
+        using ThreeByteOperation =
             std::variant<
 #define OneByte(title)
 #define TwoByte(title, b) 
@@ -252,10 +261,9 @@ class Core {
 #undef ExtendedVariant
 #undef ExtendedVariantSixByte
 #undef ExtendedVariantTenByte
-                UndefinedOpcode> kind;
-        };
+                UndefinedOpcode> ;
 
-        struct FourByteOperation {
+        using FourByteOperation =
             std::variant<
 #define OneByte(title)
 #define TwoByte(title, b) 
@@ -278,9 +286,8 @@ class Core {
 #undef ExtendedVariant
 #undef ExtendedVariantSixByte
 #undef ExtendedVariantTenByte
-                UndefinedOpcode> kind;
-        };
-        struct FiveByteOperation {
+                UndefinedOpcode>;
+        using FiveByteOperation =
             std::variant<
 #define OneByte(title)
 #define TwoByte(title, b) 
@@ -303,10 +310,8 @@ class Core {
 #undef ExtendedVariant
 #undef ExtendedVariantSixByte
 #undef ExtendedVariantTenByte
-                UndefinedOpcode> kind;
-        };
-
-        struct EightByteOperation {
+                UndefinedOpcode>;
+        using EightByteOperation =
             std::variant<
 #define OneByte(title)
 #define TwoByte(title, b) 
@@ -329,9 +334,8 @@ class Core {
 #undef ExtendedVariant
 #undef ExtendedVariantSixByte
 #undef ExtendedVariantTenByte
-                UndefinedOpcode> kind;
-        };
-        struct GrabBagOperation {
+                UndefinedOpcode>;
+        using GrabBagOperation = 
             std::variant<
 #define OneByte(title)
 #define TwoByte(title, b) 
@@ -354,10 +358,9 @@ class Core {
 #undef ExtendedVariant
 #undef ExtendedVariantSixByte
 #undef ExtendedVariantTenByte
-                UndefinedOpcode> kind;
-        };
+                UndefinedOpcode>;
 
-        struct TenByteOperation {
+        using TenByteOperation =
             std::variant<
 #define OneByte(title)
 #define TwoByte(title, b) 
@@ -380,10 +383,9 @@ class Core {
 #undef ExtendedVariant
 #undef ExtendedVariantSixByte
 #undef ExtendedVariantTenByte
-                UndefinedOpcode> kind;
-        };
+                UndefinedOpcode>;
 
-        struct SixByteOperation {
+        using SixByteOperation =
             std::variant<
 #define OneByte(title)
 #define TwoByte(title, b) 
@@ -406,8 +408,7 @@ class Core {
 #undef ExtendedVariant
 #undef ExtendedVariantSixByte
 #undef ExtendedVariantTenByte
-                UndefinedOpcode> kind;
-        };
+                UndefinedOpcode>;
 
         using ExtendedVariantOperation = std::variant<TenByteOperation, SixByteOperation>;
         using DecodedOperation = std::variant<OneByteOperation, TwoByteOperation, 

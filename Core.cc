@@ -861,19 +861,19 @@ std::function<void(Address, Address)> Core::getMemoryInstallationFunction() noex
 	return [this](Address location, Address value) { store(location, value); };
 }
 
-std::function<void(Address, Address)> Core::getInstructionInstallationFunction() noexcept {
-	return [this](Address location, Address instruction) {
-		auto width = getInstructionWidth(instruction);
-		if (width == 0) {
-			throw Problem("Core::getInstructionInstallationFunction", "Got an \"instruction\" with zero width!");
-		}
-		Datum conv(instruction);
-		for (auto curr = location, i = Address(0); curr < (location + width); ++curr, ++i) {
-			auto value = conv.getField(byte(i));
-			storeByte(curr, value);
-		}
-	};
-}
+//std::function<void(Address, Address)> Core::getInstructionInstallationFunction() noexcept {
+//	return [this](Address location, Address instruction) {
+//		auto width = getInstructionWidth(instruction);
+//		if (width == 0) {
+//			throw Problem("Core::getInstructionInstallationFunction", "Got an \"instruction\" with zero width!");
+//		}
+//		Datum conv(instruction);
+//		for (auto curr = location, i = Address(0); curr < (location + width); ++curr, ++i) {
+//			auto value = conv.getField(byte(i));
+//			storeByte(curr, value);
+//		}
+//	};
+//}
 
 //void Core::returnToNative(Operation op, DecodedArguments) {
 //	switch (op) {
@@ -1119,9 +1119,9 @@ std::optional<Core::DecodedOpcode> Core::decodeOpcode(Operation op) {
 */
 std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, OneByteInstruction) {
     // code 0: OneByte [ variant:3 | op: 5 ] // maximum of 32 ops in this class
-    std::optional<Core::DecodedOperation> op;
+    Core::OneByteOperation op;
     switch (decodeBits<byte, OneByteOpcode, 0b11111000, 3>(control)) {
-#define OneByte(title) case OneByteOpcode:: title : op = title () ; break;
+#define OneByte(title) case OneByteOpcode:: title : op = Core:: title () ; break;
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
 #define FourByte(title, b) 
@@ -1145,42 +1145,82 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, OneB
         default:
             break;
     }
-    return op;
+    return std::optional<Core::DecodedOperation>(op);
 }
 
-std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, TwoByteInstruction) {
-    // code 1: TwoByte [ variant:3 | control: 13 ] // multiple layouts
-    //          OneRegister [ variant:3 | op: 5 | dest: 4 | unused: 4 ]
-    //          TwoRegister [ variant:3 | op: 5 | dest: 4 | src: 4 ] // not as many allowed here
-    std::optional<Core::DecodedOperation> op;
-    
-    switch (decodeBits<byte, TwoByteOpcode, 0b11111000, 3>(control)) {
-#define OneByte(title) 
-#define TwoByte(title, b) case TwoByteOpcode :: title : op = Core:: title () ; decodeArguments(std::get< Core:: title > ( op.value())); break;
-#define ThreeByte(title, b) 
-#define FourByte(title, b) 
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
-#define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b) 
-#define ExtendedVariantSixByte(title, b)
-#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
-        default:
-            break;
-    }
-    return op;
-}
+//std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, TwoByteInstruction) {
+//    // code 1: TwoByte [ variant:3 | control: 13 ] // multiple layouts
+//    //          OneRegister [ variant:3 | op: 5 | dest: 4 | unused: 4 ]
+//    //          TwoRegister [ variant:3 | op: 5 | dest: 4 | src: 4 ] // not as many allowed here
+//    std::optional<Core::DecodedOperation> op;
+//    
+//    switch (decodeBits<byte, TwoByteOpcode, 0b11111000, 3>(control)) {
+//#define OneByte(title) 
+//#define TwoByte(title, b) case TwoByteOpcode :: title : op = Core:: title () ; decodeArguments(control, std::get< Core:: title > ( op.value()).args); break;
+//#define ThreeByte(title, b) 
+//#define FourByte(title, b) 
+//#define FiveByte(title, b) 
+//#define EightByte(title, b) 
+//#define GrabBag(title, b) 
+//#define ExtendedVariantTenByte(title, b) 
+//#define ExtendedVariantSixByte(title, b)
+//#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
+//#include "InstructionData.def"
+//#undef OneByte
+//#undef TwoByte
+//#undef ThreeByte
+//#undef FourByte
+//#undef FiveByte
+//#undef EightByte
+//#undef GrabBag
+//#undef ExtendedVariant
+//#undef ExtendedVariantSixByte
+//#undef ExtendedVariantTenByte
+//        default:
+//            break;
+//    }
+//    return op;
+//}
+
+//std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, ThreeByteInstruction) {
+//	// code 2: ThreeByte [ variant:3 | opcontrol:21 ]
+//	//          ThreeRegister [ variant:3 [2] | op: 6 | unused: 3 | dest: 4 | src0: 4 | src1: 4] 
+//	ThreeByteOperation op;
+//	auto nextByte = extractByteFromMolecule();
+//	auto opcodeValue = ThreeByteOpcode(encodeBits<byte, byte, 0b00000001, 5>(
+//					   decodeBits<byte, byte, 0b11111000, 3>(0, nextByte),
+//					   control));
+//	switch(opcodeValue) {
+//#define OneByte(title) 
+//#define TwoByte(title, b) 
+//#define ThreeByte(donuts, b) \
+//		case ThreeByteOpcode:: donuts : \
+//		op = Core:: donuts () ; \
+//		decodeArguments(nextByte, std::get< Core:: donuts > (op).args); \
+//		break; 
+//#define FourByte(title, b) 
+//#define FiveByte(title, b) 
+//#define EightByte(title, b) 
+//#define GrabBag(title, b) 
+//#define ExtendedVariantTenByte(title, b) 
+//#define ExtendedVariantSixByte(title, b)
+//#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
+//#include "InstructionData.def"
+//#undef OneByte
+//#undef TwoByte
+//#undef ThreeByte
+//#undef FourByte
+//#undef FiveByte
+//#undef EightByte
+//#undef GrabBag
+//#undef ExtendedVariant
+//#undef ExtendedVariantSixByte
+//#undef ExtendedVariantTenByte
+//		default:
+//			break;
+//	}
+//	return std::optional<Core::DecodedOperation>(op);
+//}
 std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
     switch(decodeVariant(control)) {
         case VariantKind::OneByte: 

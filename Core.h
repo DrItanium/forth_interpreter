@@ -347,8 +347,7 @@ class Core {
 #undef ExtendedVariantTenByte
                 UndefinedOpcode> args;
         };
-        using DecodedOperation = std::variant<OneByteOperation, TwoByteOperation, ThreeByteOperation, FourByteOperation, 
-        using DecodedInstruction = std::tuple<DecodedOpcode, DecodedArguments>;
+        using DecodedOperation = std::variant<OneByteOperation, TwoByteOperation, ThreeByteOperation, FourByteOperation>;
 	private:
         DecodedOperation decodeOpcode(byte control, OneByteInstruction op);
         DecodedOperation decodeOpcode(byte control, TwoByteInstruction op);

@@ -1224,8 +1224,11 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Thre
 }
 
 std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, FourByteInstruction) {
-	// code 2: ThreeByte [ variant:3 | opcontrol:21 ]
-	//          ThreeRegister [ variant:3 [2] | op: 6 | unused: 3 | dest: 4 | src0: 4 | src1: 4] 
+	// code 3: FourByte [ variant:3 | op: 5 | control: 24 ]
+	//          SignedImm16          [ variant:3 [3] | op: 5 | unused: 8 | imm16 ] 
+	//          FourRegister         [ variant:3 [3] | op: 5 | dest: 4 | src0: 4 | src1: 4 | src2: 4 | unused: 8 ] // compact version
+	//          FiveRegister         [ variant:3 [3] | op: 5 | dest: 4 | src0: 4 | src1: 4 | src2: 4 | src3: 4 | unused: 4 ]
+	//          OneRegisterWithImm16 [ variant:3 [3] | op: 5 | dest: 4 | unused: 4 | imm16 ]
 	Core::FourByteOperation op;
 	switch (decodeBits<byte, FourByteOpcode, 0b11111000, 3>(control)) {
 #define OneByte(title) 
@@ -1238,6 +1241,41 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Four
 		break; 
 #define FiveByte(title, b) 
 #define EightByte(title, b) 
+#define GrabBag(title, b) 
+#define ExtendedVariantTenByte(title, b) 
+#define ExtendedVariantSixByte(title, b)
+#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
+		default:
+			break;
+	}
+	return std::optional<Core::DecodedOperation>(op);
+}
+std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, EightByteInstruction) {
+	// code 4: EightByte [ variant:3 | op:5 | control: 56 ]
+	//         OneRegisterWithImm48  [ variant: 3 [4] | op: 5 | dest: 4 | unused: 4 | imm48 ]
+	Core::EightByteOperation op;
+	switch (decodeBits<byte, EightByteOpcode, 0b11111000, 3>(control)) {
+#define OneByte(title) 
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title , b) 
+#define FiveByte(title, b) 
+#define EightByte(title, b) \
+		case EightByteOpcode:: title : \
+		op = Core:: title () ; \
+		decodeArguments(control, std::get< Core:: title > (op).args); \
+		break; 
 #define GrabBag(title, b) 
 #define ExtendedVariantTenByte(title, b) 
 #define ExtendedVariantSixByte(title, b)

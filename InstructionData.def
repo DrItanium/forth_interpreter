@@ -86,8 +86,8 @@ FourByte(EncodeBits, FiveRegister)
 FourByte(ConditionalBranch, OneRegisterWithImm16)
 FourByte(ConditionalCallSubroutine, OneRegisterWithImm16)
 FourByte(LoadImmediate16, OneRegisterWithImm16)
-// code 4: EightByte [ variant:3 | kind:2 | control: 59 ]
-//         OneRegisterWithImm48  [ variant: 3 [4] | kind: 2 [0] | op: 7 | dest: 4 | imm48 ]
+// code 4: EightByte [ variant:3 | op:5 | control: 56 ]
+//         OneRegisterWithImm48  [ variant: 3 [4] | op: 5 | dest: 4 | unused: 4 | imm48 ]
 EightByte(LoadImmediate48, OneRegisterWithImm48)
 // code 5: FiveByte [ variant:3 | op: 5 | control: 32 ]
 //          Immediate24          [ variant:3 [3] | op: 5 | unused: 8 | imm24] 

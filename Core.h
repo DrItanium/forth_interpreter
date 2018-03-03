@@ -426,6 +426,11 @@ class Core {
         void decodeArguments(byte control, FiveRegister& args);
         void decodeArguments(byte control, SignedImm16& args);
         void decodeArguments(byte control, Immediate24& args);
+		void decodeArguments(byte control, OneRegisterWithImm16&);
+		void decodeArguments(byte control, TwoRegisterWithImm16&);
+		void decodeArguments(byte control, OneRegisterWithImm32&);
+		void decodeArguments(byte control, OneRegisterWithImm48&);
+		void decodeArguments(byte control, OneRegisterWithImm64&);
         std::optional<DecodedOperation> decodeInstruction(byte control, OneByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, TwoByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, ThreeByteInstruction op);

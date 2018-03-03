@@ -120,7 +120,9 @@ FiveByte(UnsignedShiftRightImmediate, TwoRegisterWithImm16)
 FiveByte(UnsignedShiftLeftImmediate, TwoRegisterWithImm16)
 FiveByte(UnsignedEqualsImmediate, TwoRegisterWithImm16)
 // code 6: GrabBag [ variant:3 | op: 5 | ... ] 
-//         TwoRegister [ variant: 3 [6] | op: 5 | dest: 4 | src: 4 ]
+//         TwoRegister          [ variant: 3 [6] | op: 5 | dest: 4 | src: 4 ]
+//         OneRegisterWithImm64 [ variant: 3 [6] | op: 5 | dest: 4 | unused: 4 | imm64 ]
+//         OneRegisterWithImm32 [ variant: 3 [6] | op: 5 | dest: 4 | unused: 4 | imm32 ]
 GrabBag(PrintString, TwoRegister) // read two registers to get start and length in memory
 GrabBag(Minus, TwoRegister) // minus unsigned makes no sense
 GrabBag(MinusUnsigned, TwoRegister)
@@ -128,11 +130,7 @@ GrabBag(MinusFloatingPoint, TwoRegister)
 GrabBag(Not, TwoRegister) // not is implicitly unsigned and works for boolean ops as well
 GrabBag(NotBoolean, TwoRegister)
 GrabBag(NotSigned, TwoRegister)
-// code 7: ExtendedVariant [ variant: 3 [8] | subvariant: 3 | ... ]
-//         subvariant 0 TenByte : [ variant: 3 [8] | subvariant: 3 [0] | kind: 2 | control: 72 ]
-//                      OneRegisterWithImm64 [ variant: 3 [8] | subvariant: 3 [0] | kind: 2 [0] | op: 4 | dest: 4 | imm64 ]
-//         subvariant 1 SixByte : [ variant: 3 [8] | subvariant: 3 [1] | kind: 2 | control: 40 ]
-//                      OneRegisterWithImm32 [ variant: 3 [8] | subvariant: 3 [1] | kind: 2 [0] | op: 4 | dest: 4 | imm32 ]
-ExtendedVariant(TenByte, LoadImmediate64, OneRegisterWithImm64)
-ExtendedVariant(SixByte, LoadImmediate32, OneRegisterWithImm32)
+GrabBag(LoadImmediate64, OneRegisterWithImm64)
+GrabBag(LoadImmediate32, OneRegisterWithImm32)
+// code 7: Unused!
 

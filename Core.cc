@@ -1242,9 +1242,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Four
 #define FiveByte(title, b) 
 #define EightByte(title, b) 
 #define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b) 
-#define ExtendedVariantSixByte(title, b)
-#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -1253,9 +1250,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Four
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
 		default:
 			break;
 	}
@@ -1277,9 +1271,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Eigh
 		decodeArguments(control, std::get< Core:: title > (op).args); \
 		break; 
 #define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b) 
-#define ExtendedVariantSixByte(title, b)
-#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -1288,9 +1279,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Eigh
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
 		default:
 			break;
 	}
@@ -1313,9 +1301,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Five
 		break; 
 #define EightByte(title, b) 
 #define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b) 
-#define ExtendedVariantSixByte(title, b)
-#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -1324,14 +1309,12 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Five
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
 		default:
 			break;
 	}
 	return std::optional<Core::DecodedOperation>(op);
 }
+
 std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
     switch(decodeVariant(control)) {
         case VariantKind::OneByte: 
@@ -1348,8 +1331,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
             return decodeInstruction(control, EightByteInstruction()); 
         case VariantKind::GrabBag:
             return decodeInstruction(control, GrabBagInstruction());
-        case VariantKind::ExtendedVariant:
-            return decodeInstruction(control, ExtendedVariantInstruction());
         default:
             return std::optional<Core::DecodedOperation>();
     }

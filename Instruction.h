@@ -63,8 +63,10 @@ struct ThreeByteInstruction final : SizedType<3> { };
 struct FourByteInstruction final : SizedType<4> { };
 struct FiveByteInstruction final : SizedType<5> { };
 struct EightByteInstruction final : SizedType<8> { };
+struct SixByteInstruction final : SizedType<6> { };
+struct TenByteInstruction final : SizedType<10> {  };
 struct GrabBagInstruction final {
-    std::variant<TwoByteInstruction, TwoByteInstruction> kind;
+    std::variant<TwoByteInstruction, TwoByteInstruction, SixByteInstruction, TenByteInstruction> kind;
     constexpr byte size() noexcept {
         switch (kind.index()) {
             case 0:
@@ -74,20 +76,7 @@ struct GrabBagInstruction final {
         }
     }
 };
-struct SixByteInstruction final : SizedType<6> { };
-struct TenByteInstruction final : SizedType<10> {  };
-struct ExtendedVariantInstruction final {
-    std::variant<TenByteInstruction, SixByteInstruction> kind;
-    constexpr byte size() noexcept {
-        switch (kind.index()) {
-            case 0:
-                return std::get<TenByteInstruction>(kind).size();
-            case 1:
-                return std::get<1>(kind).size();
-        }
-    }
-};
-using InstructionWidth = std::variant<OneByteInstruction, TwoByteInstruction, ThreeByteInstruction, FourByteInstruction, EightByteInstruction, FiveByteInstruction, GrabBagInstruction, ExtendedVariantInstruction>;
+using InstructionWidth = std::variant<OneByteInstruction, TwoByteInstruction, ThreeByteInstruction, FourByteInstruction, EightByteInstruction, FiveByteInstruction, GrabBagInstruction>;
 enum class VariantKind : byte {
     OneByte,
     TwoByte,
@@ -96,7 +85,6 @@ enum class VariantKind : byte {
     EightByte,
     FiveByte,
     GrabBag,
-    ExtendedVariant,
     Count,
 };
 static_assert(byte(VariantKind::Count) <= 8, "Too many variants specified!");
@@ -111,7 +99,6 @@ enum class OneByteOpcode : byte {
 #define FiveByte(title, b)
 #define EightByte(title, b)
 #define GrabBag(title, b)
-#define ExtendedVariant(a, b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -120,7 +107,6 @@ enum class OneByteOpcode : byte {
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
 Count,
 };
 
@@ -132,7 +118,6 @@ enum class TwoByteOpcode : byte {
 #define FiveByte(title, b)
 #define EightByte(title, b)
 #define GrabBag(title, b)
-#define ExtendedVariant(a, b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -141,7 +126,6 @@ enum class TwoByteOpcode : byte {
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
 Count,
 };
 
@@ -154,7 +138,6 @@ enum class ThreeByteOpcode : byte {
 #define FiveByte(title, b)
 #define EightByte(title, b)
 #define GrabBag(title, b)
-#define ExtendedVariant(a, b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -163,7 +146,6 @@ enum class ThreeByteOpcode : byte {
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
 Count,
 };
 
@@ -175,7 +157,6 @@ enum class FourByteOpcode : byte {
 #define FiveByte(title, b)
 #define EightByte(title, b)
 #define GrabBag(title, b)
-#define ExtendedVariant(title, b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -184,7 +165,6 @@ enum class FourByteOpcode : byte {
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
 Count,
 };
 
@@ -196,7 +176,6 @@ enum class FiveByteOpcode : byte {
 #define FiveByte(title, b) title,
 #define EightByte(title, b)
 #define GrabBag(title, b)
-#define ExtendedVariant(title, b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -205,7 +184,6 @@ enum class FiveByteOpcode : byte {
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
 Count,
 };
 
@@ -217,7 +195,6 @@ enum class EightByteOpcode : byte {
 #define FiveByte(title, b) 
 #define EightByte(title, b) title,
 #define GrabBag(title, b)
-#define ExtendedVariant(title, b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -226,7 +203,6 @@ enum class EightByteOpcode : byte {
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
 Count,
 };
 
@@ -238,7 +214,6 @@ enum class GrabBagOpcode : byte {
 #define FiveByte(title, b) 
 #define EightByte(title, b) 
 #define GrabBag(title, cl) cl ## _ ## title,
-#define ExtendedVariant(title, b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -247,116 +222,12 @@ enum class GrabBagOpcode : byte {
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
-    Count,
-};
-
-enum class ExtendedVariantOpcode : byte {
-#define OneByte(title) 
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b)
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
-#define GrabBag(title, b) 
-#define ExtendedVariant(st, title, c) st ## _ ## title,
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-#undef ExtendedVariant
-    Count,
-};
-
-enum class TenByteOpcode : byte {
-#define OneByte(title) 
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b)
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
-#define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b) title,
-#define ExtendedVariantSixByte(title, b)
-#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
     Count,
 };
 
 
-
-
-
-enum class SixByteOpcode : byte {
-#define OneByte(title) 
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b)
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
-#define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b) 
-#define ExtendedVariantSixByte(title, b) title,
-#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
-    Count,
-};
 
 struct UndefinedOpcode final { constexpr UndefinedOpcode() { } };
-
-template<ExtendedVariantOpcode op>
-constexpr auto ExtendedVariantToSubVariant = UndefinedOpcode();
-
-#define OneByte(title) 
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b)
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
-#define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b) \
-    template<> \
-    constexpr auto ExtendedVariantToSubVariant < ExtendedVariantOpcode :: TenByte ## _ ## title > = TenByteOpcode :: title  ;
-#define ExtendedVariantSixByte(title, b) \
-    template<> \
-    constexpr auto ExtendedVariantToSubVariant < ExtendedVariantOpcode :: SixByte ## _ ## title > = SixByteOpcode :: title ;
-#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
-
 
 InstructionWidth determineInstructionWidth(OneByteOpcode op);
 InstructionWidth determineInstructionWidth(TwoByteOpcode op);
@@ -365,9 +236,6 @@ InstructionWidth determineInstructionWidth(FourByteOpcode op);
 InstructionWidth determineInstructionWidth(FiveByteOpcode op);
 InstructionWidth determineInstructionWidth(EightByteOpcode op);
 InstructionWidth determineInstructionWidth(GrabBagOpcode op);
-InstructionWidth determineInstructionWidth(ExtendedVariantOpcode op);
-InstructionWidth determineInstructionWidth(TenByteOpcode op);
-InstructionWidth determineInstructionWidth(SixByteOpcode op);
 
 constexpr TargetRegister getDestinationRegister(byte field) noexcept { 
 	return TargetRegister(getLowerHalf(field));

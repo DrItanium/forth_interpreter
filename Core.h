@@ -440,7 +440,6 @@ class Core {
         std::optional<DecodedOperation> decodeInstruction(byte control, EightByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, TenByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, GrabBagInstruction op);
-        std::optional<DecodedOperation> decodeInstruction(byte control, ExtendedVariantInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte top);
     private:
 		Register& getDestinationRegister(byte value);

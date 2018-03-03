@@ -130,7 +130,7 @@ class Core {
 			SourceRegister source2;
 			SourceRegister source3;
         };
-        OperationKind(Imm24) {
+        OperationKind(Immediate24) {
             HalfAddress value;
         };
         OperationKind(TwoRegisterWithImm16) {
@@ -142,8 +142,8 @@ class Core {
             DestinationRegister destination;
             QuarterAddress imm16;
         };
-        using FourByteSelector = std::variant<IsFiveRegister, IsImm24, IsTwoRegisterWithImm16, IsOneRegisterWithImm16>;
-        using FourByteVariant = std::variant<FiveRegister, Imm24, TwoRegisterWithImm16, OneRegisterWithImm16>;
+        using FourByteSelector = std::variant<IsFiveRegister, IsImmediate24, IsTwoRegisterWithImm16, IsOneRegisterWithImm16>;
+        using FourByteVariant = std::variant<FiveRegister, Immediate24, TwoRegisterWithImm16, OneRegisterWithImm16>;
         OperationKind(LoadImm48) {
             DestinationRegister destination;
             Address imm48;
@@ -347,7 +347,258 @@ class Core {
 #undef ExtendedVariantTenByte
                 UndefinedOpcode> args;
         };
-        using DecodedOperation = std::variant<OneByteOperation, TwoByteOperation, ThreeByteOperation, FourByteOperation>;
+        struct FiveByteOperation {
+            std::variant<
+#define OneByte(title)
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b) 
+#define FiveByte(title, b) Core:: title,
+#define EightByte(title, b) 
+#define GrabBag(title, b) 
+#define ExtendedVariantTenByte(title, b)
+#define ExtendedVariantSixByte(title, b) 
+#define ExtendedVariant(st, b, c) 
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
+                UndefinedOpcode> kind;
+            std::variant<
+#define OneByte(title)
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b) 
+#define FiveByte(title, b) Core::  b,
+#define EightByte(title, b) 
+#define GrabBag(title, b) 
+#define ExtendedVariantTenByte(title, b)
+#define ExtendedVariantSixByte(title, b) 
+#define ExtendedVariant(st, b, c) 
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
+                UndefinedOpcode> args;
+        };
+
+        struct EightByteOperation {
+            std::variant<
+#define OneByte(title)
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b) 
+#define FiveByte(title, b) 
+#define EightByte(title, b) Core:: title,
+#define GrabBag(title, b) 
+#define ExtendedVariantTenByte(title, b)
+#define ExtendedVariantSixByte(title, b) 
+#define ExtendedVariant(st, b, c) 
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
+                UndefinedOpcode> kind;
+            std::variant<
+#define OneByte(title)
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b) 
+#define FiveByte(title, b) 
+#define EightByte(title, b) Core::  b,
+#define GrabBag(title, b) 
+#define ExtendedVariantTenByte(title, b)
+#define ExtendedVariantSixByte(title, b) 
+#define ExtendedVariant(st, b, c) 
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
+                UndefinedOpcode> args;
+        };
+        struct GrabBagOperation {
+            std::variant<
+#define OneByte(title)
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b) 
+#define FiveByte(title, b) 
+#define EightByte(title, b) 
+#define GrabBag(title, b) Core:: title,
+#define ExtendedVariantTenByte(title, b)
+#define ExtendedVariantSixByte(title, b) 
+#define ExtendedVariant(st, b, c) 
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
+                UndefinedOpcode> kind;
+            std::variant<
+#define OneByte(title)
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b) 
+#define FiveByte(title, b) 
+#define EightByte(title, b) 
+#define GrabBag(title, b) Core::  b,
+#define ExtendedVariantTenByte(title, b)
+#define ExtendedVariantSixByte(title, b) 
+#define ExtendedVariant(st, b, c) 
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
+                UndefinedOpcode> args;
+        };
+
+        struct TenByteOperation {
+            std::variant<
+#define OneByte(title)
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b) 
+#define FiveByte(title, b) 
+#define EightByte(title, b) 
+#define GrabBag(title, b) 
+#define ExtendedVariantTenByte(title, b) Core:: title,
+#define ExtendedVariantSixByte(title, b) 
+#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
+                UndefinedOpcode> kind;
+            std::variant<
+#define OneByte(title)
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b) 
+#define FiveByte(title, b) 
+#define EightByte(title, b) 
+#define GrabBag(title, b) 
+#define ExtendedVariantTenByte(title, b) Core::  b,
+#define ExtendedVariantSixByte(title, b) 
+#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
+                UndefinedOpcode> args;
+        };
+
+        struct SixByteOperation {
+            std::variant<
+#define OneByte(title)
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b) 
+#define FiveByte(title, b) 
+#define EightByte(title, b) 
+#define GrabBag(title, b) 
+#define ExtendedVariantTenByte(title, b) 
+#define ExtendedVariantSixByte(title, b) Core:: title,
+#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
+                UndefinedOpcode> kind;
+            std::variant<
+#define OneByte(title)
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b) 
+#define FiveByte(title, b) 
+#define EightByte(title, b) 
+#define GrabBag(title, b) 
+#define ExtendedVariantTenByte(title, b) 
+#define ExtendedVariantSixByte(title, b) Core:: title,
+#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
+                UndefinedOpcode> args;
+        };
+
+        using ExtendedVariantOperation = std::variant<TenByteOperation, SixByteOperation>;
+        using DecodedOperation = std::variant<OneByteOperation, TwoByteOperation, 
+              ThreeByteOperation, 
+              FourByteOperation, 
+              FiveByteOperation, 
+              EightByteOperation,
+              GrabBagOperation,
+              ExtendedVariantOperation>;
 	private:
         DecodedOperation decodeOpcode(byte control, OneByteInstruction op);
         DecodedOperation decodeOpcode(byte control, TwoByteInstruction op);

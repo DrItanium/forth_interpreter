@@ -13,10 +13,10 @@ TwoByte(TypeValue, OneRegister)
 TwoByte(TypeValueUnsigned, OneRegister)
 TwoByte(TypeValueFloatingPoint, OneRegister)
 TwoByte(TypeValueBoolean, OneRegister)
-TwoByte(ConditionalReturnSubroutine, OneRegister)
-TwoByte(CallSubroutineIndirect, OneRegister)
 TwoByte(PrintChar, OneRegister)          // print a character stored in a register
 TwoByte(TypeDatum, OneRegister)          // print the register with all of its contents
+TwoByte(ConditionalReturnSubroutine, OneRegister)
+TwoByte(CallSubroutineIndirect, OneRegister)
 TwoByte(JumpIndirect, TwoRegister)
 TwoByte(ConditionalBranchIndirect, TwoRegister)
 TwoByte(ConditionalCallSubroutineIndirect, TwoRegister)

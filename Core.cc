@@ -1387,5 +1387,54 @@ void Core::dispatchOperation(const Core::OneByteOperation& op) {
 				}
 			}, op);
 }
+Register& Core::getDestinationRegister(const Core::DestinationRegister& reg) {
+	if (reg) {
+		return getRegister(reg.value());
+	} else {
+		throw Problem("getDestinationRegister", "Destination register is unpopulated!");
+	}
+}
+
+const Register& Core::getSourceRegister(const Core::SourceRegister& reg) {
+	if (reg) {
+		return getRegister(reg.value());
+	} else {
+		throw Problem("getSourceRegister", "Source register is unpopulated!");
+	}
+}
+
+void Core::dispatchOperation(const Core::TwoByteOperation& op) {
+	std::visit([this](auto&& value) {
+				using T = std::decay_t<decltype(value)>;
+				auto flags = std::cout.flags();
+				auto& dest = getDestinationRegister(value.args);
+				if constexpr (std::is_same_v<T,Core::TypeValue>) {
+					std::cout << std::dec << dest.getInt();
+				} else if constexpr (std::is_same_v<T,Core::TypeValueUnsigned>) {
+					std::cout << std::hex << dest.getAddress() << "#";
+				} else if constexpr (std::is_same_v<T,Core::TypeValueBoolean>) {
+					std::cout << std::boolalpha << dest.getTruth() << std::noboolalpha;
+				} else if constexpr (std::is_same_v<T,Core::TypeValueFloatingPoint>) {
+					std::cout << dest.getFP();
+				} else if constexpr (std::is_same_v<T,Core::PrintChar>) {
+					auto c = char(dest.getAddress());
+					std::cout << c;
+				} else if constexpr (std::is_same_v<T,Core::TypeDatum>) {
+						std::cout << dest.getValue();
+				} else if constexpr (std::is_same_v<T, Core::ConditionalReturnSubroutine>) {
+					if (dest.getTruth()) {
+						dispatchOperation(Core::ReturnSubroutine());
+					}
+				} else if constexpr (std::is_same_v<T, Core::CallSubroutineIndirect>) {
+					
+				} else if constexpr (std::is_same_v<T, UndefinedOpcode>) {
+					throw Problem("dispatchOperation(TwoByte)", "undefined two byte operation");
+				} else {
+					//static_assert(AlwaysFalse<T>::value, "Unimplemented two byte operation");
+					throw Problem("dispatchOperation(TwoByte)", "Unimplemented two byte operation");
+				}
+				std::cout.setf(flags);
+			}, op);
+}
 
 } // namespace forth

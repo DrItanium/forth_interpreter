@@ -89,8 +89,8 @@ class Core {
 		void pop(TargetRegister dest, TargetRegister sp);
 		void savePositionToSubroutineStack();
 	private:
-		using DestinationRegister = std::optional<std::reference_wrapper<Register>>;
-		using SourceRegister = std::optional<std::reference_wrapper<const Register>>;
+		using DestinationRegister = std::optional<TargetRegister>;
+		using SourceRegister = std::optional<TargetRegister>;
 #define OperationKind(x) \
         struct x ; \
         struct Is ## x final { using Type = x ; }; \
@@ -164,16 +164,15 @@ class Core {
 		using TenByteVariant = std::variant<OneRegisterWithImm64>;
 #undef OperationKind
 	private:
-
         using ExtendedTwoRegister0 = TwoRegister;
         using ExtendedTwoRegister1 = TwoRegister;
 #define OneByte(title) struct title final { };
-#define TwoByte(title, b) struct title final { Core:: b args ; };
-#define ThreeByte(title, b) struct title final { Core:: b args; };
-#define FourByte(title, b) struct title final { Core:: b args; };
-#define FiveByte(title, b) struct title final { Core:: b args; };
-#define EightByte(title, b)  struct title final { Core:: b args; };
-#define GrabBag(title, b) struct title final { Core:: b args; };
+#define TwoByte(title, b) struct title final { Core:: b args; }; 
+#define ThreeByte(title, b) struct title final { Core:: b args; };  
+#define FourByte(title, b) struct title final { Core:: b args; }; 
+#define FiveByte(title, b) struct title final { Core:: b args; }; 
+#define EightByte(title, b)  struct title final { Core:: b args; }; 
+#define GrabBag(title, b) struct title final { Core:: b args; }; 
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -350,6 +349,20 @@ class Core {
 		void dispatchOperation(const FiveByteOperation& op);
 		void dispatchOperation(const EightByteOperation& op);
 		void dispatchOperation(const GrabBagOperation& op);
+		Register& getDestinationRegister(const DestinationRegister& reg);
+		const Register& getSourceRegister(const SourceRegister& reg);
+		template<typename T>
+		Register& getDestinationRegister(const T& reg) {
+			return getDestinationRegister(reg.destination);
+		}
+		template<typename T>
+		const Register& getSourceRegister(const T& reg) {
+			return getSourceRegister(reg.source);
+		}
+		template<typename T>
+		const Register& getSource2Register(const T& reg) {
+			return getSourceRegister(reg.source2);
+		}
 	private:
 		QuarterInteger extractQuarterIntegerFromMolecule();
 		QuarterAddress extractQuarterAddressFromMolecule();

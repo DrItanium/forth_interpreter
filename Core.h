@@ -418,13 +418,13 @@ class Core {
               GrabBagOperation,
               ExtendedVariantOperation>;
 	private:
-        void decodeArguments(OneRegister& args);
-        void decodeArguments(TwoRegister& args);
-        void decodeArguments(ThreeRegister& args);
-        void decodeArguments(FourRegister& args);
-        void decodeArguments(FiveRegister& args);
-        void decodeArguments(SignedImm16& args);
-        void decodeArguments(Immediate24& args);
+        void decodeArguments(byte control, OneRegister& args);
+        void decodeArguments(byte control, TwoRegister& args);
+        void decodeArguments(byte control, ThreeRegister& args);
+        void decodeArguments(byte control, FourRegister& args);
+        void decodeArguments(byte control, FiveRegister& args);
+        void decodeArguments(byte control, SignedImm16& args);
+        void decodeArguments(byte control, Immediate24& args);
         std::optional<DecodedOperation> decodeInstruction(byte control, OneByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, TwoByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, ThreeByteInstruction op);

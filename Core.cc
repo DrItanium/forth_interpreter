@@ -1118,8 +1118,52 @@ std::optional<Core::DecodedOpcode> Core::decodeOpcode(Operation op) {
 }
 */
 std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, OneByteInstruction) {
+    // code 0: OneByte [ variant:3 | op: 5 ] // maximum of 32 ops in this class
     std::optional<Core::DecodedOperation> op;
     switch (decodeBits<byte, OneByteOpcode, 0b11111000, 3>(control)) {
+#define OneByte(title) case OneByteOpcode:: title : op = title () ; break;
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b) 
+#define FiveByte(title, b) 
+#define EightByte(title, b) 
+#define GrabBag(title, b) 
+#define ExtendedVariantTenByte(title, b) 
+#define ExtendedVariantSixByte(title, b)
+#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
+        default:
+            break;
+    }
+    return op;
+}
+
+std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, TwoByteInstruction) {
+    // code 1: TwoByte [ variant:3 | kind: 1 | group: 3 | control: 8] // multiple layouts
+    //          OneRegister [ variant:3 | kind: 1 [is zero] | op: 8 | dest: 4 ]
+    //          TwoRegister [ variant:3 | kind: 1 [is one] | op: 4 | dest: 4 | src: 4 ] // not as many allowed here
+    std::optional<Core::DecodedOperation> op;
+    
+    if (decodeBits<byte, bool, 0b00001000, 3>(control)) {
+        // if it is true then TwoRegister variety
+    } else {
+       auto nextByte = extractByteFromMolecule();
+       auto code = setLowerUpperHalves
+
+       // this one gets a little more complex
+       // one register variety 
+    }
+    switch (decodeBits<byte, TwoByteOpcode, 0b11110000, 3>(control)) {
 #define OneByte(title) case OneByteOpcode:: title : op = title () ; break;
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 

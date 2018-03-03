@@ -1148,39 +1148,42 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, OneB
     return std::optional<Core::DecodedOperation>(op);
 }
 
-//std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, TwoByteInstruction) {
-//    // code 1: TwoByte [ variant:3 | control: 13 ] // multiple layouts
-//    //          OneRegister [ variant:3 | op: 5 | dest: 4 | unused: 4 ]
-//    //          TwoRegister [ variant:3 | op: 5 | dest: 4 | src: 4 ] // not as many allowed here
-//    std::optional<Core::DecodedOperation> op;
-//    
-//    switch (decodeBits<byte, TwoByteOpcode, 0b11111000, 3>(control)) {
-//#define OneByte(title) 
-//#define TwoByte(title, b) case TwoByteOpcode :: title : op = Core:: title () ; decodeArguments(control, std::get< Core:: title > ( op.value()).args); break;
-//#define ThreeByte(title, b) 
-//#define FourByte(title, b) 
-//#define FiveByte(title, b) 
-//#define EightByte(title, b) 
-//#define GrabBag(title, b) 
-//#define ExtendedVariantTenByte(title, b) 
-//#define ExtendedVariantSixByte(title, b)
-//#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
-//#include "InstructionData.def"
-//#undef OneByte
-//#undef TwoByte
-//#undef ThreeByte
-//#undef FourByte
-//#undef FiveByte
-//#undef EightByte
-//#undef GrabBag
-//#undef ExtendedVariant
-//#undef ExtendedVariantSixByte
-//#undef ExtendedVariantTenByte
-//        default:
-//            break;
-//    }
-//    return op;
-//}
+std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, TwoByteInstruction) {
+    // code 1: TwoByte [ variant:3 | control: 13 ] // multiple layouts
+    //          OneRegister [ variant:3 | op: 5 | dest: 4 | unused: 4 ]
+    //          TwoRegister [ variant:3 | op: 5 | dest: 4 | src: 4 ] // not as many allowed here
+   	Core::TwoByteOperation op ;
+    switch (decodeBits<byte, TwoByteOpcode, 0b11111000, 3>(control)) {
+#define OneByte(title) 
+#define TwoByte(title, b) \
+		case TwoByteOpcode :: title : \
+		op = Core:: title () ; \
+		decodeArguments(control, std::get< Core:: title > (op).args); \
+		break;
+#define ThreeByte(title, b) 
+#define FourByte(title, b) 
+#define FiveByte(title, b) 
+#define EightByte(title, b) 
+#define GrabBag(title, b) 
+#define ExtendedVariantTenByte(title, b) 
+#define ExtendedVariantSixByte(title, b)
+#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
+        default:
+            break;
+    }
+    return std::optional<Core::DecodedOperation>(op);
+}
 
 //std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, ThreeByteInstruction) {
 //	// code 2: ThreeByte [ variant:3 | opcontrol:21 ]

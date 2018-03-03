@@ -281,6 +281,10 @@ enum class TenByteOperation : byte {
     Count,
 };
 
+
+
+
+
 enum class SixByteOperation : byte {
 #define OneByte(title) 
 #define TwoByte(title, b) 
@@ -305,6 +309,37 @@ enum class SixByteOperation : byte {
 #undef ExtendedVariantTenByte
     Count,
 };
+
+struct UndefinedOperation final { constexpr UndefinedOperation() { } };
+
+template<ExtendedVariantOperation op>
+constexpr auto ExtendedVariantToSubVariant = UndefinedOperation();
+
+#define OneByte(title) 
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b)
+#define FiveByte(title, b) 
+#define EightByte(title, b) 
+#define GrabBag(title, b) 
+#define ExtendedVariantTenByte(title, b) \
+    template<> \
+    constexpr auto ExtendedVariantToSubVariant < ExtendedVariantOperation :: TenByte ## _ ## title > = TenByteOperation :: title  ;
+#define ExtendedVariantSixByte(title, b) \
+    template<> \
+    constexpr auto ExtendedVariantToSubVariant < ExtendedVariantOperation :: SixByte ## _ ## title > = SixByteOperation :: title ;
+#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
 
 
 InstructionWidth determineInstructionWidth(OneByteOperation op);

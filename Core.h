@@ -163,7 +163,6 @@ class Core {
         using TenByteSelector = std::variant<IsOneRegisterWithImm64>;
 		using TenByteVariant = std::variant<OneRegisterWithImm64>;
 #undef OperationKind
-		using DecodedArguments = std::variant<OneByteVariant, TwoByteVariant, ThreeByteVariant, FourByteVariant, EightByteVariant>;
 	private:
 
         using ExtendedTwoRegister0 = TwoRegister;
@@ -175,9 +174,6 @@ class Core {
 #define FiveByte(title, b) struct title final { Core:: b args; };
 #define EightByte(title, b)  struct title final { Core:: b args; };
 #define GrabBag(title, b) struct title final { Core:: b args; };
-#define ExtendedVariantTenByte(title, b) struct title final { Core:: b args; };
-#define ExtendedVariantSixByte(title, b) struct title final { Core:: b args; };
-#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -186,9 +182,6 @@ class Core {
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
 
         using OneByteOperation = std::variant<
 #define OneByte(title) Core::title,
@@ -198,9 +191,6 @@ class Core {
 #define FiveByte(title, b) 
 #define EightByte(title, b) 
 #define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b)
-#define ExtendedVariantSixByte(title, b) 
-#define ExtendedVariant(st, b, c) 
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -209,9 +199,6 @@ class Core {
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
             UndefinedOpcode
             >;
         using TwoByteOperation = 
@@ -223,9 +210,6 @@ class Core {
 #define FiveByte(title, b) 
 #define EightByte(title, b) 
 #define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b)
-#define ExtendedVariantSixByte(title, b) 
-#define ExtendedVariant(st, b, c) 
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -234,9 +218,6 @@ class Core {
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
                 UndefinedOpcode>;
         using ThreeByteOperation =
             std::variant<
@@ -247,9 +228,6 @@ class Core {
 #define FiveByte(title, b) 
 #define EightByte(title, b) 
 #define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b)
-#define ExtendedVariantSixByte(title, b) 
-#define ExtendedVariant(st, b, c) 
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -258,9 +236,6 @@ class Core {
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
                 UndefinedOpcode> ;
 
         using FourByteOperation =
@@ -272,9 +247,6 @@ class Core {
 #define FiveByte(title, b) 
 #define EightByte(title, b) 
 #define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b)
-#define ExtendedVariantSixByte(title, b) 
-#define ExtendedVariant(st, b, c) 
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -283,9 +255,6 @@ class Core {
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
                 UndefinedOpcode>;
         using FiveByteOperation =
             std::variant<
@@ -296,9 +265,6 @@ class Core {
 #define FiveByte(title, b) Core:: title,
 #define EightByte(title, b) 
 #define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b)
-#define ExtendedVariantSixByte(title, b) 
-#define ExtendedVariant(st, b, c) 
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -307,9 +273,6 @@ class Core {
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
                 UndefinedOpcode>;
         using EightByteOperation =
             std::variant<
@@ -320,9 +283,6 @@ class Core {
 #define FiveByte(title, b) 
 #define EightByte(title, b) Core:: title,
 #define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b)
-#define ExtendedVariantSixByte(title, b) 
-#define ExtendedVariant(st, b, c) 
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -331,9 +291,6 @@ class Core {
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
                 UndefinedOpcode>;
         using GrabBagOperation = 
             std::variant<
@@ -344,9 +301,6 @@ class Core {
 #define FiveByte(title, b) 
 #define EightByte(title, b) 
 #define GrabBag(title, b) Core:: title,
-#define ExtendedVariantTenByte(title, b)
-#define ExtendedVariantSixByte(title, b) 
-#define ExtendedVariant(st, b, c) 
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
@@ -355,69 +309,14 @@ class Core {
 #undef FiveByte
 #undef EightByte
 #undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
                 UndefinedOpcode>;
 
-        using TenByteOperation =
-            std::variant<
-#define OneByte(title)
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b) 
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
-#define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b) Core:: title,
-#define ExtendedVariantSixByte(title, b) 
-#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
-                UndefinedOpcode>;
-
-        using SixByteOperation =
-            std::variant<
-#define OneByte(title)
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b) 
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
-#define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b) 
-#define ExtendedVariantSixByte(title, b) Core:: title,
-#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
-                UndefinedOpcode>;
-
-        using ExtendedVariantOperation = std::variant<TenByteOperation, SixByteOperation>;
         using DecodedOperation = std::variant<OneByteOperation, TwoByteOperation, 
               ThreeByteOperation, 
               FourByteOperation, 
               FiveByteOperation, 
               EightByteOperation,
-              GrabBagOperation,
-              ExtendedVariantOperation>;
+              GrabBagOperation>;
 	private:
         void decodeArguments(byte control, OneRegister& args);
         void decodeArguments(byte control, TwoRegister& args);
@@ -444,15 +343,13 @@ class Core {
     private:
 		Register& getDestinationRegister(byte value);
 		Register& getSourceRegister(byte value);
-        // from the current position, perform the entire decode process prior to 
-        // executing
-		//std::optional<DecodedOpcode> decodeOpcode(Operation op);
-        //DecodedInstruction decode();
-        //DecodedInstruction decode(Operation op, const OneByte& b);
-        //DecodedInstruction decode(Operation op, const TwoByte& b);
-        //DecodedInstruction decode(Operation op, const ThreeByte& b);
-        //DecodedInstruction decode(Operation op, const FourByte& b);
-        //DecodedInstruction decode(Operation op, const EightByte& b);
+		void dispatchOperation(const OneByteOperation& op);
+		void dispatchOperation(const TwoByteOperation& op);
+		void dispatchOperation(const ThreeByteOperation& op);
+		void dispatchOperation(const FourByteOperation& op);
+		void dispatchOperation(const FiveByteOperation& op);
+		void dispatchOperation(const EightByteOperation& op);
+		void dispatchOperation(const GrabBagOperation& op);
 	private:
 		QuarterInteger extractQuarterIntegerFromMolecule();
 		QuarterAddress extractQuarterAddressFromMolecule();

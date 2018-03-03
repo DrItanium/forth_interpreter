@@ -1117,39 +1117,56 @@ std::optional<Core::DecodedOpcode> Core::decodeOpcode(Operation op) {
 	return c;
 }
 */
-
-
-std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
+std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, OneByteInstruction) {
     std::optional<Core::DecodedOperation> op;
-    switch(decodeVariant(control)) {
-        case VariantKind::OneByte: 
-            op = decodeInstruction(control, OneByteInstruction()); 
-            break;
-        case VariantKind::TwoByte: 
-            op = decodeInstruction(control, TwoByteInstruction()); 
-            break;
-        case VariantKind::ThreeByte: 
-            op = decodeInstruction(control, ThreeByteInstruction()); 
-            break;
-        case VariantKind::FourByte: 
-            op = decodeInstruction(control, FourByteInstruction()); 
-            break;
-        case VariantKind::FiveByte: 
-            op = decodeInstruction(control, FiveByteInstruction()); 
-            break;
-        case VariantKind::EightByte:
-            op = decodeInstruction(control, EightByteInstruction()); 
-            break;
-        case VariantKind::GrabBag:
-            op = decodeInstruction(control, GrabBagInstruction());
-            break;
-        case VariantKind::ExtendedVariant:
-            op = decodeInstruction(control, ExtendedVariantInstruction());
-            break;
+    switch (decodeBits<byte, OneByteOpcode, 0b11111000, 3>(control)) {
+#define OneByte(title) case OneByteOpcode:: title : op = title () ; break;
+#define TwoByte(title, b) 
+#define ThreeByte(title, b) 
+#define FourByte(title, b) 
+#define FiveByte(title, b) 
+#define EightByte(title, b) 
+#define GrabBag(title, b) 
+#define ExtendedVariantTenByte(title, b) 
+#define ExtendedVariantSixByte(title, b)
+#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+#undef ExtendedVariantSixByte
+#undef ExtendedVariantTenByte
         default:
             break;
     }
     return op;
+}
+std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
+    switch(decodeVariant(control)) {
+        case VariantKind::OneByte: 
+            return decodeInstruction(control, OneByteInstruction()); 
+        case VariantKind::TwoByte: 
+            return decodeInstruction(control, TwoByteInstruction()); 
+        case VariantKind::ThreeByte: 
+            return decodeInstruction(control, ThreeByteInstruction()); 
+        case VariantKind::FourByte: 
+            return decodeInstruction(control, FourByteInstruction()); 
+        case VariantKind::FiveByte: 
+            return decodeInstruction(control, FiveByteInstruction()); 
+        case VariantKind::EightByte:
+            return decodeInstruction(control, EightByteInstruction()); 
+        case VariantKind::GrabBag:
+            return decodeInstruction(control, GrabBagInstruction());
+        case VariantKind::ExtendedVariant:
+            return decodeInstruction(control, ExtendedVariantInstruction());
+        default:
+            return std::optional<Core::DecodedOperation>();
+    }
 }
 
 } // namespace forth

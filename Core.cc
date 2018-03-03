@@ -1406,34 +1406,52 @@ const Register& Core::getSourceRegister(const Core::SourceRegister& reg) {
 void Core::dispatchOperation(const Core::TwoByteOperation& op) {
 	std::visit([this](auto&& value) {
 				using T = std::decay_t<decltype(value)>;
-				auto flags = std::cout.flags();
-				auto& dest = getDestinationRegister(value.args);
-				if constexpr (std::is_same_v<T,Core::TypeValue>) {
-					std::cout << std::dec << dest.getInt();
-				} else if constexpr (std::is_same_v<T,Core::TypeValueUnsigned>) {
-					std::cout << std::hex << dest.getAddress() << "#";
-				} else if constexpr (std::is_same_v<T,Core::TypeValueBoolean>) {
-					std::cout << std::boolalpha << dest.getTruth() << std::noboolalpha;
-				} else if constexpr (std::is_same_v<T,Core::TypeValueFloatingPoint>) {
-					std::cout << dest.getFP();
-				} else if constexpr (std::is_same_v<T,Core::PrintChar>) {
-					auto c = char(dest.getAddress());
-					std::cout << c;
-				} else if constexpr (std::is_same_v<T,Core::TypeDatum>) {
-						std::cout << dest.getValue();
-				} else if constexpr (std::is_same_v<T, Core::ConditionalReturnSubroutine>) {
-					if (dest.getTruth()) {
-						dispatchOperation(Core::ReturnSubroutine());
-					}
-				} else if constexpr (std::is_same_v<T, Core::CallSubroutineIndirect>) {
-					
-				} else if constexpr (std::is_same_v<T, UndefinedOpcode>) {
+				if constexpr (std::is_same_v<T, UndefinedOpcode>) {
 					throw Problem("dispatchOperation(TwoByte)", "undefined two byte operation");
 				} else {
-					//static_assert(AlwaysFalse<T>::value, "Unimplemented two byte operation");
-					throw Problem("dispatchOperation(TwoByte)", "Unimplemented two byte operation");
+					auto flags = std::cout.flags();
+					auto& dest = getDestinationRegister(value.args);
+					if constexpr (std::is_same_v<T,Core::TypeValue>) {
+						std::cout << std::dec << dest.getInt();
+					} else if constexpr (std::is_same_v<T,Core::TypeValueUnsigned>) {
+						std::cout << std::hex << dest.getAddress() << "#";
+					} else if constexpr (std::is_same_v<T,Core::TypeValueBoolean>) {
+						std::cout << std::boolalpha << dest.getTruth() << std::noboolalpha;
+					} else if constexpr (std::is_same_v<T,Core::TypeValueFloatingPoint>) {
+						std::cout << dest.getFP();
+					} else if constexpr (std::is_same_v<T,Core::PrintChar>) {
+						auto c = char(dest.getAddress());
+						std::cout << c;
+					} else if constexpr (std::is_same_v<T,Core::TypeDatum>) {
+							std::cout << dest.getValue();
+					} else if constexpr (std::is_same_v<T, Core::ConditionalReturnSubroutine>) {
+						if (dest.getTruth()) {
+							dispatchOperation(Core::ReturnSubroutine());
+						}
+					} else if constexpr (std::is_same_v<T, Core::CallSubroutineIndirect>) {
+			    	    savePositionToSubroutineStack();
+						_pc.setValue(dest.getValue());
+					} else if constexpr (std::is_same_v<T, Core::JumpIndirect>) {
+						_pc.setValue(dest.getValue());
+					} else if constexpr (std::is_same_v<T, Core::ConditionalBranchIndirect>) {
+						if (dest.getTruth()) {
+							_pc.setValue(getSourceRegister(value.args).getValue());
+						}
+					} else if constexpr (std::is_same_v<T, Core::ConditionalCallSubroutineIndirect>) {
+						if (dest.getTruth()) {
+							savePositionToSubroutineStack();
+							_pc.setValue(dest.getValue());
+						}
+					} else if constexpr (std::is_same_v<T, Core::Load>) {
+						dest.setValue(loadWord(getSourceRegister(value.args).getAddress()));
+					} else if constexpr (std::is_same_v<T, Core::Store>) {
+						store(dest.getAddress(), getSourceRegister(value.args).getValue());
+					} else {
+						//static_assert(AlwaysFalse<T>::value, "Unimplemented two byte operation");
+						throw Problem("dispatchOperation(TwoByte)", "Unimplemented two byte operation");
+					}
+					std::cout.setf(flags);
 				}
-				std::cout.setf(flags);
 			}, op);
 }
 

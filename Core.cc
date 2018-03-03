@@ -1371,4 +1371,21 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
     }
 }
 
+void Core::dispatchOperation(const Core::OneByteOperation& op) {
+	std::visit([this](auto&& value) {
+				using T = std::decay_t<decltype(value)>;
+				if constexpr (std::is_same_v<T, Core::Nop>) {
+					// do nothing
+				} else if constexpr (std::is_same_v<T, Core::LeaveExecutionLoop>) {
+					store(Core::returnToMicrocode, Address(1));
+				} else if constexpr (std::is_same_v<T, Core::ReturnSubroutine>) {
+					_pc.setValue(pop(TargetRegister::SP2));
+				} else if constexpr (std::is_same_v<T, UndefinedOpcode>) {
+					throw Problem("dispatchOperation(OneByte)", "Undefined opcode provided to the one byte operation!");
+				} else {
+					static_assert(AlwaysFalse<T>::value, "Unimplemented one byte operation!");
+				}
+			}, op);
+}
+
 } // namespace forth

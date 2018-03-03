@@ -124,6 +124,28 @@ enum class OneByteOpcode : byte {
 Count,
 };
 
+enum class TwoByteOpcode : byte {
+#define OneByte(title) 
+#define TwoByte(title, b) title,
+#define ThreeByte(title, b)
+#define FourByte(title, b)
+#define FiveByte(title, b)
+#define EightByte(title, b)
+#define GrabBag(title, b)
+#define ExtendedVariant(a, b, c)
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef FiveByte
+#undef EightByte
+#undef GrabBag
+#undef ExtendedVariant
+Count,
+};
+
+
 enum class ThreeByteOpcode : byte {
 #define OneByte(title) 
 #define TwoByte(title, b) 
@@ -335,59 +357,9 @@ constexpr auto ExtendedVariantToSubVariant = UndefinedOpcode();
 #undef ExtendedVariantSixByte
 #undef ExtendedVariantTenByte
 
-enum class OneRegisterOpcode : byte {
-#define OneByte(title) 
-#define TwoByteOneRegister(title) title,
-#define TwoByteTwoRegister(title) 
-#define TwoByte(title, b) INDIRECTION(TwoByte, b)(title)
-#define ThreeByte(title, b)
-#define FourByte(title, b)
-#define FiveByte(title, b)
-#define EightByte(title, b)
-#define GrabBag(title, b)
-#define ExtendedVariant(a, b, c)
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-#undef ExtendedVariant
-#undef TwoByteOneRegister
-#undef TwoByteTwoRegister
-Count,
-};
-enum class TwoRegisterOpcode : byte {
-#define OneByte(title)
-#define TwoByteOneRegister(title)
-#define TwoByteTwoRegister(title) title,
-#define TwoByte(title, b) INDIRECTION(TwoByte, b)(title)
-#define ThreeByte(title, b)
-#define FourByte(title, b)
-#define FiveByte(title, b)
-#define EightByte(title, b)
-#define GrabBag(title, b)
-#define ExtendedVariant(a, b, c)
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-#undef ExtendedVariant
-#undef TwoByteOneRegister
-#undef TwoByteTwoRegister
-Count,
-};
-
 
 InstructionWidth determineInstructionWidth(OneByteOpcode op);
-InstructionWidth determineInstructionWidth(OneRegisterOpcode op);
-InstructionWidth determineInstructionWidth(TwoRegisterOpcode op);
+InstructionWidth determineInstructionWidth(TwoByteOpcode op);
 InstructionWidth determineInstructionWidth(ThreeByteOpcode op);
 InstructionWidth determineInstructionWidth(FourByteOpcode op);
 InstructionWidth determineInstructionWidth(FiveByteOpcode op);

@@ -6,8 +6,8 @@
 OneByte(Nop)
 OneByte(ReturnSubroutine)
 OneByte(LeaveExecutionLoop) // a hack to support returning to native code
-// code 1: TwoByte [ variant:3 | kind: 1 | group: 3 | control: 8] // multiple layouts
-//          OneRegister [ variant:3 | kind: 1 [is zero] | op: 8 | dest: 4 ]
+// code 1: TwoByte [ variant:3 | control: 13 ] // multiple layouts
+//          OneRegister [ variant:3 | op: 5 | dest: 4 | unused: 4 ]
 TwoByte(TypeValue, OneRegister)
 TwoByte(TypeValueUnsigned, OneRegister)
 TwoByte(TypeValueFloatingPoint, OneRegister)
@@ -16,7 +16,7 @@ TwoByte(ConditionalReturnSubroutine, OneRegister)
 TwoByte(CallSubroutineIndirect, OneRegister)
 TwoByte(PrintChar, OneRegister)          // print a character stored in a register
 TwoByte(TypeDatum, OneRegister)          // print the register with all of its contents
-//          TwoRegister [ variant:3 | kind: 1 [is one] | op: 4 | dest: 4 | src: 4 ] // not as many allowed here
+//          TwoRegister [ variant:3 | op: 5 | dest: 4 | src: 4 ] // not as many allowed here
 TwoByte(JumpIndirect, TwoRegister)
 TwoByte(ConditionalBranchIndirect, TwoRegister)
 TwoByte(ConditionalCallSubroutineIndirect, TwoRegister)

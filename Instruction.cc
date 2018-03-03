@@ -34,8 +34,7 @@ namespace forth {
 
 InstructionWidth determineInstructionWidth(OneByteOpcode op) { return OneByteInstruction(); }
 
-InstructionWidth determineInstructionWidth(OneRegisterOpcode op) { return TwoByteInstruction(); }
-InstructionWidth determineInstructionWidth(TwoRegisterOpcode op) { return TwoByteInstruction(); }
+InstructionWidth determineInstructionWidth(TwoByteOpcode op) { return TwoByteInstruction(); }
 
 InstructionWidth determineInstructionWidth(ThreeByteOpcode op) { return ThreeByteInstruction(); }
 

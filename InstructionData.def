@@ -8,6 +8,7 @@ OneByte(ReturnSubroutine)
 OneByte(LeaveExecutionLoop) // a hack to support returning to native code
 // code 1: TwoByte [ variant:3 | control: 13 ] // multiple layouts
 //          OneRegister [ variant:3 | op: 5 | dest: 4 | unused: 4 ]
+//          TwoRegister [ variant:3 | op: 5 | dest: 4 | src: 4 ] // not as many allowed here
 TwoByte(TypeValue, OneRegister)
 TwoByte(TypeValueUnsigned, OneRegister)
 TwoByte(TypeValueFloatingPoint, OneRegister)
@@ -16,7 +17,6 @@ TwoByte(ConditionalReturnSubroutine, OneRegister)
 TwoByte(CallSubroutineIndirect, OneRegister)
 TwoByte(PrintChar, OneRegister)          // print a character stored in a register
 TwoByte(TypeDatum, OneRegister)          // print the register with all of its contents
-//          TwoRegister [ variant:3 | op: 5 | dest: 4 | src: 4 ] // not as many allowed here
 TwoByte(JumpIndirect, TwoRegister)
 TwoByte(ConditionalBranchIndirect, TwoRegister)
 TwoByte(ConditionalCallSubroutineIndirect, TwoRegister)
@@ -32,8 +32,8 @@ TwoByte(LoadByte, TwoRegister)
 TwoByte(StoreByte, TwoRegister)
 TwoByte(StoreHalfAddress, TwoRegister)
 TwoByte(StoreQuarterAddress, TwoRegister)
-// code 2: ThreeByte [ variant:3 | kind: 2 | control:18 ]
-//          ThreeRegister [ variant:3 [2] | kind: 2 [0] | op: 6 | dest: 4 | src0: 4 | src1: 4] 
+// code 2: ThreeByte [ variant:3 | opcontrol:21 ]
+//          ThreeRegister [ variant:3 [2] | op: 6 | unused: 3 | dest: 4 | src0: 4 | src1: 4] 
 ThreeByte(Add, ThreeRegister)
 ThreeByte(Subtract, ThreeRegister)
 ThreeByte(Multiply, ThreeRegister)
@@ -74,25 +74,25 @@ ThreeByte(AndBoolean, ThreeRegister)
 ThreeByte(OrBoolean, ThreeRegister)
 ThreeByte(XorBoolean, ThreeRegister)
 ThreeByte(EqualsBoolean, ThreeRegister)
-//          FourRegister  [ variant:3 [2] | kind: 2 [1] | op: 3 | dest: 4 | src0: 4 | src1: 4 | src2: 4] // compact version
-ThreeByte(DecodeBits, FourRegister)
-//          SignedImm16   [ variant:3 [2] | kind: 2 [2] | op: 3 | imm16 ] 
-ThreeByte(Jump, SignedImm16)
-ThreeByte(CallSubroutine, SignedImm16)
-// code 3: FourByte [ variant:3 | kind:2 | control: 27 ]
-//          FiveRegister         [ variant:3 [3] | kind: 2 [0] | op: 7 | dest: 4 | src0: 4 | src1: 4 | src2: 4 | src3: 4 ]
+// code 3: FourByte [ variant:3 | op: 5 | control: 24 ]
+//          SignedImm16          [ variant:3 [3] | op: 5 | unused: 8 | imm16 ] 
+//          FourRegister         [ variant:3 [3] | op: 5 | dest: 4 | src0: 4 | src1: 4 | src2: 4 | unused: 8 ] // compact version
+//          FiveRegister         [ variant:3 [3] | op: 5 | dest: 4 | src0: 4 | src1: 4 | src2: 4 | src3: 4 | unused: 4 ]
+//          OneRegisterWithImm16 [ variant:3 [3] | op: 5 | dest: 4 | unused: 4 | imm16 ]
+FourByte(Jump, SignedImm16)
+FourByte(CallSubroutine, SignedImm16)
+FourByte(DecodeBits, FourRegister)
 FourByte(EncodeBits, FiveRegister)
-//          Immediate24          [ variant:3 [3] | kind: 2 [1] | op: 3 | imm24] 
-FourByte(JumpAbsolute, Immediate24)
-//          OneRegisterWithImm16 [ variant:3 [3] | kind: 2 [2] | op: 7  | dest: 4 | imm16 ]
 FourByte(ConditionalBranch, OneRegisterWithImm16)
 FourByte(ConditionalCallSubroutine, OneRegisterWithImm16)
 FourByte(LoadImmediate16, OneRegisterWithImm16)
 // code 4: EightByte [ variant:3 | kind:2 | control: 59 ]
 //         OneRegisterWithImm48  [ variant: 3 [4] | kind: 2 [0] | op: 7 | dest: 4 | imm48 ]
 EightByte(LoadImmediate48, OneRegisterWithImm48)
-// code 5: FiveByte [ variant:3 | kind:2 | control: 35 ]
-//         TwoRegisterWithImm16 [ variant: 3 [5] | kind:2 [0] | op: 6 | unused: 5 | dest:4 | src0:4 | imm16 ]
+// code 5: FiveByte [ variant:3 | op: 5 | control: 32 ]
+//          Immediate24          [ variant:3 [3] | op: 5 | unused: 8 | imm24] 
+//          TwoRegisterWithImm16 [ variant:3 [3] | op: 5 | dest:4 | src0:4 | unused: 8 | imm16 ]
+FiveByte(JumpAbsolute, Immediate24)
 FiveByte(AddImmediate, TwoRegisterWithImm16)
 FiveByte(SubtractImmediate, TwoRegisterWithImm16)
 FiveByte(MultiplyImmediate, TwoRegisterWithImm16)
@@ -119,21 +119,20 @@ FiveByte(UnsignedXorImmediate, TwoRegisterWithImm16)
 FiveByte(UnsignedShiftRightImmediate, TwoRegisterWithImm16)
 FiveByte(UnsignedShiftLeftImmediate, TwoRegisterWithImm16)
 FiveByte(UnsignedEqualsImmediate, TwoRegisterWithImm16)
-// code 6: GrabBag [ variant:3 | kind: 3 | ... ] 
-//         ExtendedTwoRegister0 [ variant: 3 [6] | kind:3 [0] | op: 2 | dest: 4 | src: 4 
-GrabBag(PrintString, ExtendedTwoRegister0) // read two registers to get start and length in memory
-GrabBag(Minus, ExtendedTwoRegister0) // minus unsigned makes no sense
-GrabBag(MinusUnsigned, ExtendedTwoRegister0)
-GrabBag(MinusFloatingPoint, ExtendedTwoRegister0)
-//         ExtendedTwoRegister0 [ variant: 3 [6] | kind:3 [1] | op: 2 | dest: 4 | src: 4 
-GrabBag(Not, ExtendedTwoRegister1) // not is implicitly unsigned and works for boolean ops as well
-GrabBag(NotBoolean, ExtendedTwoRegister1)
-GrabBag(NotSigned, ExtendedTwoRegister1)
+// code 6: GrabBag [ variant:3 | op: 5 | ... ] 
+//         TwoRegister [ variant: 3 [6] | op: 5 | dest: 4 | src: 4 ]
+GrabBag(PrintString, TwoRegister) // read two registers to get start and length in memory
+GrabBag(Minus, TwoRegister) // minus unsigned makes no sense
+GrabBag(MinusUnsigned, TwoRegister)
+GrabBag(MinusFloatingPoint, TwoRegister)
+GrabBag(Not, TwoRegister) // not is implicitly unsigned and works for boolean ops as well
+GrabBag(NotBoolean, TwoRegister)
+GrabBag(NotSigned, TwoRegister)
 // code 7: ExtendedVariant [ variant: 3 [8] | subvariant: 3 | ... ]
-// code 7, subvariant 0 TenByte : [ variant: 3 [8] | subvariant: 3 [0] | kind: 2 | control: 72 ]
-//          OneRegisterWithImm64 [ variant: 3 [8] | subvariant: 3 [0] | kind: 2 [0] | op: 4 | dest: 4 | imm64 ]
+//         subvariant 0 TenByte : [ variant: 3 [8] | subvariant: 3 [0] | kind: 2 | control: 72 ]
+//                      OneRegisterWithImm64 [ variant: 3 [8] | subvariant: 3 [0] | kind: 2 [0] | op: 4 | dest: 4 | imm64 ]
+//         subvariant 1 SixByte : [ variant: 3 [8] | subvariant: 3 [1] | kind: 2 | control: 40 ]
+//                      OneRegisterWithImm32 [ variant: 3 [8] | subvariant: 3 [1] | kind: 2 [0] | op: 4 | dest: 4 | imm32 ]
 ExtendedVariant(TenByte, LoadImmediate64, OneRegisterWithImm64)
-// code 7, subvariant 1 SixByte : [ variant: 3 [8] | subvariant: 3 [1] | kind: 2 | control: 40 ]
-//          OneRegisterWithImm32 [ variant: 3 [8] | subvariant: 3 [1] | kind: 2 [0] | op: 4 | dest: 4 | imm32 ]
 ExtendedVariant(SixByte, LoadImmediate32, OneRegisterWithImm32)
 

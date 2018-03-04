@@ -341,10 +341,6 @@ void Core::pop(TargetRegister reg, TargetRegister sp) {
 //	//		push(TargetRegister::C, TargetRegister::SP);
 //	//		break;
 //	//	default: {
-//	//				 auto args = extractTwoRegisterForm();
-//	//				 // push sp, src
-//	//				 push(std::get<1>(args), std::get<0>(args));
-//	//				 break;
 //	//			 }
 //	//}
 //}
@@ -1395,7 +1391,7 @@ Register& Core::getDestinationRegister(const Core::DestinationRegister& reg) {
 	}
 }
 
-const Register& Core::getSourceRegister(const Core::SourceRegister& reg) {
+Register& Core::getSourceRegister(const Core::SourceRegister& reg) {
 	if (reg) {
 		return getRegister(reg.value());
 	} else {
@@ -1446,6 +1442,22 @@ void Core::dispatchOperation(const Core::TwoByteOperation& op) {
 						dest.setValue(loadWord(getSourceRegister(value.args).getAddress()));
 					} else if constexpr (std::is_same_v<T, Core::Store>) {
 						store(dest.getAddress(), getSourceRegister(value.args).getValue());
+					} else if constexpr (std::is_same_v<T, Core::Move>) {
+						dest.setValue(getSourceRegister(value.args).getValue());
+					} else if constexpr (std::is_same_v<T, Core::Swap>) {
+						auto temp = dest.getValue();
+						dest.setValue(getSourceRegister(value.args).getValue());
+						getSourceRegister(value.args).setValue(temp);
+					} else if constexpr (std::is_same_v<T, Core::PopRegister>) {
+						// pop dest, sp
+						auto& stackPointer = getSourceRegister(value.args);
+						dest.setValue(loadWord(stackPointer.getAddress()));
+						stackPointer.increment(sizeof(Address));
+					} else if constexpr (std::is_same_v<T, Core::PushRegister>) {
+						// push sp, src
+						auto& stackPointer = dest;
+						stackPointer.decrement(sizeof(Address));
+						store(stackPointer.getAddress(), getSourceRegister(value.args).getValue());
 					} else {
 						//static_assert(AlwaysFalse<T>::value, "Unimplemented two byte operation");
 						throw Problem("dispatchOperation(TwoByte)", "Unimplemented two byte operation");

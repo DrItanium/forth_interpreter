@@ -350,13 +350,13 @@ class Core {
 		void dispatchOperation(const EightByteOperation& op);
 		void dispatchOperation(const GrabBagOperation& op);
 		Register& getDestinationRegister(const DestinationRegister& reg);
-		const Register& getSourceRegister(const SourceRegister& reg);
+		Register& getSourceRegister(const SourceRegister& reg);
 		template<typename T>
 		Register& getDestinationRegister(const T& reg) {
 			return getDestinationRegister(reg.destination);
 		}
 		template<typename T>
-		const Register& getSourceRegister(const T& reg) {
+		Register& getSourceRegister(const T& reg) {
 			return getSourceRegister(reg.source);
 		}
 		template<typename T>

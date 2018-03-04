@@ -125,10 +125,10 @@ class Core {
 		using ThreeByteVariant = std::variant<ThreeRegister, FourRegister, SignedImm16>;
         OperationKind(FiveRegister) {
             DestinationRegister destination;
-			SourceRegister source0;
-			SourceRegister source1;
+			SourceRegister source;
 			SourceRegister source2;
 			SourceRegister source3;
+			SourceRegister source4;
         };
         OperationKind(Immediate24) {
             HalfAddress value;

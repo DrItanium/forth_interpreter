@@ -894,12 +894,6 @@ std::function<void(Address, Address)> Core::getMemoryInstallationFunction() noex
 //					}
 //				} else if constexpr (std::is_same_v<T, TwoRegister>) {
 //					if (op == Operation::PrintString) {
-//						auto begin = value.destination.value().get().getAddress();
-//						auto length = value.destination.value().get().getAddress();
-//						auto end = begin + length;
-//						for (auto loc = begin; loc < end; ++loc) {
-//							std::cout << char(loadByte(loc));
-//						}
 //					} else {
 //						throw Problem("Core::printString", "Unexpected Two Register operation provided!");
 //					}
@@ -1539,6 +1533,11 @@ void Core::dispatchOperation(const Core::FourByteOperation& op) {
 			}, op);
 }
 
+auto minus(auto a) noexcept -> decltype(-a) { return -a; }
+auto notOp(auto a) noexcept -> decltype(~a) { return ~a; }
+bool notOp(bool a) noexcept { return !a; }
+
+
 void Core::dispatchOperation(const Core::GrabBagOperation& op) {
 	std::visit([this](auto&& value) {
 				using T = std::decay_t<decltype(value)>;
@@ -1549,16 +1548,43 @@ void Core::dispatchOperation(const Core::GrabBagOperation& op) {
 					auto& src = getSourceRegister(value.args);
 					auto& src2 = getSource2Register(value.args);
 					auto& src3 = getSourceRegister(value.args.source3);
-					dest.setValue(forth::decodeBits(src.getAddress(), src2.getAddress(), src3.getAddress()));
+					dest.setValue(forth::decodeBits<Address, Address> (src.getAddress(), src2.getAddress(), src3.getAddress()));
 				} else if constexpr (std::is_same_v<T, EncodeBits>) {
 					auto& dest = getDestinationRegister(value.args);
 					auto& src = getSourceRegister(value.args);
 					auto& src2 = getSource2Register(value.args);
 					auto& src3 = getSourceRegister(value.args.source3);
 					auto& src4 = getSourceRegister(value.args.source4);
-					dest.setValue(forth::encodeBits(src.getAddress(), src2.getAddress(), src3.getAddress(), src4.getAddress()));
+					dest.setValue(forth::encodeBits<Address, Address>(src.getAddress(), src2.getAddress(), src3.getAddress(), src4.getAddress()));
+				} else if constexpr (std::is_same_v<T, PrintString>) {
+						auto begin = getDestinationRegister(value.args).getAddress();
+						auto length = getSourceRegister(value.args).getAddress();
+						auto end = begin + length;
+						for (auto loc = begin; loc < end; ++loc) {
+							std::cout << char(loadByte(loc));
+						}
+				} else if constexpr (std::is_same_v<T, Minus>) {
+					getDestinationRegister(value.args).setValue(minus(getSourceRegister(value.args).getInt()));
+				} else if constexpr (std::is_same_v<T, MinusUnsigned>) {
+					getDestinationRegister(value.args).setValue(minus(getSourceRegister(value.args).getAddress()));
+				} else if constexpr (std::is_same_v<T, MinusFloatingPoint>) {
+					getDestinationRegister(value.args).setValue(minus(getSourceRegister(value.args).getFP()));
+				} else if constexpr (std::is_same_v<T, Not>) {
+					getDestinationRegister(value.args).setValue(notOp(getSourceRegister(value.args).getAddress()));
+				} else if constexpr (std::is_same_v<T, NotBoolean>) {
+					getDestinationRegister(value.args).setValue(notOp(getSourceRegister(value.args).getTruth()));
+				} else if constexpr (std::is_same_v<T, NotSigned>) {
+					getDestinationRegister(value.args).setValue(notOp(getSourceRegister(value.args).getInt()));
+				} else if constexpr (std::is_same_v<T, LoadImmediate16>) {
+					getDestinationRegister(value.args).setValue(Address(value.args.imm16));
+				} else if constexpr (std::is_same_v<T, LoadImmediate32>) {
+					getDestinationRegister(value.args).setValue(Address(value.args.imm32));
+				} else if constexpr (std::is_same_v<T, LoadImmediate48>) {
+					getDestinationRegister(value.args).setValue(Address(value.args.imm48));
+				} else if constexpr (std::is_same_v<T, LoadImmediate64>) {
+					getDestinationRegister(value.args).setValue(Address(value.args.imm64));
 				} else {
-					static_assert(AlwaysFalse<T>:;value, "Unimplemented grab bag operation!");
+					static_assert(AlwaysFalse<T>::value, "Unimplemented grab bag operation!");
 				}
 			}, op);
 }

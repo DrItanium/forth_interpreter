@@ -1484,17 +1484,26 @@ void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
 					auto& dest = getDestinationRegister(value.args);
 					auto& src0 = getSourceRegister(value.args);
 					auto& src1 = getSource2Register(value.args);
-					auto updateDest = [&dest](auto value) { dest.setValue(value); };
-					auto convSrc0 = [&src0](auto conv) { return conv(src0); };
-					auto convSrc1 = [&src1](auto conv) { return conv(src1); };
 					#define InvokeConv(bfun, cfun) \
-						updateDest( bfun ( convSrc0( cfun ) , convSrc1 ( cfun )))
+						dest.setValue( bfun ( cfun(src0) , cfun(src1) ))
 					if constexpr (IsType(Add)) {
 						InvokeConv(add, intFunction);
 					} else if constexpr (IsType(AddUnsigned)) {
 						InvokeConv(add, unsignedFunction);
 					} else if constexpr (IsType(FloatingPointAdd)) {
 						InvokeConv(add, floatFunction);
+					} else if constexpr (IsType(Subtract)) {
+						InvokeConv(subtract, intFunction);
+					} else if constexpr (IsType(SubtractUnsigned)) {
+						InvokeConv(subtract, unsignedFunction);
+					} else if constexpr (IsType(FloatingPointSubtract)) {
+						InvokeConv(subtract, floatFunction);
+					} else if constexpr (IsType(Multiply)) {
+						InvokeConv(multiply, intFunction);
+					} else if constexpr (IsType(MultiplyUnsigned)) {
+						InvokeConv(multiply, unsignedFunction);
+					} else if constexpr (IsType(FloatingPointMultiply)) {
+						InvokeConv(multiply, floatFunction);
 					} else {
 						throw Problem("dispatchOperation(ThreeByte)", "Unimplemented three byte operation!");
 					}

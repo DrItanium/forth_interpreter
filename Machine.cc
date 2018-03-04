@@ -667,7 +667,7 @@ endLoopTop:
 	std::function<void(Address, Address)> Machine::getMemoryInstallationFunction() {
 		return _core.getMemoryInstallationFunction();
 	}
-	std::function<void(Address, Address)> Machine::getInstructionInstallationFunction() {
-		return _core.getInstructionInstallationFunction();
-	}
+	//std::function<void(Address, Address)> Machine::getInstructionInstallationFunction() {
+	//	return _core.getInstructionInstallationFunction();
+	//}
 } // end namespace forth

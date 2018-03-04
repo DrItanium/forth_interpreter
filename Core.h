@@ -83,7 +83,7 @@ class Core {
 		Datum pop(TargetRegister sp);
         void executionCycle(Address startAddress = 0);
 		std::function<void(Address, Address)> getMemoryInstallationFunction() noexcept;
-		std::function<void(Address, Address)> getInstructionInstallationFunction() noexcept;
+		//std::function<void(Address, Address)> getInstructionInstallationFunction() noexcept;
 	private:
 		void push(TargetRegister reg, TargetRegister sp);
 		void pop(TargetRegister dest, TargetRegister sp);

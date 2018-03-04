@@ -5,22 +5,22 @@
 #include <variant>
 
 
-using Address = forth::Address;
-using Operation = forth::Operation;
+//using Address = forth::Address;
+//using Operation = forth::Operation;
 
-static constexpr auto ra = forth::TargetRegister::A;
-static constexpr auto rb = forth::TargetRegister::B;
-static constexpr auto rc = forth::TargetRegister::C;
-static constexpr auto rs = forth::TargetRegister::S;
-static constexpr auto rx = forth::TargetRegister::X;
-static constexpr auto moveCtoA = forth::move(ra, rc);
-static constexpr auto moveAtoB = forth::move(rb, ra);
-static constexpr auto popA = forth::popA();
-static constexpr auto popB = forth::popB();
-static constexpr auto popC = forth::popRegister(rc);
-static constexpr auto pushC = forth::pushC();
-static constexpr auto pushA = forth::pushA();
-static constexpr auto pushB = forth::pushB();
+//static constexpr auto ra = forth::TargetRegister::A;
+//static constexpr auto rb = forth::TargetRegister::B;
+//static constexpr auto rc = forth::TargetRegister::C;
+//static constexpr auto rs = forth::TargetRegister::S;
+//static constexpr auto rx = forth::TargetRegister::X;
+//static constexpr auto moveCtoA = forth::move(ra, rc);
+//static constexpr auto moveAtoB = forth::move(rb, ra);
+//static constexpr auto popA = forth::popA();
+//static constexpr auto popB = forth::popB();
+//static constexpr auto popC = forth::popRegister(rc);
+//static constexpr auto pushC = forth::pushC();
+//static constexpr auto pushA = forth::pushA();
+//static constexpr auto pushB = forth::pushB();
 
 
 //template<auto op>
@@ -193,64 +193,64 @@ static constexpr auto pushB = forth::pushB();
 //	machine.addMachineCodeWord<popA, typevalb(ra)>(",b");
 //	machine.addMachineCodeWord<swap(ra, rb)>("swap.ab");
 //}
-namespace forth {
-void systemSetup(forth::Machine& machine) {
-	// initial system values that we need to use
-	forth::AssemblerBuilder init(0);
-	init.addInstruction(
-        storeImmediate64(forth::Machine::shouldKeepExecutingLocation, 1),
-        storeImmediate64(forth::Machine::isCompilingLocation, 0),
-        storeImmediate64(forth::Machine::ignoreInputLocation, 0),
-        storeImmediate64(forth::Machine::subroutineStackEmptyLocation, 0xFF0000),
-        storeImmediate64(forth::Machine::subroutineStackFullLocation, 0xFE0000),
-        storeImmediate64(forth::Machine::parameterStackEmptyLocation, 0xFE0000),
-        storeImmediate64(forth::Machine::parameterStackFullLocation, 0xFD0000),
-        loadImmediate64(rx, forth::Machine::subroutineStackEmptyLocation),
-        load(forth::TargetRegister::SP2, rx),
-        loadImmediate64(rx, forth::Machine::parameterStackEmptyLocation),
-        load(forth::TargetRegister::SP, rx),
-		storeImmediate64(forth::Machine::terminateControlLoopLocation, "terminateControlLoop"),
-		// now start using the other system variables to 
-		forth::returnToNative(),
-		label("terminateControlLoop"),
-		loadImmediate64(TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-		forth::store(TargetRegister::X, TargetRegister::Zero),
-		forth::returnToNative()
-		);
+//namespace forth {
+//void systemSetup(forth::Machine& machine) {
+//	// initial system values that we need to use
+//	forth::AssemblerBuilder init(0);
+//	init.addInstruction(
+//        storeImmediate64(forth::Machine::shouldKeepExecutingLocation, 1),
+//        storeImmediate64(forth::Machine::isCompilingLocation, 0),
+//        storeImmediate64(forth::Machine::ignoreInputLocation, 0),
+//        storeImmediate64(forth::Machine::subroutineStackEmptyLocation, 0xFF0000),
+//        storeImmediate64(forth::Machine::subroutineStackFullLocation, 0xFE0000),
+//        storeImmediate64(forth::Machine::parameterStackEmptyLocation, 0xFE0000),
+//        storeImmediate64(forth::Machine::parameterStackFullLocation, 0xFD0000),
+//        loadImmediate64(rx, forth::Machine::subroutineStackEmptyLocation),
+//        load(forth::TargetRegister::SP2, rx),
+//        loadImmediate64(rx, forth::Machine::parameterStackEmptyLocation),
+//        load(forth::TargetRegister::SP, rx),
+//		storeImmediate64(forth::Machine::terminateControlLoopLocation, "terminateControlLoop"),
+//		// now start using the other system variables to 
+//		forth::returnToNative(),
+//		label("terminateControlLoop"),
+//		loadImmediate64(TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+//		forth::store(TargetRegister::X, TargetRegister::Zero),
+//		forth::returnToNative()
+//		);
+//
+//
+//		
+//		// setup the code fragment routines here
+//	machine.dispatchInstruction(init);
+//}
+//}
 
-
-		
-		// setup the code fragment routines here
-	machine.dispatchInstruction(init);
-}
-}
-
-template<auto op>
-void addBinaryOperation(forth::Machine& mach, const std::string& name) {
-	mach.addMachineCodeWord<
-		forth::popA(),
-		forth::popB(),
-		op,
-		forth::pushC()>(name);
-}
+//template<auto op>
+//void addBinaryOperation(forth::Machine& mach, const std::string& name) {
+//	mach.addMachineCodeWord<
+//		forth::popA(),
+//		forth::popB(),
+//		op,
+//		forth::pushC()>(name);
+//}
 int main() {
-	forth::Machine machine (std::cout, std::cin);
-	machine.initializeBaseDictionary();
-	addBinaryOperation<forth::add()>(machine, "+");
-	addBinaryOperation<forth::addf()>(machine, "+f");
-	addBinaryOperation<forth::sub()>(machine, "-");
-	addBinaryOperation<forth::subf()>(machine, "-f");
-	machine.addMachineCodeWord<forth::addiu(forth::TargetRegister::C, forth::TargetRegister::Zero, 1), pushC>("true");
-	machine.addMachineCodeWord<forth::zeroRegister(forth::TargetRegister::C), pushC>("false");
-	machine.addMachineCodeWord<forth::popA()>("drop");
-	machine.addMachineCodeWord<forth::popA(), forth::popA()>("2drop");
-	machine.addMachineCodeWord<forth::popA(), forth::pushA(), forth::pushA()>("dup");
+	//forth::Machine machine (std::cout, std::cin);
+	//machine.initializeBaseDictionary();
+	//addBinaryOperation<forth::add()>(machine, "+");
+	//addBinaryOperation<forth::addf()>(machine, "+f");
+	//addBinaryOperation<forth::sub()>(machine, "-");
+	//addBinaryOperation<forth::subf()>(machine, "-f");
+	//machine.addMachineCodeWord<forth::addiu(forth::TargetRegister::C, forth::TargetRegister::Zero, 1), pushC>("true");
+	//machine.addMachineCodeWord<forth::zeroRegister(forth::TargetRegister::C), pushC>("false");
+	//machine.addMachineCodeWord<forth::popA()>("drop");
+	//machine.addMachineCodeWord<forth::popA(), forth::popA()>("2drop");
+	//machine.addMachineCodeWord<forth::popA(), forth::pushA(), forth::pushA()>("dup");
 	//microarchitectureWords(machine);
 	//arithmeticOperators(machine);
 	//stackOperators(machine);
 	//registerDecls(machine);
-	forth::systemSetup(machine);
-	machine.controlLoop();
+	//forth::systemSetup(machine);
+	//machine.controlLoop();
 
 	return 0;
 }

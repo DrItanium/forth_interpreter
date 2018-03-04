@@ -167,22 +167,22 @@ namespace forth {
 	void Machine::printRegisters() {
 		auto printRegister = [](const std::string& title, TargetRegister reg) noexcept -> forth::EagerInstruction {
 			return [title, reg](AssemblerBuilder& ab) {
-				ab.addInstruction(printChar(title),
-								  printChar(": "),
-								  typeDatum(reg),
-								  printChar("\n"));
+				//ab.addInstruction(printChar(title),
+				//				  printChar(": "),
+				//				  typeDatum(reg),
+				//				  printChar("\n"));
 			};
 		};
-		dispatchInstruction(
-				printRegister("SP", TargetRegister::SP),
-				printRegister("SP2", TargetRegister::SP2),
-				printRegister("A", TargetRegister::A),
-				printRegister("B", TargetRegister::B),
-				printRegister("C", TargetRegister::C),
-				printRegister("X", TargetRegister::X),
-				printRegister("S", TargetRegister::S),
-				printRegister("Index", TargetRegister::Index),
-				printRegister("DP", TargetRegister::DP));
+		//dispatchInstruction(
+		//		printRegister("SP", TargetRegister::SP),
+		//		printRegister("SP2", TargetRegister::SP2),
+		//		printRegister("A", TargetRegister::A),
+		//		printRegister("B", TargetRegister::B),
+		//		printRegister("C", TargetRegister::C),
+		//		printRegister("X", TargetRegister::X),
+		//		printRegister("S", TargetRegister::S),
+		//		printRegister("Index", TargetRegister::Index),
+		//		printRegister("DP", TargetRegister::DP));
 	}
 	void Machine::defineWord() {
 		if (inCompilationMode() || _compileTarget != nullptr) {
@@ -233,7 +233,7 @@ namespace forth {
 	Machine::Machine(std::ostream& output, std::istream& input) :  _output(output), _input(input), _words(nullptr) { }
 
 	Datum Machine::popParameter() {
-		dispatchInstruction(forth::popRegister(TargetRegister::Temporary, TargetRegister::SP));
+	//	dispatchInstruction(forth::popRegister(TargetRegister::Temporary, TargetRegister::SP));
 		return _core.getRegister(TargetRegister::Temporary).getValue();
 	}
 
@@ -260,7 +260,7 @@ namespace forth {
             if (inCompilationMode()) {
                 _compileTarget->addSpaceEntry(true);
             } else {
-			    dispatchInstruction(addiu(TargetRegister::C, TargetRegister::Zero, 1), pushC());
+			    //dispatchInstruction(addiu(TargetRegister::C, TargetRegister::Zero, 1), pushC());
             }
 			return true;
 		}
@@ -428,14 +428,14 @@ namespace forth {
             _output.setf(flags);
     }
     void Machine::terminateControlLoop() {
-		dispatchInstruction(loadImmediate64(TargetRegister::X, terminateControlLoopLocation),
-							forth::load(TargetRegister::X, TargetRegister::X),
-							jumpIndirect(TargetRegister::X));
+		//dispatchInstruction(loadImmediate64(TargetRegister::X, terminateControlLoopLocation),
+		//					forth::load(TargetRegister::X, TargetRegister::X),
+		//					jumpIndirect(TargetRegister::X));
     }
     void Machine::invokeCore() {
         // invoke a single molecule/address
-        auto value = Molecule(popParameter().address);
-        dispatchInstruction(value);
+        //auto value = Molecule(popParameter().address);
+        //dispatchInstruction(value);
     }
 	void Machine::doStatement() {
 		if (!inCompilationMode()) {
@@ -453,7 +453,7 @@ namespace forth {
                 throw Problem("microcodeInvoke", "No compile target yet compiling!");
             }
         } else {
-			dispatchInstruction(m);
+			//dispatchInstruction(m);
         }
 	}
 	void Machine::continueStatement() {
@@ -466,9 +466,9 @@ namespace forth {
 		auto parent = popSubroutine();
 		addWord(_compileTarget);
 		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
-				dispatchInstruction(popAB(), cmpeq());
+				//dispatchInstruction(popAB(), cmpeq());
 				if (_core.getRegister(TargetRegister::C).getTruth()) {
-					dispatchInstruction(pushB(), pushA());
+				//	dispatchInstruction(pushB(), pushA());
                     // super gross but far more accurately models the underlying micro architecture
 loopTop:
 					body->operator()(m);
@@ -476,9 +476,9 @@ loopTop:
 					// popa
 					// popb
 					// eq
-					dispatchInstruction(popAB(), cmpeq());
+					//dispatchInstruction(popAB(), cmpeq());
                     if (!_core.getRegister(TargetRegister::C).getTruth()) {
-						dispatchInstruction(pushB(), pushA()); // put the values back on the stack
+						//dispatchInstruction(pushB(), pushA()); // put the values back on the stack
                         goto loopTop;
                     }
 				}
@@ -528,9 +528,9 @@ endLoopTop:
 		// now we have to construct a single entry for the parent which has the conditional code added as well
 	}
 	void Machine::dispatchInstruction(AssemblerBuilder& ab) {
-		ab.addInstruction(forth::returnToNative());
-		ab.installIntoMemory(_core.getInstructionInstallationFunction());
-		_core.executionCycle(ab.getBaseAddress());
+		//ab.addInstruction(forth::returnToNative());
+		//ab.installIntoMemory(_core.getInstructionInstallationFunction());
+		//_core.executionCycle(ab.getBaseAddress());
 	}
     void Machine::injectWord() {
         // read the next word and then lookup that entry
@@ -551,15 +551,15 @@ endLoopTop:
         top.entry->operator()(this);
     }
 	bool Machine::keepExecuting() noexcept {
-		dispatchInstruction(loadImmediate64(TargetRegister::X, shouldKeepExecutingLocation),
-				forth::load(TargetRegister::X, TargetRegister::X));
+		//dispatchInstruction(loadImmediate64(TargetRegister::X, shouldKeepExecutingLocation),
+		//		forth::load(TargetRegister::X, TargetRegister::X));
 		return _core.getRegister(TargetRegister::X).getTruth();
 	}
 
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
 		// clear the stacks and the input pointer
-		dispatchInstruction(loadImmediate64(TargetRegister::X, parameterStackEmptyLocation),
-						  forth::load(TargetRegister::SP, TargetRegister::X));
+		//dispatchInstruction(loadImmediate64(TargetRegister::X, parameterStackEmptyLocation),
+		//				  forth::load(TargetRegister::SP, TargetRegister::X));
 		clearSubroutineStack();
 		_input.clear();
 		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -568,48 +568,48 @@ endLoopTop:
 			delete _compileTarget;
 			_compileTarget = nullptr;
 		}
-		dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation), 
-				forth::store(TargetRegister::X, TargetRegister::Zero));
+		//dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation), 
+		//		forth::store(TargetRegister::X, TargetRegister::Zero));
 	}
 	void Machine::dispatchInstruction() {
 		// just pop a molecule off of the stack and pass it to
 		// dispatchInstruction
-		Molecule tmp(popParameter().address);
-		dispatchInstruction(tmp);
+		//Molecule tmp(popParameter().address);
+		//dispatchInstruction(tmp);
 	}
 	bool Machine::inCompilationMode() noexcept {
-		dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
-						  forth::load(TargetRegister::X, TargetRegister::X));
+		//dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
+		//				  forth::load(TargetRegister::X, TargetRegister::X));
 		return _core.getRegister(TargetRegister::X).getTruth();
 	}
 	void Machine::activateCompileMode() {
-		dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
-				loadImmediate16(TargetRegister::C, 1),
-				forth::store(TargetRegister::X, TargetRegister::C));
+		//dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
+		//		loadImmediate16(TargetRegister::C, 1),
+		//		forth::store(TargetRegister::X, TargetRegister::C));
 	}
 	void Machine::deactivateCompileMode() {
-		dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
-				forth::store(TargetRegister::X, TargetRegister::Zero));
+		//dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
+		//		forth::store(TargetRegister::X, TargetRegister::Zero));
 	}
 
 	bool Machine::stackEmpty(TargetRegister sp, Address location) {
-		dispatchInstruction(loadImmediate64(TargetRegister::X, location),
-				forth::load(TargetRegister::Temporary, TargetRegister::X),
-				cmpeq(TargetRegister::C, TargetRegister::Temporary, sp));
+		//dispatchInstruction(loadImmediate64(TargetRegister::X, location),
+		//		forth::load(TargetRegister::Temporary, TargetRegister::X),
+		//		cmpeq(TargetRegister::C, TargetRegister::Temporary, sp));
 		return _core.getRegister(TargetRegister::C).getTruth();
 	}
 	bool Machine::stackFull(TargetRegister sp, Address location) {
-		dispatchInstruction(loadImmediate64(TargetRegister::X, location),
-				forth::load(TargetRegister::Temporary, TargetRegister::X),
-				cmpeq(TargetRegister::C, TargetRegister::Temporary, sp));
+		//dispatchInstruction(loadImmediate64(TargetRegister::X, location),
+		//		forth::load(TargetRegister::Temporary, TargetRegister::X),
+		//		cmpeq(TargetRegister::C, TargetRegister::Temporary, sp));
 		return _core.getRegister(TargetRegister::C).getTruth();
 	}
 	void Machine::pushOntoStack(TargetRegister sp, Datum value, Address fullLocation) {
 		if (stackFull(sp, fullLocation)) {
 			throw Problem("pushOntoStack", "STACK FULL!!!");
 		}
-		dispatchInstruction(loadImmediate64(TargetRegister::X, value.address),
-				pushRegister(TargetRegister::X, sp));
+		//dispatchInstruction(loadImmediate64(TargetRegister::X, value.address),
+		//		pushRegister(TargetRegister::X, sp));
 	}
 	void Machine::pushSubroutine(Datum value) {
 		try {
@@ -622,7 +622,7 @@ endLoopTop:
 		if (stackEmpty(sp, emptyLocation)) {
 			throw Problem("pop", "STACK EMPTY!");
 		}
-		dispatchInstruction(popRegister(TargetRegister::C, sp));
+		//dispatchInstruction(popRegister(TargetRegister::C, sp));
 		return _core.getRegister(TargetRegister::C).getValue();
 	}
 	Datum Machine::popSubroutine() {
@@ -639,12 +639,13 @@ endLoopTop:
 		return stackFull(TargetRegister::SP2, subroutineStackFullLocation);
 	}
 	void Machine::clearSubroutineStack() {
-		dispatchInstruction(loadImmediate64(TargetRegister::X, subroutineStackEmptyLocation),
-				forth::load(TargetRegister::SP2, TargetRegister::X));
+		//dispatchInstruction(loadImmediate64(TargetRegister::X, subroutineStackEmptyLocation),
+		//		forth::load(TargetRegister::SP2, TargetRegister::X));
 	}
 
 	void Machine::printStack() {
         // load the bottom of the stack
+		/*
 		dispatchInstruction(loadImmediate64(TargetRegister::X, parameterStackEmptyLocation),
 				forth::load(TargetRegister::X, TargetRegister::X),
 				zeroRegister(TargetRegister::A),
@@ -661,6 +662,7 @@ endLoopTop:
 				notb(TargetRegister::C, TargetRegister::C),
 				forth::conditionalBranch(TargetRegister::C, "loopRestart"),
 				label("done"));
+				*/
 	}
 	std::function<void(Address, Address)> Machine::getMemoryInstallationFunction() {
 		return _core.getMemoryInstallationFunction();

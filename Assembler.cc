@@ -1,6 +1,7 @@
 #include "Types.h"
 #include "Instruction.h"
 #include "Assembler.h"
+#include "Core.h"
 
 namespace forth {
 	AssemblerBuilder::AssemblerBuilder(Address baseAddress) : _baseAddress(baseAddress), _currentLocation(baseAddress) {}
@@ -60,6 +61,37 @@ namespace forth {
 		// invoke it
 		op(*this);
 	}
+#define OneByte(title) Core:: title op ## title () noexcept { return Core:: title (); }
+#define TwoByte(title, b) \
+	Core:: title op ## title (const Core:: b & x) noexcept { \
+		Core:: title value; \
+		value.args = x; \
+		return value; \
+	}
+#define ThreeByte(title, b) \
+	Core:: title op ## title (const Core:: b & x) noexcept { \
+		Core:: title value; \
+		value.args = x; \
+		return value; \
+	}
+#define FourByte(title, b) \
+	Core:: title op ## title (const Core:: b & x) noexcept { \
+		Core:: title value; \
+		value.args = x; \
+		return value; \
+	}
+#define GrabBag(title, b) \
+	Core:: title op ## title (const Core:: b & x) noexcept { \
+		Core:: title value; \
+		value.args = x; \
+		return value; \
+	}
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef GrabBag
 	//SizedResolvableLazyFunction jumpRelative(const std::string& name) {
 	//	return std::make_tuple(getInstructionWidth(Operation::Jump), 
 	//						[name](AssemblerBuilder& ab, Address from) {

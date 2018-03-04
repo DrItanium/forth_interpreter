@@ -68,16 +68,19 @@ class AssemblerBuilder {
 
 
 #define OneByte(title) Core:: title op ## title () noexcept ;
-#define TwoByte(title, b) Core:: title op ## title (const b &) noexcept ;
-#define ThreeByte(title, b) Core:: title op ## title (const b &) noexcept ;
-#define FourByte(title, b) Core:: title op ## title (const b &) noexcept ;
-#define GrabBag(title, b) Core:: title op ## title (const b &) noexcept ;
+#define TwoByte(title, b) Core:: title op ## title (const Core:: b &) noexcept ;
+#define ThreeByte(title, b) Core:: title op ## title (const Core:: b &) noexcept ;
+#define FourByte(title, b) Core:: title op ## title (const Core:: b &) noexcept ;
+#define GrabBag(title, b) Core:: title op ## title (const Core:: b &) noexcept ;
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
 #undef GrabBag
+
+EagerInstruction opPrintChar(char c) noexcept;
+EagerInstruction opPrintChar(const std::string& str) noexcept;
 
 //constexpr byte encodeSingleByteOperation(Operation op) noexcept {
 //	return static_cast<byte>(op);
@@ -550,13 +553,5 @@ class AssemblerBuilder {
 //}
 
 } // end namespace forth
-//static_assert(sizeof(unsigned long long int) >= sizeof(forth::Address), "Unsigned long long int is a 64-bit value or greater!");
-//constexpr forth::QuarterAddressWrapper operator "" _addrqlowest(unsigned long long int addr) {  return forth::getLowestQuarter(forth::Address(addr)); }
-//constexpr forth::QuarterAddressWrapper operator "" _addrqlower(unsigned long long int addr) {   return forth::getLowerQuarter(forth::Address(addr)); }
-//constexpr forth::QuarterAddressWrapper operator "" _addrqhigher(unsigned long long int addr) {  return forth::getHigherQuarter(forth::Address(addr)); }
-//constexpr forth::QuarterAddressWrapper operator "" _addrqhighest(unsigned long long int addr) { return forth::getHighestQuarter(forth::Address(addr)); }
-//
-//constexpr forth::HalfAddressWrapper operator "" _hupper(unsigned long long int addr) {  return forth::getUpperHalf(forth::Address(addr)); }
-//constexpr forth::HalfAddressWrapper operator "" _hlower(unsigned long long int addr) { return forth::getLowerHalf(forth::Address(addr)); }
 
 #endif

@@ -88,7 +88,7 @@ class Core {
 		void push(TargetRegister reg, TargetRegister sp);
 		void pop(TargetRegister dest, TargetRegister sp);
 		void savePositionToSubroutineStack();
-	private:
+	public:
 		using DestinationRegister = std::optional<TargetRegister>;
 		using SourceRegister = std::optional<TargetRegister>;
 #define OperationKind(x) \
@@ -163,23 +163,25 @@ class Core {
         using TenByteSelector = std::variant<IsOneRegisterWithImm64>;
 		using TenByteVariant = std::variant<OneRegisterWithImm64>;
 #undef OperationKind
-	private:
-        using ExtendedTwoRegister0 = TwoRegister;
-        using ExtendedTwoRegister1 = TwoRegister;
-#define OneByte(title) struct title final { };
-#define TwoByte(title, b) struct title final { Core:: b args; }; 
-#define ThreeByte(title, b) struct title final { Core:: b args; };  
-#define FourByte(title, b) struct title final { Core:: b args; }; 
-#define FiveByte(title, b) struct title final { Core:: b args; }; 
-#define EightByte(title, b)  struct title final { Core:: b args; }; 
-#define GrabBag(title, b) struct title final { Core:: b args; }; 
+#define OneByte(title) struct title final { \
+	static constexpr auto opcode = OneByteOpcode:: title ; };
+#define TwoByte(title, b) struct title final { \
+	static constexpr auto opcode = TwoByteOpcode:: title ; \
+	Core:: b args; }; 
+#define ThreeByte(title, b) struct title final { \
+	static constexpr auto opcode = ThreeByteOpcode:: title ; \
+	Core:: b args; };  
+#define FourByte(title, b) struct title final { \
+	static constexpr auto opcode = FourByteOpcode :: title ; \
+	Core:: b args; }; 
+#define GrabBag(title, b) struct title final { \
+	static constexpr auto opcode = GrabBagOpcode :: title ; \
+	Core:: b args; }; 
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
 
         using OneByteOperation = std::variant<
@@ -187,16 +189,12 @@ class Core {
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
 #define FourByte(title, b)
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
 #define GrabBag(title, b) 
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
             UndefinedOpcode
             >;
@@ -206,16 +204,12 @@ class Core {
 #define TwoByte(title, b) Core:: title,
 #define ThreeByte(title, b) 
 #define FourByte(title, b)
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
 #define GrabBag(title, b) 
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
                 UndefinedOpcode>;
         using ThreeByteOperation =
@@ -224,16 +218,12 @@ class Core {
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) Core:: title,
 #define FourByte(title, b)
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
 #define GrabBag(title, b) 
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
                 UndefinedOpcode> ;
 
@@ -243,16 +233,12 @@ class Core {
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
 #define FourByte(title, b) Core:: title,
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
 #define GrabBag(title, b) 
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
                 UndefinedOpcode>;
         using GrabBagOperation = 
@@ -261,16 +247,12 @@ class Core {
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
 #define FourByte(title, b) 
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
 #define GrabBag(title, b) Core:: title,
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
                 UndefinedOpcode>;
 

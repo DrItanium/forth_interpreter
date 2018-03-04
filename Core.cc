@@ -1487,15 +1487,18 @@ void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
 					auto updateDest = [&dest](auto value) { dest.setValue(value); };
 					auto convSrc0 = [&src0](auto conv) { return conv(src0); };
 					auto convSrc1 = [&src1](auto conv) { return conv(src1); };
-
+					#define InvokeConv(bfun, cfun) \
+						updateDest( bfun ( convSrc0( cfun ) , convSrc1 ( cfun )))
 					if constexpr (IsType(Add)) {
-						updateDest(add(convSrc0(intFunction), convSrc1(intFunction)));
+						InvokeConv(add, intFunction);
 					} else if constexpr (IsType(AddUnsigned)) {
-
+						InvokeConv(add, unsignedFunction);
 					} else if constexpr (IsType(FloatingPointAdd)) {
+						InvokeConv(add, floatFunction);
 					} else {
 						throw Problem("dispatchOperation(ThreeByte)", "Unimplemented three byte operation!");
 					}
+					#undef InvokeConv
 					#undef IsType
 				}
 			}, op);

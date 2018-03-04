@@ -1535,14 +1535,34 @@ void Core::dispatchOperation(const Core::FourByteOperation& op) {
 #undef IsType
 #undef InvokeS
 #undef InvokeU
+#undef InvokeSU
+			}, op);
+}
+
+void Core::dispatchOperation(const Core::GrabBagOperation& op) {
+	std::visit([this](auto&& value) {
+				using T = std::decay_t<decltype(value)>;
+				if constexpr (std::is_same_v<T, UndefinedOpcode>) {
+					throw Problem("dispatchOperation(GrabBag)", "UndefinedOpcode provided");
+				} else if constexpr (std::is_same_v<T, DecodeBits>) {
+					auto& dest = getDestinationRegister(value.args);
+					auto& src = getSourceRegister(value.args);
+					auto& src2 = getSource2Register(value.args);
+					auto& src3 = getSourceRegister(value.args.source3);
+					dest.setValue(forth::decodeBits(src.getAddress(), src2.getAddress(), src3.getAddress()));
+				} else if constexpr (std::is_same_v<T, EncodeBits>) {
+					auto& dest = getDestinationRegister(value.args);
+					auto& src = getSourceRegister(value.args);
+					auto& src2 = getSource2Register(value.args);
+					auto& src3 = getSourceRegister(value.args.source3);
+					auto& src4 = getSourceRegister(value.args.source4);
+					dest.setValue(forth::encodeBits(src.getAddress(), src2.getAddress(), src3.getAddress(), src4.getAddress()));
+				} else {
+					static_assert(AlwaysFalse<T>:;value, "Unimplemented grab bag operation!");
+				}
 			}, op);
 }
 				//} else if constexpr (std::is_same_v<T, DecodeBits>) {
-				//	auto& dest = getDestinationRegister(value.args);
-				//	auto& src = getSourceRegister(value.args);
-				//	auto& src2 = getSource2Register(value.args);
-				//	auto& src3 = getSourceRegister(value.args.source3);
-				//	dest.setValue(forth::decodeBits(src.getAddress(), src2.getAddress(), src3.getAddress()));
 				//} else if constexpr (std::is_same_v<T, DecodeBitsg
 
 } // namespace forth

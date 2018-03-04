@@ -128,14 +128,26 @@ namespace forth {
 		};
 	}
 
-	auto swapAB() noexcept -> decltype(opSwap({TargetRegister::A, TargetRegister::B})) {
+	Core::Swap swapAB() noexcept {
 		return opSwap({TargetRegister::A, TargetRegister::B});
 	}
 
 	EagerInstruction label(const std::string& str) {
 		return [str](auto& ab) { ab.labelHere(str); };
 	}
+	Core::PushRegister opPushRegister(TargetRegister reg, TargetRegister sp) noexcept {
+		return opPushRegister({sp, reg});
+	}
+	Core::PopRegister opPopRegister(TargetRegister reg, TargetRegister sp ) noexcept {
+		return opPopRegister({reg, sp});
+	}
 
+	Core::PopRegister popA() noexcept { return opPopRegister(TargetRegister::A); }
+	Core::PopRegister popB() noexcept { return opPopRegister(TargetRegister::B); }
+	Core::PopRegister popC() noexcept { return opPopRegister(TargetRegister::C); }
+	Core::PushRegister pushA() noexcept { return opPushRegister(TargetRegister::A); }
+	Core::PushRegister pushB() noexcept { return opPushRegister(TargetRegister::B); }
+	Core::PushRegister pushC() noexcept { return opPushRegister(TargetRegister::C); }
 	//SizedResolvableLazyFunction jumpRelative(const std::string& name) {
 	//	return std::make_tuple(getInstructionWidth(Operation::Jump), 
 	//						[name](AssemblerBuilder& ab, Address from) {

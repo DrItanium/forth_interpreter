@@ -85,14 +85,14 @@ Core::PopRegister opPopRegister(TargetRegister reg, TargetRegister sp = TargetRe
 Core::Move zeroRegister(TargetRegister reg) noexcept;
 Core::LoadImmediate64 loadImmediate64(TargetRegister reg, Address value) noexcept;
 EagerInstruction useRegister(TargetRegister reg, EagerInstruction body) noexcept;
-auto popA() noexcept { return opPopRegister(TargetRegister::A); }
-auto popB() noexcept { return opPopRegister(TargetRegister::B); }
-auto popC() noexcept { return opPopRegister(TargetRegister::C); }
-auto pushA() noexcept { return opPushRegister(TargetRegister::A); }
-auto pushB() noexcept { return opPushRegister(TargetRegister::B); }
-auto pushC() noexcept { return opPushRegister(TargetRegister::C); }
+Core::PopRegister popA() noexcept;
+Core::PopRegister popB() noexcept;
+Core::PopRegister popC() noexcept;
+Core::PushRegister pushA() noexcept;
+Core::PushRegister pushB() noexcept;
+Core::PushRegister pushC() noexcept;
 EagerInstruction popAB() noexcept;
-auto swapAB() noexcept -> decltype(opSwap({TargetRegister::A, TargetRegister::B}));
+Core::Swap swapAB() noexcept;
 EagerInstruction label(const std::string&);
 //
 //constexpr QuarterAddress swapAB() noexcept {

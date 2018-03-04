@@ -1481,32 +1481,68 @@ void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
 			}, op);
 }
 
-//void Core::dispatchOperation(const Core::FourByteOperation& op) {
-//	std::visit([this](auto&& value) {
-//				using T = std::decay_t<decltype(value)>;
-//				if constexpr (std::is_same_v<T, UndefinedOpcode>) {
-//					throw Problem("dispatchOperation(FourByte)", "UndefinedOpcode provided");
-//				} else if constexpr (std::is_same_v<T, Jump>) {
-//					_pc.setValue(_pc.getInt() + value.args.value);
-//				} else if constexpr (std::is_same_v<T, CallSubroutine>) {
-//					savePositionToSubroutineStack();
-//					_pc.setValue(_pc.getInt() + value.args.value);
-//				} else if constexpr (std::is_same_v<T, JumpAbsolute>) {
-//					_pc.setValue(value.args.value);
-//				} else if constexpr (std::is_same_v<T, CallSubroutineAbsolute>) {
-//					savePositionToSubroutineStack();
-//					_pc.setValue(value.args.value);
-//				} else if constexpr (std::is_same_v<T, DecodeBits>) {
-//					auto& dest = getDestinationRegister(value.args);
-//					auto& src = getSourceRegister(value.args);
-//					auto& src2 = getSource2Register(value.args);
-//					auto& src3 = getSourceRegister(value.args.source3);
-//					dest.setValue(forth::decodeBits(src.getAddress(), src2.getAddress(), src3.getAddress()));
-//				} else if constexpr (std::is_same_v<T, DecodeBitsg
-//				} else {
-//					static_assert(AlwaysFalse<T>::value, "Unimplemented four byte operation!");
-//				}
-//			}, op);
-//}
+void Core::dispatchOperation(const Core::FourByteOperation& op) {
+	std::visit([this](auto&& value) {
+				using T = std::decay_t<decltype(value)>;
+#define IsType(t) std::is_same_v<T, t>
+#define InvokeS(t, func) \
+				else if constexpr (IsType( t ## Immediate )) { \
+					auto& dest = getDestinationRegister(value.args); \
+					auto& src = getSourceRegister(value.args); \
+					dest.setValue ( func ( src.getInt() , Integer(value.args.imm16) )); \
+				}
+#define InvokeU(t, func) \
+				else if constexpr (IsType( Unsigned ## t ## Immediate )) { \
+					auto& dest = getDestinationRegister(value.args); \
+					auto& src = getSourceRegister(value.args); \
+					dest.setValue ( func ( src.getAddress() , Address(value.args.imm16) )); \
+				}
+#define InvokeSU(t, func) \
+				InvokeS(t, func) \
+				InvokeU(t, func)
+				if constexpr (std::is_same_v<T, UndefinedOpcode>) {
+					throw Problem("dispatchOperation(FourByte)", "UndefinedOpcode provided");
+				} else if constexpr (std::is_same_v<T, Jump>) {
+					_pc.setValue(_pc.getInt() + value.args.value);
+				} else if constexpr (std::is_same_v<T, CallSubroutine>) {
+					savePositionToSubroutineStack();
+					_pc.setValue(_pc.getInt() + value.args.value);
+				} else if constexpr (std::is_same_v<T, JumpAbsolute>) {
+					_pc.setValue(Address(value.args.value));
+				} else if constexpr (std::is_same_v<T, CallSubroutineAbsolute>) {
+					savePositionToSubroutineStack();
+					_pc.setValue(Address(value.args.value));
+				} else if constexpr (std::is_same_v<T, JumpAbsolute>) {
+				} else if constexpr (std::is_same_v<T, ConditionalBranch>) {
+				} else if constexpr (std::is_same_v<T, ConditionalCallSubroutine>) { 
+				} 
+				InvokeSU(Add, add)
+				InvokeSU(Subtract, subtract)
+				InvokeSU(Multiply, multiply)
+				InvokeSU(Divide, divide)
+				InvokeSU(Modulo, modulo)
+				InvokeSU(And, andOp)
+				InvokeSU(Or, orOp)
+				InvokeSU(Xor, xorOp)
+				InvokeSU(ShiftLeft, shiftLeft)
+				InvokeSU(ShiftRight, shiftRight)
+				InvokeSU(GreaterThan, greaterThan)
+				InvokeSU(LessThan, lessThan)
+				InvokeSU(Equals, equals)
+				else {
+					static_assert(AlwaysFalse<T>::value, "Unimplemented four byte operation!");
+				}
+#undef IsType
+#undef InvokeS
+#undef InvokeU
+			}, op);
+}
+				//} else if constexpr (std::is_same_v<T, DecodeBits>) {
+				//	auto& dest = getDestinationRegister(value.args);
+				//	auto& src = getSourceRegister(value.args);
+				//	auto& src2 = getSource2Register(value.args);
+				//	auto& src3 = getSourceRegister(value.args.source3);
+				//	dest.setValue(forth::decodeBits(src.getAddress(), src2.getAddress(), src3.getAddress()));
+				//} else if constexpr (std::is_same_v<T, DecodeBitsg
 
 } // namespace forth

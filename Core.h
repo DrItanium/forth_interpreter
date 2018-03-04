@@ -94,27 +94,39 @@ class Core {
 #define OperationKind(x) struct x final
 		OperationKind(NoArguments) { };
         OperationKind(TwoRegister) {
+			TwoRegister() = default;
+			TwoRegister(DestinationRegister dest, SourceRegister src) : destination(dest), source(src) { };
             DestinationRegister destination;
             SourceRegister source;
         };
         OperationKind(OneRegister) {
+			OneRegister() = default;
+			OneRegister(DestinationRegister dest) : destination(dest) { };
             DestinationRegister destination;
         };
         OperationKind(FourRegister) {
+			FourRegister() = default;
+			FourRegister(DestinationRegister dest, SourceRegister src, SourceRegister src2, SourceRegister src3) : destination(dest), source(src), source2(src2), source3(src3) { }
             DestinationRegister destination;
             SourceRegister source;
             SourceRegister source2;
             SourceRegister source3;
         };
         OperationKind(ThreeRegister) {
+			ThreeRegister() = default;
+			ThreeRegister(DestinationRegister dest, SourceRegister src, SourceRegister src2) : destination(dest), source(src), source2(src2) { }
             DestinationRegister destination;
             SourceRegister source;
             SourceRegister source2;
         };
 		OperationKind(SignedImm16) {
+			SignedImm16() = default;
+			SignedImm16(QuarterInteger imm16) : value(imm16) { }
 			QuarterInteger value;
 		};
         OperationKind(FiveRegister) {
+			FiveRegister() = default;
+			FiveRegister(DestinationRegister dest, SourceRegister src, SourceRegister src2, SourceRegister src3, SourceRegister src4) : destination(dest), source(src), source2(src2), source3(src3), source4(src4) { }
             DestinationRegister destination;
 			SourceRegister source;
 			SourceRegister source2;
@@ -122,28 +134,40 @@ class Core {
 			SourceRegister source4;
         };
         OperationKind(Immediate24) {
+			Immediate24() = default;
+			Immediate24(HalfAddress addr) : value(addr) { };
             HalfAddress value;
         };
         OperationKind(TwoRegisterWithImm16) {
+			TwoRegisterWithImm16() = default;
+			TwoRegisterWithImm16(DestinationRegister dest, SourceRegister src, QuarterAddress imm) : destination(dest), source(src), imm16(imm) { }
             DestinationRegister destination;
             SourceRegister source;
             QuarterAddress imm16;
         };
         OperationKind(OneRegisterWithImm16) {
+			OneRegisterWithImm16() = default;
+			OneRegisterWithImm16(DestinationRegister dest, QuarterAddress imm) : destination(dest), imm16(imm) { }
             DestinationRegister destination;
             QuarterAddress imm16;
         };
         OperationKind(OneRegisterWithImm48) {
+			OneRegisterWithImm48() = default;
+			OneRegisterWithImm48(DestinationRegister dest, Address imm) : destination(dest), imm48(imm) { }
             DestinationRegister destination;
             Address imm48;
         };
         OperationKind(OneRegisterWithImm32) {
+			OneRegisterWithImm32() = default;
+			OneRegisterWithImm32(DestinationRegister dest, HalfAddress imm) : destination(dest), imm32(imm) { }
             DestinationRegister destination;
             HalfAddress imm32;
         };
         OperationKind(OneRegisterWithImm64) {
+			OneRegisterWithImm64() = default;
+			OneRegisterWithImm64(DestinationRegister dest, Address imm) : destination(dest), imm64(imm) { }
             DestinationRegister destination;
-            HalfAddress imm64;
+            Address imm64;
         };
 #undef OperationKind
 #define OneByte(title) struct title final { \

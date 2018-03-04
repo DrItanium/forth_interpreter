@@ -1466,5 +1466,39 @@ void Core::dispatchOperation(const Core::TwoByteOperation& op) {
 				}
 			}, op);
 }
+auto add(auto a, auto b) noexcept -> decltype(a + b) { return a + b; }
+auto subtract(auto a, auto b) noexcept -> decltype(a - b) { return a - b; }
+auto multiply(auto a, auto b) noexcept -> decltype(a * b) { return a * b; }
+
+void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
+	auto intFunction = [](const Register& value) { return value.getInt(); };
+	auto floatFunction = [](const Register& value) { return value.getFP(); };
+	auto unsignedFunction = [](const Register& value) { return value.getAddress(); };
+	auto booleanFunction = [](const Register& value) { return value.getTruth(); };
+	std::visit([this, intFunction, floatFunction, unsignedFunction, booleanFunction](auto&& value) {
+				using T = std::decay_t<decltype(value)>;
+				if constexpr (std::is_same_v<T, UndefinedOpcode>) {
+					throw Problem("dispatchOperation(ThreeByte)", "UndefinedOpcode provided");
+				} else {
+					#define IsType(t) std::is_same_v<T, t>
+					auto& dest = getDestinationRegister(value.args);
+					auto& src0 = getSourceRegister(value.args);
+					auto& src1 = getSource2Register(value.args);
+					auto updateDest = [&dest](auto value) { dest.setValue(value); };
+					auto convSrc0 = [&src0](auto conv) { return conv(src0); };
+					auto convSrc1 = [&src1](auto conv) { return conv(src1); };
+
+					if constexpr (IsType(Add)) {
+						updateDest(add(convSrc0(intFunction), convSrc1(intFunction)));
+					} else if constexpr (IsType(AddUnsigned)) {
+
+					} else if constexpr (IsType(FloatingPointAdd)) {
+					} else {
+						throw Problem("dispatchOperation(ThreeByte)", "Unimplemented three byte operation!");
+					}
+					#undef IsType
+				}
+			}, op);
+}
 
 } // namespace forth

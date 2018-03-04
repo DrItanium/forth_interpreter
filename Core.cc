@@ -40,12 +40,6 @@ Register& Core::getRegister(TargetRegister reg) {
 			throw Problem("getRegister", "Undefined register!");
 	}
 }
-Register& Core::getDestinationRegister(byte value) {
-	return getRegister(forth::getDestinationRegister(value));
-}
-Register& Core::getSourceRegister(byte value) {
-	return getRegister(forth::getSourceRegister(value));
-}
 Datum& Core::getSystemVariable(Address index) {
     if (getByteOffset(index) != 0) {
         throw Problem("getSystemVariable", "System variables are 8-bytes wide and must be accessed on 8-byte boundaries!");
@@ -316,7 +310,7 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, TwoB
 #define TwoByte(title, b) \
 		case TwoByteOpcode :: title : \
 		op = Core:: title () ; \
-		decodeArguments(control, std::get< Core:: title > (op).args); \
+		decodeArguments(std::get< Core:: title > (op).args); \
 		break;
 #define ThreeByte(title, b) 
 #define FourByte(title, b) 
@@ -335,17 +329,15 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, TwoB
 
 std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, ThreeByteInstruction) {
 	// code 2: ThreeByte [ variant:3 | opcontrol:21 ]
-	//          ThreeRegister [ variant:3 [2] | op: 6 | unused: 3 | dest: 4 | src0: 4 | src1: 4] 
+	//          ThreeRegister [ variant:3 [2] | op: 5 | dest: 4 | src0: 4 | src1: 4 | unused: 4 ] 
 	Core::ThreeByteOperation op;
-	auto nextByte = extractByteFromMolecule();
-	auto opcodeValue = ThreeByteOpcode(((nextByte & 0x1) << 5) | decodeBits<byte, byte, 0b11111000, 3>(control));
-	switch(opcodeValue) {
+	switch (decodeBits<byte, ThreeByteOpcode, 0b11111000, 3>(control)) {
 #define OneByte(title) 
 #define TwoByte(title, b) 
 #define ThreeByte(title , b) \
 		case ThreeByteOpcode:: title : \
 		op = Core:: title () ; \
-		decodeArguments(nextByte, std::get< Core:: title > (op).args); \
+		decodeArguments(std::get< Core:: title > (op).args); \
 		break; 
 #define FourByte(title, b) 
 #define GrabBag(title, b) 
@@ -375,7 +367,7 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Four
 #define FourByte(title , b) \
 		case FourByteOpcode:: title : \
 		op = Core:: title () ; \
-		decodeArguments(control, std::get< Core:: title > (op).args); \
+		decodeArguments(std::get< Core:: title > (op).args); \
 		break; 
 #define GrabBag(title, b) 
 #include "InstructionData.def"
@@ -404,7 +396,7 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Grab
 #define GrabBag(title, b) \
 		case GrabBagOpcode :: title : \
 		op = Core:: title () ; \
-		decodeArguments(control, std::get< Core:: title > (op).args); \
+		decodeArguments(std::get< Core:: title > (op).args); \
 		break; 
 #include "InstructionData.def"
 #undef OneByte
@@ -614,11 +606,6 @@ void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
 					InvokeSUB(Xor, xorOp)
 					InvokeSUF(GreaterThan, greaterThan)
 					InvokeSUF(LessThan, lessThan)
-					InvokeSU(ShiftRight, shiftRight)
-					InvokeSU(ShiftLeft, shiftLeft)
-					InvokeSUB(Equals, equals)
-					InvokeF(Equals, equals)
-					InvokeSUF(Pow, powFunc)
 					else {
 						static_assert(AlwaysFalse<T>::value, "Unimplemented three byte operation!");
 					}
@@ -700,10 +687,52 @@ bool notOp(bool a) noexcept { return !a; }
 
 void Core::dispatchOperation(const Core::GrabBagOperation& op) {
 	std::visit([this](auto&& value) {
+				auto intFunction = [](const Register& value) { return value.getInt(); };
+				auto floatFunction = [](const Register& value) { return value.getFP(); };
+				auto unsignedFunction = [](const Register& value) { return value.getAddress(); };
+				auto booleanFunction = [](const Register& value) { return value.getTruth(); };
 				using T = std::decay_t<decltype(value)>;
 				if constexpr (std::is_same_v<T, UndefinedOpcode>) {
 					throw Problem("dispatchOperation(GrabBag)", "UndefinedOpcode provided");
-				} else if constexpr (std::is_same_v<T, DecodeBits>) {
+				} 
+#define IsType(t) std::is_same_v<T, t>
+#define InvokeConv(bfun, cfun) \
+	auto& dest = getDestinationRegister(value.args); \
+	auto& src0 = getSourceRegister(value.args); \
+	auto& src1 = getSourceRegister(value.args.source2); \
+	dest.setValue( bfun ( cfun(src0) , cfun(src1) ))
+#define InvokeS(t, func) \
+					else if constexpr (IsType( t )) { InvokeConv(func, intFunction); }
+#define InvokeU(t, func) \
+					else if constexpr (IsType( t ## Unsigned )) { InvokeConv(func, unsignedFunction); }
+#define InvokeF(t, func) \
+					else if constexpr (IsType( FloatingPoint ## t )) { InvokeConv(func, floatFunction); }
+#define InvokeB(t, func) \
+					else if constexpr (IsType( t ## Boolean)) { InvokeConv(func, booleanFunction); }
+#define InvokeSU(t, func) \
+					InvokeS(t, func) \
+					InvokeU(t, func)
+#define InvokeSUF(t, func) \
+					InvokeSU(t, func) \
+					InvokeF(t, func)
+#define InvokeSUB(t, func) \
+					InvokeSU(t, func) \
+					InvokeB(t, func)
+					InvokeSU(ShiftRight, shiftRight)
+					InvokeSU(ShiftLeft, shiftLeft)
+					InvokeSUB(Equals, equals)
+					InvokeF(Equals, equals)
+					InvokeSUF(Pow, powFunc)
+#undef InvokeS
+#undef InvokeU
+#undef InvokeF
+#undef InvokeB
+#undef InvokeSU
+#undef InvokeSUF
+#undef InvokeSUB
+#undef InvokeConv
+#undef IsType
+				else if constexpr (std::is_same_v<T, DecodeBits>) {
 					auto& dest = getDestinationRegister(value.args);
 					auto& src = getSourceRegister(value.args);
 					auto& src2 = getSource2Register(value.args);
@@ -757,5 +786,46 @@ void Core::dispatchInstruction() {
 		throw Problem("dispatchInstruction", "Bad Instruction!");
 	}
 }
+void Core::decodeArguments(OneRegister& args) {
+	// read the next byte
+	args.destination = forth::getDestinationRegister(extractByteFromMolecule());
+}
+
+void Core::decodeArguments(TwoRegister& args) {
+	auto nextByte = extractByteFromMolecule();
+	args.destination = forth::getDestinationRegister(nextByte);
+	args.source = forth::getSourceRegister(nextByte);
+}
+
+void Core::decodeArguments(ThreeRegister& args) {
+}
+
+void Core::decodeArguments(FourRegister& args) {
+}
+
+void Core::decodeArguments(FiveRegister& args) {
+}
+
+void Core::decodeArguments(SignedImm16& args) {
+}
+
+void Core::decodeArguments(Immediate24& args) {
+}
+
+void Core::decodeArguments(OneRegisterWithImm16&) {
+}
+
+void Core::decodeArguments(TwoRegisterWithImm16&) {
+}
+
+void Core::decodeArguments(OneRegisterWithImm32&) {
+}
+
+void Core::decodeArguments(OneRegisterWithImm48&) {
+}
+
+void Core::decodeArguments(OneRegisterWithImm64&) {
+}
+
 
 } // namespace forth

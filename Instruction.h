@@ -65,7 +65,7 @@ struct EightByteInstruction final : SizedType<8> { };
 struct SixByteInstruction final : SizedType<6> { };
 struct TenByteInstruction final : SizedType<10> {  };
 struct GrabBagInstruction final {
-    std::variant<TwoByteInstruction, SixByteInstruction, TenByteInstruction, EightByteInstruction, FourByteInstruction> kind;
+    std::variant<TwoByteInstruction, SixByteInstruction, TenByteInstruction, EightByteInstruction, FourByteInstruction, ThreeByteInstruction> kind;
     constexpr byte size() noexcept {
         switch (kind.index()) {
             case 0:
@@ -78,6 +78,8 @@ struct GrabBagInstruction final {
 				return std::get<3>(kind).size();
 			case 4:
 				return std::get<4>(kind).size();
+			case 5:
+				return std::get<5>(kind).size();
         }
     }
 };

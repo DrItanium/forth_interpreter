@@ -33,7 +33,7 @@ TwoByte(PushRegister, TwoRegister)
 //TwoByte(StoreHalfAddress, TwoRegister)
 //TwoByte(StoreQuarterAddress, TwoRegister)
 // code 2: ThreeByte [ variant:3 | opcontrol:21 ]
-//          ThreeRegister [ variant:3 [2] | op: 6 | unused: 3 | dest: 4 | src0: 4 | src1: 4] 
+//          ThreeRegister [ variant:3 [2] | op: 5 | dest: 4 | src0: 4 | src1: 4 | unused: 4 ] 
 ThreeByte(Nop3, ThreeRegister) // special case so I can use macros safely
 ThreeByte(Add, ThreeRegister)
 ThreeByte(AddUnsigned, ThreeRegister)
@@ -64,17 +64,6 @@ ThreeByte(GreaterThanUnsigned, ThreeRegister)
 ThreeByte(LessThan, ThreeRegister)
 ThreeByte(LessThanUnsigned, ThreeRegister)
 ThreeByte(FloatingPointLessThan, ThreeRegister)
-ThreeByte(ShiftRight, ThreeRegister)
-ThreeByte(ShiftRightUnsigned, ThreeRegister)
-ThreeByte(ShiftLeft, ThreeRegister)
-ThreeByte(ShiftLeftUnsigned, ThreeRegister)
-ThreeByte(Equals, ThreeRegister)
-ThreeByte(EqualsUnsigned, ThreeRegister)
-ThreeByte(EqualsBoolean, ThreeRegister)
-ThreeByte(FloatingPointEquals, ThreeRegister)
-ThreeByte(Pow, ThreeRegister)
-ThreeByte(FloatingPointPow, ThreeRegister)
-ThreeByte(PowUnsigned, ThreeRegister)
 // code 3: FourByte [ variant:3 | op: 5 | control: 24 ]
 //          SignedImm16          [ variant:3 [3] | op: 5 | unused: 8 | imm16 ] 
 //          Address24            [ variant:3 [3] | op: 5 | imm24 ]
@@ -132,5 +121,16 @@ GrabBag(LoadImmediate16, OneRegisterWithImm16)
 GrabBag(LoadImmediate32, OneRegisterWithImm32)
 GrabBag(LoadImmediate48, OneRegisterWithImm48)
 GrabBag(LoadImmediate64, OneRegisterWithImm64)
+GrabBag(ShiftRight, ThreeRegister)
+GrabBag(ShiftRightUnsigned, ThreeRegister)
+GrabBag(ShiftLeft, ThreeRegister)
+GrabBag(ShiftLeftUnsigned, ThreeRegister)
+GrabBag(Equals, ThreeRegister)
+GrabBag(EqualsUnsigned, ThreeRegister)
+GrabBag(EqualsBoolean, ThreeRegister)
+GrabBag(FloatingPointEquals, ThreeRegister)
+GrabBag(Pow, ThreeRegister)
+GrabBag(FloatingPointPow, ThreeRegister)
+GrabBag(PowUnsigned, ThreeRegister)
 // code 5-7: Unused!
 

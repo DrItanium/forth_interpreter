@@ -98,9 +98,44 @@ namespace forth {
 			ab.addInstruction(opAddImmediate({TargetRegister::Temporary,
 											 TargetRegister::Zero,
 											 QuarterAddress(c)}),
-							  opPrintChar(Core::DestinationRegister(TargetRegister::Temporary)));
+							  opPrintChar(TargetRegister::Temporary));
 		};
 	}
+	EagerInstruction opPrintChar(const std::string& str) noexcept {
+		return [str](AssemblerBuilder& ab) {
+			for (auto const& c : str) {
+				ab.addInstruction(opPrintChar(c));
+			}
+		};
+	}
+	Core::Move zeroRegister(TargetRegister reg) noexcept {
+		return opMove({reg, TargetRegister::Zero});
+	}
+	Core::LoadImmediate64 loadImmediate64(TargetRegister reg, Address value) noexcept {
+		return opLoadImmediate64({reg, value});
+	}
+
+	EagerInstruction useRegister(TargetRegister reg, EagerInstruction body) noexcept {
+		return [reg, body](AssemblerBuilder& ab) {
+			ab.addInstruction(opPushRegister(reg),
+							  body,
+							  opPopRegister(reg));
+		};
+	}
+	EagerInstruction popAB() noexcept {
+		return [](AssemblerBuilder& ab) {
+			ab.addInstruction(popA(), popB());
+		};
+	}
+
+	auto swapAB() noexcept -> decltype(opSwap({TargetRegister::A, TargetRegister::B})) {
+		return opSwap({TargetRegister::A, TargetRegister::B});
+	}
+
+	EagerInstruction label(const std::string& str) {
+		return [str](auto& ab) { ab.labelHere(str); };
+	}
+
 	//SizedResolvableLazyFunction jumpRelative(const std::string& name) {
 	//	return std::make_tuple(getInstructionWidth(Operation::Jump), 
 	//						[name](AssemblerBuilder& ab, Address from) {
@@ -163,14 +198,6 @@ namespace forth {
 	//		ab.addInstruction(loadLowerImmediate48(r, name));
 	//		ab.addInstruction(setImmediate16_Highest(r, name));
 	//	};
-	//}
-	//EagerInstruction label(const std::string& name) {
-	//	return [name](AssemblerBuilder& ab) {
-	//		ab.labelHere(name);
-	//	};
-	//}
-	//void AssemblerBuilder::addInstruction(const std::string& labelName) {
-	//	labelHere(labelName);
 	//}
 	//SizedResolvableLazyFunction conditionalBranch(TargetRegister cond, const std::string& name) {
 	//	return std::make_tuple(getInstructionWidth(Operation::ConditionalBranch),
@@ -238,23 +265,5 @@ namespace forth {
     //EagerInstruction pushImmediate(const Datum& value, TargetRegister sp) {
     //    return pushImmediate(value.address, sp);
     //}
-	//EagerInstruction printChar(char c) {
-	//	return [c](AssemblerBuilder& ab) {
-	//		ab.addInstruction(loadImmediate16(TargetRegister::Temporary, QuarterAddress(c)),
-	//						  printChar(TargetRegister::Temporary));
-	//	};
-	//}
-	//EagerInstruction printChar(const std::string& str) {
-	//	return [str](AssemblerBuilder& ab) {
-	//		for (const auto c : str) {
-	//			ab.addInstruction(printChar(c));
-	//		}
-	//	};
-	//}
-	//EagerInstruction popAB() {
-	//	return [](AssemblerBuilder& ab) {
-	//		ab.addInstruction(popA(), popB());
-	//	};
-	//}
 
 } // end namespace forth

@@ -40,4 +40,4 @@ DictionaryEntry.o: DictionaryEntry.cc DictionaryEntry.h Types.h Datum.h Problem.
 Problem.o: Problem.cc Problem.h
 Core.o: Core.cc Core.h Instruction.h Datum.h Types.h Problem.h
 Instruction.o: Instruction.cc Instruction.h Types.h Problem.h
-Assembler.o: Assembler.cc Assembler.h Types.h Instruction.h Datum.h Problem.h
+Assembler.o: Assembler.cc Assembler.h Types.h Instruction.h Datum.h Problem.h Core.h

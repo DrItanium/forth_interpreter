@@ -11,6 +11,7 @@
 #include <map>
 #include <list>
 #include "Datum.h"
+#include "Core.h"
 
 namespace forth {
 class AssemblerBuilder;
@@ -27,7 +28,7 @@ class AssemblerBuilder {
 	public:
 		using AddressToMolecule = std::tuple<Address, Molecule>;
 		using NameToAddress = std::tuple<std::string, Address>;
-		using DelayedInstruction = std::variant<Address, LazyInstruction>;
+		using DelayedInstruction = std::variant<Core::DecodedOperation, LazyInstruction>;
 	public:
 		AssemblerBuilder(Address baseAddress);
 		~AssemblerBuilder();

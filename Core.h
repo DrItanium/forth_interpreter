@@ -91,13 +91,8 @@ class Core {
 	public:
 		using DestinationRegister = std::optional<TargetRegister>;
 		using SourceRegister = std::optional<TargetRegister>;
-#define OperationKind(x) \
-        struct x ; \
-        struct Is ## x final { using Type = x ; }; \
-        struct x final
+#define OperationKind(x) struct x final
 		OperationKind(NoArguments) { };
-		using OneByteSelector = std::variant<IsNoArguments>;
-		using OneByteVariant = std::variant<NoArguments>;
         OperationKind(TwoRegister) {
             DestinationRegister destination;
             SourceRegister source;
@@ -105,8 +100,6 @@ class Core {
         OperationKind(OneRegister) {
             DestinationRegister destination;
         };
-        using TwoByteSelector = std::variant<IsTwoRegister, IsOneRegister>;
-		using TwoByteVariant = std::variant<OneRegister, TwoRegister>;
         OperationKind(FourRegister) {
             DestinationRegister destination;
             SourceRegister source;
@@ -121,8 +114,6 @@ class Core {
 		OperationKind(SignedImm16) {
 			QuarterInteger value;
 		};
-        using ThreeByteSelector = std::variant<IsFourRegister, IsThreeRegister, IsSignedImm16>;
-		using ThreeByteVariant = std::variant<ThreeRegister, FourRegister, SignedImm16>;
         OperationKind(FiveRegister) {
             DestinationRegister destination;
 			SourceRegister source;
@@ -142,40 +133,38 @@ class Core {
             DestinationRegister destination;
             QuarterAddress imm16;
         };
-        using FourByteSelector = std::variant<IsFiveRegister, IsImmediate24, IsTwoRegisterWithImm16, IsOneRegisterWithImm16>;
-        using FourByteVariant = std::variant<FiveRegister, Immediate24, TwoRegisterWithImm16, OneRegisterWithImm16>;
         OperationKind(OneRegisterWithImm48) {
             DestinationRegister destination;
             Address imm48;
         };
-        using EightByteSelector = std::variant<IsOneRegisterWithImm48>;
-		using EightByteVariant = std::variant<OneRegisterWithImm48>;
         OperationKind(OneRegisterWithImm32) {
             DestinationRegister destination;
             HalfAddress imm32;
         };
-        using SixByteSelector = std::variant<IsOneRegisterWithImm32>;
-		using SixByteVariant = std::variant<OneRegisterWithImm32>;
         OperationKind(OneRegisterWithImm64) {
             DestinationRegister destination;
             HalfAddress imm64;
         };
-        using TenByteSelector = std::variant<IsOneRegisterWithImm64>;
-		using TenByteVariant = std::variant<OneRegisterWithImm64>;
 #undef OperationKind
 #define OneByte(title) struct title final { \
-	static constexpr auto opcode = OneByteOpcode:: title ; };
+	OneByteOpcode getOpcode() { return  OneByteOpcode:: title ; } \
+	byte size() { return std::visit([](auto&& value) { return value.size(); }, determineInstructionWidth(getOpcode())); } \
+	};
 #define TwoByte(title, b) struct title final { \
-	static constexpr auto opcode = TwoByteOpcode:: title ; \
+	TwoByteOpcode getOpcode() { return  TwoByteOpcode:: title ; } \
+	byte size() { return std::visit([](auto&& value) { return value.size(); }, determineInstructionWidth(getOpcode())); } \
 	Core:: b args; }; 
 #define ThreeByte(title, b) struct title final { \
-	static constexpr auto opcode = ThreeByteOpcode:: title ; \
+	ThreeByteOpcode getOpcode() { return  ThreeByteOpcode:: title ; } \
+	byte size() { return std::visit([](auto&& value) { return value.size(); }, determineInstructionWidth(getOpcode())); } \
 	Core:: b args; };  
 #define FourByte(title, b) struct title final { \
-	static constexpr auto opcode = FourByteOpcode :: title ; \
+	FourByteOpcode getOpcode() { return  FourByteOpcode:: title ; } \
+	byte size() { return std::visit([](auto&& value) { return value.size(); }, determineInstructionWidth(getOpcode())); } \
 	Core:: b args; }; 
 #define GrabBag(title, b) struct title final { \
-	static constexpr auto opcode = GrabBagOpcode :: title ; \
+	GrabBagOpcode getOpcode() { return  GrabBagOpcode:: title ; } \
+	byte size() { return std::visit([](auto&& value) { return value.size(); }, determineInstructionWidth(getOpcode())); } \
 	Core:: b args; }; 
 #include "InstructionData.def"
 #undef OneByte

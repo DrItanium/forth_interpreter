@@ -61,12 +61,11 @@ struct OneByteInstruction final : SizedType<1> { };
 struct TwoByteInstruction final : SizedType<2> { };
 struct ThreeByteInstruction final : SizedType<3> { };
 struct FourByteInstruction final : SizedType<4> { };
-struct FiveByteInstruction final : SizedType<5> { };
 struct EightByteInstruction final : SizedType<8> { };
 struct SixByteInstruction final : SizedType<6> { };
 struct TenByteInstruction final : SizedType<10> {  };
 struct GrabBagInstruction final {
-    std::variant<TwoByteInstruction, SixByteInstruction, TenByteInstruction> kind;
+    std::variant<TwoByteInstruction, SixByteInstruction, TenByteInstruction, EightByteInstruction, FourByteInstruction> kind;
     constexpr byte size() noexcept {
         switch (kind.index()) {
             case 0:
@@ -75,17 +74,19 @@ struct GrabBagInstruction final {
 				return std::get<1>(kind).size();
 			case 2:
 				return std::get<2>(kind).size();
+			case 3:
+				return std::get<3>(kind).size();
+			case 4:
+				return std::get<4>(kind).size();
         }
     }
 };
-using InstructionWidth = std::variant<OneByteInstruction, TwoByteInstruction, ThreeByteInstruction, FourByteInstruction, EightByteInstruction, FiveByteInstruction, GrabBagInstruction>;
+using InstructionWidth = std::variant<OneByteInstruction, TwoByteInstruction, ThreeByteInstruction, FourByteInstruction, GrabBagInstruction>;
 enum class VariantKind : byte {
     OneByte,
     TwoByte,
     ThreeByte,
     FourByte,
-    EightByte,
-    FiveByte,
     GrabBag,
     Count,
 };
@@ -98,16 +99,12 @@ enum class OneByteOpcode : byte {
 #define TwoByte(title, b) 
 #define ThreeByte(title, b)
 #define FourByte(title, b)
-#define FiveByte(title, b)
-#define EightByte(title, b)
 #define GrabBag(title, b)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
 Count,
 };
@@ -117,16 +114,12 @@ enum class TwoByteOpcode : byte {
 #define TwoByte(title, b) title,
 #define ThreeByte(title, b)
 #define FourByte(title, b)
-#define FiveByte(title, b)
-#define EightByte(title, b)
 #define GrabBag(title, b)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
 Count,
 };
@@ -137,16 +130,12 @@ enum class ThreeByteOpcode : byte {
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) title,
 #define FourByte(title, b)
-#define FiveByte(title, b)
-#define EightByte(title, b)
 #define GrabBag(title, b)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
 Count,
 };
@@ -156,73 +145,28 @@ enum class FourByteOpcode : byte {
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
 #define FourByte(title, b) title,
-#define FiveByte(title, b)
-#define EightByte(title, b)
 #define GrabBag(title, b)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
 Count,
 };
 
-enum class FiveByteOpcode : byte {
-#define OneByte(title) 
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b)
-#define FiveByte(title, b) title,
-#define EightByte(title, b)
-#define GrabBag(title, b)
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-Count,
-};
-
-enum class EightByteOpcode : byte {
-#define OneByte(title) 
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b)
-#define FiveByte(title, b) 
-#define EightByte(title, b) title,
-#define GrabBag(title, b)
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-Count,
-};
 
 enum class GrabBagOpcode : byte {
 #define OneByte(title) 
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
 #define FourByte(title, b)
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
 #define GrabBag(title, cl) title,
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
     Count,
 };
@@ -235,8 +179,6 @@ InstructionWidth determineInstructionWidth(OneByteOpcode op);
 InstructionWidth determineInstructionWidth(TwoByteOpcode op);
 InstructionWidth determineInstructionWidth(ThreeByteOpcode op);
 InstructionWidth determineInstructionWidth(FourByteOpcode op);
-InstructionWidth determineInstructionWidth(FiveByteOpcode op);
-InstructionWidth determineInstructionWidth(EightByteOpcode op);
 InstructionWidth determineInstructionWidth(GrabBagOpcode op);
 
 constexpr TargetRegister getDestinationRegister(byte field) noexcept { 

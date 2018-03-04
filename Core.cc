@@ -1121,8 +1121,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, OneB
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
 #define FourByte(title, b) 
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
 #define GrabBag(title, b) 
 #define ExtendedVariantTenByte(title, b) 
 #define ExtendedVariantSixByte(title, b)
@@ -1132,8 +1130,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, OneB
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
 #undef ExtendedVariant
 #undef ExtendedVariantSixByte
@@ -1158,8 +1154,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, TwoB
 		break;
 #define ThreeByte(title, b) 
 #define FourByte(title, b) 
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
 #define GrabBag(title, b) 
 #define ExtendedVariantTenByte(title, b) 
 #define ExtendedVariantSixByte(title, b)
@@ -1169,8 +1163,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, TwoB
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
 #undef ExtendedVariant
 #undef ExtendedVariantSixByte
@@ -1196,8 +1188,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Thre
 		decodeArguments(nextByte, std::get< Core:: title > (op).args); \
 		break; 
 #define FourByte(title, b) 
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
 #define GrabBag(title, b) 
 #define ExtendedVariantTenByte(title, b) 
 #define ExtendedVariantSixByte(title, b)
@@ -1207,8 +1197,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Thre
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
 #undef ExtendedVariant
 #undef ExtendedVariantSixByte
@@ -1235,75 +1223,12 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Four
 		op = Core:: title () ; \
 		decodeArguments(control, std::get< Core:: title > (op).args); \
 		break; 
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
 #define GrabBag(title, b) 
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-		default:
-			break;
-	}
-	return std::optional<Core::DecodedOperation>(op);
-}
-std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, EightByteInstruction) {
-	// code 4: EightByte [ variant:3 | op:5 | control: 56 ]
-	//         OneRegisterWithImm48  [ variant: 3 [4] | op: 5 | dest: 4 | unused: 4 | imm48 ]
-	Core::EightByteOperation op;
-	switch (decodeBits<byte, EightByteOpcode, 0b11111000, 3>(control)) {
-#define OneByte(title) 
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title , b) 
-#define FiveByte(title, b) 
-#define EightByte(title, b) \
-		case EightByteOpcode:: title : \
-		op = Core:: title () ; \
-		decodeArguments(control, std::get< Core:: title > (op).args); \
-		break; 
-#define GrabBag(title, b) 
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-		default:
-			break;
-	}
-	return std::optional<Core::DecodedOperation>(op);
-}
-std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, FiveByteInstruction) {
-// code 5: FiveByte [ variant:3 | op: 5 | control: 32 ]
-//          Immediate24          [ variant:3 [3] | op: 5 | unused: 8 | imm24] 
-//          TwoRegisterWithImm16 [ variant:3 [3] | op: 5 | dest:4 | src0:4 | unused: 8 | imm16 ]
-	Core::FiveByteOperation op;
-	switch (decodeBits<byte, FiveByteOpcode, 0b11111000, 3>(control)) {
-#define OneByte(title) 
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title , b) 
-#define FiveByte(title, b) \
-		case FiveByteOpcode:: title : \
-		op = Core:: title () ; \
-		decodeArguments(control, std::get< Core:: title > (op).args); \
-		break; 
-#define EightByte(title, b) 
-#define GrabBag(title, b) 
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
 		default:
 			break;
@@ -1322,8 +1247,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Grab
 #define TwoByte(title, b) 
 #define ThreeByte(title, b) 
 #define FourByte(title , b) 
-#define FiveByte(title, b) 
-#define EightByte(title, b) 
 #define GrabBag(title, b) \
 		case GrabBagOpcode :: title : \
 		op = Core:: title () ; \
@@ -1334,8 +1257,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Grab
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
-#undef FiveByte
-#undef EightByte
 #undef GrabBag
 
 		default:
@@ -1356,10 +1277,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
             return decodeInstruction(control, ThreeByteInstruction()); 
         case VariantKind::FourByte: 
             return decodeInstruction(control, FourByteInstruction()); 
-        case VariantKind::FiveByte: 
-            return decodeInstruction(control, FiveByteInstruction()); 
-        case VariantKind::EightByte:
-            return decodeInstruction(control, EightByteInstruction()); 
         case VariantKind::GrabBag:
             return decodeInstruction(control, GrabBagInstruction());
         default:
@@ -1419,7 +1336,7 @@ void Core::dispatchOperation(const Core::TwoByteOperation& op) {
 						auto c = char(dest.getAddress());
 						std::cout << c;
 					} else if constexpr (std::is_same_v<T,Core::TypeDatum>) {
-							std::cout << dest.getValue();
+						std::cout << dest.getValue();
 					} else if constexpr (std::is_same_v<T, Core::ConditionalReturnSubroutine>) {
 						if (dest.getTruth()) {
 							dispatchOperation(Core::ReturnSubroutine());
@@ -1546,9 +1463,10 @@ void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
 					InvokeSU(ShiftRight, shiftRight)
 					InvokeSU(ShiftLeft, shiftLeft)
 					InvokeSUB(Equals, equals)
+					InvokeF(Equals, equals)
 					InvokeSUF(Pow, powFunc)
 					else {
-						throw Problem("dispatchOperation(ThreeByte)", "Unimplemented three byte operation!");
+						static_assert(AlwaysFalse<T>::value, "Unimplemented three byte operation!");
 					}
 #undef InvokeS
 #undef InvokeU
@@ -1562,5 +1480,33 @@ void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
 				}
 			}, op);
 }
+
+//void Core::dispatchOperation(const Core::FourByteOperation& op) {
+//	std::visit([this](auto&& value) {
+//				using T = std::decay_t<decltype(value)>;
+//				if constexpr (std::is_same_v<T, UndefinedOpcode>) {
+//					throw Problem("dispatchOperation(FourByte)", "UndefinedOpcode provided");
+//				} else if constexpr (std::is_same_v<T, Jump>) {
+//					_pc.setValue(_pc.getInt() + value.args.value);
+//				} else if constexpr (std::is_same_v<T, CallSubroutine>) {
+//					savePositionToSubroutineStack();
+//					_pc.setValue(_pc.getInt() + value.args.value);
+//				} else if constexpr (std::is_same_v<T, JumpAbsolute>) {
+//					_pc.setValue(value.args.value);
+//				} else if constexpr (std::is_same_v<T, CallSubroutineAbsolute>) {
+//					savePositionToSubroutineStack();
+//					_pc.setValue(value.args.value);
+//				} else if constexpr (std::is_same_v<T, DecodeBits>) {
+//					auto& dest = getDestinationRegister(value.args);
+//					auto& src = getSourceRegister(value.args);
+//					auto& src2 = getSource2Register(value.args);
+//					auto& src3 = getSourceRegister(value.args.source3);
+//					dest.setValue(forth::decodeBits(src.getAddress(), src2.getAddress(), src3.getAddress()));
+//				} else if constexpr (std::is_same_v<T, DecodeBitsg
+//				} else {
+//					static_assert(AlwaysFalse<T>::value, "Unimplemented four byte operation!");
+//				}
+//			}, op);
+//}
 
 } // namespace forth

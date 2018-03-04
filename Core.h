@@ -333,7 +333,6 @@ class Core {
         std::optional<DecodedOperation> decodeInstruction(byte control, TwoByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, ThreeByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, FourByteInstruction op);
-        std::optional<DecodedOperation> decodeInstruction(byte control, FiveByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, SixByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, EightByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, TenByteInstruction op);
@@ -346,8 +345,6 @@ class Core {
 		void dispatchOperation(const TwoByteOperation& op);
 		void dispatchOperation(const ThreeByteOperation& op);
 		void dispatchOperation(const FourByteOperation& op);
-		void dispatchOperation(const FiveByteOperation& op);
-		void dispatchOperation(const EightByteOperation& op);
 		void dispatchOperation(const GrabBagOperation& op);
 		Register& getDestinationRegister(const DestinationRegister& reg);
 		Register& getSourceRegister(const SourceRegister& reg);

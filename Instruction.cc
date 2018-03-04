@@ -40,10 +40,6 @@ InstructionWidth determineInstructionWidth(ThreeByteOpcode op) { return ThreeByt
 
 InstructionWidth determineInstructionWidth(FourByteOpcode op) { return FourByteInstruction(); }
 
-InstructionWidth determineInstructionWidth(FiveByteOpcode op) { return FiveByteInstruction(); }
-
-InstructionWidth determineInstructionWidth(EightByteOpcode op) { return EightByteInstruction(); }
-
 InstructionWidth determineInstructionWidth(GrabBagOpcode op){
     GrabBagInstruction gb;
     switch (op) {
@@ -62,6 +58,10 @@ InstructionWidth determineInstructionWidth(GrabBagOpcode op){
 		case GrabBagOpcode::LoadImmediate64:
 			gb.kind = TenByteInstruction();
 			break;
+		case GrabBagOpcode::LoadImmediate16:
+			gb.kind = FourByteInstruction();
+			break;
+
         default:
             throw Problem("determineInstructionWidth", "Illegal grab bag operation specified!");
     }

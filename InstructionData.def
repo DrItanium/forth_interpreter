@@ -55,15 +55,15 @@ ThreeByte(AndBoolean, ThreeRegister)
 ThreeByte(Or, ThreeRegister)
 ThreeByte(OrUnsigned, ThreeRegister)
 ThreeByte(OrBoolean, ThreeRegister)
+ThreeByte(Xor, ThreeRegister)
+ThreeByte(XorUnsigned, ThreeRegister)
+ThreeByte(XorBoolean, ThreeRegister)
 ThreeByte(GreaterThan, ThreeRegister)
 ThreeByte(FloatingPointGreaterThan, ThreeRegister)
 ThreeByte(GreaterThanUnsigned, ThreeRegister)
 ThreeByte(LessThan, ThreeRegister)
 ThreeByte(LessThanUnsigned, ThreeRegister)
 ThreeByte(FloatingPointLessThan, ThreeRegister)
-ThreeByte(Xor, ThreeRegister)
-ThreeByte(XorUnsigned, ThreeRegister)
-ThreeByte(XorBoolean, ThreeRegister)
 ThreeByte(ShiftRight, ThreeRegister)
 ThreeByte(ShiftRightUnsigned, ThreeRegister)
 ThreeByte(ShiftLeft, ThreeRegister)
@@ -77,53 +77,48 @@ ThreeByte(FloatingPointPow, ThreeRegister)
 ThreeByte(PowUnsigned, ThreeRegister)
 // code 3: FourByte [ variant:3 | op: 5 | control: 24 ]
 //          SignedImm16          [ variant:3 [3] | op: 5 | unused: 8 | imm16 ] 
-//          FourRegister         [ variant:3 [3] | op: 5 | dest: 4 | src0: 4 | src1: 4 | src2: 4 | unused: 8 ] // compact version
-//          FiveRegister         [ variant:3 [3] | op: 5 | dest: 4 | src0: 4 | src1: 4 | src2: 4 | src3: 4 | unused: 4 ]
-//          OneRegisterWithImm16 [ variant:3 [3] | op: 5 | dest: 4 | unused: 4 | imm16 ]
+//          Address24            [ variant:3 [3] | op: 5 | imm24 ]
+//          TwoRegisterWithImm16 [ variant:3 [3] | op: 5 | dest:4 | src0:4 | imm16 ]
 FourByte(Jump, SignedImm16)
 FourByte(CallSubroutine, SignedImm16)
-FourByte(DecodeBits, FourRegister)
-FourByte(EncodeBits, FiveRegister)
+FourByte(CallSubroutineAbsolute, Immediate24)
+FourByte(JumpAbsolute, Immediate24)
 FourByte(ConditionalBranch, OneRegisterWithImm16)
 FourByte(ConditionalCallSubroutine, OneRegisterWithImm16)
-FourByte(LoadImmediate16, OneRegisterWithImm16)
-// code 4: EightByte [ variant:3 | op:5 | control: 56 ]
-//         OneRegisterWithImm48  [ variant: 3 [4] | op: 5 | dest: 4 | unused: 4 | imm48 ]
-EightByte(LoadImmediate48, OneRegisterWithImm48)
-// code 5: FiveByte [ variant:3 | op: 5 | control: 32 ]
-//          Immediate24          [ variant:3 [3] | op: 5 | unused: 8 | imm24] 
-//          TwoRegisterWithImm16 [ variant:3 [3] | op: 5 | dest:4 | src0:4 | unused: 8 | imm16 ]
-FiveByte(JumpAbsolute, Immediate24)
-FiveByte(AddImmediate, TwoRegisterWithImm16)
-FiveByte(SubtractImmediate, TwoRegisterWithImm16)
-FiveByte(MultiplyImmediate, TwoRegisterWithImm16)
-FiveByte(DivideImmediate, TwoRegisterWithImm16)
-FiveByte(ModuloImmediate, TwoRegisterWithImm16)
-FiveByte(AndImmediate, TwoRegisterWithImm16)
-FiveByte(OrImmediate, TwoRegisterWithImm16)
-FiveByte(GreaterThanImmediate, TwoRegisterWithImm16)
-FiveByte(LessThanImmediate, TwoRegisterWithImm16)
-FiveByte(XorImmediate, TwoRegisterWithImm16)
-FiveByte(ShiftRightImmediate, TwoRegisterWithImm16)
-FiveByte(ShiftLeftImmediate, TwoRegisterWithImm16)
-FiveByte(EqualsImmediate, TwoRegisterWithImm16)
-FiveByte(UnsignedAddImmediate, TwoRegisterWithImm16)
-FiveByte(UnsignedSubtractImmediate, TwoRegisterWithImm16)
-FiveByte(UnsignedMultiplyImmediate, TwoRegisterWithImm16)
-FiveByte(UnsignedDivideImmediate, TwoRegisterWithImm16)
-FiveByte(UnsignedModuloImmediate, TwoRegisterWithImm16)
-FiveByte(UnsignedAndImmediate, TwoRegisterWithImm16)
-FiveByte(UnsignedOrImmediate, TwoRegisterWithImm16)
-FiveByte(UnsignedGreaterThanImmediate, TwoRegisterWithImm16)
-FiveByte(UnsignedLessThanImmediate, TwoRegisterWithImm16)
-FiveByte(UnsignedXorImmediate, TwoRegisterWithImm16)
-FiveByte(UnsignedShiftRightImmediate, TwoRegisterWithImm16)
-FiveByte(UnsignedShiftLeftImmediate, TwoRegisterWithImm16)
-FiveByte(UnsignedEqualsImmediate, TwoRegisterWithImm16)
-// code 6: GrabBag [ variant:3 | op: 5 | ... ] 
+FourByte(AddImmediate, TwoRegisterWithImm16)
+FourByte(SubtractImmediate, TwoRegisterWithImm16)
+FourByte(MultiplyImmediate, TwoRegisterWithImm16)
+FourByte(DivideImmediate, TwoRegisterWithImm16)
+FourByte(ModuloImmediate, TwoRegisterWithImm16)
+FourByte(AndImmediate, TwoRegisterWithImm16)
+FourByte(OrImmediate, TwoRegisterWithImm16)
+FourByte(GreaterThanImmediate, TwoRegisterWithImm16)
+FourByte(LessThanImmediate, TwoRegisterWithImm16)
+FourByte(XorImmediate, TwoRegisterWithImm16)
+FourByte(ShiftRightImmediate, TwoRegisterWithImm16)
+FourByte(ShiftLeftImmediate, TwoRegisterWithImm16)
+FourByte(EqualsImmediate, TwoRegisterWithImm16)
+FourByte(UnsignedAddImmediate, TwoRegisterWithImm16)
+FourByte(UnsignedSubtractImmediate, TwoRegisterWithImm16)
+FourByte(UnsignedMultiplyImmediate, TwoRegisterWithImm16)
+FourByte(UnsignedDivideImmediate, TwoRegisterWithImm16)
+FourByte(UnsignedModuloImmediate, TwoRegisterWithImm16)
+FourByte(UnsignedAndImmediate, TwoRegisterWithImm16)
+FourByte(UnsignedOrImmediate, TwoRegisterWithImm16)
+FourByte(UnsignedGreaterThanImmediate, TwoRegisterWithImm16)
+FourByte(UnsignedLessThanImmediate, TwoRegisterWithImm16)
+FourByte(UnsignedXorImmediate, TwoRegisterWithImm16)
+FourByte(UnsignedShiftRightImmediate, TwoRegisterWithImm16)
+FourByte(UnsignedShiftLeftImmediate, TwoRegisterWithImm16)
+FourByte(UnsignedEqualsImmediate, TwoRegisterWithImm16)
+// code 4: GrabBag [ variant:3 | op: 5 | ... ] 
 //         TwoRegister          [ variant: 3 [6] | op: 5 | dest: 4 | src: 4 ]
 //         OneRegisterWithImm64 [ variant: 3 [6] | op: 5 | dest: 4 | unused: 4 | imm64 ]
 //         OneRegisterWithImm32 [ variant: 3 [6] | op: 5 | dest: 4 | unused: 4 | imm32 ]
+//         FourRegister         [ variant:3 [6]  | op: 5 | dest: 4 | src0: 4 | src1: 4 | src2: 4 | unused: 8 ] // compact version
+//         FiveRegister         [ variant:3 [6]  | op: 5 | dest: 4 | src0: 4 | src1: 4 | src2: 4 | src3: 4 | unused: 4 ]
+//         OneRegisterWithImm16 [ variant:3 [3] | op: 5 | dest: 4 | unused: 4 | imm16 ]
+//         OneRegisterWithImm48  [ variant: 3 [4] | op: 5 | dest: 4 | unused: 4 | imm48 ]
 GrabBag(PrintString, TwoRegister) // read two registers to get start and length in memory
 GrabBag(Minus, TwoRegister) // minus unsigned makes no sense
 GrabBag(MinusUnsigned, TwoRegister)
@@ -131,7 +126,11 @@ GrabBag(MinusFloatingPoint, TwoRegister)
 GrabBag(Not, TwoRegister) // not is implicitly unsigned and works for boolean ops as well
 GrabBag(NotBoolean, TwoRegister)
 GrabBag(NotSigned, TwoRegister)
-GrabBag(LoadImmediate64, OneRegisterWithImm64)
+GrabBag(DecodeBits, FourRegister)
+GrabBag(EncodeBits, FiveRegister)
+GrabBag(LoadImmediate16, OneRegisterWithImm16)
 GrabBag(LoadImmediate32, OneRegisterWithImm32)
+GrabBag(LoadImmediate48, OneRegisterWithImm48)
+GrabBag(LoadImmediate64, OneRegisterWithImm64)
 // code 7: Unused!
 

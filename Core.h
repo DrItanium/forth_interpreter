@@ -255,42 +255,6 @@ class Core {
 #undef EightByte
 #undef GrabBag
                 UndefinedOpcode>;
-        using FiveByteOperation =
-            std::variant<
-#define OneByte(title)
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b) 
-#define FiveByte(title, b) Core:: title,
-#define EightByte(title, b) 
-#define GrabBag(title, b) 
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-                UndefinedOpcode>;
-        using EightByteOperation =
-            std::variant<
-#define OneByte(title)
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b) 
-#define FiveByte(title, b) 
-#define EightByte(title, b) Core:: title,
-#define GrabBag(title, b) 
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef FiveByte
-#undef EightByte
-#undef GrabBag
-                UndefinedOpcode>;
         using GrabBagOperation = 
             std::variant<
 #define OneByte(title)
@@ -310,11 +274,11 @@ class Core {
 #undef GrabBag
                 UndefinedOpcode>;
 
-        using DecodedOperation = std::variant<OneByteOperation, TwoByteOperation, 
+        using DecodedOperation = std::variant<
+			OneByteOperation, 
+			TwoByteOperation, 
               ThreeByteOperation, 
               FourByteOperation, 
-              FiveByteOperation, 
-              EightByteOperation,
               GrabBagOperation>;
 	private:
         void decodeArguments(byte control, OneRegister& args);
@@ -333,9 +297,6 @@ class Core {
         std::optional<DecodedOperation> decodeInstruction(byte control, TwoByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, ThreeByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, FourByteInstruction op);
-        std::optional<DecodedOperation> decodeInstruction(byte control, SixByteInstruction op);
-        std::optional<DecodedOperation> decodeInstruction(byte control, EightByteInstruction op);
-        std::optional<DecodedOperation> decodeInstruction(byte control, TenByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, GrabBagInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte top);
     private:

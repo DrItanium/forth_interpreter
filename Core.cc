@@ -245,8 +245,6 @@ Address Core::extractImm48() {
     return lowest16 | lower16 | higher16;
 }
 
-void Core::dispatchInstruction() {
-}
 
 
 void Core::executionCycle(Address startAddress) {
@@ -296,18 +294,12 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, OneB
 #define ThreeByte(title, b) 
 #define FourByte(title, b) 
 #define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b) 
-#define ExtendedVariantSixByte(title, b)
-#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
 #undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
         default:
             break;
     }
@@ -329,18 +321,12 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, TwoB
 #define ThreeByte(title, b) 
 #define FourByte(title, b) 
 #define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b) 
-#define ExtendedVariantSixByte(title, b)
-#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
 #undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
         default:
             break;
     }
@@ -363,18 +349,12 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, Thre
 		break; 
 #define FourByte(title, b) 
 #define GrabBag(title, b) 
-#define ExtendedVariantTenByte(title, b) 
-#define ExtendedVariantSixByte(title, b)
-#define ExtendedVariant(st, b, c) INDIRECTION(ExtendedVariant, st)(b, c)
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
 #undef GrabBag
-#undef ExtendedVariant
-#undef ExtendedVariantSixByte
-#undef ExtendedVariantTenByte
 		default:
 			break;
 	}
@@ -768,7 +748,14 @@ void Core::dispatchOperation(const Core::GrabBagOperation& op) {
 				}
 			}, op);
 }
-				//} else if constexpr (std::is_same_v<T, DecodeBits>) {
-				//} else if constexpr (std::is_same_v<T, DecodeBitsg
+void Core::dispatchInstruction() {
+	auto control = extractByteFromMolecule();
+	auto result = decodeInstruction(control);
+	if (result) {
+		std::visit([this](auto&& value) { dispatchOperation(value); }, result.value());
+	} else {
+		throw Problem("dispatchInstruction", "Bad Instruction!");
+	}
+}
 
 } // namespace forth

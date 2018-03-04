@@ -1490,6 +1490,13 @@ auto orOp(auto a, auto b) noexcept -> decltype(a | b) { return a | b; }
 bool orOp(bool a, bool b) noexcept { return a || b; }
 auto xorOp(auto a, auto b) noexcept -> decltype(a ^ b) { return a ^ b; }
 bool xorOp(bool a, bool b) noexcept { return a != b; }
+auto greaterThan(auto a, auto b) noexcept -> decltype(a > b) { return a > b; }
+auto lessThan(auto a, auto b) noexcept -> decltype(a < b) { return a < b; }
+auto shiftRight(auto a, auto b) noexcept -> decltype(a >> b) { return a >> b; }
+auto shiftLeft(auto a, auto b) noexcept -> decltype(a << b) { return a << b; }
+auto equals(auto a, auto b) noexcept -> decltype(a == b) { return a == b; }
+auto powFunc(auto a, auto b) noexcept -> decltype(a) { return decltype(a)(std::pow(double(a), double(b))); }
+
 
 void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
 	auto intFunction = [](const Register& value) { return value.getInt(); };
@@ -1501,16 +1508,20 @@ void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
 				if constexpr (std::is_same_v<T, UndefinedOpcode>) {
 					throw Problem("dispatchOperation(ThreeByte)", "UndefinedOpcode provided");
 				} else {
-					#define IsType(t) std::is_same_v<T, t>
+#define IsType(t) std::is_same_v<T, t>
 					auto& dest = getDestinationRegister(value.args);
 					auto& src0 = getSourceRegister(value.args);
 					auto& src1 = getSource2Register(value.args);
-					#define InvokeConv(bfun, cfun) \
-						dest.setValue( bfun ( cfun(src0) , cfun(src1) ))
-#define InvokeS(t, func) else if constexpr (IsType( t )) { InvokeConv(func, intFunction); }
-#define InvokeU(t, func) else if constexpr (IsType( t ## Unsigned )) { InvokeConv(func, unsignedFunction); }
-#define InvokeF(t, func) else if constexpr (IsType( FloatingPoint ## t )) { InvokeConv(func, floatFunction); }
-#define InvokeB(t, func) else if constexpr (IsType( t ## Boolean)) { InvokeConv(func, booleanFunction); }
+#define InvokeConv(bfun, cfun) \
+	dest.setValue( bfun ( cfun(src0) , cfun(src1) ))
+#define InvokeS(t, func) \
+					else if constexpr (IsType( t )) { InvokeConv(func, intFunction); }
+#define InvokeU(t, func) \
+					else if constexpr (IsType( t ## Unsigned )) { InvokeConv(func, unsignedFunction); }
+#define InvokeF(t, func) \
+					else if constexpr (IsType( FloatingPoint ## t )) { InvokeConv(func, floatFunction); }
+#define InvokeB(t, func) \
+					else if constexpr (IsType( t ## Boolean)) { InvokeConv(func, booleanFunction); }
 #define InvokeSU(t, func) \
 					InvokeS(t, func) \
 					InvokeU(t, func)
@@ -1530,11 +1541,24 @@ void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
 					InvokeSUB(And, andOp)
 					InvokeSUB(Or, orOp)
 					InvokeSUB(Xor, xorOp)
+					InvokeSUF(GreaterThan, greaterThan)
+					InvokeSUF(LessThan, lessThan)
+					InvokeSU(ShiftRight, shiftRight)
+					InvokeSU(ShiftLeft, shiftLeft)
+					InvokeSUB(Equals, equals)
+					InvokeSUF(Pow, powFunc)
 					else {
 						throw Problem("dispatchOperation(ThreeByte)", "Unimplemented three byte operation!");
 					}
-					#undef InvokeConv
-					#undef IsType
+#undef InvokeS
+#undef InvokeU
+#undef InvokeF
+#undef InvokeB
+#undef InvokeSU
+#undef InvokeSUF
+#undef InvokeSUB
+#undef InvokeConv
+#undef IsType
 				}
 			}, op);
 }

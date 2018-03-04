@@ -1469,6 +1469,27 @@ void Core::dispatchOperation(const Core::TwoByteOperation& op) {
 auto add(auto a, auto b) noexcept -> decltype(a + b) { return a + b; }
 auto subtract(auto a, auto b) noexcept -> decltype(a - b) { return a - b; }
 auto multiply(auto a, auto b) noexcept -> decltype(a * b) { return a * b; }
+auto divide(auto a, auto b) -> decltype(a / b) { 
+	if constexpr (!std::is_floating_point_v<decltype(a)>) {
+		if (b == 0) {
+			throw Problem("divide", "Dividing by zero!");
+		}
+	}
+	return a / b;
+}
+
+auto modulo(auto a, auto b) -> decltype(a / b) { 
+	if (b == 0) {
+		throw Problem("modulo", "Dividing by zero!");
+	}
+	return a % b;
+}
+auto andOp(auto a, auto b) noexcept -> decltype(a & b) { return a & b; }
+bool andOp(bool a, bool b) noexcept { return a && b; }
+auto orOp(auto a, auto b) noexcept -> decltype(a | b) { return a | b; }
+bool orOp(bool a, bool b) noexcept { return a || b; }
+auto xorOp(auto a, auto b) noexcept -> decltype(a ^ b) { return a ^ b; }
+bool xorOp(bool a, bool b) noexcept { return a != b; }
 
 void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
 	auto intFunction = [](const Register& value) { return value.getInt(); };
@@ -1486,25 +1507,30 @@ void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
 					auto& src1 = getSource2Register(value.args);
 					#define InvokeConv(bfun, cfun) \
 						dest.setValue( bfun ( cfun(src0) , cfun(src1) ))
-					if constexpr (IsType(Add)) {
-						InvokeConv(add, intFunction);
-					} else if constexpr (IsType(AddUnsigned)) {
-						InvokeConv(add, unsignedFunction);
-					} else if constexpr (IsType(FloatingPointAdd)) {
-						InvokeConv(add, floatFunction);
-					} else if constexpr (IsType(Subtract)) {
-						InvokeConv(subtract, intFunction);
-					} else if constexpr (IsType(SubtractUnsigned)) {
-						InvokeConv(subtract, unsignedFunction);
-					} else if constexpr (IsType(FloatingPointSubtract)) {
-						InvokeConv(subtract, floatFunction);
-					} else if constexpr (IsType(Multiply)) {
-						InvokeConv(multiply, intFunction);
-					} else if constexpr (IsType(MultiplyUnsigned)) {
-						InvokeConv(multiply, unsignedFunction);
-					} else if constexpr (IsType(FloatingPointMultiply)) {
-						InvokeConv(multiply, floatFunction);
-					} else {
+#define InvokeS(t, func) else if constexpr (IsType( t )) { InvokeConv(func, intFunction); }
+#define InvokeU(t, func) else if constexpr (IsType( t ## Unsigned )) { InvokeConv(func, unsignedFunction); }
+#define InvokeF(t, func) else if constexpr (IsType( FloatingPoint ## t )) { InvokeConv(func, floatFunction); }
+#define InvokeB(t, func) else if constexpr (IsType( t ## Boolean)) { InvokeConv(func, booleanFunction); }
+#define InvokeSU(t, func) \
+					InvokeS(t, func) \
+					InvokeU(t, func)
+#define InvokeSUF(t, func) \
+					InvokeSU(t, func) \
+					InvokeF(t, func)
+#define InvokeSUB(t, func) \
+					InvokeSU(t, func) \
+					InvokeB(t, func)
+
+					if constexpr (IsType(Nop3)) { }
+					InvokeSUF(Add, add)
+					InvokeSUF(Subtract, subtract)
+					InvokeSUF(Multiply, multiply)
+					InvokeSUF(Divide, divide)
+					InvokeSU(Modulo, modulo)
+					InvokeSUB(And, andOp)
+					InvokeSUB(Or, orOp)
+					InvokeSUB(Xor, xorOp)
+					else {
 						throw Problem("dispatchOperation(ThreeByte)", "Unimplemented three byte operation!");
 					}
 					#undef InvokeConv

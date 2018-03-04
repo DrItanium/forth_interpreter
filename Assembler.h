@@ -65,6 +65,20 @@ class AssemblerBuilder {
 		std::map<std::string, Address> _names;
 		std::map<Address, DelayedInstruction> _operations;
 };
+
+
+#define OneByte(title) Core:: title op ## title () noexcept ;
+#define TwoByte(title, b) Core:: title op ## title (const b &) noexcept ;
+#define ThreeByte(title, b) Core:: title op ## title (const b &) noexcept ;
+#define FourByte(title, b) Core:: title op ## title (const b &) noexcept ;
+#define GrabBag(title, b) Core:: title op ## title (const b &) noexcept ;
+#include "InstructionData.def"
+#undef OneByte
+#undef TwoByte
+#undef ThreeByte
+#undef FourByte
+#undef GrabBag
+
 //constexpr byte encodeSingleByteOperation(Operation op) noexcept {
 //	return static_cast<byte>(op);
 //}

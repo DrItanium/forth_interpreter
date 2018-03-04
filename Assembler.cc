@@ -92,6 +92,15 @@ namespace forth {
 #undef ThreeByte
 #undef FourByte
 #undef GrabBag
+
+	EagerInstruction opPrintChar(char c) noexcept {
+		return [c](AssemblerBuilder& ab) {
+			ab.addInstruction(opAddImmediate({TargetRegister::Temporary,
+											 TargetRegister::Zero,
+											 QuarterAddress(c)}),
+							  opPrintChar(Core::DestinationRegister(TargetRegister::Temporary)));
+		};
+	}
 	//SizedResolvableLazyFunction jumpRelative(const std::string& name) {
 	//	return std::make_tuple(getInstructionWidth(Operation::Jump), 
 	//						[name](AssemblerBuilder& ab, Address from) {

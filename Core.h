@@ -92,19 +92,19 @@ class Core {
 		using DestinationRegister = std::optional<TargetRegister>;
 		using SourceRegister = std::optional<TargetRegister>;
 #define OperationKind(x) struct x final
-		OperationKind(NoArguments) { };
+	OperationKind(NoArguments) { };
         OperationKind(TwoRegister) {
-			TwoRegister() = default;
-			TwoRegister(DestinationRegister dest, SourceRegister src) : destination(dest), source(src) { };
-			TwoRegister(TargetRegister dest, TargetRegister src) : destination(dest), source(src) { };
-            DestinationRegister destination;
-            SourceRegister source;
+		TwoRegister() = default;
+		TwoRegister(DestinationRegister dest, SourceRegister src) : destination(dest), source(src) { };
+		TwoRegister(TargetRegister dest, TargetRegister src) : destination(dest), source(src) { };
+		DestinationRegister destination;
+		SourceRegister source;
         };
         OperationKind(OneRegister) {
-			OneRegister() = default;
-			OneRegister(DestinationRegister dest) : destination(dest) { };
-			OneRegister(TargetRegister dest) : destination(dest) { };
-            DestinationRegister destination;
+		OneRegister() = default;
+		OneRegister(DestinationRegister dest) : destination(dest) { };
+		OneRegister(TargetRegister dest) : destination(dest) { };
+		DestinationRegister destination;
         };
         OperationKind(FourRegister) {
 			FourRegister() = default;

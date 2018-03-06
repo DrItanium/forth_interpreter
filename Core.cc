@@ -798,24 +798,51 @@ void Core::decodeArguments(TwoRegister& args) {
 }
 
 void Core::decodeArguments(ThreeRegister& args) {
+	auto nextByte = extractByteFromMolecule();
+	args.destination = forth::getDestinationRegister(nextByte);
+	args.source = forth::getSourceRegister(nextByte);
+	auto b2 = extractByteFromMolecule();
+	args.source2 = forth::getDestinationRegister(b2);
 }
 
 void Core::decodeArguments(FourRegister& args) {
+	auto nextByte = extractByteFromMolecule();
+	args.destination = forth::getDestinationRegister(nextByte);
+	args.source = forth::getSourceRegister(nextByte);
+	auto b2 = extractByteFromMolecule();
+	args.source2 = forth::getDestinationRegister(b2);
+	args.source3 = forth::getDestinationRegister(b2);
 }
 
 void Core::decodeArguments(FiveRegister& args) {
+	auto nextByte = extractByteFromMolecule();
+	args.destination = forth::getDestinationRegister(nextByte);
+	args.source = forth::getSourceRegister(nextByte);
+	auto b2 = extractByteFromMolecule();
+	args.source2 = forth::getDestinationRegister(b2);
+	args.source3 = forth::getDestinationRegister(b2);
+	auto b3 = extractByteFromMolecule();
+	args.source4 = forth::getDestinationRegister(b3);
 }
 
 void Core::decodeArguments(SignedImm16& args) {
+	args.value = extractQuarterIntegerFromMolecule();
 }
 
 void Core::decodeArguments(Immediate24& args) {
 }
 
-void Core::decodeArguments(OneRegisterWithImm16&) {
+void Core::decodeArguments(OneRegisterWithImm16& args) {
+
+	args.destination = forth::getDestinationRegister(extractByteFromMolecule());
+	args.imm16 = extractQuarterAddressFromMolecule();
 }
 
-void Core::decodeArguments(TwoRegisterWithImm16&) {
+void Core::decodeArguments(TwoRegisterWithImm16& args) {
+	auto nextByte = extractByteFromMolecule();
+	args.destination = forth::getDestinationRegister(nextByte);
+	args.source = forth::getSourceRegister(nextByte);
+	args.imm16 = extractQuarterAddressFromMolecule();
 }
 
 void Core::decodeArguments(OneRegisterWithImm32&) {

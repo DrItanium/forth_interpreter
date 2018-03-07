@@ -854,5 +854,78 @@ void Core::decodeArguments(OneRegisterWithImm64& args) {
     args.imm64 = lower48 | upper16;
 }
 
+void Core::encodeArguments(OneRegister& args) { 
+    storeByte(_pc.getAddress(), encodeRegisterPair(args.destination, TargetRegister::Zero));
+    _pc.increment();
+}
+void Core::encodeArguments(TwoRegister& args) { 
+    storeByte(_pc.getAddress(), encodeRegisterPair(args.destination, args.source));
+    _pc.increment();
+}
+void Core::encodeArguments(ThreeRegister& args) { 
+    storeByte(_pc.getAddress(), encodeRegisterPair(args.destination, args.source));
+    _pc.increment();
+    storeByte(_pc.getAddress(), encodeRegisterPair(args.source2, TargetRegister::Zero));
+    _pc.increment();
+}
+void Core::encodeArguments(FourRegister& args) { 
+    storeByte(_pc.getAddress(), encodeRegisterPair(args.destination, args.source));
+    _pc.increment();
+    storeByte(_pc.getAddress(), encodeRegisterPair(args.source2, args.source3));
+    _pc.increment();
+}
+void Core::encodeArguments(FiveRegister& args) { 
+    storeByte(_pc.getAddress(), encodeRegisterPair(args.destination, args.source));
+    _pc.increment();
+    storeByte(_pc.getAddress(), encodeRegisterPair(args.source2, args.source3));
+    _pc.increment();
+    storeByte(_pc.getAddress(), encodeRegisterPair(args.source4, TargetRegister::Zero));
+    _pc.increment();
+}
+void Core::encodeArguments(SignedImm16& args) { 
+    storeByte(_pc.getAddress(), forth::getLowerHalf(args.value));
+    _pc.increment();
+    storeByte(_pc.getAddress(), forth::getUpperHalf(args.value));
+    _pc.increment();
+}
+void Core::encodeArguments(Immediate24& args) { 
+    storeByte(_pc.getAddress(), forth::getLowerHalf(forth::getLowerHalf(args.value)));
+    _pc.increment();
+    storeByte(_pc.getAddress(), forth::getUpperHalf(forth::getLowerHalf(args.value)));
+    _pc.increment();
+    storeByte(_pc.getAddress(), forth::getLowerHalf(forth::getUpperHalf(args.value)));
+    _pc.increment();
+}
+void Core::encodeArguments(OneRegisterWithImm16& args) { 
+    storeByte(_pc.getAddress(), encodeRegisterPair(args.destination, TargetRegister::Zero));
+    _pc.increment();
+    storeByte(_pc.getAddress(), forth::getLowerHalf(args.imm16));
+    _pc.increment();
+    storeByte(_pc.getAddress(), forth::getUpperHalf(args.imm16));
+    _pc.increment();
+}
+void Core::encodeArguments(TwoRegisterWithImm16& args) { 
+    storeByte(_pc.getAddress(), encodeRegisterPair(args.destination, args.source));
+    _pc.increment();
+    storeByte(_pc.getAddress(), forth::getLowerHalf(args.imm16));
+    _pc.increment();
+    storeByte(_pc.getAddress(), forth::getUpperHalf(args.imm16));
+    _pc.increment();
+}
+void Core::encodeArguments(OneRegisterWithImm32& args) { 
+    storeByte(_pc.getAddress(), encodeRegisterPair(args.destination, TargetRegister::Zero));
+    _pc.increment();
+    storeByte(_pc.getAddress(), forth::getLowerHalf(forth::getLowerHalf(args.imm32)));
+    _pc.increment();
+    storeByte(_pc.getAddress(), forth::getUpperHalf(forth::getLowerHalf(args.imm32)));
+    _pc.increment();
+    storeByte(_pc.getAddress(), forth::getLowerHalf(forth::getUpperHalf(args.imm32)));
+    _pc.increment();
+    storeByte(_pc.getAddress(), forth::getUpperHalf(forth::getUpperHalf(args.imm32)));
+    _pc.increment();
+}
+void Core::encodeArguments(OneRegisterWithImm48& args) { }
+void Core::encodeArguments(OneRegisterWithImm64& args) { }
+
 
 } // namespace forth

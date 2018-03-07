@@ -315,7 +315,18 @@ class Core {
             args.destination = forth::getDestinationRegister(nextByte);
             args.source = forth::getSourceRegister(nextByte);
         }
-
+        void encodeArguments(OneRegister& args);
+        void encodeArguments(TwoRegister& args);
+        void encodeArguments(ThreeRegister& args);
+        void encodeArguments(FourRegister& args);
+        void encodeArguments(FiveRegister& args);
+        void encodeArguments(SignedImm16& args);
+        void encodeArguments(Immediate24& args);
+		void encodeArguments(OneRegisterWithImm16& args);
+		void encodeArguments(TwoRegisterWithImm16& args);
+		void encodeArguments(OneRegisterWithImm32& args);
+		void encodeArguments(OneRegisterWithImm48& args);
+		void encodeArguments(OneRegisterWithImm64& args);
 
     private:
 		void dispatchOperation(const OneByteOperation& op);

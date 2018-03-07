@@ -30,6 +30,8 @@ Register& Core::getRegister(TargetRegister reg) {
 			return _sp2;
         case Type::Temporary:
             return _tmp0;
+        case Type::Temporary2:
+            return _tmp1;
         case Type::DP:
             return _dp;
         case Type::Index:
@@ -787,37 +789,28 @@ void Core::dispatchInstruction() {
 	}
 }
 void Core::decodeArguments(OneRegister& args) {
-	// read the next byte
-	args.destination = forth::getDestinationRegister(extractByteFromMolecule());
+    populateDestination(args);
 }
 
 void Core::decodeArguments(TwoRegister& args) {
-	auto nextByte = extractByteFromMolecule();
-	args.destination = forth::getDestinationRegister(nextByte);
-	args.source = forth::getSourceRegister(nextByte);
+    populateDestinationAndSource(args);
 }
 
 void Core::decodeArguments(ThreeRegister& args) {
-	auto nextByte = extractByteFromMolecule();
-	args.destination = forth::getDestinationRegister(nextByte);
-	args.source = forth::getSourceRegister(nextByte);
+    populateDestinationAndSource(args);
 	auto b2 = extractByteFromMolecule();
 	args.source2 = forth::getDestinationRegister(b2);
 }
 
 void Core::decodeArguments(FourRegister& args) {
-	auto nextByte = extractByteFromMolecule();
-	args.destination = forth::getDestinationRegister(nextByte);
-	args.source = forth::getSourceRegister(nextByte);
+    populateDestinationAndSource(args);
 	auto b2 = extractByteFromMolecule();
 	args.source2 = forth::getDestinationRegister(b2);
 	args.source3 = forth::getDestinationRegister(b2);
 }
 
 void Core::decodeArguments(FiveRegister& args) {
-	auto nextByte = extractByteFromMolecule();
-	args.destination = forth::getDestinationRegister(nextByte);
-	args.source = forth::getSourceRegister(nextByte);
+    populateDestinationAndSource(args);
 	auto b2 = extractByteFromMolecule();
 	args.source2 = forth::getDestinationRegister(b2);
 	args.source3 = forth::getDestinationRegister(b2);
@@ -833,25 +826,32 @@ void Core::decodeArguments(Immediate24& args) {
 }
 
 void Core::decodeArguments(OneRegisterWithImm16& args) {
-
-	args.destination = forth::getDestinationRegister(extractByteFromMolecule());
+    populateDestination(args);
 	args.imm16 = extractQuarterAddressFromMolecule();
 }
 
 void Core::decodeArguments(TwoRegisterWithImm16& args) {
-	auto nextByte = extractByteFromMolecule();
-	args.destination = forth::getDestinationRegister(nextByte);
-	args.source = forth::getSourceRegister(nextByte);
+    populateDestinationAndSource(args);
 	args.imm16 = extractQuarterAddressFromMolecule();
 }
 
-void Core::decodeArguments(OneRegisterWithImm32&) {
+void Core::decodeArguments(OneRegisterWithImm32& args) {
+    populateDestination(args);
+    auto lowerHalf = extractQuarterAddressFromMolecule();
+    auto upperHalf = extractQuarterAddressFromMolecule();
+    args.imm32 = forth::setLowerUpperHalves<decltype(args.imm32)>(lowerHalf, upperHalf);
 }
 
-void Core::decodeArguments(OneRegisterWithImm48&) {
+void Core::decodeArguments(OneRegisterWithImm48& args) {
+    populateDestination(args);
+    args.imm48 = extractImm48();
 }
 
-void Core::decodeArguments(OneRegisterWithImm64&) {
+void Core::decodeArguments(OneRegisterWithImm64& args) {
+    populateDestination(args);
+    auto lower48 = extractImm48();
+    auto upper16 = Address(extractQuarterAddressFromMolecule()) << 48;
+    args.imm64 = lower48 | upper16;
 }
 
 

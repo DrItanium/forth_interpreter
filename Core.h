@@ -304,6 +304,19 @@ class Core {
         std::optional<DecodedOperation> decodeInstruction(byte control, FourByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, GrabBagInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte top);
+        template<typename T>
+        void populateDestination(T& args) {
+            auto nextByte = extractByteFromMolecule();
+            args.destination = forth::getDestinationRegister(nextByte);
+        }
+        template<typename T>
+        void populateDestinationAndSource(T& args) {
+            auto nextByte = extractByteFromMolecule();
+            args.destination = forth::getDestinationRegister(nextByte);
+            args.source = forth::getSourceRegister(nextByte);
+        }
+
+
     private:
 		void dispatchOperation(const OneByteOperation& op);
 		void dispatchOperation(const TwoByteOperation& op);

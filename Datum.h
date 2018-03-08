@@ -46,11 +46,17 @@ namespace forth {
         void setField(byte index, byte value);
         byte getField(byte index) const;
         HalfAddress upperHalfAddress() const noexcept;
+        void setUpperHalf(HalfAddress value) noexcept;
+        void setLowerHalf(HalfAddress value) noexcept;
         HalfAddress lowerHalfAddress() const noexcept;
         QuarterAddress highestQuarterAddress() const noexcept;
         QuarterAddress higherQuarterAddress() const noexcept;
         QuarterAddress lowerQuarterAddress() const noexcept;
         QuarterAddress lowestQuarterAddress() const noexcept;
+        void setHighestQuarterAddress(QuarterAddress addr) noexcept;
+        void setHigherQuarterAddress(QuarterAddress addr ) noexcept;
+        void setLowerQuarterAddress(QuarterAddress addr  ) noexcept;
+        void setLowestQuarterAddress(QuarterAddress addr ) noexcept;
 
     };
     std::ostream& operator<<(std::ostream& out, const Datum& dt);

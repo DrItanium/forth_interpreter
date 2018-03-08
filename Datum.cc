@@ -100,19 +100,5 @@ namespace forth {
     QuarterAddress Datum::higherQuarterAddress() const noexcept { return getLowerHalf(upperHalfAddress()); }
     QuarterAddress Datum::lowerQuarterAddress() const noexcept { return getUpperHalf(lowerHalfAddress()); }
     QuarterAddress Datum::lowestQuarterAddress() const noexcept { return getLowerHalf(lowerHalfAddress()); }
-    /*
-    std::optional<forth::Discriminant> involvesDiscriminantType(Operation op) {
-        std::optional<forth::Discriminant> r;
-        switch (op) {
-#define X(title, sz, arg, disc) case Operation :: title : { if constexpr (Discriminant:: disc != Discriminant::Count) { r = Discriminant:: disc ; } break; } 
-#include "InstructionData.def"
-#undef X
-            default:
-                break;
-
-        }
-        return r;
-    }
-    */
 
 } // end namespace forth

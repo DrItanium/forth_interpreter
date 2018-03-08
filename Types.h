@@ -3,6 +3,7 @@
 #include <climits>
 #include <cstdint>
 #include <type_traits>
+#include <optional>
 #define INDIRECTION0(x, y) x ## y
 #define INDIRECTION(x, y) INDIRECTION0(x, y)
 namespace forth {
@@ -49,6 +50,13 @@ namespace forth {
 	constexpr byte getLowerHalf(byte input) noexcept {
 		return decodeBits<byte, byte, 0x0'F>(input);
 	}
+
+
+    byte getLowerHalf(const std::optional<byte>& value);
+    byte getLowerHalf(const std::optional<QuarterAddress>& value);
+    QuarterAddress getLowerHalf(const std::optional<HalfAddress>& value);
+    HalfAddress getLowerHalf(const std::optional<Address>& value);
+
 
 	constexpr byte getLowerHalf(QuarterAddress input) noexcept {
 		return decodeBits<QuarterAddress, byte, 0x00'FF>(input);

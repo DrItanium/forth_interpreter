@@ -7,7 +7,8 @@ OBJECTS = forth.o \
 		  Problem.o \
 		  Core.o \
 		  Instruction.o \
-		  Assembler.o
+		  Assembler.o \
+		  Types.o
 
 OUTPUT_BINARY = forth
 
@@ -41,3 +42,4 @@ Problem.o: Problem.cc Problem.h
 Core.o: Core.cc Core.h Instruction.h Datum.h Types.h Problem.h
 Instruction.o: Instruction.cc Instruction.h Types.h Problem.h
 Assembler.o: Assembler.cc Assembler.h Types.h Instruction.h Datum.h Problem.h Core.h
+Types.o: Types.cc Types.h Problem.h

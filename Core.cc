@@ -873,7 +873,11 @@ void Core::storeAndAdvance(Register& reg, HalfAddress value) {
     storeByte(addr + 1, forth::getUpperHalf(forth::getLowerHalf(value)));
     storeByte(addr + 2, forth::getLowerHalf(forth::getUpperHalf(value)));
     storeByte(addr + 3, forth::getUpperHalf(forth::getUpperHalf(value)));
-    reg.increment(4);
+    reg.increment(sizeof(HalfAddress));
+}
+void Core::storeAndAdvance(Register& reg, Address value) {
+    store(reg.getAddress(), value);
+    reg.increment(sizeof(Address));
 }
 void Core::encodeArguments(const DestinationRegister& dest) {
     storeAndAdvance(_pc, encodeRegisterPair(dest, TargetRegister::Zero));

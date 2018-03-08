@@ -85,6 +85,7 @@ class Core {
 		std::function<void(Address, Address)> getMemoryInstallationFunction() noexcept;
 		//std::function<void(Address, Address)> getInstructionInstallationFunction() noexcept;
 	private:
+        void storeByte(Register& reg, byte value, Address increment = 0);
 		void push(TargetRegister reg, TargetRegister sp);
 		void pop(TargetRegister dest, TargetRegister sp);
 		void savePositionToSubroutineStack();
@@ -315,6 +316,10 @@ class Core {
             args.destination = forth::getDestinationRegister(nextByte);
             args.source = forth::getSourceRegister(nextByte);
         }
+        void encodeArguments(const DestinationRegister& dest, const SourceRegister& src);
+        void encodeArguments(const DestinationRegister& dest);
+        void encodeArguments(HalfAddress value);
+        void encodeArguments(QuarterAddress value);
         void encodeArguments(OneRegister& args);
         void encodeArguments(TwoRegister& args);
         void encodeArguments(ThreeRegister& args);

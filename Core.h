@@ -85,7 +85,10 @@ class Core {
 		std::function<void(Address, Address)> getMemoryInstallationFunction() noexcept;
 		//std::function<void(Address, Address)> getInstructionInstallationFunction() noexcept;
 	private:
-        void storeByte(Register& reg, byte value, Address increment = 0);
+        void storeAndAdvance(Register& reg, byte value);
+        void storeAndAdvance(Register& reg, QuarterAddress value);
+        void storeAndAdvance(Register& reg, HalfAddress value);
+        void storeAndAdvance(Register& reg, Address value);
 		void push(TargetRegister reg, TargetRegister sp);
 		void pop(TargetRegister dest, TargetRegister sp);
 		void savePositionToSubroutineStack();

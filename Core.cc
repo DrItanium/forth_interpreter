@@ -623,7 +623,6 @@ void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
 				}
 			}, op);
 }
-
 void Core::dispatchOperation(const Core::FourByteOperation& op) {
 	std::visit([this](auto&& value) {
 				using T = std::decay_t<decltype(value)>;
@@ -656,9 +655,17 @@ void Core::dispatchOperation(const Core::FourByteOperation& op) {
 					savePositionToSubroutineStack();
 					_pc.setValue(Address(value.args.value));
 				} else if constexpr (std::is_same_v<T, JumpAbsolute>) {
+                    _pc.setValue(value.args.value);
 				} else if constexpr (std::is_same_v<T, ConditionalBranch>) {
+                    if (getDestinationRegister(value.args).getTruth()) {
+                        _pc.setValue(_pc.getInt() + safeExtract(value.args.imm16));
+                    }
 				} else if constexpr (std::is_same_v<T, ConditionalCallSubroutine>) { 
-				} 
+                    if (getDestinationRegister(value.args).getTruth()) {
+                        savePositionToSubroutineStack();
+                        _pc.setValue(_pc.getInt() + safeExtract(value.args.imm16));
+                    }
+				}
 				InvokeSU(Add, add)
 				InvokeSU(Subtract, subtract)
 				InvokeSU(Multiply, multiply)

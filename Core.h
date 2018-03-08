@@ -89,8 +89,8 @@ class Core {
 		void pop(TargetRegister dest, TargetRegister sp);
 		void savePositionToSubroutineStack();
 	public:
-		using DestinationRegister = std::optional<TargetRegister>;
-		using SourceRegister = std::optional<TargetRegister>;
+        using DestinationRegister = forth::OptionalRegister;
+        using SourceRegister = forth::OptionalRegister;
 #define OperationKind(x) struct x final
 	OperationKind(NoArguments) { };
         OperationKind(TwoRegister) {

@@ -7,6 +7,7 @@
 #include <list>
 #include <tuple>
 #include <variant>
+#include <optional>
 namespace forth {
 
 union Molecule {
@@ -35,22 +36,27 @@ enum class TargetRegister : byte {
     Temporary2, // for the cases where the assembler needs another temporary register
     Count,
 };
+using OptionalRegister = std::optional<TargetRegister>;
 static_assert(byte(TargetRegister::Count) <= 16, "Too many registers defined!");
-constexpr byte encodeDestinationRegister(byte value, TargetRegister reg) noexcept {
-	return setLowerHalf(value, byte(reg));
+constexpr byte encodeDestinationRegister(byte value) noexcept {
+    return value & 0x0F;
 }
 constexpr byte encodeDestinationRegister(TargetRegister reg) noexcept {
-    return encodeDestinationRegister(0, reg);
+    return encodeDestinationRegister(byte(reg));
 }
-constexpr byte encodeSourceRegister(byte value, byte reg) noexcept {
-	return setUpperHalf(value, reg);
+byte encodeDestinationRegister(const OptionalRegister& value);
+constexpr byte encodeSourceRegister(byte value) noexcept {
+    return (value << 4) & 0xF0;
 }
-constexpr byte encodeSourceRegister(byte value, TargetRegister reg) noexcept {
-    return encodeSourceRegister(value, byte(reg));
+constexpr byte encodeSourceRegister(TargetRegister reg) noexcept {
+    return encodeSourceRegister(byte(reg));
 }
-template<typename T>
-constexpr byte encodeRegisterPair(TargetRegister dest, T src) noexcept {
-	return setLowerUpperHalves<byte>(byte(dest), byte(src));
+byte encodeSourceRegister(const OptionalRegister& reg);
+
+template<typename Dest, typename Src>
+byte encodeRegisterPair(Dest dest, Src src) {
+    return encodeSourceRegister(src) |
+           encodeDestinationRegister(src);
 }
 template<byte c>
 struct SizedType {

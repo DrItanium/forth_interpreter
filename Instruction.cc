@@ -68,5 +68,21 @@ InstructionWidth determineInstructionWidth(GrabBagOpcode op){
     return gb;
 }
 
+byte encodeDestinationRegister(const OptionalRegister& value) {
+    if (value) {
+        return encodeDestinationRegister(value.value());
+    } else {
+        throw Problem("encodeDestinationRegister", "No register provided!");
+    }
+}
+
+byte encodeSourceRegister(const OptionalRegister& value) {
+    if (value) {
+        return encodeSourceRegister(value.value());
+    } else {
+        throw Problem("encodeSourceRegister", "No register provided!");
+    }
+}
+
 
 } // end namespace forth

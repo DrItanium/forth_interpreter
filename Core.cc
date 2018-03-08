@@ -883,7 +883,7 @@ void Core::encodeArguments(FiveRegister& args) {
     _pc.increment();
 }
 void Core::encodeArguments(SignedImm16& args) { 
-    storeByte(_pc.getAddress(), forth::getLowerHalf(args.value));
+    storeByte(_pc.getAddress(), forth::getLowerHalf((args.value)));
     _pc.increment();
     storeByte(_pc.getAddress(), forth::getUpperHalf(args.value));
     _pc.increment();

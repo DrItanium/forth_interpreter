@@ -70,7 +70,7 @@ InstructionWidth determineInstructionWidth(GrabBagOpcode op){
 
 byte encodeDestinationRegister(const OptionalRegister& value) {
     if (value) {
-        return encodeDestinationRegister(value.value());
+        return encodeDestinationRegister(byte(value.value()));
     } else {
         throw Problem("encodeDestinationRegister", "No register provided!");
     }
@@ -78,7 +78,7 @@ byte encodeDestinationRegister(const OptionalRegister& value) {
 
 byte encodeSourceRegister(const OptionalRegister& value) {
     if (value) {
-        return encodeSourceRegister(value.value());
+        return encodeSourceRegister(byte(value.value()));
     } else {
         throw Problem("encodeSourceRegister", "No register provided!");
     }

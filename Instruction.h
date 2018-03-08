@@ -41,15 +41,9 @@ static_assert(byte(TargetRegister::Count) <= 16, "Too many registers defined!");
 constexpr byte encodeDestinationRegister(byte value) noexcept {
     return value & 0x0F;
 }
-constexpr byte encodeDestinationRegister(TargetRegister reg) noexcept {
-    return encodeDestinationRegister(byte(reg));
-}
 byte encodeDestinationRegister(const OptionalRegister& value);
 constexpr byte encodeSourceRegister(byte value) noexcept {
     return (value << 4) & 0xF0;
-}
-constexpr byte encodeSourceRegister(TargetRegister reg) noexcept {
-    return encodeSourceRegister(byte(reg));
 }
 byte encodeSourceRegister(const OptionalRegister& reg);
 

@@ -15,9 +15,9 @@
 
 namespace forth {
 class AssemblerBuilder;
-using ResolvableLazyFunction = std::function<Address(AssemblerBuilder&, Address from)>;
+using ResolvableLazyFunction = std::function<Core::DecodedOperation(AssemblerBuilder&, Address from)>;
 using SizedResolvableLazyFunction = std::tuple<byte, ResolvableLazyFunction>;
-using LazyInstruction = std::function<Address()>;
+using LazyInstruction = std::function<Core::DecodedOperation()>;
 using SizedLazyInstruction = std::tuple<byte, LazyInstruction>;
 /**
  * Used to denote a modifier to an instruction to be performed then and there

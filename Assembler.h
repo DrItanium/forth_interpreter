@@ -132,6 +132,7 @@ EagerInstruction opPrintChar(const std::string& str);
 EagerInstruction opIndirectLoad(TargetRegister dest, TargetRegister src = TargetRegister::X);
 EagerInstruction opPushImmediate(const Datum& value, TargetRegister sp = TargetRegister::SP);
 EagerInstruction opPushImmediate(Address value, TargetRegister sp = TargetRegister::SP);
+SizedResolvableLazyFunction opPushImmediate(const std::string& name, TargetRegister sp = TargetRegister::SP);
 inline auto opPopRegister(TargetRegister reg) noexcept -> decltype(opPopRegister(reg, TargetRegister::SP)) { 
     return opPopRegister(reg, TargetRegister::SP); 
 }

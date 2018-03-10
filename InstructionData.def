@@ -118,7 +118,6 @@ GrabBag(MinusFloatingPoint, TwoRegister)
 GrabBag(Not, TwoRegister) // not is implicitly unsigned and works for boolean ops as well
 GrabBag(NotBoolean, TwoRegister)
 GrabBag(NotSigned, TwoRegister)
-GrabBag(LoadImmediate16, OneRegisterWithImm16)
 GrabBag(LoadImmediate32, OneRegisterWithImm32)
 GrabBag(LoadImmediate48, OneRegisterWithImm48)
 GrabBag(LoadImmediate64, OneRegisterWithImm64)

@@ -773,8 +773,6 @@ void Core::dispatchOperation(const Core::GrabBagOperation& op) {
 					getDestinationRegister(value.args).setValue(notOp(getSourceRegister(value.args).getTruth()));
 				} else if constexpr (std::is_same_v<T, NotSigned>) {
 					getDestinationRegister(value.args).setValue(notOp(getSourceRegister(value.args).getInt()));
-				} else if constexpr (std::is_same_v<T, LoadImmediate16>) {
-					getDestinationRegister(value.args).setValue(Address(value.args.imm16));
 				} else if constexpr (std::is_same_v<T, LoadImmediate32>) {
 					getDestinationRegister(value.args).setValue(Address(value.args.imm32));
 				} else if constexpr (std::is_same_v<T, LoadImmediate48>) {

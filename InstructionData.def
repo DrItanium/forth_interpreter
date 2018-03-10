@@ -2,7 +2,7 @@
 // the lowest four bits are the instruction width [variant] (maximum of 16 different widths, not 1-16 but variable based off of need)
 // the remaining layout is dependent on the variant id
 // NoArguments [ variant:3 | op: 5 ]
-X(Nop, NoArguments)
+FirstX(Nop, NoArguments)
 X(ReturnSubroutine, NoArguments)
 X(LeaveExecutionLoop, NoArguments) // a hack to support returning to native code
 // OneRegister [ op: 8 | dest: 4 | unused: 4 ]

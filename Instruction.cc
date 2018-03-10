@@ -32,40 +32,6 @@ namespace forth {
 		return ((b5 << 40) | (b4 << 32) | (b3 << 24) | (b2 << 16) | (b1 << 8) | b0) & 0x00FF'FFFF'FFFF'FFFF;
 	}
 
-InstructionWidth determineInstructionWidth(Opcode code) {
-	switch (code) {
-#define DispatchOneRegister(title) return TwoByteInstruction() ;
-#define DispatchTwoRegister(title) return TwoByteInstruction() ;
-#define DispatchThreeRegister(title) return ThreeByteInstruction() ;
-#define DispatchSignedImm16(title) return FourByteInstruction() ;
-#define DispatchImmediate24(title) return FourByteInstruction() ;
-#define DispatchTwoRegisterWithImm16(title) return FourByteInstruction();
-#define DispatchOneRegisterWithImm16(title) return FourByteInstruction();
-#define DispatchFourRegister(title) return ThreeByteInstruction();
-#define DispatchFiveRegister(title) return FourByteInstruction();
-#define DispatchOneRegisterWithImm64(title) return TenByteInstruction();
-#define DispatchOneRegisterWithImm32(title) return SixByteInstruction();
-#define DispatchNoArguments(title) return OneByteInstruction();
-#define X(title, k) case Opcode :: title: INDIRECTION(Dispatch, k)(title)
-#include "InstructionData.def"
-#undef X
-#undef DispatchNoArguments
-#undef DispatchOneRegister
-#undef DispatchTwoRegister
-#undef DispatchThreeRegister
-#undef DispatchSignedImm16
-#undef DispatchImmediate24
-#undef DispatchTwoRegisterWithImm16
-#undef DispatchOneRegisterWithImm16
-#undef DispatchFiveRegister
-#undef DispatchFourRegister
-#undef DispatchOneRegisterWithImm32
-#undef DispatchOneRegisterWithImm64
-		default:
-			throw Problem("determineInstructionWidth", "Unable to determine instruction width!");
-	}
-}
-
 byte encodeDestinationRegister(const OptionalRegister& value) {
     if (value) {
         return encodeDestinationRegister(byte(value.value()));

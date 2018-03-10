@@ -75,8 +75,10 @@ class AssemblerBuilder {
 #define DispatchNoArguments(title)
 #define X(title, b) Core:: title op ## title () noexcept ; \
 	INDIRECTION(Dispatch, b)(title);
+#define FirstX(title, b) X(title, b)
 #include "InstructionData.def"
 #undef DispatchNoArguments
+#undef FirstX
 #undef X
 #undef DispatchOneRegister
 #undef DispatchTwoRegister 

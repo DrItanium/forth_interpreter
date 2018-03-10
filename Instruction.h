@@ -57,6 +57,7 @@ struct SizedType {
     constexpr SizedType() { }
     constexpr byte size() noexcept { return c; }
 };
+struct ZeroByteInstruction final : SizedType<0> { };
 struct OneByteInstruction final : SizedType<1> { };
 struct TwoByteInstruction final : SizedType<2> { };
 struct ThreeByteInstruction final : SizedType<3> { };
@@ -64,15 +65,20 @@ struct FourByteInstruction final : SizedType<4> { };
 struct SixByteInstruction final : SizedType<6> { };
 struct TenByteInstruction final : SizedType<10> {  };
 struct InstructionWidth {
-	std::variant<OneByteInstruction, TwoByteInstruction, ThreeByteInstruction, FourByteInstruction> contents;
+	using Args = std::variant<ZeroByteInstruction, OneByteInstruction, TwoByteInstruction, ThreeByteInstruction, FourByteInstruction, SixByteInstruction, TenByteInstruction>;
+	Args contents;
 	constexpr InstructionWidth() { }
+	template<typename T>
+	constexpr InstructionWidth(T&& arg) noexcept : contents(std::move(arg)) { }
 	constexpr byte size() noexcept {
 		return std::visit([](auto&& v) { return v.size(); }, contents);
 	}
 };
 enum class Opcode : byte {
 #define X(title, b) title,
+#define FirstX(title, b) X(title, b)
 #include "InstructionData.def"
+#undef FirstX
 #undef X
 	Count,
 };
@@ -80,8 +86,41 @@ static_assert(byte(Opcode::Count) <= 256, "Too many opcodes defined!");
 
 
 
-struct UndefinedOpcode final { constexpr UndefinedOpcode() { } };
-InstructionWidth determineInstructionWidth(Opcode op);
+constexpr InstructionWidth determineInstructionWidth(Opcode op) noexcept {
+	switch (op) {
+#define DispatchOneRegister(title) return TwoByteInstruction() ;
+#define DispatchTwoRegister(title) return  TwoByteInstruction() ;
+#define DispatchThreeRegister(title) return  ThreeByteInstruction() ;
+#define DispatchSignedImm16(title) return  FourByteInstruction() ;
+#define DispatchImmediate24(title) return  FourByteInstruction() ;
+#define DispatchTwoRegisterWithImm16(title) return  FourByteInstruction();
+#define DispatchOneRegisterWithImm16(title) return  FourByteInstruction();
+#define DispatchFourRegister(title) return  ThreeByteInstruction();
+#define DispatchFiveRegister(title) return  FourByteInstruction();
+#define DispatchOneRegisterWithImm64(title) return  TenByteInstruction();
+#define DispatchOneRegisterWithImm32(title) return  SixByteInstruction();
+#define DispatchNoArguments(title) return  OneByteInstruction();
+#define X(title, k) case Opcode :: title: INDIRECTION(Dispatch, k)(title)
+#define FirstX(title, k) X(title, k)
+#include "InstructionData.def"
+#undef FirstX
+#undef X
+#undef DispatchNoArguments
+#undef DispatchOneRegister
+#undef DispatchTwoRegister
+#undef DispatchThreeRegister
+#undef DispatchSignedImm16
+#undef DispatchImmediate24
+#undef DispatchTwoRegisterWithImm16
+#undef DispatchOneRegisterWithImm16
+#undef DispatchFiveRegister
+#undef DispatchFourRegister
+#undef DispatchOneRegisterWithImm32
+#undef DispatchOneRegisterWithImm64
+		default:
+			return ZeroByteInstruction();
+	}
+}
 template<typename T>
 InstructionWidth determineInstructionWidth(T value) {
     if constexpr (std::is_enum<T>::value) {

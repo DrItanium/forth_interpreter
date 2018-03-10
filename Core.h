@@ -96,7 +96,7 @@ class Core {
         using DestinationRegister = forth::OptionalRegister;
         using SourceRegister = forth::OptionalRegister;
 #define OperationKind(x) struct x final
-	OperationKind(NoArguments) { };
+		OperationKind(NoArguments) { };
         OperationKind(TwoRegister) {
 		TwoRegister() = default;
 		TwoRegister(DestinationRegister dest, SourceRegister src) : destination(dest), source(src) { };
@@ -178,17 +178,21 @@ class Core {
         };
 #undef OperationKind
 #define X(title, b) struct title final { \
-	Opcode getOpcode() { return Opcode:: title ; } \
-	byte size() { return determineInstructionWidth(getOpcode()).size(); } \
+	constexpr Opcode getOpcode() const noexcept { return Opcode:: title ; } \
+	constexpr byte size() const noexcept { return determineInstructionWidth(getOpcode()).size(); } \
 	Core:: b args; };
+#define FirstX(title, b) X(title, b)
 #include "InstructionData.def"
 #undef X
+#undef FirstX
 
 		using DecodedOperation = std::variant<
-#define X(title, b) Core:: title , 
+#define X(title, b) , Core:: title
+#define FirstX(title, b) Core:: title
 #include "InstructionData.def"
 #undef X
-			UndefinedOpcode>;
+#undef FirstX
+			>;
 
 	private:
         void decodeArguments(OneRegister& args);

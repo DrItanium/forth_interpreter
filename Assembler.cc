@@ -61,8 +61,10 @@ namespace forth {
 		return value; \
 	} \
 	INDIRECTION(Dispatch, b)(title)
+#define FirstX(title, b) X(title, b)
 #include "InstructionData.def"
 #undef X
+#undef FirstX
 #undef DispatchNoArguments
 #undef DispatchOneRegister
 #undef DispatchTwoRegister
@@ -117,7 +119,12 @@ namespace forth {
 	}
 	void AssemblerBuilder::addInstruction(const Core::DecodedOperation& op) {
 		_operations.emplace(_currentLocation, op);
-		_currentLocation += std::visit([](auto&& value) { return value.args.size(); }, op);
+		byte result = std::visit([](auto&& value) constexpr 
+				{ 
+					return value.size(); 
+				}, 
+				op);
+		_currentLocation += result;
 	}
 	EagerInstruction opJump(const std::string& name) {
 		return [name](AssemblerBuilder& ab) {

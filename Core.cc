@@ -303,8 +303,10 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
 			op = Core:: title () ; \
 			INDIRECTION(X, b)(title) ; \
 			break;
+#define FirstX(title, b) X(title, b)
 #include "InstructionData.def"
 #undef X
+#undef FirstX
 #undef XNoArguments
 #undef XOneRegister
 #undef XTwoRegister
@@ -387,10 +389,7 @@ void Core::dispatchInstruction() {
 				auto unsignedFunction = [](const Register& value) { return value.getAddress(); };
 				auto booleanFunction = [](const Register& value) { return value.getTruth(); };
 				using T = std::decay_t<decltype(value)>;
-				if constexpr (std::is_same_v<T, UndefinedOpcode>) {
-					throw Problem("dispatchInstruction", "Undefined opcode provided");
-				} 
-				else if constexpr (std::is_same_v<T, Core::Nop>) {
+				if constexpr (std::is_same_v<T, Core::Nop>) {
 					// do nothing
 				} else if constexpr (std::is_same_v<T, Core::LeaveExecutionLoop>) {
 					store(Core::returnToMicrocode, Address(1));

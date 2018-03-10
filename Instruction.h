@@ -61,11 +61,10 @@ struct OneByteInstruction final : SizedType<1> { };
 struct TwoByteInstruction final : SizedType<2> { };
 struct ThreeByteInstruction final : SizedType<3> { };
 struct FourByteInstruction final : SizedType<4> { };
-struct EightByteInstruction final : SizedType<8> { };
 struct SixByteInstruction final : SizedType<6> { };
 struct TenByteInstruction final : SizedType<10> {  };
 struct GrabBagInstruction final {
-    std::variant<TwoByteInstruction, SixByteInstruction, TenByteInstruction, EightByteInstruction, FourByteInstruction, ThreeByteInstruction> kind;
+    std::variant<TwoByteInstruction, SixByteInstruction, TenByteInstruction, FourByteInstruction, ThreeByteInstruction> kind;
     constexpr byte size() noexcept {
         switch (kind.index()) {
             case 0:
@@ -78,8 +77,6 @@ struct GrabBagInstruction final {
 				return std::get<3>(kind).size();
 			case 4:
 				return std::get<4>(kind).size();
-			case 5:
-				return std::get<5>(kind).size();
         }
     }
 };
@@ -182,6 +179,23 @@ InstructionWidth determineInstructionWidth(TwoByteOpcode op);
 InstructionWidth determineInstructionWidth(ThreeByteOpcode op);
 InstructionWidth determineInstructionWidth(FourByteOpcode op);
 InstructionWidth determineInstructionWidth(GrabBagOpcode op);
+template<typename T>
+InstructionWidth determineInstructionWidth(T value) {
+    if constexpr (std::is_enum<T>::value) {
+        return determineInstructionWidth(value);
+    } else {
+        return determineInstructionWidth(value.getOpcode());
+    }
+}
+
+template<typename T, typename ... Rest>
+Address computeInstructionWidth(T value, Rest&& ... rest) {
+    auto combine = Address(std::visit([](auto&& value) { return value.size(); }, determineInstructionWidth(value)));
+    if constexpr (sizeof...(rest) > 0) {
+        combine += computeInstructionWidth(std::move(rest)...);
+    } 
+    return combine;
+}
 
 constexpr TargetRegister getDestinationRegister(byte field) noexcept { 
 	return TargetRegister(getLowerHalf(field));
@@ -193,6 +207,7 @@ template<typename T>
 byte getInstructionWidth(T opcode) {
     return std::visit([](auto&& value) { return value.size(); }, determineInstructionWidth(opcode));
 }
+
 
 
 } // end namespace forth

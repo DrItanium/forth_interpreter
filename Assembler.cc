@@ -41,10 +41,10 @@ namespace forth {
 			throw Problem("relativeLabelAddress", "Can't find label name!");
 		}
 	}
-	void AssemblerBuilder::addInstruction(LazyInstruction op, byte width) {
+	void AssemblerBuilder::addInstruction(LazyInstruction op, Address width) {
 		addInstruction(std::make_tuple(width, op));
 	}
-	void AssemblerBuilder::addInstruction(ResolvableLazyFunction op, byte width) {
+	void AssemblerBuilder::addInstruction(ResolvableLazyFunction op, Address width) {
 		addInstruction(std::make_tuple(width, op));
 	}
 	void AssemblerBuilder::addInstruction(SizedResolvableLazyFunction op) {
@@ -175,12 +175,6 @@ namespace forth {
 									}
 							   });
 	}
-	SizedResolvableLazyFunction loadImmediate48(TargetRegister r, const std::string& name) {
-		return std::make_tuple(getInstructionWidth(GrabBagOpcode::LoadImmediate48),
-				[name, r](AssemblerBuilder& ab, Address _) {
-                    return opLoadImmediate48(r, ab.absoluteLabelAddress(name) & 0x0000'FFFF'FFFF'FFFF);
-				});
-	}
 	SizedResolvableLazyFunction loadImmediate32(TargetRegister r, const std::string& name) {
         return std::make_tuple(getInstructionWidth(GrabBagOpcode::LoadImmediate32),
                 [name, r](AssemblerBuilder& ab, Address _) {
@@ -188,9 +182,9 @@ namespace forth {
                 });
 	}
 	SizedResolvableLazyFunction loadImmediate16(TargetRegister r, const std::string& name) {
-        return std::make_tuple(getInstructionWidth(GrabBagOpcode::LoadImmediate16),
+        return std::make_tuple(getInstructionWidth(FourByteOpcode::UnsignedAddImmediate),
                 [name, r](AssemblerBuilder& ab, Address _) {
-                    return opLoadImmediate16(r, QuarterAddress(ab.absoluteLabelAddress(name)) );
+                    return opUnsignedAddImmediate(r, TargetRegister::Zero, QuarterAddress(ab.absoluteLabelAddress(name))); 
                 });
 	}
 	SizedResolvableLazyFunction loadImmediate64(TargetRegister r, const std::string& name) {

@@ -16,9 +16,9 @@
 namespace forth {
 class AssemblerBuilder;
 using ResolvableLazyFunction = std::function<Core::DecodedOperation(AssemblerBuilder&, Address from)>;
-using SizedResolvableLazyFunction = std::tuple<byte, ResolvableLazyFunction>;
+using SizedResolvableLazyFunction = std::tuple<Address, ResolvableLazyFunction>;
 using LazyInstruction = std::function<Core::DecodedOperation()>;
-using SizedLazyInstruction = std::tuple<byte, LazyInstruction>;
+using SizedLazyInstruction = std::tuple<Address, LazyInstruction>;
 /**
  * Used to denote a modifier to an instruction to be performed then and there
  * useful for macros!
@@ -38,8 +38,8 @@ class AssemblerBuilder {
 		Integer relativeLabelAddress(const std::string& name, Address from) const;
 		Address here() const noexcept { return _currentLocation; }
 		Address getBaseAddress() const noexcept { return _baseAddress; }
-		void addInstruction(LazyInstruction op, byte width = sizeof(Address));
-		void addInstruction(ResolvableLazyFunction op, byte width = sizeof(Address));
+		void addInstruction(LazyInstruction op, Address width = sizeof(Address));
+		void addInstruction(ResolvableLazyFunction op, Address width = sizeof(Address));
 		void addInstruction(SizedResolvableLazyFunction op);
 		void addInstruction(SizedLazyInstruction op);
 		void addInstruction(EagerInstruction op);
@@ -122,7 +122,6 @@ Core::Swap swapAB() noexcept;
 EagerInstruction label(const std::string&);
 SizedResolvableLazyFunction opLoadImmediate16(TargetRegister r, const std::string& name);
 SizedResolvableLazyFunction opLoadImmediate32(TargetRegister r, const std::string& name);
-SizedResolvableLazyFunction opLoadImmediate48(TargetRegister r, const std::string& name);
 SizedResolvableLazyFunction opLoadImmediate64(TargetRegister r, const std::string& name);
 SizedResolvableLazyFunction opJumpAbsolute(const std::string& name);
 SizedResolvableLazyFunction opJumpRelative(const std::string& name);

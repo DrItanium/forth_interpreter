@@ -775,8 +775,6 @@ void Core::dispatchOperation(const Core::GrabBagOperation& op) {
 					getDestinationRegister(value.args).setValue(notOp(getSourceRegister(value.args).getInt()));
 				} else if constexpr (std::is_same_v<T, LoadImmediate32>) {
 					getDestinationRegister(value.args).setValue(Address(value.args.imm32));
-				} else if constexpr (std::is_same_v<T, LoadImmediate48>) {
-					getDestinationRegister(value.args).setValue(Address(value.args.imm48));
 				} else if constexpr (std::is_same_v<T, LoadImmediate64>) {
 					getDestinationRegister(value.args).setValue(Address(value.args.imm64));
 				} else {
@@ -845,11 +843,6 @@ void Core::decodeArguments(OneRegisterWithImm32& args) {
     auto lowerHalf = extractQuarterAddressFromMolecule();
     auto upperHalf = extractQuarterAddressFromMolecule();
     args.imm32 = forth::setLowerUpperHalves<decltype(args.imm32)>(lowerHalf, upperHalf);
-}
-
-void Core::decodeArguments(OneRegisterWithImm48& args) {
-    populateDestination(args);
-    args.imm48 = extractImm48();
 }
 
 void Core::decodeArguments(OneRegisterWithImm64& args) {
@@ -930,11 +923,6 @@ void Core::encodeArguments(TwoRegisterWithImm16& args) {
 void Core::encodeArguments(OneRegisterWithImm32& args) { 
     encodeArguments(args.destination);
     encodeArguments(args.imm32);
-}
-void Core::encodeArguments(OneRegisterWithImm48& args) {
-    encodeArguments(args.destination);
-    encodeArguments(decodeBits<Address, QuarterAddress, 0x0000'0000'0000'FFFF, 0>(args.imm48));
-    encodeArguments(decodeBits<Address, HalfAddress, 0x0000'FFFF'FFFF'0000, 16>(args.imm48));
 }
 void Core::encodeArguments(OneRegisterWithImm64& args) 
 { 

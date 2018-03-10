@@ -162,13 +162,6 @@ class Core {
             DestinationRegister destination;
             QuarterAddress imm16;
         };
-        OperationKind(OneRegisterWithImm48) {
-			OneRegisterWithImm48() = default;
-			OneRegisterWithImm48(DestinationRegister dest, Address imm) : destination(dest), imm48(imm) { }
-			OneRegisterWithImm48(TargetRegister dest, Address imm) : destination(dest), imm48(imm) { }
-            DestinationRegister destination;
-            Address imm48;
-        };
         OperationKind(OneRegisterWithImm32) {
 			OneRegisterWithImm32() = default;
 			OneRegisterWithImm32(DestinationRegister dest, HalfAddress imm) : destination(dest), imm32(imm) { }
@@ -300,7 +293,6 @@ class Core {
 		void decodeArguments(OneRegisterWithImm16&);
 		void decodeArguments(TwoRegisterWithImm16&);
 		void decodeArguments(OneRegisterWithImm32&);
-		void decodeArguments(OneRegisterWithImm48&);
 		void decodeArguments(OneRegisterWithImm64&);
         std::optional<DecodedOperation> decodeInstruction(byte control, OneByteInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte control, TwoByteInstruction op);
@@ -333,7 +325,6 @@ class Core {
 		void encodeArguments(OneRegisterWithImm16& args);
 		void encodeArguments(TwoRegisterWithImm16& args);
 		void encodeArguments(OneRegisterWithImm32& args);
-		void encodeArguments(OneRegisterWithImm48& args);
 		void encodeArguments(OneRegisterWithImm64& args);
 
     private:

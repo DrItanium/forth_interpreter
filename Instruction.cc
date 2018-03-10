@@ -58,10 +58,6 @@ InstructionWidth determineInstructionWidth(GrabBagOpcode op){
 		case GrabBagOpcode::LoadImmediate64:
 			gb.kind = TenByteInstruction();
 			break;
-		case GrabBagOpcode::LoadImmediate16:
-			gb.kind = FourByteInstruction();
-			break;
-
         default:
             throw Problem("determineInstructionWidth", "Illegal grab bag operation specified!");
     }

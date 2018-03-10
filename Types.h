@@ -191,6 +191,7 @@ namespace forth {
     template<typename T>
     struct AlwaysFalse : std::false_type { };
     QuarterInteger safeExtract(QuarterAddress addr) noexcept;
+    QuarterAddress safeExtract(QuarterInteger addr) noexcept;
 }
 
 #endif // end TYPES_H__

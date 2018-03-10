@@ -148,80 +148,87 @@ namespace forth {
 	Core::PushRegister pushA() noexcept { return opPushRegister(TargetRegister::A); }
 	Core::PushRegister pushB() noexcept { return opPushRegister(TargetRegister::B); }
 	Core::PushRegister pushC() noexcept { return opPushRegister(TargetRegister::C); }
-	//SizedResolvableLazyFunction jumpRelative(const std::string& name) {
-	//	return std::make_tuple(getInstructionWidth(Operation::Jump), 
-	//						[name](AssemblerBuilder& ab, Address from) {
-	//							auto addr = ab.relativeLabelAddress(name, from);
-	//							if (addr > 32767 || addr < -32768) {
-	//								throw Problem("jumpRelative", "Can't encode label address into 16-bits");
-	//							} else {
-	//								return jumpRelative(QuarterInteger(addr));
-	//							}
-	//						   });
-	//}
-	//SizedResolvableLazyFunction jumpAbsolute(const std::string& name) {
-	//	return std::make_tuple(getInstructionWidth(Operation::JumpAbsolute),
-	//						   [name](AssemblerBuilder& ab, Address from) {
-	//								auto addr = ab.absoluteLabelAddress(name);
-	//								if (addr > 0xFFFF) {
-	//									throw Problem("jumpAbsolute", "Can't encode label address into 16-bits");
-	//								} else {
-	//									return jumpAbsolute(QuarterAddress(addr));
-	//								}
-	//						   });
-	//}
-	//SizedResolvableLazyFunction setImmediate16_Lowest(TargetRegister r, const std::string& name) {
-	//	return std::make_tuple(getInstructionWidth(Operation::SetImmediate16_Lowest),
-	//			[name, r](AssemblerBuilder& ab, Address _) {
-	//					return forth::setImmediate64_Lowest(r, ab.absoluteLabelAddress(name));
-	//			});
-	//}
-	//SizedResolvableLazyFunction setImmediate16_Lower(TargetRegister r, const std::string& name) {
-	//	return std::make_tuple(getInstructionWidth(Operation::SetImmediate16_Lower),
-	//			[name, r](AssemblerBuilder& ab, Address _) {
-	//					return forth::setImmediate64_Lower(r, ab.absoluteLabelAddress(name));
-	//			});
-	//}
-	//SizedResolvableLazyFunction setImmediate16_Higher(TargetRegister r, const std::string& name) {
-	//	return std::make_tuple(getInstructionWidth(Operation::SetImmediate16_Higher),
-	//			[name, r](AssemblerBuilder& ab, Address _) {
-	//					return forth::setImmediate64_Higher(r, ab.absoluteLabelAddress(name));
-	//			});
-	//}
-	//SizedResolvableLazyFunction setImmediate16_Highest(TargetRegister r, const std::string& name) {
-	//	return std::make_tuple(getInstructionWidth(Operation::SetImmediate16_Highest),
-	//			[name, r](AssemblerBuilder& ab, Address _) {
-	//					return forth::setImmediate64_Highest(r, ab.absoluteLabelAddress(name));
-	//			});
-	//}
-	//SizedResolvableLazyFunction loadLowerImmediate48(TargetRegister r, const std::string& name) {
-	//	return std::make_tuple(getInstructionWidth(Operation::ImmediateLower48),
-	//			[name, r](AssemblerBuilder& ab, Address _) {
-	//				return forth::loadLowerImmediate48(r, ab.absoluteLabelAddress(name));
-	//			});
-	//}
-	//EagerInstruction loadImmediate64(TargetRegister r, Address value) {
-	//	return [r, value](AssemblerBuilder& ab) {
-	//		ab.addInstruction(loadLowerImmediate48(r, value), setImmediate64_Highest(r, value));
-	//	};
-	//}
-	//EagerInstruction loadImmediate64(TargetRegister r, const std::string& name) {
-	//	return [r, name](AssemblerBuilder& ab) {
-	//		ab.addInstruction(loadLowerImmediate48(r, name));
-	//		ab.addInstruction(setImmediate16_Highest(r, name));
-	//	};
-	//}
-	//SizedResolvableLazyFunction conditionalBranch(TargetRegister cond, const std::string& name) {
-	//	return std::make_tuple(getInstructionWidth(Operation::ConditionalBranch),
-	//				[name, cond](AssemblerBuilder& ab, Address from) {
-	//					auto addr = ab.relativeLabelAddress(name, from);
-	//					if (addr > 32767 || addr < -32768) {
-	//						throw Problem("conditionalBranch", "Can't encode label into a relative 16-bit offset!");
-	//					} else {
-	//						return conditionalBranch(cond, addr);
-	//					}
-	//				});
-	//}
+	SizedResolvableLazyFunction jumpRelative(const std::string& name) {
+		return std::make_tuple(getInstructionWidth(FourByteOpcode::Jump), 
+							[name](AssemblerBuilder& ab, Address from) {
+								auto addr = ab.relativeLabelAddress(name, from);
+								if (addr > 32767 || addr < -32768) {
+									throw Problem("jumpRelative", "Can't encode label address into 16-bits");
+								} else {
+                                    return opJump(addr);
+								}
+							   });
+	}
+	SizedResolvableLazyFunction jumpAbsolute(const std::string& name) {
+		return std::make_tuple(getInstructionWidth(FourByteOpcode::JumpAbsolute),
+							   [name](AssemblerBuilder& ab, Address from) {
+									auto addr = ab.absoluteLabelAddress(name);
+									if (addr > 0xFFFF) {
+										throw Problem("jumpAbsolute", "Can't encode label address into 16-bits");
+									} else {
+										return opJumpAbsolute(HalfAddress(addr) & 0x00FFFFFF);
+									}
+							   });
+	}
+	SizedResolvableLazyFunction loadImmediate48(TargetRegister r, const std::string& name) {
+		return std::make_tuple(getInstructionWidth(GrabBagOpcode::LoadImmediate48),
+				[name, r](AssemblerBuilder& ab, Address _) {
+                    return opLoadImmediate48({r, ab.absoluteLabelAddress(name) & 0x0000'FFFF'FFFF'FFFF});
+				});
+	}
+	SizedResolvableLazyFunction loadImmediate32(TargetRegister r, const std::string& name) {
+        return std::make_tuple(getInstructionWidth(GrabBagOpcode::LoadImmediate32),
+                [name, r](AssemblerBuilder& ab, Address _) {
+                    return opLoadImmediate32({r, HalfAddress(ab.absoluteLabelAddress(name)) });
+                });
+	}
+	SizedResolvableLazyFunction loadImmediate16(TargetRegister r, const std::string& name) {
+        return std::make_tuple(getInstructionWidth(GrabBagOpcode::LoadImmediate16),
+                [name, r](AssemblerBuilder& ab, Address _) {
+                    return opLoadImmediate16({r, QuarterAddress(ab.absoluteLabelAddress(name)) });
+                });
+	}
+	SizedResolvableLazyFunction loadImmediate64(TargetRegister r, const std::string& name) {
+        return std::make_tuple(getInstructionWidth(GrabBagOpcode::LoadImmediate64),
+                [name, r](AssemblerBuilder& ab, Address _) {
+                    return opLoadImmediate64({r, ab.absoluteLabelAddress(name)});
+                });
+	}
+	SizedResolvableLazyFunction conditionalBranch(TargetRegister cond, const std::string& name) {
+		return std::make_tuple(getInstructionWidth(FourByteOpcode::ConditionalBranch),
+					[name, cond](AssemblerBuilder& ab, Address from) {
+						auto addr = ab.relativeLabelAddress(name, from);
+						if (addr > 32767 || addr < -32768) {
+							throw Problem("conditionalBranch", "Can't encode label into a relative 16-bit offset!");
+						} else {
+							return opConditionalBranch({cond, safeExtract(QuarterInteger(addr))});
+						}
+					});
+	}
+    EagerInstruction indirectLoad(TargetRegister dest, TargetRegister src) {
+        if (dest == src) {
+            return [dest, src](AssemblerBuilder& ab) {
+                ab.addInstruction(load(dest, src), load(dest, dest));
+            };
+        } else {
+            if (src == TargetRegister::Temporary) {
+                throw Problem("indirectLoad", "Temporary already in use!");
+            }
+            return [dest, src](AssemblerBuilder& ab) {
+                ab.addInstruction(opLoad({TargetRegister::Temporary, src}),
+                        opLoad({dest, TargetRegister::Temporary}));
+            };
+        }
+    }
+    EagerInstruction pushImmediate(Address value, TargetRegister sp) {
+        return [value, sp](AssemblerBuilder& ab) {
+            ab.addInstruction(opLoadImmediate64({TargetRegister::Temporary, value}),
+                              opPushRegister({TargetRegister::Temporary, sp}));
+        };
+    }
+    EagerInstruction pushImmediate(const Datum& value, TargetRegister sp) {
+        return pushImmediate(value.address, sp);
+    }
 	//EagerInstruction storeImmediate64(Address addr, const std::string& name) {
 	//	return [addr, name](AssemblerBuilder& ab) {
 	//		ab.addInstruction(loadImmediate64(TargetRegister::X, addr),
@@ -251,31 +258,6 @@ namespace forth {
     //        ab.addInstruction(loadImmediate64(TargetRegister::X, addr),
     //                          storeImmediate64(TargetRegister::X, value));
     //    };
-    //}
-    //EagerInstruction indirectLoad(TargetRegister dest, TargetRegister src) {
-    //    if (dest == src) {
-    //        return [dest, src](AssemblerBuilder& ab) {
-    //            ab.addInstruction(load(dest, src), 
-    //                    load(dest, dest));
-    //        };
-    //    } else {
-    //        if (src == TargetRegister::Temporary) {
-    //            throw Problem("indirectLoad", "Temporary already in use!");
-    //        }
-    //        return [dest, src](AssemblerBuilder& ab) {
-    //            ab.addInstruction(load(TargetRegister::Temporary, src),
-    //                    load(dest, TargetRegister::Temporary));
-    //        };
-    //    }
-    //}
-    //EagerInstruction pushImmediate(Address value, TargetRegister sp) {
-    //    return [value, sp](AssemblerBuilder& ab) {
-    //        ab.addInstruction(loadImmediate64(TargetRegister::Temporary, value),
-    //                pushRegister(TargetRegister::Temporary, sp));
-    //    };
-    //}
-    //EagerInstruction pushImmediate(const Datum& value, TargetRegister sp) {
-    //    return pushImmediate(value.address, sp);
     //}
 
 } // end namespace forth

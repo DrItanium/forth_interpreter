@@ -189,6 +189,10 @@ constexpr TargetRegister getDestinationRegister(byte field) noexcept {
 constexpr TargetRegister getSourceRegister(byte field) noexcept { 
 	return TargetRegister(getUpperHalf(field));
 }
+template<typename T>
+byte getInstructionWidth(T opcode) {
+    return std::visit([](auto&& value) { return value.size(); }, determineInstructionWidth(opcode));
+}
 
 
 } // end namespace forth

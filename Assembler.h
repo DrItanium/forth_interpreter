@@ -94,52 +94,19 @@ Core::PushRegister pushC() noexcept;
 EagerInstruction popAB() noexcept;
 Core::Swap swapAB() noexcept;
 EagerInstruction label(const std::string&);
-//
-//constexpr QuarterAddress swapAB() noexcept {
-//    return swap(TargetRegister::B, TargetRegister::A);
-//}
-//constexpr auto zeroRegister(TargetRegister reg) noexcept -> decltype(move(reg, TargetRegister::Zero)) {
-//    return move(reg, TargetRegister::Zero);
-//}
-//constexpr QuarterAddress imm16TestValue = 0xfded;
-//static_assert(popA() == popRegister(TargetRegister::A, TargetRegister::SP), "Two different code paths for popA should yield the same result!");
-//static_assert(getInstructionWidth(cmpeq()) == 3, "Compare eq should only be one byte if the args are defaulted");
-//static_assert(getInstructionWidth(cmpeq()) == 3, "Compare eq should only be one byte if the args are defaulted");
-//static_assert(byte(0xFD) == getUpperHalf(imm16TestValue), "getUpperHalf is not working correctly!");
-//static_assert(byte(0xED) == getLowerHalf(imm16TestValue), "getUpperHalf is not working correctly!");
-//static_assert(byte(0x01) == byte(TargetRegister::A), "register cast assumptions broken!");
-////static_assert(byte(0x16) == byte(Operation::SetImmediate16_Lowest), "Operation index is no longer correct!");
-////static_assert(Address(0xFDED0116) == encodeFourByte(Operation::SetImmediate16_Lowest, TargetRegister::A, imm16TestValue), "Encoding is broken!");
-////static_assert(Address(0xFDED0116) == setImmediate16_Lowest(TargetRegister::A, imm16TestValue), "setImmediate16_Lowest is broken!");
-////static_assert(Address(0xFDED0117) == setImmediate16_Lower(TargetRegister::A, imm16TestValue), "setImmediate16_Lower is broken!");
-////static_assert(Address(0xFDED0118) == setImmediate16_Higher(TargetRegister::A, imm16TestValue), "setImmediate16_Higher is broken!");
-////static_assert(Address(0xFDED0119) == setImmediate16_Highest(TargetRegister::A, imm16TestValue), "setImmediate16_Highest is broken!");
-//static_assert(getInstructionWidth(mulf(TargetRegister::A, TargetRegister::A, TargetRegister::A)) == 3, "FloatingPointMultiplyFull is not three bytes!");
-//static_assert(getInstructionWidth(mulf()) == 3, "FloatingPointMultiplyFull is not three bytes!");
-//
-//SizedResolvableLazyFunction setImmediate16_Lowest(TargetRegister r, const std::string& name);
-//SizedResolvableLazyFunction setImmediate16_Lower(TargetRegister r, const std::string& name);
-//SizedResolvableLazyFunction setImmediate16_Higher(TargetRegister r, const std::string& name);
-//SizedResolvableLazyFunction setImmediate16_Highest(TargetRegister r, const std::string& name);
-//SizedResolvableLazyFunction loadLowerImmediate48(TargetRegister r, const std::string& name);
-//constexpr HalfAddress jumpAbsolute(QuarterAddress imm16) noexcept {
-//	return encodeThreeByte(Operation::JumpAbsolute, imm16);
-//}
-//SizedResolvableLazyFunction jumpAbsolute(const std::string& name);
-//constexpr HalfAddress jumpRelative(QuarterInteger imm16) noexcept {
-//	return encodeThreeByte(Operation::Jump, byte(imm16), byte(imm16 >> 8));
-//}
-//SizedResolvableLazyFunction jumpRelative(const std::string& name);
-//SizedResolvableLazyFunction conditionalBranch(TargetRegister reg, const std::string& name);
-//
-//EagerInstruction loadImmediate64(TargetRegister r, Address value);
-//EagerInstruction loadImmediate64(TargetRegister r, const std::string& name);
-//
-//
-//constexpr auto loadImmediate16(TargetRegister dest, QuarterAddress value) noexcept -> decltype(addiu(dest, TargetRegister::Zero, value)) { 
-//	return addiu(dest, TargetRegister::Zero, value);
-//}
-//
+SizedResolvableLazyFunction opLoadImmediate16(TargetRegister r, const std::string& name);
+SizedResolvableLazyFunction opLoadImmediate32(TargetRegister r, const std::string& name);
+SizedResolvableLazyFunction opLoadImmediate48(TargetRegister r, const std::string& name);
+SizedResolvableLazyFunction opLoadImmediate64(TargetRegister r, const std::string& name);
+SizedResolvableLazyFunction opJumpAbsolute(const std::string& name);
+SizedResolvableLazyFunction opJumpRelative(const std::string& name);
+SizedResolvableLazyFunction opConditionalBranch(TargetRegister reg, const std::string& name);
+EagerInstruction indirectLoad(TargetRegister dest, TargetRegister src = TargetRegister::X);
+EagerInstruction printChar(char c, TargetRegister tmp = TargetRegister::Temporary);
+EagerInstruction printChar(const std::string& str, TargetRegister tmp = TargetRegister::Temporary);
+EagerInstruction pushImmediate(const Datum& value, TargetRegister sp = TargetRegister::SP);
+EagerInstruction pushImmediate(Address value, TargetRegister sp = TargetRegister::SP);
+
 ///**
 // * Store into register X our contents!
 // */
@@ -150,27 +117,6 @@ EagerInstruction label(const std::string&);
 // */
 //EagerInstruction storeImmediate64(Address addr, Address value);
 //EagerInstruction storeImmediate64(Address addr, const std::string& value);
-//
-//EagerInstruction indirectLoad(TargetRegister dest, TargetRegister src = TargetRegister::X);
-//
-//EagerInstruction label(const std::string& name);
-//EagerInstruction pushImmediate(const Datum& value, TargetRegister sp);
-//EagerInstruction pushImmediate(Address value, TargetRegister sp);
-//
-//constexpr QuarterAddress printString(TargetRegister start, TargetRegister length) noexcept {
-//	return encodeTwoByte(Operation::PrintString, start, length);
-//}
-//
-//
-//constexpr QuarterAddress printChar(TargetRegister src) noexcept {
-//	return encodeTwoByte(Operation::PrintChar, encodeDestinationRegister(src));
-//}
-//EagerInstruction printChar(char c);
-//EagerInstruction printChar(const std::string& str);
-//
-//constexpr QuarterAddress typeDatum(TargetRegister src) noexcept {
-//	return encodeTwoByte(Operation::TypeDatum, encodeDestinationRegister(src));
-//}
 
 } // end namespace forth
 

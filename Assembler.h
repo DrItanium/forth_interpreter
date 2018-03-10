@@ -64,22 +64,50 @@ class AssemblerBuilder {
 		std::map<std::string, Address> _names;
 		std::map<Address, DelayedInstruction> _operations;
 };
-
-
+#define DispatchOneRegister(title) 
+#define DispatchTwoRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src) noexcept;
+#define DispatchThreeRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1) noexcept;
+#define DispatchFourRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1, TargetRegister src2) noexcept;
+#define DispatchFiveRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1, TargetRegister src2, TargetRegister src3) noexcept;
+#define DispatchSignedImm16(title)
+#define DispatchImmediate24(title)
+#define DispatchTwoRegisterWithImm16(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept;
+#define DispatchOneRegisterWithImm16(title) Core:: title op ## title (TargetRegister dest, QuarterAddress value) noexcept;
+#define DispatchOneRegisterWithImm64(title) Core:: title op ## title (TargetRegister dest, Address addr) noexcept;
+#define DispatchOneRegisterWithImm48(title) Core:: title op ## title (TargetRegister dest, Address addr) noexcept;
+#define DispatchOneRegisterWithImm32(title) Core:: title op ## title (TargetRegister dest, HalfAddress addr) noexcept;
 #define OneByte(title) Core:: title op ## title () noexcept ;
-#define TwoByte(title, b) Core:: title op ## title (const Core:: b &) noexcept ;
-#define ThreeByte(title, b) Core:: title op ## title (const Core:: b &) noexcept ;
-#define FourByte(title, b) Core:: title op ## title (const Core:: b &) noexcept ;
-#define GrabBag(title, b) Core:: title op ## title (const Core:: b &) noexcept ;
+#define TwoByte(title, b) \
+    Core:: title op ## title (const Core:: b &) noexcept ; \
+    INDIRECTION(Dispatch, b)(title); 
+#define ThreeByte(title, b) \
+    Core:: title op ## title (const Core:: b &) noexcept ; \
+    INDIRECTION(Dispatch, b)(title);
+#define FourByte(title, b) \
+    Core:: title op ## title (const Core:: b &) noexcept ; \
+    INDIRECTION(Dispatch, b)(title); 
+#define GrabBag(title, b) \
+    Core:: title op ## title (const Core:: b &) noexcept ; \
+    INDIRECTION(Dispatch, b)(title);
 #include "InstructionData.def"
 #undef OneByte
 #undef TwoByte
 #undef ThreeByte
 #undef FourByte
 #undef GrabBag
+#undef DispatchOneRegister
+#undef DispatchTwoRegister 
+#undef DispatchThreeRegister
+#undef DispatchSignedImm16
+#undef DispatchImmediate24
+#undef DispatchTwoRegisterWithImm16
+#undef DispatchOneRegisterWithImm16
+#undef DispatchFiveRegister
+#undef DispatchFourRegister
+#undef DispatchOneRegisterWithImm48
+#undef DispatchOneRegisterWithImm32
+#undef DispatchOneRegisterWithImm64
 
-Core::PushRegister opPushRegister(TargetRegister reg, TargetRegister sp = TargetRegister::SP) noexcept;
-Core::PopRegister opPopRegister(TargetRegister reg, TargetRegister sp = TargetRegister::SP) noexcept;
 Core::Move zeroRegister(TargetRegister reg) noexcept;
 Core::LoadImmediate64 loadImmediate64(TargetRegister reg, Address value) noexcept;
 EagerInstruction useRegister(TargetRegister reg, EagerInstruction body) noexcept;
@@ -104,9 +132,11 @@ EagerInstruction opPrintChar(const std::string& str);
 EagerInstruction opIndirectLoad(TargetRegister dest, TargetRegister src = TargetRegister::X);
 EagerInstruction opPushImmediate(const Datum& value, TargetRegister sp = TargetRegister::SP);
 EagerInstruction opPushImmediate(Address value, TargetRegister sp = TargetRegister::SP);
-
-inline auto opLoad(TargetRegister dest, TargetRegister src) noexcept -> decltype(opLoad({dest, src})) {
-    return opLoad({dest, src});
+inline auto opPopRegister(TargetRegister reg) noexcept -> decltype(opPopRegister(reg, TargetRegister::SP)) { 
+    return opPopRegister(reg, TargetRegister::SP); 
+}
+inline auto opPushRegister(TargetRegister reg) noexcept -> decltype(opPushRegister(reg, TargetRegister::SP)) { 
+    return opPushRegister(reg, TargetRegister::SP); 
 }
 
 ///**

@@ -202,11 +202,6 @@ class Core {
 		void decodeArguments(TwoRegisterWithImm16&);
 		void decodeArguments(OneRegisterWithImm32&);
 		void decodeArguments(OneRegisterWithImm64&);
-        std::optional<DecodedOperation> decodeInstruction(byte control, OneByteInstruction op);
-        std::optional<DecodedOperation> decodeInstruction(byte control, TwoByteInstruction op);
-        std::optional<DecodedOperation> decodeInstruction(byte control, ThreeByteInstruction op);
-        std::optional<DecodedOperation> decodeInstruction(byte control, FourByteInstruction op);
-        std::optional<DecodedOperation> decodeInstruction(byte control, GrabBagInstruction op);
         std::optional<DecodedOperation> decodeInstruction(byte top);
         template<typename T>
         void populateDestination(T& args) {

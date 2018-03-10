@@ -281,173 +281,23 @@ std::function<void(Address, Address)> Core::getMemoryInstallationFunction() noex
 //	};
 //}
 
-std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, OneByteInstruction) {
-    // code 0: OneByte [ variant:3 | op: 5 ] // maximum of 32 ops in this class
-    Core::OneByteOperation op;
-    switch (decodeBits<byte, OneByteOpcode, 0b11111000, 3>(control)) {
-#define OneByte(title) case OneByteOpcode:: title : op = Core:: title () ; break;
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b) 
-#define GrabBag(title, b) 
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
-        default:
-            break;
-    }
-    return std::optional<Core::DecodedOperation>(op);
-}
-
-std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, TwoByteInstruction) {
-    // code 1: TwoByte [ variant:3 | control: 13 ] // multiple layouts
-    //          OneRegister [ variant:3 | op: 5 | dest: 4 | unused: 4 ]
-    //          TwoRegister [ variant:3 | op: 5 | dest: 4 | src: 4 ] // not as many allowed here
-   	Core::TwoByteOperation op ;
-    switch (decodeBits<byte, TwoByteOpcode, 0b11111000, 3>(control)) {
-#define OneByte(title) 
-#define TwoByte(title, b) \
-		case TwoByteOpcode :: title : \
-		op = Core:: title () ; \
-		decodeArguments(std::get< Core:: title > (op).args); \
-		break;
-#define ThreeByte(title, b) 
-#define FourByte(title, b) 
-#define GrabBag(title, b) 
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
-        default:
-            break;
-    }
-    return std::optional<Core::DecodedOperation>(op);
-}
-
-std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, ThreeByteInstruction) {
-	// code 2: ThreeByte [ variant:3 | opcontrol:21 ]
-	//          ThreeRegister [ variant:3 [2] | op: 5 | dest: 4 | src0: 4 | src1: 4 | unused: 4 ] 
-	Core::ThreeByteOperation op;
-	switch (decodeBits<byte, ThreeByteOpcode, 0b11111000, 3>(control)) {
-#define OneByte(title) 
-#define TwoByte(title, b) 
-#define ThreeByte(title , b) \
-		case ThreeByteOpcode:: title : \
-		op = Core:: title () ; \
-		decodeArguments(std::get< Core:: title > (op).args); \
-		break; 
-#define FourByte(title, b) 
-#define GrabBag(title, b) 
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
-		default:
-			break;
-	}
-	return std::optional<Core::DecodedOperation>(op);
-}
-
-std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, FourByteInstruction) {
-	// code 3: FourByte [ variant:3 | op: 5 | control: 24 ]
-	//          SignedImm16          [ variant:3 [3] | op: 5 | unused: 8 | imm16 ] 
-	//          FourRegister         [ variant:3 [3] | op: 5 | dest: 4 | src0: 4 | src1: 4 | src2: 4 | unused: 8 ] // compact version
-	//          FiveRegister         [ variant:3 [3] | op: 5 | dest: 4 | src0: 4 | src1: 4 | src2: 4 | src3: 4 | unused: 4 ]
-	//          OneRegisterWithImm16 [ variant:3 [3] | op: 5 | dest: 4 | unused: 4 | imm16 ]
-	Core::FourByteOperation op;
-	switch (decodeBits<byte, FourByteOpcode, 0b11111000, 3>(control)) {
-#define OneByte(title) 
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title , b) \
-		case FourByteOpcode:: title : \
-		op = Core:: title () ; \
-		decodeArguments(std::get< Core:: title > (op).args); \
-		break; 
-#define GrabBag(title, b) 
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
-		default:
-			break;
-	}
-	return std::optional<Core::DecodedOperation>(op);
-}
-
-std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control, GrabBagInstruction) {
-	// code 6: GrabBag [ variant:3 | op: 5 | ... ] 
-	//         TwoRegister          [ variant: 3 [6] | op: 5 | dest: 4 | src: 4 ]
-	//         OneRegisterWithImm64 [ variant: 3 [6] | op: 5 | dest: 4 | unused: 4 | imm64 ]
-	//         OneRegisterWithImm32 [ variant: 3 [6] | op: 5 | dest: 4 | unused: 4 | imm32 ]
-	Core::GrabBagOperation op;
-	switch (decodeBits<byte, GrabBagOpcode, 0b11111000, 3>(control)) {
-#define OneByte(title) 
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title , b) 
-#define GrabBag(title, b) \
-		case GrabBagOpcode :: title : \
-		op = Core:: title () ; \
-		decodeArguments(std::get< Core:: title > (op).args); \
-		break; 
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
-
-		default:
-			break;
-	}
-
-
-	return std::optional<Core::DecodedOperation>(op);
-}
-
 std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
-    switch(decodeVariant(control)) {
-        case VariantKind::OneByte: 
-            return decodeInstruction(control, OneByteInstruction()); 
-        case VariantKind::TwoByte: 
-            return decodeInstruction(control, TwoByteInstruction()); 
-        case VariantKind::ThreeByte: 
-            return decodeInstruction(control, ThreeByteInstruction()); 
-        case VariantKind::FourByte: 
-            return decodeInstruction(control, FourByteInstruction()); 
-        case VariantKind::GrabBag:
-            return decodeInstruction(control, GrabBagInstruction());
-        default:
-            return std::optional<Core::DecodedOperation>();
-    }
+	std::optional<Core::DecodedOperation> op;
+	switch (Opcode(control)) {
+#define X(title, b) \
+		case Opcode:: title : \
+			op = Core:: title () ; \
+			decodeArguments(std::get< Core:: title > (op) .args ); \
+			break;
+#include "InstructionData.def"
+#undef X
+		default:
+			break;
+
+	}
+	return op;
 }
 
-void Core::dispatchOperation(const Core::OneByteOperation& op) {
-	std::visit([this](auto&& value) {
-				using T = std::decay_t<decltype(value)>;
-				if constexpr (std::is_same_v<T, Core::Nop>) {
-					// do nothing
-				} else if constexpr (std::is_same_v<T, Core::LeaveExecutionLoop>) {
-					store(Core::returnToMicrocode, Address(1));
-				} else if constexpr (std::is_same_v<T, Core::ReturnSubroutine>) {
-					_pc.setValue(pop(TargetRegister::SP2));
-				} else if constexpr (std::is_same_v<T, UndefinedOpcode>) {
-					throw Problem("dispatchOperation(OneByte)", "Undefined opcode provided to the one byte operation!");
-				} else {
-					static_assert(AlwaysFalse<T>::value, "Unimplemented one byte operation!");
-				}
-			}, op);
-}
 Register& Core::getDestinationRegister(const Core::DestinationRegister& reg) {
 	if (reg) {
 		return getRegister(reg.value());
@@ -464,15 +314,63 @@ Register& Core::getSourceRegister(const Core::SourceRegister& reg) {
 	}
 }
 
-void Core::dispatchOperation(const Core::TwoByteOperation& op) {
-	std::visit([this](auto&& value) {
+auto add(auto a, auto b) noexcept -> decltype(a + b) { return a + b; }
+auto subtract(auto a, auto b) noexcept -> decltype(a - b) { return a - b; }
+auto multiply(auto a, auto b) noexcept -> decltype(a * b) { return a * b; }
+auto divide(auto a, auto b) -> decltype(a / b) { 
+	if constexpr (!std::is_floating_point_v<decltype(a)>) {
+		if (b == 0) {
+			throw Problem("divide", "Dividing by zero!");
+		}
+	}
+	return a / b;
+}
+
+auto modulo(auto a, auto b) -> decltype(a / b) { 
+	if (b == 0) {
+		throw Problem("modulo", "Dividing by zero!");
+	}
+	return a % b;
+}
+auto andOp(auto a, auto b) noexcept -> decltype(a & b) { return a & b; }
+bool andOp(bool a, bool b) noexcept { return a && b; }
+auto orOp(auto a, auto b) noexcept -> decltype(a | b) { return a | b; }
+bool orOp(bool a, bool b) noexcept { return a || b; }
+auto xorOp(auto a, auto b) noexcept -> decltype(a ^ b) { return a ^ b; }
+bool xorOp(bool a, bool b) noexcept { return a != b; }
+auto greaterThan(auto a, auto b) noexcept -> decltype(a > b) { return a > b; }
+auto lessThan(auto a, auto b) noexcept -> decltype(a < b) { return a < b; }
+auto shiftRight(auto a, auto b) noexcept -> decltype(a >> b) { return a >> b; }
+auto shiftLeft(auto a, auto b) noexcept -> decltype(a << b) { return a << b; }
+auto equals(auto a, auto b) noexcept -> decltype(a == b) { return a == b; }
+auto powFunc(auto a, auto b) noexcept -> decltype(a) { return decltype(a)(std::pow(double(a), double(b))); }
+auto minus(auto a) noexcept -> decltype(-a) { return -a; }
+auto notOp(auto a) noexcept -> decltype(~a) { return ~a; }
+bool notOp(bool a) noexcept { return !a; }
+
+
+void Core::dispatchInstruction() {
+	auto control = extractByteFromMolecule();
+	auto result = decodeInstruction(control);
+	if (result) {
+		std::visit([this](auto&& value) { 
+				auto flags = std::cout.flags();
+				auto intFunction = [](const Register& value) { return value.getInt(); };
+				auto floatFunction = [](const Register& value) { return value.getFP(); };
+				auto unsignedFunction = [](const Register& value) { return value.getAddress(); };
+				auto booleanFunction = [](const Register& value) { return value.getTruth(); };
 				using T = std::decay_t<decltype(value)>;
 				if constexpr (std::is_same_v<T, UndefinedOpcode>) {
-					throw Problem("dispatchOperation(TwoByte)", "undefined two byte operation");
-				} else {
-					auto flags = std::cout.flags();
-					auto& dest = getDestinationRegister(value.args);
-					if constexpr (std::is_same_v<T,Core::TypeValue>) {
+					throw Problem("dispatchOperation(GrabBag)", "UndefinedOpcode provided");
+				} 
+				else if constexpr (std::is_same_v<T, Core::Nop>) {
+					// do nothing
+				} else if constexpr (std::is_same_v<T, Core::LeaveExecutionLoop>) {
+					store(Core::returnToMicrocode, Address(1));
+				} else if constexpr (std::is_same_v<T, Core::ReturnSubroutine>) {
+					_pc.setValue(pop(TargetRegister::SP2));
+				} 
+					else if constexpr (std::is_same_v<T,Core::TypeValue>) {
 						std::cout << std::dec << dest.getInt();
 					} else if constexpr (std::is_same_v<T,Core::TypeValueUnsigned>) {
 						std::cout << std::hex << dest.getAddress() << "#";
@@ -523,56 +421,7 @@ void Core::dispatchOperation(const Core::TwoByteOperation& op) {
 						auto& stackPointer = dest;
 						stackPointer.decrement(sizeof(Address));
 						store(stackPointer.getAddress(), getSourceRegister(value.args).getValue());
-					} else {
-						//static_assert(AlwaysFalse<T>::value, "Unimplemented two byte operation");
-						throw Problem("dispatchOperation(TwoByte)", "Unimplemented two byte operation");
-					}
-					std::cout.setf(flags);
-				}
-			}, op);
-}
-auto add(auto a, auto b) noexcept -> decltype(a + b) { return a + b; }
-auto subtract(auto a, auto b) noexcept -> decltype(a - b) { return a - b; }
-auto multiply(auto a, auto b) noexcept -> decltype(a * b) { return a * b; }
-auto divide(auto a, auto b) -> decltype(a / b) { 
-	if constexpr (!std::is_floating_point_v<decltype(a)>) {
-		if (b == 0) {
-			throw Problem("divide", "Dividing by zero!");
-		}
-	}
-	return a / b;
-}
-
-auto modulo(auto a, auto b) -> decltype(a / b) { 
-	if (b == 0) {
-		throw Problem("modulo", "Dividing by zero!");
-	}
-	return a % b;
-}
-auto andOp(auto a, auto b) noexcept -> decltype(a & b) { return a & b; }
-bool andOp(bool a, bool b) noexcept { return a && b; }
-auto orOp(auto a, auto b) noexcept -> decltype(a | b) { return a | b; }
-bool orOp(bool a, bool b) noexcept { return a || b; }
-auto xorOp(auto a, auto b) noexcept -> decltype(a ^ b) { return a ^ b; }
-bool xorOp(bool a, bool b) noexcept { return a != b; }
-auto greaterThan(auto a, auto b) noexcept -> decltype(a > b) { return a > b; }
-auto lessThan(auto a, auto b) noexcept -> decltype(a < b) { return a < b; }
-auto shiftRight(auto a, auto b) noexcept -> decltype(a >> b) { return a >> b; }
-auto shiftLeft(auto a, auto b) noexcept -> decltype(a << b) { return a << b; }
-auto equals(auto a, auto b) noexcept -> decltype(a == b) { return a == b; }
-auto powFunc(auto a, auto b) noexcept -> decltype(a) { return decltype(a)(std::pow(double(a), double(b))); }
-
-
-void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
-	auto intFunction = [](const Register& value) { return value.getInt(); };
-	auto floatFunction = [](const Register& value) { return value.getFP(); };
-	auto unsignedFunction = [](const Register& value) { return value.getAddress(); };
-	auto booleanFunction = [](const Register& value) { return value.getTruth(); };
-	std::visit([this, intFunction, floatFunction, unsignedFunction, booleanFunction](auto&& value) {
-				using T = std::decay_t<decltype(value)>;
-				if constexpr (std::is_same_v<T, UndefinedOpcode>) {
-					throw Problem("dispatchOperation(ThreeByte)", "UndefinedOpcode provided");
-				} else {
+					} 
 #define IsType(t) std::is_same_v<T, t>
 					auto& dest = getDestinationRegister(value.args);
 					auto& src0 = getSourceRegister(value.args);
@@ -597,7 +446,6 @@ void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
 					InvokeSU(t, func) \
 					InvokeB(t, func)
 
-					if constexpr (IsType(Nop3)) { }
 					InvokeSUF(Add, add)
 					InvokeSUF(Subtract, subtract)
 					InvokeSUF(Multiply, multiply)
@@ -608,9 +456,6 @@ void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
 					InvokeSUB(Xor, xorOp)
 					InvokeSUF(GreaterThan, greaterThan)
 					InvokeSUF(LessThan, lessThan)
-					else {
-						static_assert(AlwaysFalse<T>::value, "Unimplemented three byte operation!");
-					}
 #undef InvokeS
 #undef InvokeU
 #undef InvokeF
@@ -620,12 +465,6 @@ void Core::dispatchOperation(const Core::ThreeByteOperation& op) {
 #undef InvokeSUB
 #undef InvokeConv
 #undef IsType
-				}
-			}, op);
-}
-void Core::dispatchOperation(const Core::FourByteOperation& op) {
-	std::visit([this](auto&& value) {
-				using T = std::decay_t<decltype(value)>;
 #define IsType(t) std::is_same_v<T, t>
 #define InvokeS(t, func) \
 				else if constexpr (IsType( t ## Immediate )) { \
@@ -642,9 +481,7 @@ void Core::dispatchOperation(const Core::FourByteOperation& op) {
 #define InvokeSU(t, func) \
 				InvokeS(t, func) \
 				InvokeU(t, func)
-				if constexpr (std::is_same_v<T, UndefinedOpcode>) {
-					throw Problem("dispatchOperation(FourByte)", "UndefinedOpcode provided");
-				} else if constexpr (std::is_same_v<T, Jump>) {
+				 else if constexpr (std::is_same_v<T, Jump>) {
 					_pc.setValue(_pc.getInt() + value.args.value);
 				} else if constexpr (std::is_same_v<T, CallSubroutine>) {
 					savePositionToSubroutineStack();
@@ -679,31 +516,10 @@ void Core::dispatchOperation(const Core::FourByteOperation& op) {
 				InvokeSU(GreaterThan, greaterThan)
 				InvokeSU(LessThan, lessThan)
 				InvokeSU(Equals, equals)
-				else {
-					static_assert(AlwaysFalse<T>::value, "Unimplemented four byte operation!");
-				}
 #undef IsType
 #undef InvokeS
 #undef InvokeU
 #undef InvokeSU
-			}, op);
-}
-
-auto minus(auto a) noexcept -> decltype(-a) { return -a; }
-auto notOp(auto a) noexcept -> decltype(~a) { return ~a; }
-bool notOp(bool a) noexcept { return !a; }
-
-
-void Core::dispatchOperation(const Core::GrabBagOperation& op) {
-	std::visit([this](auto&& value) {
-				auto intFunction = [](const Register& value) { return value.getInt(); };
-				auto floatFunction = [](const Register& value) { return value.getFP(); };
-				auto unsignedFunction = [](const Register& value) { return value.getAddress(); };
-				auto booleanFunction = [](const Register& value) { return value.getTruth(); };
-				using T = std::decay_t<decltype(value)>;
-				if constexpr (std::is_same_v<T, UndefinedOpcode>) {
-					throw Problem("dispatchOperation(GrabBag)", "UndefinedOpcode provided");
-				} 
 #define IsType(t) std::is_same_v<T, t>
 #define InvokeConv(bfun, cfun) \
 	auto& dest = getDestinationRegister(value.args); \
@@ -780,13 +596,8 @@ void Core::dispatchOperation(const Core::GrabBagOperation& op) {
 				} else {
 					static_assert(AlwaysFalse<T>::value, "Unimplemented grab bag operation!");
 				}
-			}, op);
-}
-void Core::dispatchInstruction() {
-	auto control = extractByteFromMolecule();
-	auto result = decodeInstruction(control);
-	if (result) {
-		std::visit([this](auto&& value) { dispatchOperation(value); }, result.value());
+					std::cout.setf(flags);
+				}, result.value());
 	} else {
 		throw Problem("dispatchInstruction", "Bad Instruction!");
 	}

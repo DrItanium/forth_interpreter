@@ -179,7 +179,7 @@ class Core {
 #undef OperationKind
 #define X(title, b) struct title final { \
 	Opcode getOpcode() { return Opcode:: title ; } \
-	byte size() { return determineInstructionWidth(getOpcode()); } \
+	byte size() { return determineInstructionWidth(getOpcode()).size(); } \
 	Core:: b args; };
 #include "InstructionData.def"
 #undef X
@@ -231,11 +231,6 @@ class Core {
 		void encodeArguments(OneRegisterWithImm64& args);
 
     private:
-		void dispatchOperation(const OneByteOperation& op);
-		void dispatchOperation(const TwoByteOperation& op);
-		void dispatchOperation(const ThreeByteOperation& op);
-		void dispatchOperation(const FourByteOperation& op);
-		void dispatchOperation(const GrabBagOperation& op);
 		Register& getDestinationRegister(const DestinationRegister& reg);
 		Register& getSourceRegister(const SourceRegister& reg);
 		template<typename T>

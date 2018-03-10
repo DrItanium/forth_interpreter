@@ -284,13 +284,40 @@ std::function<void(Address, Address)> Core::getMemoryInstallationFunction() noex
 std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
 	std::optional<Core::DecodedOperation> op;
 	switch (Opcode(control)) {
+#define PerformDecode(title) decodeArguments(std::get< Core:: title > (op.value()) .args )
+#define XOneRegister(title) PerformDecode(title)
+#define XTwoRegister(title) PerformDecode(title)
+#define XThreeRegister(title) PerformDecode(title)
+#define XSignedImm16(title) PerformDecode(title)
+#define XImmediate24(title) PerformDecode(title)
+#define XTwoRegisterWithImm16(title) PerformDecode(title) 
+#define XOneRegisterWithImm16(title) PerformDecode(title) 
+#define XFourRegister(title) PerformDecode(title) 
+#define XFiveRegister(title) PerformDecode(title) 
+#define XOneRegisterWithImm64(title) PerformDecode(title)
+#define XOneRegisterWithImm48(title) PerformDecode(title)
+#define XOneRegisterWithImm32(title) PerformDecode(title)
+#define XNoArguments(title) 
 #define X(title, b) \
 		case Opcode:: title : \
 			op = Core:: title () ; \
-			decodeArguments(std::get< Core:: title > (op) .args ); \
+			INDIRECTION(X, b)(title) ; \
 			break;
 #include "InstructionData.def"
 #undef X
+#undef XNoArguments
+#undef XOneRegister
+#undef XTwoRegister
+#undef XThreeRegister
+#undef XSignedImm16
+#undef XImmediate24
+#undef XTwoRegisterWithImm16
+#undef XOneRegisterWithImm16
+#undef XFourRegister
+#undef XFiveRegister
+#undef XOneRegisterWithImm64
+#undef XOneRegisterWithImm48
+#undef XOneRegisterWithImm32
 		default:
 			break;
 
@@ -361,7 +388,7 @@ void Core::dispatchInstruction() {
 				auto booleanFunction = [](const Register& value) { return value.getTruth(); };
 				using T = std::decay_t<decltype(value)>;
 				if constexpr (std::is_same_v<T, UndefinedOpcode>) {
-					throw Problem("dispatchOperation(GrabBag)", "UndefinedOpcode provided");
+					throw Problem("dispatchInstruction", "Undefined opcode provided");
 				} 
 				else if constexpr (std::is_same_v<T, Core::Nop>) {
 					// do nothing

@@ -93,21 +93,6 @@ namespace forth {
 #undef FourByte
 #undef GrabBag
 
-	EagerInstruction opPrintChar(char c) noexcept {
-		return [c](AssemblerBuilder& ab) {
-			ab.addInstruction(opAddImmediate({TargetRegister::Temporary,
-											 TargetRegister::Zero,
-											 QuarterAddress(c)}),
-							  opPrintChar(TargetRegister::Temporary));
-		};
-	}
-	EagerInstruction opPrintChar(const std::string& str) noexcept {
-		return [str](AssemblerBuilder& ab) {
-			for (auto const& c : str) {
-				ab.addInstruction(opPrintChar(c));
-			}
-		};
-	}
 	Core::Move zeroRegister(TargetRegister reg) noexcept {
 		return opMove({reg, TargetRegister::Zero});
 	}
@@ -208,7 +193,7 @@ namespace forth {
     EagerInstruction indirectLoad(TargetRegister dest, TargetRegister src) {
         if (dest == src) {
             return [dest, src](AssemblerBuilder& ab) {
-                ab.addInstruction(load(dest, src), load(dest, dest));
+                ab.addInstruction(opLoad(dest, src), opLoad(dest, dest));
             };
         } else {
             if (src == TargetRegister::Temporary) {
@@ -229,35 +214,18 @@ namespace forth {
     EagerInstruction pushImmediate(const Datum& value, TargetRegister sp) {
         return pushImmediate(value.address, sp);
     }
-	//EagerInstruction storeImmediate64(Address addr, const std::string& name) {
-	//	return [addr, name](AssemblerBuilder& ab) {
-	//		ab.addInstruction(loadImmediate64(TargetRegister::X, addr),
-	//						  loadImmediate64(TargetRegister::Temporary, name),
-	//						  store(TargetRegister::X, TargetRegister::Temporary));
-	//	};
-	//}
-    //EagerInstruction storeImmediate64(TargetRegister addr, Address value) {
-    //    if (addr == TargetRegister::Temporary) {
-    //        throw Problem("Assembler::storeImmediate64", "Temporary register already in use!");
-    //    } else {
-    //        if (value == 0) {
-    //            return [addr](AssemblerBuilder& ab) { ab.addInstruction(store(addr, TargetRegister::Zero)); };
-    //        } else {
-    //            return [addr, value](AssemblerBuilder& ab) {
-    //                ab.addInstruction(loadImmediate64(TargetRegister::Temporary, value),
-    //                                  store(addr, TargetRegister::Temporary));
-    //            };
-    //        }
-    //    }
-    //}
-    //EagerInstruction storeImmediate64(Address value) {
-    //    return storeImmediate64(TargetRegister::X, value);
-    //}
-    //EagerInstruction storeImmediate64(Address addr, Address value) {
-    //    return [addr, value](AssemblerBuilder& ab) {
-    //        ab.addInstruction(loadImmediate64(TargetRegister::X, addr),
-    //                          storeImmediate64(TargetRegister::X, value));
-    //    };
-    //}
+    EagerInstruction opPrintChar(char c) {
+        return [c](AssemblerBuilder& ab) {
+            ab.addInstruction(opAddImmediate({TargetRegister::Temporary, TargetRegister::Zero, QuarterAddress(c)}),
+                              opPrintChar(TargetRegister::Temporary));
+        };
+    }
+    EagerInstruction opPrintChar(const std::string& str) {
+        return [str, i](AssemblerBuilder& ab) {
+            for (auto const& c : str) {
+                ab.addInstruction(opPrintChar(c));
+            }
+        };
+    }
 
 } // end namespace forth

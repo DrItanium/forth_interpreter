@@ -78,8 +78,6 @@ class AssemblerBuilder {
 #undef FourByte
 #undef GrabBag
 
-EagerInstruction opPrintChar(char c) noexcept;
-EagerInstruction opPrintChar(const std::string& str) noexcept;
 Core::PushRegister opPushRegister(TargetRegister reg, TargetRegister sp = TargetRegister::SP) noexcept;
 Core::PopRegister opPopRegister(TargetRegister reg, TargetRegister sp = TargetRegister::SP) noexcept;
 Core::Move zeroRegister(TargetRegister reg) noexcept;
@@ -101,11 +99,15 @@ SizedResolvableLazyFunction opLoadImmediate64(TargetRegister r, const std::strin
 SizedResolvableLazyFunction opJumpAbsolute(const std::string& name);
 SizedResolvableLazyFunction opJumpRelative(const std::string& name);
 SizedResolvableLazyFunction opConditionalBranch(TargetRegister reg, const std::string& name);
-EagerInstruction indirectLoad(TargetRegister dest, TargetRegister src = TargetRegister::X);
-EagerInstruction printChar(char c, TargetRegister tmp = TargetRegister::Temporary);
-EagerInstruction printChar(const std::string& str, TargetRegister tmp = TargetRegister::Temporary);
-EagerInstruction pushImmediate(const Datum& value, TargetRegister sp = TargetRegister::SP);
-EagerInstruction pushImmediate(Address value, TargetRegister sp = TargetRegister::SP);
+EagerInstruction opPrintChar(char c);
+EagerInstruction opPrintChar(const std::string& str);
+EagerInstruction opIndirectLoad(TargetRegister dest, TargetRegister src = TargetRegister::X);
+EagerInstruction opPushImmediate(const Datum& value, TargetRegister sp = TargetRegister::SP);
+EagerInstruction opPushImmediate(Address value, TargetRegister sp = TargetRegister::SP);
+
+inline auto opLoad(TargetRegister dest, TargetRegister src) noexcept -> decltype(opLoad({dest, src})) {
+    return opLoad({dest, src});
+}
 
 ///**
 // * Store into register X our contents!

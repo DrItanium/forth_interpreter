@@ -63,122 +63,19 @@ struct ThreeByteInstruction final : SizedType<3> { };
 struct FourByteInstruction final : SizedType<4> { };
 struct SixByteInstruction final : SizedType<6> { };
 struct TenByteInstruction final : SizedType<10> {  };
-struct GrabBagInstruction final {
-    std::variant<TwoByteInstruction, SixByteInstruction, TenByteInstruction, FourByteInstruction, ThreeByteInstruction> kind;
-    constexpr byte size() noexcept {
-        switch (kind.index()) {
-            case 0:
-                return std::get<0>(kind).size();
-			case 1:
-				return std::get<1>(kind).size();
-			case 2:
-				return std::get<2>(kind).size();
-			case 3:
-				return std::get<3>(kind).size();
-			case 4:
-				return std::get<4>(kind).size();
-        }
-    }
-};
-using InstructionWidth = std::variant<OneByteInstruction, TwoByteInstruction, ThreeByteInstruction, FourByteInstruction, GrabBagInstruction>;
-enum class VariantKind : byte {
-    OneByte,
-    TwoByte,
-    ThreeByte,
-    FourByte,
-    GrabBag,
-    Count,
-};
-static_assert(byte(VariantKind::Count) <= 8, "Too many variants specified!");
-constexpr VariantKind decodeVariant(byte input) noexcept {
-    return decodeBits<byte, VariantKind, 0b00000111, 0>(input);
-}
-enum class OneByteOpcode : byte {
-#define OneByte(title) title,
-#define TwoByte(title, b) 
-#define ThreeByte(title, b)
-#define FourByte(title, b)
-#define GrabBag(title, b)
+using InstructionWidth = std::variant<OneByteInstruction, TwoByteInstruction, ThreeByteInstruction, FourByteInstruction>;
+enum class Opcode : byte {
+#define X(title, b) title,
 #include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
-Count,
+#undef X
+	Count,
 };
-
-enum class TwoByteOpcode : byte {
-#define OneByte(title) 
-#define TwoByte(title, b) title,
-#define ThreeByte(title, b)
-#define FourByte(title, b)
-#define GrabBag(title, b)
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
-Count,
-};
-
-
-enum class ThreeByteOpcode : byte {
-#define OneByte(title) 
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) title,
-#define FourByte(title, b)
-#define GrabBag(title, b)
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
-Count,
-};
-
-enum class FourByteOpcode : byte {
-#define OneByte(title) 
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b) title,
-#define GrabBag(title, b)
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
-Count,
-};
-
-
-enum class GrabBagOpcode : byte {
-#define OneByte(title) 
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b)
-#define GrabBag(title, cl) title,
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
-    Count,
-};
+static_assert(byte(Opcode::Count) <= 256, "Too many opcodes defined!");
 
 
 
 struct UndefinedOpcode final { constexpr UndefinedOpcode() { } };
-
-InstructionWidth determineInstructionWidth(OneByteOpcode op);
-InstructionWidth determineInstructionWidth(TwoByteOpcode op);
-InstructionWidth determineInstructionWidth(ThreeByteOpcode op);
-InstructionWidth determineInstructionWidth(FourByteOpcode op);
-InstructionWidth determineInstructionWidth(GrabBagOpcode op);
+InstructionWidth determineInstructionWidth(Opcode op);
 template<typename T>
 InstructionWidth determineInstructionWidth(T value) {
     if constexpr (std::is_enum<T>::value) {

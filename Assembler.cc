@@ -53,41 +53,17 @@ namespace forth {
 #define DispatchOneRegisterWithImm64(title) Core:: title op ## title (TargetRegister dest, Address addr) noexcept { return op ## title ( {dest, addr}); }
 #define DispatchOneRegisterWithImm48(title) Core:: title op ## title (TargetRegister dest, Address addr) noexcept { return op ## title ( {dest, addr}); }
 #define DispatchOneRegisterWithImm32(title) Core:: title op ## title (TargetRegister dest, HalfAddress addr) noexcept { return op ## title ( {dest, addr}); }
-#define OneByte(title) Core:: title op ## title () noexcept { return Core:: title (); }
-#define TwoByte(title, b) \
+#define DispatchNoArguments(title) 
+#define X(title, b) \
 	Core:: title op ## title (const Core:: b & x) noexcept { \
 		Core:: title value; \
 		value.args = x; \
 		return value; \
 	} \
-    INDIRECTION(Dispatch, b)(title)
-#define ThreeByte(title, b) \
-	Core:: title op ## title (const Core:: b & x) noexcept { \
-		Core:: title value; \
-		value.args = x; \
-		return value; \
-	} \
-    INDIRECTION(Dispatch, b)(title)
-#define FourByte(title, b) \
-	Core:: title op ## title (const Core:: b & x) noexcept { \
-		Core:: title value; \
-		value.args = x; \
-		return value; \
-	} \
-    INDIRECTION(Dispatch, b)(title)
-#define GrabBag(title, b) \
-	Core:: title op ## title (const Core:: b & x) noexcept { \
-		Core:: title value; \
-		value.args = x; \
-		return value; \
-	} \
-    INDIRECTION(Dispatch, b)(title)
+	INDIRECTION(Dispatch, b)(title)
 #include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
+#undef X
+#undef DispatchNoArguments
 #undef DispatchOneRegister
 #undef DispatchTwoRegister
 #undef DispatchThreeRegister

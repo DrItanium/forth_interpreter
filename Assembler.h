@@ -72,25 +72,12 @@ class AssemblerBuilder {
 #define DispatchOneRegisterWithImm64(title) Core:: title op ## title (TargetRegister dest, Address addr) noexcept;
 #define DispatchOneRegisterWithImm48(title) Core:: title op ## title (TargetRegister dest, Address addr) noexcept;
 #define DispatchOneRegisterWithImm32(title) Core:: title op ## title (TargetRegister dest, HalfAddress addr) noexcept;
-#define OneByte(title) Core:: title op ## title () noexcept ;
-#define TwoByte(title, b) \
-    Core:: title op ## title (const Core:: b &) noexcept ; \
-    INDIRECTION(Dispatch, b)(title); 
-#define ThreeByte(title, b) \
-    Core:: title op ## title (const Core:: b &) noexcept ; \
-    INDIRECTION(Dispatch, b)(title);
-#define FourByte(title, b) \
-    Core:: title op ## title (const Core:: b &) noexcept ; \
-    INDIRECTION(Dispatch, b)(title); 
-#define GrabBag(title, b) \
-    Core:: title op ## title (const Core:: b &) noexcept ; \
-    INDIRECTION(Dispatch, b)(title);
+#define DispatchNoArguments(title)
+#define X(title, b) Core:: title op ## title () noexcept ; \
+	INDIRECTION(Dispatch, b)(title);
 #include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
+#undef DispatchNoArguments
+#undef X
 #undef DispatchOneRegister
 #undef DispatchTwoRegister 
 #undef DispatchThreeRegister

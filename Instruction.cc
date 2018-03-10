@@ -32,38 +32,6 @@ namespace forth {
 		return ((b5 << 40) | (b4 << 32) | (b3 << 24) | (b2 << 16) | (b1 << 8) | b0) & 0x00FF'FFFF'FFFF'FFFF;
 	}
 
-InstructionWidth determineInstructionWidth(OneByteOpcode op) { return OneByteInstruction(); }
-
-InstructionWidth determineInstructionWidth(TwoByteOpcode op) { return TwoByteInstruction(); }
-
-InstructionWidth determineInstructionWidth(ThreeByteOpcode op) { return ThreeByteInstruction(); }
-
-InstructionWidth determineInstructionWidth(FourByteOpcode op) { return FourByteInstruction(); }
-
-InstructionWidth determineInstructionWidth(GrabBagOpcode op){
-    GrabBagInstruction gb;
-    switch (op) {
-        case GrabBagOpcode::Minus:
-        case GrabBagOpcode::MinusUnsigned:
-        case GrabBagOpcode::MinusFloatingPoint:
-        case GrabBagOpcode::PrintString:
-        case GrabBagOpcode::NotBoolean:
-        case GrabBagOpcode::NotSigned:
-        case GrabBagOpcode::Not:
-            gb.kind = TwoByteInstruction();
-            break;
-		case GrabBagOpcode::LoadImmediate32:
-			gb.kind = SixByteInstruction();
-			break;
-		case GrabBagOpcode::LoadImmediate64:
-			gb.kind = TenByteInstruction();
-			break;
-        default:
-            throw Problem("determineInstructionWidth", "Illegal grab bag operation specified!");
-    }
-    return gb;
-}
-
 InstructionWidth determineInstructionWidth(Opcode code) {
 	switch (code) {
 #define DispatchOneRegister(title) return TwoByteInstruction() ;

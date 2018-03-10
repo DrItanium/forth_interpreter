@@ -63,7 +63,13 @@ struct ThreeByteInstruction final : SizedType<3> { };
 struct FourByteInstruction final : SizedType<4> { };
 struct SixByteInstruction final : SizedType<6> { };
 struct TenByteInstruction final : SizedType<10> {  };
-using InstructionWidth = std::variant<OneByteInstruction, TwoByteInstruction, ThreeByteInstruction, FourByteInstruction>;
+struct InstructionWidth {
+	std::variant<OneByteInstruction, TwoByteInstruction, ThreeByteInstruction, FourByteInstruction> contents;
+	constexpr InstructionWidth() { }
+	constexpr byte size() noexcept {
+		return std::visit([](auto&& v) { return v.size(); }, contents);
+	}
+};
 enum class Opcode : byte {
 #define X(title, b) title,
 #include "InstructionData.def"

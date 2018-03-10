@@ -177,124 +177,17 @@ class Core {
             Address imm64;
         };
 #undef OperationKind
-#define OneByte(title) struct title final { \
-	OneByteOpcode getOpcode() { return  OneByteOpcode:: title ; } \
-	byte size() { return std::visit([](auto&& value) { return value.size(); }, determineInstructionWidth(getOpcode())); } \
-	};
-#define TwoByte(title, b) struct title final { \
-	TwoByteOpcode getOpcode() { return  TwoByteOpcode:: title ; } \
-	byte size() { return std::visit([](auto&& value) { return value.size(); }, determineInstructionWidth(getOpcode())); } \
-	Core:: b args; }; 
-#define ThreeByte(title, b) struct title final { \
-	ThreeByteOpcode getOpcode() { return  ThreeByteOpcode:: title ; } \
-	byte size() { return std::visit([](auto&& value) { return value.size(); }, determineInstructionWidth(getOpcode())); } \
-	Core:: b args; };  
-#define FourByte(title, b) struct title final { \
-	FourByteOpcode getOpcode() { return  FourByteOpcode:: title ; } \
-	byte size() { return std::visit([](auto&& value) { return value.size(); }, determineInstructionWidth(getOpcode())); } \
-	Core:: b args; }; 
-#define GrabBag(title, b) struct title final { \
-	GrabBagOpcode getOpcode() { return  GrabBagOpcode:: title ; } \
-	byte size() { return std::visit([](auto&& value) { return value.size(); }, determineInstructionWidth(getOpcode())); } \
-	Core:: b args; }; 
+#define X(title, b) struct title final { \
+	Opcode getOpcode() { return Opcode:: title ; } \
+	byte size() { return determineInstructionWidth(getOpcode()); } \
+	Core:: b args; };
 #include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
+#undef X
 
-//        using OneByteOperation = std::variant<
-//#define OneByte(title) Core::title,
-//#define TwoByte(title, b) 
-//#define ThreeByte(title, b) 
-//#define FourByte(title, b)
-//#define GrabBag(title, b) 
-//#include "InstructionData.def"
-//#undef OneByte
-//#undef TwoByte
-//#undef ThreeByte
-//#undef FourByte
-//#undef GrabBag
-//            UndefinedOpcode
-//            >;
-//        using TwoByteOperation = 
-//            std::variant<
-//#define OneByte(title)
-//#define TwoByte(title, b) Core:: title,
-//#define ThreeByte(title, b) 
-//#define FourByte(title, b)
-//#define GrabBag(title, b) 
-//#include "InstructionData.def"
-//#undef OneByte
-//#undef TwoByte
-//#undef ThreeByte
-//#undef FourByte
-//#undef GrabBag
-//                UndefinedOpcode>;
-//        using ThreeByteOperation =
-//            std::variant<
-//#define OneByte(title)
-//#define TwoByte(title, b) 
-//#define ThreeByte(title, b) Core:: title,
-//#define FourByte(title, b)
-//#define GrabBag(title, b) 
-//#include "InstructionData.def"
-//#undef OneByte
-//#undef TwoByte
-//#undef ThreeByte
-//#undef FourByte
-//#undef GrabBag
-//                UndefinedOpcode> ;
-//
-//        using FourByteOperation =
-//            std::variant<
-//#define OneByte(title)
-//#define TwoByte(title, b) 
-//#define ThreeByte(title, b) 
-//#define FourByte(title, b) Core:: title,
-//#define GrabBag(title, b) 
-//#include "InstructionData.def"
-//#undef OneByte
-//#undef TwoByte
-//#undef ThreeByte
-//#undef FourByte
-//#undef GrabBag
-//                UndefinedOpcode>;
-//        using GrabBagOperation = 
-//            std::variant<
-//#define OneByte(title)
-//#define TwoByte(title, b) 
-//#define ThreeByte(title, b) 
-//#define FourByte(title, b) 
-//#define GrabBag(title, b) Core:: title,
-//#include "InstructionData.def"
-//#undef OneByte
-//#undef TwoByte
-//#undef ThreeByte
-//#undef FourByte
-//#undef GrabBag
-                //UndefinedOpcode>;
-
-//        using DecodedOperation = std::variant<
-//			OneByteOperation, 
-//			TwoByteOperation, 
-//              ThreeByteOperation, 
-//              FourByteOperation, 
-//              GrabBagOperation>;
-//
 		using DecodedOperation = std::variant<
-#define OneByte(title) Core:: title ,
-#define TwoByte(title, b) Core:: title ,
-#define ThreeByte(title, b) Core:: title ,
-#define FourByte(title, b) Core:: title ,
-#define GrabBag(title, b) Core:: title,
+#define X(title, b) Core:: title , 
 #include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
+#undef X
 			UndefinedOpcode>;
 
 	private:

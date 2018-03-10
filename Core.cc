@@ -423,11 +423,8 @@ void Core::dispatchInstruction() {
 						store(stackPointer.getAddress(), getSourceRegister(value.args).getValue());
 					} 
 #define IsType(t) std::is_same_v<T, t>
-					auto& dest = getDestinationRegister(value.args);
-					auto& src0 = getSourceRegister(value.args);
-					auto& src1 = getSource2Register(value.args);
 #define InvokeConv(bfun, cfun) \
-	dest.setValue( bfun ( cfun(src0) , cfun(src1) ))
+	getDestinationRegister(value.args).setValue( bfun ( cfun(getSourceRegister(value.args)) , cfun(getSource2Register(value.args)) ))
 #define InvokeS(t, func) \
 					else if constexpr (IsType( t )) { InvokeConv(func, intFunction); }
 #define InvokeU(t, func) \

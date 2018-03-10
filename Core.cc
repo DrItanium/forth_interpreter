@@ -371,54 +371,54 @@ void Core::dispatchInstruction() {
 					_pc.setValue(pop(TargetRegister::SP2));
 				} 
 					else if constexpr (std::is_same_v<T,Core::TypeValue>) {
-						std::cout << std::dec << dest.getInt();
+						std::cout << std::dec << getDestinationRegister(value.args).getInt();
 					} else if constexpr (std::is_same_v<T,Core::TypeValueUnsigned>) {
-						std::cout << std::hex << dest.getAddress() << "#";
+						std::cout << std::hex << getDestinationRegister(value.args).getAddress() << "#";
 					} else if constexpr (std::is_same_v<T,Core::TypeValueBoolean>) {
-						std::cout << std::boolalpha << dest.getTruth() << std::noboolalpha;
+						std::cout << std::boolalpha << getDestinationRegister(value.args).getTruth() << std::noboolalpha;
 					} else if constexpr (std::is_same_v<T,Core::TypeValueFloatingPoint>) {
-						std::cout << dest.getFP();
+						std::cout << getDestinationRegister(value.args).getFP();
 					} else if constexpr (std::is_same_v<T,Core::PrintChar>) {
-						auto c = char(dest.getAddress());
+						auto c = char(getDestinationRegister(value.args).getAddress());
 						std::cout << c;
 					} else if constexpr (std::is_same_v<T,Core::TypeDatum>) {
-						std::cout << dest.getValue();
+						std::cout << getDestinationRegister(value.args).getValue();
 					} else if constexpr (std::is_same_v<T, Core::ConditionalReturnSubroutine>) {
-						if (dest.getTruth()) {
-							dispatchOperation(Core::ReturnSubroutine());
+						if (getDestinationRegister(value.args).getTruth()) {
+							_pc.setValue(pop(TargetRegister::SP2));
 						}
 					} else if constexpr (std::is_same_v<T, Core::CallSubroutineIndirect>) {
 			    	    savePositionToSubroutineStack();
-						_pc.setValue(dest.getValue());
+						_pc.setValue(getDestinationRegister(value.args).getValue());
 					} else if constexpr (std::is_same_v<T, Core::JumpIndirect>) {
-						_pc.setValue(dest.getValue());
+						_pc.setValue(getDestinationRegister(value.args).getValue());
 					} else if constexpr (std::is_same_v<T, Core::ConditionalBranchIndirect>) {
-						if (dest.getTruth()) {
+						if (getDestinationRegister(value.args).getTruth()) {
 							_pc.setValue(getSourceRegister(value.args).getValue());
 						}
 					} else if constexpr (std::is_same_v<T, Core::ConditionalCallSubroutineIndirect>) {
-						if (dest.getTruth()) {
+						if (getDestinationRegister(value.args).getTruth()) {
 							savePositionToSubroutineStack();
-							_pc.setValue(dest.getValue());
+							_pc.setValue(getDestinationRegister(value.args).getValue());
 						}
 					} else if constexpr (std::is_same_v<T, Core::Load>) {
-						dest.setValue(loadWord(getSourceRegister(value.args).getAddress()));
+						getDestinationRegister(value.args).setValue(loadWord(getSourceRegister(value.args).getAddress()));
 					} else if constexpr (std::is_same_v<T, Core::Store>) {
-						store(dest.getAddress(), getSourceRegister(value.args).getValue());
+						store(getDestinationRegister(value.args).getAddress(), getSourceRegister(value.args).getValue());
 					} else if constexpr (std::is_same_v<T, Core::Move>) {
-						dest.setValue(getSourceRegister(value.args).getValue());
+						getDestinationRegister(value.args).setValue(getSourceRegister(value.args).getValue());
 					} else if constexpr (std::is_same_v<T, Core::Swap>) {
-						auto temp = dest.getValue();
-						dest.setValue(getSourceRegister(value.args).getValue());
+						auto temp = getDestinationRegister(value.args).getValue();
+						getDestinationRegister(value.args).setValue(getSourceRegister(value.args).getValue());
 						getSourceRegister(value.args).setValue(temp);
 					} else if constexpr (std::is_same_v<T, Core::PopRegister>) {
 						// pop dest, sp
 						auto& stackPointer = getSourceRegister(value.args);
-						dest.setValue(loadWord(stackPointer.getAddress()));
+						getDestinationRegister(value.args).setValue(loadWord(stackPointer.getAddress()));
 						stackPointer.increment(sizeof(Address));
 					} else if constexpr (std::is_same_v<T, Core::PushRegister>) {
 						// push sp, src
-						auto& stackPointer = dest;
+						auto& stackPointer = getDestinationRegister(value.args);
 						stackPointer.decrement(sizeof(Address));
 						store(stackPointer.getAddress(), getSourceRegister(value.args).getValue());
 					} 

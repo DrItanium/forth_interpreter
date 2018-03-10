@@ -193,37 +193,37 @@
 //	machine.addMachineCodeWord<popA, typevalb(ra)>(",b");
 //	machine.addMachineCodeWord<swap(ra, rb)>("swap.ab");
 //}
-//namespace forth {
-//void systemSetup(forth::Machine& machine) {
-//	// initial system values that we need to use
-//	forth::AssemblerBuilder init(0);
-//	init.addInstruction(
-//        storeImmediate64(forth::Machine::shouldKeepExecutingLocation, 1),
-//        storeImmediate64(forth::Machine::isCompilingLocation, 0),
-//        storeImmediate64(forth::Machine::ignoreInputLocation, 0),
-//        storeImmediate64(forth::Machine::subroutineStackEmptyLocation, 0xFF0000),
-//        storeImmediate64(forth::Machine::subroutineStackFullLocation, 0xFE0000),
-//        storeImmediate64(forth::Machine::parameterStackEmptyLocation, 0xFE0000),
-//        storeImmediate64(forth::Machine::parameterStackFullLocation, 0xFD0000),
-//        loadImmediate64(rx, forth::Machine::subroutineStackEmptyLocation),
-//        load(forth::TargetRegister::SP2, rx),
-//        loadImmediate64(rx, forth::Machine::parameterStackEmptyLocation),
-//        load(forth::TargetRegister::SP, rx),
-//		storeImmediate64(forth::Machine::terminateControlLoopLocation, "terminateControlLoop"),
-//		// now start using the other system variables to 
-//		forth::returnToNative(),
-//		label("terminateControlLoop"),
-//		loadImmediate64(TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
-//		forth::store(TargetRegister::X, TargetRegister::Zero),
-//		forth::returnToNative()
-//		);
-//
-//
-//		
-//		// setup the code fragment routines here
-//	machine.dispatchInstruction(init);
-//}
-//}
+namespace forth {
+void systemSetup(forth::Machine& machine) {
+	// initial system values that we need to use
+	forth::AssemblerBuilder init(0);
+	init.addInstruction(
+        storeImmediate64(forth::Machine::shouldKeepExecutingLocation, 1),
+        storeImmediate64(forth::Machine::isCompilingLocation, 0),
+        storeImmediate64(forth::Machine::ignoreInputLocation, 0),
+        storeImmediate64(forth::Machine::subroutineStackEmptyLocation, 0xFF0000),
+        storeImmediate64(forth::Machine::subroutineStackFullLocation, 0xFE0000),
+        storeImmediate64(forth::Machine::parameterStackEmptyLocation, 0xFE0000),
+        storeImmediate64(forth::Machine::parameterStackFullLocation, 0xFD0000),
+        loadImmediate64(TargetRegister::X, forth::Machine::subroutineStackEmptyLocation),
+        opLoad(forth::TargetRegister::SP2, TargetRegister::X),
+        loadImmediate64(TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
+        opLoad(forth::TargetRegister::SP, TargetRegister::X),
+		storeImmediate64(forth::Machine::terminateControlLoopLocation, "terminateControlLoop"),
+		// now start using the other system variables to 
+		forth::opLeaveExecutionLoop(),
+		label("terminateControlLoop"),
+		loadImmediate64(TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+		forth::opStore(TargetRegister::X, TargetRegister::Zero),
+		forth::opLeaveExecutionLoop()
+		);
+
+
+		
+		// setup the code fragment routines here
+	machine.dispatchInstruction(init);
+}
+}
 
 //template<auto op>
 //void addBinaryOperation(forth::Machine& mach, const std::string& name) {

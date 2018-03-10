@@ -204,69 +204,90 @@ class Core {
 #undef FourByte
 #undef GrabBag
 
-        using OneByteOperation = std::variant<
-#define OneByte(title) Core::title,
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b)
-#define GrabBag(title, b) 
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
-            UndefinedOpcode
-            >;
-        using TwoByteOperation = 
-            std::variant<
-#define OneByte(title)
-#define TwoByte(title, b) Core:: title,
-#define ThreeByte(title, b) 
-#define FourByte(title, b)
-#define GrabBag(title, b) 
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
-                UndefinedOpcode>;
-        using ThreeByteOperation =
-            std::variant<
-#define OneByte(title)
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) Core:: title,
-#define FourByte(title, b)
-#define GrabBag(title, b) 
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
-                UndefinedOpcode> ;
+//        using OneByteOperation = std::variant<
+//#define OneByte(title) Core::title,
+//#define TwoByte(title, b) 
+//#define ThreeByte(title, b) 
+//#define FourByte(title, b)
+//#define GrabBag(title, b) 
+//#include "InstructionData.def"
+//#undef OneByte
+//#undef TwoByte
+//#undef ThreeByte
+//#undef FourByte
+//#undef GrabBag
+//            UndefinedOpcode
+//            >;
+//        using TwoByteOperation = 
+//            std::variant<
+//#define OneByte(title)
+//#define TwoByte(title, b) Core:: title,
+//#define ThreeByte(title, b) 
+//#define FourByte(title, b)
+//#define GrabBag(title, b) 
+//#include "InstructionData.def"
+//#undef OneByte
+//#undef TwoByte
+//#undef ThreeByte
+//#undef FourByte
+//#undef GrabBag
+//                UndefinedOpcode>;
+//        using ThreeByteOperation =
+//            std::variant<
+//#define OneByte(title)
+//#define TwoByte(title, b) 
+//#define ThreeByte(title, b) Core:: title,
+//#define FourByte(title, b)
+//#define GrabBag(title, b) 
+//#include "InstructionData.def"
+//#undef OneByte
+//#undef TwoByte
+//#undef ThreeByte
+//#undef FourByte
+//#undef GrabBag
+//                UndefinedOpcode> ;
+//
+//        using FourByteOperation =
+//            std::variant<
+//#define OneByte(title)
+//#define TwoByte(title, b) 
+//#define ThreeByte(title, b) 
+//#define FourByte(title, b) Core:: title,
+//#define GrabBag(title, b) 
+//#include "InstructionData.def"
+//#undef OneByte
+//#undef TwoByte
+//#undef ThreeByte
+//#undef FourByte
+//#undef GrabBag
+//                UndefinedOpcode>;
+//        using GrabBagOperation = 
+//            std::variant<
+//#define OneByte(title)
+//#define TwoByte(title, b) 
+//#define ThreeByte(title, b) 
+//#define FourByte(title, b) 
+//#define GrabBag(title, b) Core:: title,
+//#include "InstructionData.def"
+//#undef OneByte
+//#undef TwoByte
+//#undef ThreeByte
+//#undef FourByte
+//#undef GrabBag
+                //UndefinedOpcode>;
 
-        using FourByteOperation =
-            std::variant<
-#define OneByte(title)
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b) Core:: title,
-#define GrabBag(title, b) 
-#include "InstructionData.def"
-#undef OneByte
-#undef TwoByte
-#undef ThreeByte
-#undef FourByte
-#undef GrabBag
-                UndefinedOpcode>;
-        using GrabBagOperation = 
-            std::variant<
-#define OneByte(title)
-#define TwoByte(title, b) 
-#define ThreeByte(title, b) 
-#define FourByte(title, b) 
+//        using DecodedOperation = std::variant<
+//			OneByteOperation, 
+//			TwoByteOperation, 
+//              ThreeByteOperation, 
+//              FourByteOperation, 
+//              GrabBagOperation>;
+//
+		using DecodedOperation = std::variant<
+#define OneByte(title) Core:: title ,
+#define TwoByte(title, b) Core:: title ,
+#define ThreeByte(title, b) Core:: title ,
+#define FourByte(title, b) Core:: title ,
 #define GrabBag(title, b) Core:: title,
 #include "InstructionData.def"
 #undef OneByte
@@ -274,14 +295,8 @@ class Core {
 #undef ThreeByte
 #undef FourByte
 #undef GrabBag
-                UndefinedOpcode>;
+			UndefinedOpcode>;
 
-        using DecodedOperation = std::variant<
-			OneByteOperation, 
-			TwoByteOperation, 
-              ThreeByteOperation, 
-              FourByteOperation, 
-              GrabBagOperation>;
 	private:
         void decodeArguments(OneRegister& args);
         void decodeArguments(TwoRegister& args);

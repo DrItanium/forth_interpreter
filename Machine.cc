@@ -121,10 +121,10 @@ namespace forth {
         currentTarget->wordToPush(elseBlock);
 		//compileMicrocodeInvoke(prepRegisters, currentTarget);
 	}
-	void Machine::compileMicrocodeInvoke(const Molecule& m, DictionaryEntry* current) {
-		current->addSpaceEntry(m._value);
-		current->wordToInvoke(_microcodeInvoke);
-	}
+	//void Machine::compileMicrocodeInvoke(const Molecule& m, DictionaryEntry* current) {
+	//	current->addSpaceEntry(m._value);
+	//	current->wordToInvoke(_microcodeInvoke);
+	//}
 	void Machine::elseCondition() {
 		if (!inCompilationMode()) {
 			throw Problem("else", "must be defining a word!");
@@ -445,17 +445,17 @@ namespace forth {
 		_compileTarget = new DictionaryEntry("");
 		_compileTarget->markFakeEntry();
 	}
-	void Machine::microcodeInvoke(const Molecule& m) {
-        if (inCompilationMode()) {
-            if (_compileTarget) {
-                compileMicrocodeInvoke(m, _compileTarget);
-            } else {
-                throw Problem("microcodeInvoke", "No compile target yet compiling!");
-            }
-        } else {
-			//dispatchInstruction(m);
-        }
-	}
+	//void Machine::microcodeInvoke(const Molecule& m) {
+    //    if (inCompilationMode()) {
+    //        if (_compileTarget) {
+    //            compileMicrocodeInvoke(m, _compileTarget);
+    //        } else {
+    //            throw Problem("microcodeInvoke", "No compile target yet compiling!");
+    //        }
+    //    } else {
+	//		//dispatchInstruction(m);
+    //    }
+	//}
 	void Machine::continueStatement() {
 		if (!inCompilationMode()) {
 			throw Problem("continue", "not compiling!");

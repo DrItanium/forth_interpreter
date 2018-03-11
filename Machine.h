@@ -128,10 +128,10 @@ namespace forth {
             void seeWord(const DictionaryEntry* entry);
 			std::string readWord(bool allowEscapedQuotes = false);
             void moveOrSwap(TargetRegister from, TargetRegister to, bool swap = false);
-            void moveRegister(const Molecule& m);
-            void swapRegisters(const Molecule& m);
-			void compileMicrocodeInvoke(const Molecule& m, DictionaryEntry* current);
-			void microcodeInvoke(const Molecule& m);
+            //void moveRegister(const Molecule& m);
+            //void swapRegisters(const Molecule& m);
+			//void compileMicrocodeInvoke(const Molecule& m, DictionaryEntry* current);
+			//void microcodeInvoke(const Molecule& m);
             void injectWord();
             void executeTop();
 			bool keepExecuting() noexcept;

@@ -205,15 +205,15 @@ void systemSetup(forth::Machine& machine) {
         storeImmediate64(forth::Machine::subroutineStackFullLocation, 0xFE0000),
         storeImmediate64(forth::Machine::parameterStackEmptyLocation, 0xFE0000),
         storeImmediate64(forth::Machine::parameterStackFullLocation, 0xFD0000),
-        loadImmediate64(TargetRegister::X, forth::Machine::subroutineStackEmptyLocation),
+        opLoadImmediate64(TargetRegister::X, forth::Machine::subroutineStackEmptyLocation),
         opLoad(forth::TargetRegister::SP2, TargetRegister::X),
-        loadImmediate64(TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
+        opLoadImmediate64(TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
         opLoad(forth::TargetRegister::SP, TargetRegister::X),
 		storeImmediate64(forth::Machine::terminateControlLoopLocation, "terminateControlLoop"),
 		// now start using the other system variables to 
 		forth::opLeaveExecutionLoop(),
 		label("terminateControlLoop"),
-		loadImmediate64(TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
+		opLoadImmediate64(TargetRegister::X, forth::Machine::shouldKeepExecutingLocation),
 		forth::opStore(TargetRegister::X, TargetRegister::Zero),
 		forth::opLeaveExecutionLoop()
 		);

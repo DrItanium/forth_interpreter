@@ -66,7 +66,7 @@ class AssemblerBuilder {
 #define DispatchFourRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1, TargetRegister src2) noexcept;
 #define DispatchFiveRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1, TargetRegister src2, TargetRegister src3) noexcept;
 #define DispatchSignedImm16(title)
-#define DispatchImmediate24(title)
+#define DispatchImmediate24(title) Core:: title op ## title (HalfAddress addr) noexcept;
 #define DispatchTwoRegisterWithImm16(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept;
 #define DispatchOneRegisterWithImm16(title) Core:: title op ## title (TargetRegister dest, QuarterAddress value) noexcept;
 #define DispatchOneRegisterWithImm64(title) Core:: title op ## title (TargetRegister dest, Address addr) noexcept;
@@ -94,7 +94,6 @@ class AssemblerBuilder {
 #undef DispatchOneRegisterWithImm64
 
 Core::Move zeroRegister(TargetRegister reg) noexcept;
-Core::LoadImmediate64 loadImmediate64(TargetRegister reg, Address value) noexcept;
 EagerInstruction useRegister(TargetRegister reg, EagerInstruction body) noexcept;
 Core::PopRegister popA() noexcept;
 Core::PopRegister popB() noexcept;
@@ -105,12 +104,12 @@ Core::PushRegister pushC() noexcept;
 EagerInstruction popAB() noexcept;
 Core::Swap swapAB() noexcept;
 EagerInstruction label(const std::string&);
-ResolvableLazyFunction opLoadImmediate16(TargetRegister r, const std::string& name);
-ResolvableLazyFunction opLoadImmediate32(TargetRegister r, const std::string& name);
-ResolvableLazyFunction opLoadImmediate64(TargetRegister r, const std::string& name);
-ResolvableLazyFunction opJumpAbsolute(const std::string& name);
+EagerInstruction opLoadImmediate16(TargetRegister r, const std::string& name);
+EagerInstruction opLoadImmediate32(TargetRegister r, const std::string& name);
+EagerInstruction opLoadImmediate64(TargetRegister r, const std::string& name);
+EagerInstruction opJumpAbsolute(const std::string& name);
 EagerInstruction opJump(const std::string& name);
-ResolvableLazyFunction opConditionalBranch(TargetRegister reg, const std::string& name);
+EagerInstruction opConditionalBranch(TargetRegister reg, const std::string& name);
 EagerInstruction opPrintChar(char c);
 EagerInstruction opPrintChar(const std::string& str);
 EagerInstruction opIndirectLoad(TargetRegister dest, TargetRegister src = TargetRegister::X);

@@ -144,8 +144,8 @@ class Core {
         };
         OperationKind(Immediate24) {
 			Immediate24() = default;
-			Immediate24(HalfAddress addr) : value(addr) { };
-            HalfAddress value;
+			Immediate24(HalfAddress addr) : imm24(addr) { };
+            HalfAddress imm24;
         };
         OperationKind(TwoRegisterWithImm16) {
 			TwoRegisterWithImm16() = default;

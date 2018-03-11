@@ -45,7 +45,7 @@ namespace forth {
 #define DispatchTwoRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src) noexcept { return op ## title ({dest, src}); }
 #define DispatchThreeRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1) noexcept { return op ## title ({dest, src, src1}); }
 #define DispatchSignedImm16(title)
-#define DispatchImmediate24(title)
+#define DispatchImmediate24(title) Core::title op ## title (HalfAddress addr) noexcept { return op ## title ({addr}); }
 #define DispatchTwoRegisterWithImm16(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept { return op ## title ( {dest, src, value}); }
 #define DispatchOneRegisterWithImm16(title) Core:: title op ## title (TargetRegister dest, QuarterAddress value) noexcept { return op ## title ( {dest, value}); }
 #define DispatchFourRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1, TargetRegister src2) noexcept { return op ## title ( { dest, src, src1, src2 }); }
@@ -80,9 +80,6 @@ namespace forth {
 #undef DispatchOneRegisterWithImm64
 	Core::Move zeroRegister(TargetRegister reg) noexcept {
 		return opMove(reg, TargetRegister::Zero);
-	}
-	Core::LoadImmediate64 loadImmediate64(TargetRegister reg, Address value) noexcept {
-		return opLoadImmediate64(reg, value);
 	}
 
 	EagerInstruction useRegister(TargetRegister reg, EagerInstruction body) noexcept {
@@ -135,55 +132,63 @@ namespace forth {
 							  };
 			ab.addInstruction(jmp, fn);
 		};
-		//return std::make_tuple(getInstructionWidth(FourByteOpcode::Jump), 
-		//					[name](AssemblerBuilder& ab, Address from) {
-		//						auto addr = ab.relativeLabelAddress(name, from);
-		//						if (addr > 32767 || addr < -32768) {
-		//							throw Problem("jumpRelative", "Can't encode label address into 16-bits");
-		//						} else {
-        //                            return opJump(addr);
-		//						}
-		//					   });
 	}
-	//SizedResolvableLazyFunction jumpAbsolute(const std::string& name) {
-	//	return std::make_tuple(getInstructionWidth(FourByteOpcode::JumpAbsolute),
-	//						   [name](AssemblerBuilder& ab, Address from) {
-	//								auto addr = ab.absoluteLabelAddress(name);
-	//								if (addr > 0xFFFF) {
-	//									throw Problem("jumpAbsolute", "Can't encode label address into 16-bits");
-	//								} else {
-	//									return opJumpAbsolute(HalfAddress(addr) & 0x00FFFFFF);
-	//								}
-	//						   });
-	//}
-	//SizedResolvableLazyFunction opLoadImmediate32(TargetRegister r, const std::string& name) {
-    //    return std::make_tuple(getInstructionWidth(GrabBagOpcode::LoadImmediate32),
-    //            [name, r](AssemblerBuilder& ab, Address _) {
-    //                return opLoadImmediate32(r, HalfAddress(ab.absoluteLabelAddress(name)) );
-    //            });
-	//}
-	//SizedResolvableLazyFunction opLoadImmediate16(TargetRegister r, const std::string& name) {
-    //    return std::make_tuple(getInstructionWidth(FourByteOpcode::UnsignedAddImmediate),
-    //            [name, r](AssemblerBuilder& ab, Address _) {
-    //                return opUnsignedAddImmediate(r, TargetRegister::Zero, QuarterAddress(ab.absoluteLabelAddress(name))); 
-    //            });
-	//}
-	ResolvableLazyFunction opLoadImmediate64(TargetRegister r, const std::string& name) {
-		return [name, r](AssemblerBuilder& ab, Address _) {
-			return opLoadImmediate64(r, ab.absoluteLabelAddress(name));
+	EagerInstruction opJumpAbsolute(const std::string& name) {
+		return [name](AssemblerBuilder& ab) {
+			auto jmp = opJumpAbsolute({HalfAddress(0)});
+			ResolvableLazyFunction fn = [name, &jmp](AssemblerBuilder& ab, Address from) {
+				auto addr = ab.absoluteLabelAddress(name);
+				if (addr > 0xFFFFFF) {
+					throw Problem("opJumpAbsolute", "Can't encode label that is outside the first 24 bits");
+				} else {
+					jmp.args.imm24 = (HalfAddress(addr) & 0x00FFFFFF);
+				}
+			};
+			ab.addInstruction(jmp, fn);
 		};
 	}
-	//SizedResolvableLazyFunction conditionalBranch(TargetRegister cond, const std::string& name) {
-	//	return std::make_tuple(getInstructionWidth(FourByteOpcode::ConditionalBranch),
-	//				[name, cond](AssemblerBuilder& ab, Address from) {
-	//					auto addr = ab.relativeLabelAddress(name, from);
-	//					if (addr > 32767 || addr < -32768) {
-	//						throw Problem("conditionalBranch", "Can't encode label into a relative 16-bit offset!");
-	//					} else {
-	//						return opConditionalBranch(cond, safeExtract(QuarterInteger(addr)));
-	//					}
-	//				});
-	//}
+	EagerInstruction opLoadImmediate32(TargetRegister r, const std::string& name) {
+		return [r, name](AssemblerBuilder& ab) {
+			auto ld = opLoadImmediate32(r, 0);
+			ResolvableLazyFunction fn = [name, &ld](AssemblerBuilder& ab, Address _) {
+				auto addr = ab.absoluteLabelAddress(name);
+				ld.args.imm32 = forth::getLowerHalf(addr);
+			};
+			ab.addInstruction(ld, fn);
+		};
+	}
+	EagerInstruction opLoadImmediate16(TargetRegister r, const std::string& name) {
+		return [r, name](AssemblerBuilder& ab) {
+			auto add = opUnsignedAddImmediate(r, TargetRegister::Zero, 0);
+			ResolvableLazyFunction fn = [name, &add](auto& ab, auto from) {
+				auto addr = ab.absoluteLabelAddress(name);
+				add.args.imm16 = QuarterAddress(addr);
+			};
+			ab.addInstruction(add, fn);
+		};
+	}
+	EagerInstruction opLoadImmediate64(TargetRegister r, const std::string& name) {
+		return [name, r](AssemblerBuilder& ab) {
+			auto ld = opLoadImmediate64(r, 0);
+			ResolvableLazyFunction fn = [name, &ld](AssemblerBuilder& ab, Address _) {
+				ld.args.imm64 = ab.absoluteLabelAddress(name);
+			};
+		};
+	}
+	EagerInstruction opConditionalBranch(TargetRegister r, const std::string& name) {
+		return [r, name](auto& ab) {
+			auto cond = opConditionalBranch(r, 0);
+			ResolvableLazyFunction fn = [name, &cond](auto& ab, auto from) {
+				auto addr = ab.relativeLabelAddress(name, from);
+				if (addr > 32767 || addr < -32768) {
+					throw Problem("opConditionalBranch", "Can't encode label into a relative 16-bit offset!");
+				} else {
+					cond.args.imm16 = safeExtract(QuarterInteger(addr));
+				}
+			};
+			ab.addInstruction(cond, fn);
+		};
+	}
     EagerInstruction indirectLoad(TargetRegister dest, TargetRegister src) {
         if (dest == src) {
             return [dest, src](AssemblerBuilder& ab) {

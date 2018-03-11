@@ -510,10 +510,10 @@ void Core::dispatchInstruction() {
 					savePositionToSubroutineStack();
 					_pc.setValue(_pc.getInt() + value.args.value);
 				} else if constexpr (std::is_same_v<T, JumpAbsolute>) {
-					_pc.setValue(Address(value.args.value));
+					_pc.setValue(Address(value.args.imm24));
 				} else if constexpr (std::is_same_v<T, CallSubroutineAbsolute>) {
 					savePositionToSubroutineStack();
-					_pc.setValue(Address(value.args.value));
+					_pc.setValue(Address(value.args.imm24));
 				} else if constexpr (std::is_same_v<T, JumpAbsolute>) {
                     _pc.setValue(value.args.value);
 				} else if constexpr (std::is_same_v<T, ConditionalBranch>) {
@@ -657,6 +657,9 @@ void Core::decodeArguments(SignedImm16& args) {
 }
 
 void Core::decodeArguments(Immediate24& args) {
+	auto lower16 = HalfAddress(extractQuarterAddressFromMolecule());
+	auto upper8 = HalfAddress(extractByteFromMolecule() << 16); 
+	args.imm24 = (upper8 | lower16) & 0x00FF'FFFF;
 }
 
 void Core::decodeArguments(OneRegisterWithImm16& args) {
@@ -739,9 +742,9 @@ void Core::encodeArguments(const SignedImm16& args) {
     storeAndAdvance(_pc, forth::getUpperHalf(args.value));
 }
 void Core::encodeArguments(const Immediate24& args) { 
-    storeAndAdvance(_pc, forth::getLowerHalf(forth::getLowerHalf(args.value)));
-    storeAndAdvance(_pc, forth::getUpperHalf(forth::getLowerHalf(args.value)));
-    storeAndAdvance(_pc, forth::getLowerHalf(forth::getUpperHalf(args.value)));
+    storeAndAdvance(_pc, forth::getLowerHalf(forth::getLowerHalf(args.imm24)));
+    storeAndAdvance(_pc, forth::getUpperHalf(forth::getLowerHalf(args.imm24)));
+    storeAndAdvance(_pc, forth::getLowerHalf(forth::getUpperHalf(args.imm24)));
 }
 void Core::encodeArguments(const OneRegisterWithImm16& args) { 
     encodeArguments(args.destination);

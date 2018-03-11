@@ -246,7 +246,7 @@ namespace forth {
             if (inCompilationMode()) {
                 _compileTarget->addSpaceEntry(value.address);
             } else {
-			    dispatchInstruction(loadImmediate64(TargetRegister::C, value.address), pushC());
+			    dispatchInstruction(opLoadImmediate64(TargetRegister::C, value.address), pushC());
             }
         };
 		if (word.empty()) { 

@@ -4,6 +4,19 @@
 #include "Core.h"
 
 namespace forth {
+	constexpr bool outOfRange16(Integer value) noexcept {
+		constexpr Integer maxRange = 32767;
+		constexpr Integer minRange = -32768;
+		return (value > maxRange) || (value < minRange);
+	}
+	static constexpr HalfAddress mask24 = 0x00FF'FFFF;
+	HalfAddress make24bit(Address input) {
+		if (input > mask24) {
+			throw Problem("make24bit", "Provided address is larger than 24-bits");
+		} else {
+			return HalfAddress(input) & mask24;
+		}
+	}
 	AssemblerBuilder::AssemblerBuilder(Address baseAddress) : _baseAddress(baseAddress), _currentLocation(baseAddress) {}
 	AssemblerBuilder::~AssemblerBuilder() {
 
@@ -124,7 +137,7 @@ namespace forth {
 			auto jmp = opJump(Core::SignedImm16(0));
 			ResolvableLazyFunction fn = [name, &jmp](AssemblerBuilder& ab, Address from) {
 								auto addr = ab.relativeLabelAddress(name);
-								if (addr > 32767 || addr < - 32768) {
+								if (outOfRange16(addr)) {
 									throw Problem("jumpRelative", "Can't encode label address into 16-bits");
 								} else {
 									jmp.args.value = addr;
@@ -137,12 +150,7 @@ namespace forth {
 		return [name](AssemblerBuilder& ab) {
 			auto jmp = opJumpAbsolute({HalfAddress(0)});
 			ResolvableLazyFunction fn = [name, &jmp](AssemblerBuilder& ab, Address from) {
-				auto addr = ab.absoluteLabelAddress(name);
-				if (addr > 0xFFFFFF) {
-					throw Problem("opJumpAbsolute", "Can't encode label that is outside the first 24 bits");
-				} else {
-					jmp.args.imm24 = (HalfAddress(addr) & 0x00FFFFFF);
-				}
+				jmp.args.imm24 = make24bit(ab.absoluteLabelAddress(name));
 			};
 			ab.addInstruction(jmp, fn);
 		};
@@ -151,18 +159,25 @@ namespace forth {
 		return [r, name](AssemblerBuilder& ab) {
 			auto ld = opLoadImmediate32(r, 0);
 			ResolvableLazyFunction fn = [name, &ld](AssemblerBuilder& ab, Address _) {
-				auto addr = ab.absoluteLabelAddress(name);
-				ld.args.imm32 = forth::getLowerHalf(addr);
+				ld.args.imm32 = forth::getLowerHalf(ab.absoluteLabelAddress(name));
 			};
 			ab.addInstruction(ld, fn);
+		};
+	}
+	EagerInstruction opLoadImmediate16(TargetRegister r, QuarterAddress value) {
+		return [r, value](AssemblerBuilder& ab) {
+			if (value == 0) {
+				ab.addInstruction(zeroRegister(r));
+			} else {
+				ab.addInstruction(opUnsignedAddImmediate(r, TargetRegister::Zero, value));
+			}
 		};
 	}
 	EagerInstruction opLoadImmediate16(TargetRegister r, const std::string& name) {
 		return [r, name](AssemblerBuilder& ab) {
 			auto add = opUnsignedAddImmediate(r, TargetRegister::Zero, 0);
 			ResolvableLazyFunction fn = [name, &add](auto& ab, auto from) {
-				auto addr = ab.absoluteLabelAddress(name);
-				add.args.imm16 = QuarterAddress(addr);
+				add.args.imm16 = QuarterAddress(ab.absoluteLabelAddress(name));
 			};
 			ab.addInstruction(add, fn);
 		};
@@ -180,7 +195,7 @@ namespace forth {
 			auto cond = opConditionalBranch(r, 0);
 			ResolvableLazyFunction fn = [name, &cond](auto& ab, auto from) {
 				auto addr = ab.relativeLabelAddress(name, from);
-				if (addr > 32767 || addr < -32768) {
+				if (outOfRange16(addr)) {
 					throw Problem("opConditionalBranch", "Can't encode label into a relative 16-bit offset!");
 				} else {
 					cond.args.imm16 = safeExtract(QuarterInteger(addr));
@@ -226,9 +241,9 @@ namespace forth {
             }
         };
     }
-	EagerInstruction storeImmediate64(TargetRegister dest, Address value) {
+	EagerInstruction opStoreImmediate64(TargetRegister dest, Address value) {
 		if (dest == TargetRegister::Temporary) {
-			throw Problem("storeImmediate64", "Destination cannot be temp as it will lead to unpredictable behavior");
+			throw Problem("opStoreImmediate64", "Destination cannot be temp as it will lead to unpredictable behavior");
 		}
 		return [dest, value](AssemblerBuilder& ab) {
 			ab.addInstruction(opLoadImmediate64(TargetRegister::Temporary, value),
@@ -236,21 +251,21 @@ namespace forth {
 		};
 	}
 
-	EagerInstruction storeImmediate64(Address addr, Address value) {
+	EagerInstruction opStoreImmediate64(Address addr, Address value) {
 		return [addr, value](AssemblerBuilder& ab) {
 			ab.addInstruction(opLoadImmediate64(TargetRegister::Temporary2, addr),
-							  storeImmediate64(TargetRegister::Temporary2, value));
+							  opStoreImmediate64(TargetRegister::Temporary2, value));
 		};
 	}
 
-	EagerInstruction storeImmediate64(TargetRegister addr, const std::string& value) {
+	EagerInstruction opStoreImmediate64(TargetRegister addr, const std::string& value) {
 		return [addr, value](AssemblerBuilder& ab) {
 			ab.addInstruction(opLoadImmediate64(TargetRegister::Temporary, value),
 							  opStore(addr, TargetRegister::Temporary));
 		};
 	}
 
-	EagerInstruction storeImmediate64(Address addr, const std::string& value) {
+	EagerInstruction opStoreImmediate64(Address addr, const std::string& value) {
 		return [addr, value](AssemblerBuilder& ab) {
 			ab.addInstruction(opLoadImmediate64(TargetRegister::Temporary2, addr),
 							  opLoadImmediate64(TargetRegister::Temporary, value),
@@ -260,13 +275,13 @@ namespace forth {
 
 	EagerInstruction subroutineCall(Address addr) {
 		return [addr](AssemblerBuilder& ab) {
-			if (addr <= 0x00FFFFFF) {
+			if (addr <= mask24) {
 				// do a non indirect call!
-				ab.addInstruction(opCallSubroutineAbsolute(HalfAddress(addr) & 0x00FFFFFF));
+				ab.addInstruction(opCallSubroutineAbsolute(HalfAddress(addr) & mask24));
 			} else {
 				// We need to load the address into temporary
 				// Then we call the address via temporary
-				ab.addInstruction(loadImmediate64(TargetRegister::Temporary, addr),
+				ab.addInstruction(opLoadImmediate64(TargetRegister::Temporary, addr),
 								  opCallSubroutineIndirect(TargetRegister::Temporary));
 			}
 		};
@@ -274,5 +289,56 @@ namespace forth {
 	EagerInstruction semicolon() {
 		return [](AssemblerBuilder& ab) { ab.addInstruction(opReturnSubroutine()); };
 	}
+
+	static constexpr Address mask16 = 0xFFFF;
+	static constexpr Address mask32 = 0xFFFF'FFFF;
+	static constexpr Address mask64 = 0xFFFF'FFFF'FFFF'FFFF;
+	EagerInstruction opStoreImmediate(TargetRegister addr, Address value) {
+		if (addr == TargetRegister::Temporary2) {
+			throw Problem("storeImmediate", "Cannot use Temporary2 as the address");
+		}
+		if (value == 0) {
+			return [addr](AssemblerBuilder& ab) {
+				ab.addInstruction(opStore(addr, TargetRegister::Zero));
+			};
+		} else {
+			return [addr, value](AssemblerBuilder& ab) {
+				ab.addInstruction(opLoadImmediate(TargetRegister::Temporary2, value),
+								  opStore(addr, TargetRegister::Temporary2));
+			};
+		}
+	}
+
+	EagerInstruction opLoadImmediate(TargetRegister addr, Address value) {
+		if (value == 0) {
+			return [addr](AssemblerBuilder& ab) {
+				ab.addInstruction(zeroRegister(addr));
+			};
+		} else {
+			return [addr, value](AssemblerBuilder& ab) {
+				if (value <= mask16) {
+					ab.addInstruction(opLoadImmediate16(addr, QuarterAddress(value)));
+				} else if (value <= mask32) {
+					ab.addInstruction(opLoadImmediate32(addr, HalfAddress(value)));
+				} else if (value == mask64) {
+					ab.addInstruction(opNot(addr, TargetRegister::Zero));
+				} else {
+					ab.addInstruction(opLoadImmediate64(addr, value));
+				}
+			};
+		}
+	}
+
+	EagerInstruction opStoreImmediate(Address addr, Address value) {
+		if (addr == 0) {
+			return opStoreImmediate(TargetRegister::Zero, value);
+		} else {
+			return [addr, value](AssemblerBuilder& ab) {
+				ab.addInstruction(opLoadImmediate(TargetRegister::Temporary, addr),
+								  opStoreImmediate(TargetRegister::Temporary, value));
+			};
+		}
+	}
+
 
 } // end namespace forth

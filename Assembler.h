@@ -104,6 +104,7 @@ Core::PushRegister pushC() noexcept;
 EagerInstruction popAB() noexcept;
 Core::Swap swapAB() noexcept;
 EagerInstruction label(const std::string&);
+EagerInstruction opLoadImmediate16(TargetRegister r, QuarterAddress value);
 EagerInstruction opLoadImmediate16(TargetRegister r, const std::string& name);
 EagerInstruction opLoadImmediate32(TargetRegister r, const std::string& name);
 EagerInstruction opLoadImmediate64(TargetRegister r, const std::string& name);
@@ -115,8 +116,8 @@ EagerInstruction opPrintChar(const std::string& str);
 EagerInstruction opIndirectLoad(TargetRegister dest, TargetRegister src = TargetRegister::X);
 EagerInstruction opPushImmediate64(const Datum& value, TargetRegister sp = TargetRegister::SP);
 EagerInstruction opPushImmediate64(Address value, TargetRegister sp = TargetRegister::SP);
-EagerInstruction subroutineCall(Address value);
-EagerInstruction semicolon();
+EagerInstruction opSubroutineCall(Address value);
+EagerInstruction opSemicolon();
 inline auto opPopRegister(TargetRegister reg) noexcept -> decltype(opPopRegister(reg, TargetRegister::SP)) { 
     return opPopRegister(reg, TargetRegister::SP); 
 }
@@ -124,14 +125,20 @@ inline auto opPushRegister(TargetRegister reg) noexcept -> decltype(opPushRegist
     return opPushRegister(reg, TargetRegister::SP); 
 }
 
-EagerInstruction storeImmediate64(TargetRegister addr, Address value);
-EagerInstruction storeImmediate64(TargetRegister addr, const std::string& value);
+EagerInstruction opStoreImmediate64(TargetRegister addr, Address value);
+EagerInstruction opStoreImmediate64(TargetRegister addr, const std::string& value);
 /**
  * load a specific address into X and a value into Temporary, then store temporary into X
  */
-EagerInstruction storeImmediate64(Address addr, Address value);
-EagerInstruction storeImmediate64(Address addr, const std::string& value);
+EagerInstruction opStoreImmediate64(Address addr, Address value);
+EagerInstruction opStoreImmediate64(Address addr, const std::string& value);
 
+/**
+ * Do some logic to select the best instruction to store an immediate with
+ */
+EagerInstruction opStoreImmediate(TargetRegister addr, Address value);
+EagerInstruction opStoreImmediate(Address addr, Address value);
+EagerInstruction opLoadImmediate(TargetRegister addr, Address value);
 } // end namespace forth
 
 #endif

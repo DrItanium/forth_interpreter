@@ -258,4 +258,21 @@ namespace forth {
 		};
 	}
 
+	EagerInstruction subroutineCall(Address addr) {
+		return [addr](AssemblerBuilder& ab) {
+			if (addr <= 0x00FFFFFF) {
+				// do a non indirect call!
+				ab.addInstruction(opCallSubroutineAbsolute(HalfAddress(addr) & 0x00FFFFFF));
+			} else {
+				// We need to load the address into temporary
+				// Then we call the address via temporary
+				ab.addInstruction(loadImmediate64(TargetRegister::Temporary, addr),
+								  opCallSubroutineIndirect(TargetRegister::Temporary));
+			}
+		};
+	}
+	EagerInstruction semicolon() {
+		return [](AssemblerBuilder& ab) { ab.addInstruction(opReturnSubroutine()); };
+	}
+
 } // end namespace forth

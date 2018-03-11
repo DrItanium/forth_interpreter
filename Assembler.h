@@ -115,6 +115,8 @@ EagerInstruction opPrintChar(const std::string& str);
 EagerInstruction opIndirectLoad(TargetRegister dest, TargetRegister src = TargetRegister::X);
 EagerInstruction opPushImmediate64(const Datum& value, TargetRegister sp = TargetRegister::SP);
 EagerInstruction opPushImmediate64(Address value, TargetRegister sp = TargetRegister::SP);
+EagerInstruction subroutineCall(Address value);
+EagerInstruction semicolon();
 inline auto opPopRegister(TargetRegister reg) noexcept -> decltype(opPopRegister(reg, TargetRegister::SP)) { 
     return opPopRegister(reg, TargetRegister::SP); 
 }

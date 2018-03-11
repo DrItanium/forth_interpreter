@@ -175,6 +175,7 @@ class Core {
 			OneRegisterWithImm64(TargetRegister dest, Address imm) : destination(dest), imm64(imm) { }
             DestinationRegister destination;
             Address imm64;
+
         };
 #undef OperationKind
 #define X(title, b) struct title final { \
@@ -222,18 +223,19 @@ class Core {
         void encodeArguments(const DestinationRegister& dest);
         void encodeArguments(HalfAddress value);
         void encodeArguments(QuarterAddress value);
-        void encodeArguments(OneRegister& args);
-        void encodeArguments(TwoRegister& args);
-        void encodeArguments(ThreeRegister& args);
-        void encodeArguments(FourRegister& args);
-        void encodeArguments(FiveRegister& args);
-        void encodeArguments(SignedImm16& args);
-        void encodeArguments(Immediate24& args);
-		void encodeArguments(OneRegisterWithImm16& args);
-		void encodeArguments(TwoRegisterWithImm16& args);
-		void encodeArguments(OneRegisterWithImm32& args);
-		void encodeArguments(OneRegisterWithImm64& args);
-
+        void encodeArguments(const OneRegister& args);
+        void encodeArguments(const TwoRegister& args);
+        void encodeArguments(const ThreeRegister& args);
+        void encodeArguments(const FourRegister& args);
+        void encodeArguments(const FiveRegister& args);
+        void encodeArguments(const SignedImm16& args);
+        void encodeArguments(const Immediate24& args);
+		void encodeArguments(const OneRegisterWithImm16& args);
+		void encodeArguments(const TwoRegisterWithImm16& args);
+		void encodeArguments(const OneRegisterWithImm32& args);
+		void encodeArguments(const OneRegisterWithImm64& args);
+		void encodeArguments(const NoArguments& args);
+		void encodeInstruction(const DecodedOperation& op);
     private:
 		Register& getDestinationRegister(const DestinationRegister& reg);
 		Register& getSourceRegister(const SourceRegister& reg);

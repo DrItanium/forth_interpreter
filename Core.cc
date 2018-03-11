@@ -718,47 +718,47 @@ void Core::encodeArguments(const DestinationRegister& dest, const SourceRegister
     storeAndAdvance(_pc, encodeRegisterPair(dest, src));
 }
 
-void Core::encodeArguments(OneRegister& args) { 
+void Core::encodeArguments(const OneRegister& args) { 
     encodeArguments(args.destination);
 }
-void Core::encodeArguments(TwoRegister& args) { 
+void Core::encodeArguments(const TwoRegister& args) { 
     encodeArguments(args.destination, args.source);
 }
-void Core::encodeArguments(ThreeRegister& args) { 
+void Core::encodeArguments(const ThreeRegister& args) { 
     encodeArguments(args.destination, args.source);
     encodeArguments(args.source2);
 }
-void Core::encodeArguments(FourRegister& args) { 
+void Core::encodeArguments(const FourRegister& args) { 
     encodeArguments(args.destination, args.source);
     encodeArguments(args.source2, args.source3);
 }
-void Core::encodeArguments(FiveRegister& args) { 
+void Core::encodeArguments(const FiveRegister& args) { 
     encodeArguments(args.destination, args.source);
     encodeArguments(args.source2, args.source3);
     encodeArguments(args.source4);
 }
-void Core::encodeArguments(SignedImm16& args) { 
+void Core::encodeArguments(const SignedImm16& args) { 
     storeAndAdvance(_pc, forth::getLowerHalf(args.value));
     storeAndAdvance(_pc, forth::getUpperHalf(args.value));
 }
-void Core::encodeArguments(Immediate24& args) { 
+void Core::encodeArguments(const Immediate24& args) { 
     storeAndAdvance(_pc, forth::getLowerHalf(forth::getLowerHalf(args.value)));
     storeAndAdvance(_pc, forth::getUpperHalf(forth::getLowerHalf(args.value)));
     storeAndAdvance(_pc, forth::getLowerHalf(forth::getUpperHalf(args.value)));
 }
-void Core::encodeArguments(OneRegisterWithImm16& args) { 
+void Core::encodeArguments(const OneRegisterWithImm16& args) { 
     encodeArguments(args.destination);
     encodeArguments(args.imm16);
 }
-void Core::encodeArguments(TwoRegisterWithImm16& args) { 
+void Core::encodeArguments(const TwoRegisterWithImm16& args) { 
     encodeArguments(args.destination, args.source);
     encodeArguments(args.imm16);
 }
-void Core::encodeArguments(OneRegisterWithImm32& args) { 
+void Core::encodeArguments(const OneRegisterWithImm32& args) { 
     encodeArguments(args.destination);
     encodeArguments(args.imm32);
 }
-void Core::encodeArguments(OneRegisterWithImm64& args) 
+void Core::encodeArguments(const OneRegisterWithImm64& args) 
 { 
     encodeArguments(args.destination);
     encodeArguments(getLowerHalf(args.imm64));
@@ -769,6 +769,15 @@ void Core::storeAndAdvance(Register& reg, byte value) {
     storeByte(reg.getAddress(), value);
     reg.increment();
 }
+
+void Core::encodeInstruction(const Core::DecodedOperation& op) {
+	std::visit([this](auto&& value) {
+				using T = std::decay_t<decltype(value)>;
+				storeAndAdvance(_pc, byte(value.getOpcode()));
+				encodeArguments(value.args);
+			}, op);
+}
+void Core::encodeArguments(const NoArguments&) { }
 
 
 } // namespace forth

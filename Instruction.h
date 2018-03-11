@@ -10,17 +10,6 @@
 #include <optional>
 namespace forth {
 
-union Molecule {
-    Molecule(Address v);
-    Molecule(const Molecule& other);
-    Address _value;
-    byte backingStore[sizeof(Address)];
-
-    byte getByte(Address index) const;
-    QuarterAddress getQuarterAddress(Address index) const;
-	QuarterInteger getQuarterOffset(Address index) const;
-	Address getImm48(Address index) const;
-};
 enum class TargetRegister : byte {
     Zero, // always zero
     A,

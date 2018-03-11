@@ -47,9 +47,6 @@ namespace forth {
 	const DictionaryEntry* Register::getWord() const noexcept {
 		return _value.entry; 
 	}
-	Molecule Register::getMolecule() const noexcept { 
-		return static_cast<Molecule>(_value.address); 
-	}
 	void Register::reset() {
 		if (!_readonly) {
 			_value.address = 0;

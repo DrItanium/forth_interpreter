@@ -14,7 +14,6 @@ namespace forth {
         FloatingPoint,
         Boolean,
         Word,
-        Molecule,
         DictionaryEntry,
         Count,
     };
@@ -74,7 +73,6 @@ namespace forth {
             Integer getInt() const noexcept;
             Address getAddress() const noexcept;
             const DictionaryEntry* getWord() const noexcept;
-            Molecule getMolecule() const noexcept;
             bool isReadonly() const noexcept { return _readonly; }
             void reset();
             void increment(Address amount = 1);

@@ -545,10 +545,7 @@ void Core::dispatchInstruction() {
 #undef InvokeSU
 #define IsType(t) std::is_same_v<T, t>
 #define InvokeConv(bfun, cfun) \
-	auto& dest = getDestinationRegister(value.args); \
-	auto& src0 = getSourceRegister(value.args); \
-	auto& src1 = getSourceRegister(value.args.source2); \
-	dest.setValue( bfun ( cfun(src0) , cfun(src1) ))
+	getDestinationRegister(value.args).setValue( bfun ( cfun(getSourceRegister(value.args)) , cfun(getSourceRegister(value.args.source2)) ))
 #define InvokeS(t, func) \
 					else if constexpr (IsType( t )) { InvokeConv(func, intFunction); }
 #define InvokeU(t, func) \
@@ -617,7 +614,7 @@ void Core::dispatchInstruction() {
 				} else if constexpr (std::is_same_v<T, LoadImmediate64>) {
 					getDestinationRegister(value.args).setValue(Address(value.args.imm64));
 				} else {
-					static_assert(AlwaysFalse<T>::value, "Unimplemented grab bag operation!");
+					static_assert(AlwaysFalse<T>::value, "Unimplemented instruction!");
 				}
 					std::cout.setf(flags);
 				}, result.value());

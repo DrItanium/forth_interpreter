@@ -53,7 +53,7 @@ namespace forth {
 #define DispatchOneRegisterWithImm64(title) Core:: title op ## title (TargetRegister dest, Address addr) noexcept { return op ## title ( {dest, addr}); }
 #define DispatchOneRegisterWithImm48(title) Core:: title op ## title (TargetRegister dest, Address addr) noexcept { return op ## title ( {dest, addr}); }
 #define DispatchOneRegisterWithImm32(title) Core:: title op ## title (TargetRegister dest, HalfAddress addr) noexcept { return op ## title ( {dest, addr}); }
-#define DispatchNoArguments(title) 
+#define DispatchNoArguments(title) Core:: title op ## title () noexcept { return Core:: title () ; }
 #define X(title, b) \
 	Core:: title op ## title (const Core:: b & x) noexcept { \
 		Core:: title value; \
@@ -119,11 +119,7 @@ namespace forth {
 	}
 	void AssemblerBuilder::addInstruction(const Core::DecodedOperation& op) {
 		_operations.emplace(_currentLocation, op);
-		byte result = std::visit([](auto&& value) constexpr 
-				{ 
-					return value.size(); 
-				}, 
-				op);
+		byte result = std::visit([](auto&& value) constexpr { return value.size(); }, op);
 		_currentLocation += result;
 	}
 	EagerInstruction opJump(const std::string& name) {
@@ -172,12 +168,11 @@ namespace forth {
     //                return opUnsignedAddImmediate(r, TargetRegister::Zero, QuarterAddress(ab.absoluteLabelAddress(name))); 
     //            });
 	//}
-	//SizedResolvableLazyFunction opLoadImmediate64(TargetRegister r, const std::string& name) {
-    //    return std::make_tuple(getInstructionWidth(GrabBagOpcode::LoadImmediate64),
-    //            [name, r](AssemblerBuilder& ab, Address _) {
-    //                return opLoadImmediate64(r, ab.absoluteLabelAddress(name));
-    //            });
-	//}
+	ResolvableLazyFunction opLoadImmediate64(TargetRegister r, const std::string& name) {
+		return [name, r](AssemblerBuilder& ab, Address _) {
+			return opLoadImmediate64(r, ab.absoluteLabelAddress(name));
+		};
+	}
 	//SizedResolvableLazyFunction conditionalBranch(TargetRegister cond, const std::string& name) {
 	//	return std::make_tuple(getInstructionWidth(FourByteOpcode::ConditionalBranch),
 	//				[name, cond](AssemblerBuilder& ab, Address from) {
@@ -204,14 +199,14 @@ namespace forth {
             };
         }
     }
-    EagerInstruction pushImmediate(Address value, TargetRegister sp) {
+    EagerInstruction opPushImmediate64(Address value, TargetRegister sp) {
         return [value, sp](AssemblerBuilder& ab) {
             ab.addInstruction(opLoadImmediate64(TargetRegister::Temporary, value),
                               opPushRegister(TargetRegister::Temporary, sp));
         };
     }
-    EagerInstruction pushImmediate(const Datum& value, TargetRegister sp) {
-        return pushImmediate(value.address, sp);
+    EagerInstruction opPushImmediate64(const Datum& value, TargetRegister sp) {
+        return opPushImmediate64(value.address, sp);
     }
     EagerInstruction opPrintChar(char c) {
         return [c](AssemblerBuilder& ab) {
@@ -235,9 +230,6 @@ namespace forth {
 							  opStore(dest, TargetRegister::Temporary));
 		};
 	}
-	EagerInstruction storeImmediate64(Address value) {
-		return storeImmediate64(TargetRegister::X, value);
-	}
 
 	EagerInstruction storeImmediate64(Address addr, Address value) {
 		return [addr, value](AssemblerBuilder& ab) {
@@ -246,14 +238,19 @@ namespace forth {
 		};
 	}
 
-	//EagerInstruction storeImmediate64(Address addr, const std::string& value) {
-	//	return [addr, value](AssemblerBuilder& ab) {
-	//		ResolvableLazyFunction fn = 
-	//			[addr, value](AssemblerBuilder& ab, Address from) {
+	EagerInstruction storeImmediate64(TargetRegister addr, const std::string& value) {
+		return [addr, value](AssemblerBuilder& ab) {
+			ab.addInstruction(opLoadImmediate64(TargetRegister::Temporary, value),
+							  opStore(addr, TargetRegister::Temporary));
+		};
+	}
 
-	//			};
-	//		ab.addInstruction(
-	//	};
-	//}
+	EagerInstruction storeImmediate64(Address addr, const std::string& value) {
+		return [addr, value](AssemblerBuilder& ab) {
+			ab.addInstruction(opLoadImmediate64(TargetRegister::Temporary2, addr),
+							  opLoadImmediate64(TargetRegister::Temporary, value),
+							  opStore(TargetRegister::Temporary2, TargetRegister::Temporary));
+		};
+	}
 
 } // end namespace forth

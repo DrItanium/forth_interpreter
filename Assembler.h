@@ -50,7 +50,7 @@ class AssemblerBuilder {
 		void addInstruction(T first, Rest&& ... rest) {
 			addInstruction(first);
 			if constexpr (sizeof...(rest) > 0) {
-				addInstruction<Rest...>(std::move(rest)...);
+				addInstruction(std::move(rest)...);
 			}
 		}
 
@@ -72,8 +72,8 @@ class AssemblerBuilder {
 #define DispatchOneRegisterWithImm64(title) Core:: title op ## title (TargetRegister dest, Address addr) noexcept;
 #define DispatchOneRegisterWithImm48(title) Core:: title op ## title (TargetRegister dest, Address addr) noexcept;
 #define DispatchOneRegisterWithImm32(title) Core:: title op ## title (TargetRegister dest, HalfAddress addr) noexcept;
-#define DispatchNoArguments(title)
-#define X(title, b) Core:: title op ## title () noexcept ; \
+#define DispatchNoArguments(title) Core:: title op ## title () noexcept;
+#define X(title, b) Core:: title op ## title (const Core:: b & x) noexcept ; \
 	INDIRECTION(Dispatch, b)(title);
 #define FirstX(title, b) X(title, b)
 #include "InstructionData.def"
@@ -114,9 +114,8 @@ ResolvableLazyFunction opConditionalBranch(TargetRegister reg, const std::string
 EagerInstruction opPrintChar(char c);
 EagerInstruction opPrintChar(const std::string& str);
 EagerInstruction opIndirectLoad(TargetRegister dest, TargetRegister src = TargetRegister::X);
-EagerInstruction opPushImmediate(const Datum& value, TargetRegister sp = TargetRegister::SP);
-EagerInstruction opPushImmediate(Address value, TargetRegister sp = TargetRegister::SP);
-ResolvableLazyFunction opPushImmediate(const std::string& name, TargetRegister sp = TargetRegister::SP);
+EagerInstruction opPushImmediate64(const Datum& value, TargetRegister sp = TargetRegister::SP);
+EagerInstruction opPushImmediate64(Address value, TargetRegister sp = TargetRegister::SP);
 inline auto opPopRegister(TargetRegister reg) noexcept -> decltype(opPopRegister(reg, TargetRegister::SP)) { 
     return opPopRegister(reg, TargetRegister::SP); 
 }
@@ -124,11 +123,8 @@ inline auto opPushRegister(TargetRegister reg) noexcept -> decltype(opPushRegist
     return opPushRegister(reg, TargetRegister::SP); 
 }
 
-/**
- * Store into register X our contents!
- */
-EagerInstruction storeImmediate64(Address value);
 EagerInstruction storeImmediate64(TargetRegister addr, Address value);
+EagerInstruction storeImmediate64(TargetRegister addr, const std::string& value);
 /**
  * load a specific address into X and a value into Temporary, then store temporary into X
  */

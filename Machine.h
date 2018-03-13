@@ -10,6 +10,7 @@
 #include <sstream>
 #include "Core.h"
 #include "Assembler.h"
+#include <stack>
 
 namespace forth {
 	class Machine {
@@ -162,6 +163,7 @@ namespace forth {
 			Core _core;
 			const DictionaryEntry* _microcodeInvoke = nullptr;
             std::list<std::string> _stringCache;
+            std::stack<Address, std::list<Address>> _jitCacheAddresses;
 	};
 } // end namespace forth
 

@@ -363,6 +363,23 @@ namespace forth {
         return opMemoryEquals(dest, TargetRegister::SP, Machine::parameterStackFullLocation);
     }
 
+    EagerInstruction ifThenElseStatement(TargetRegister cond, Address onTrue, Address onFalse) {
+        if (onFalse == Address(-1)) {
+            return [cond, onTrue](auto& ab) {
+                ab.addInstruction(opLoadImmediate(TargetRegister::Temporary, onTrue),
+                        opConditionalCallSubroutineIndirect(cond, TargetRegister::Temporary));
+            };
+        } else {
+            return [cond, onTrue, onFalse](auto& ab) {
+                constexpr auto t = TargetRegister::Temporary;
+                constexpr auto f = TargetRegister::Temporary2;
+                ab.addInstruction(opLoadImmediate(t, onTrue),
+                                  opLoadImmediate(t, onFalse),
+                                  opCallIfStatement(cond, t, f));
+            };
+        }
+    }
+
 
 
 } // end namespace forth

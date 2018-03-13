@@ -149,6 +149,14 @@ inline auto opPopRegisterAB() noexcept -> EagerInstruction {
                 opPopRegisterB());
     };
 }
+inline auto opPopRegisterCAB() noexcept -> EagerInstruction {
+    return [](AssemblerBuilder& ab) {
+        ab.addInstruction(opPopRegisterC(),
+                          opPopRegisterAB());
+    };
+}
+
+EagerInstruction ifThenElseStatement(TargetRegister cond, Address onTrue, Address onFalse = Address(-1));
 
 } // end namespace forth
 

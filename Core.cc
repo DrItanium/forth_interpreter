@@ -613,6 +613,15 @@ void Core::dispatchInstruction() {
 					getDestinationRegister(value.args).setValue(Address(value.args.imm32));
 				} else if constexpr (std::is_same_v<T, LoadImmediate64>) {
 					getDestinationRegister(value.args).setValue(Address(value.args.imm64));
+                } else if constexpr (std::is_same_v<T, IfStatement>) {
+                    _pc.setValue(getDestinationRegister(value.args).getTruth() ?
+                            getSourceRegister(value.args).getAddress() : 
+                            getSource2Register(value.args).getAddress());
+                } else if constexpr (std::is_same_v<T, CallIfStatement>) {
+                    savePositionToSubroutineStack();
+                    _pc.setValue(getDestinationRegister(value.args).getTruth() ?
+                            getSourceRegister(value.args).getAddress() : 
+                            getSource2Register(value.args).getAddress());
 				} else {
 					static_assert(AlwaysFalse<T>::value, "Unimplemented instruction!");
 				}

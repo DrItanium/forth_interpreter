@@ -15,7 +15,7 @@ X(PrintChar, OneRegister)          // print a character stored in a register
 X(TypeDatum, OneRegister)          // print the register with all of its contents
 X(ConditionalReturnSubroutine, OneRegister)
 X(CallSubroutineIndirect, OneRegister)
-X(JumpIndirect, TwoRegister)
+X(JumpIndirect, OneRegister)
 X(ConditionalBranchIndirect, TwoRegister)
 X(ConditionalCallSubroutineIndirect, TwoRegister)
 X(Load, TwoRegister)
@@ -125,4 +125,6 @@ X(FloatingPointEquals, ThreeRegister)
 X(Pow, ThreeRegister)
 X(FloatingPointPow, ThreeRegister)
 X(PowUnsigned, ThreeRegister)
+X(IfStatement, ThreeRegister) // jump to one of two locations based off of the condition
+X(CallIfStatement, ThreeRegister) // call one of the two locations based off of the condition
 

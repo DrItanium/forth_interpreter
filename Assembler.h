@@ -95,14 +95,6 @@ class AssemblerBuilder {
 
 Core::Move zeroRegister(TargetRegister reg) noexcept;
 EagerInstruction useRegister(TargetRegister reg, EagerInstruction body) noexcept;
-Core::PopRegister popA() noexcept;
-Core::PopRegister popB() noexcept;
-Core::PopRegister popC() noexcept;
-Core::PushRegister pushA() noexcept;
-Core::PushRegister pushB() noexcept;
-Core::PushRegister pushC() noexcept;
-EagerInstruction popAB() noexcept;
-Core::Swap swapAB() noexcept;
 EagerInstruction label(const std::string&);
 EagerInstruction opLoadImmediate16(TargetRegister r, QuarterAddress value);
 EagerInstruction opLoadImmediate16(TargetRegister r, const std::string& name);
@@ -139,10 +131,25 @@ EagerInstruction opStoreImmediate64(Address addr, const std::string& value);
 EagerInstruction opStoreImmediate(TargetRegister addr, Address value);
 EagerInstruction opStoreImmediate(Address addr, Address value);
 EagerInstruction opLoadImmediate(TargetRegister addr, Address value);
-EagerInstruction opParameterStackEmpty(Address emptyAddress);
-EagerInstruction opParameterStackFull(Address fullAddress);
-EagerInstruction opSubroutineStackEmpty(Address emptyAddress);
-EagerInstruction opSubroutineStackFull(Address fullAddress);
+EagerInstruction opEquals(TargetRegister destination, TargetRegister src, Address addr);
+EagerInstruction opMemoryEquals(TargetRegister destination, TargetRegister src, Address memLoc);
+EagerInstruction opSubroutineStackEmpty(TargetRegister dest);
+EagerInstruction opSubroutineStackFull(TargetRegister dest);
+EagerInstruction opParameterStackEmpty(TargetRegister dest);
+EagerInstruction opParameterStackFull(TargetRegister dest);
+inline auto opPopRegisterA() noexcept -> decltype(opPopRegister(TargetRegister::A)) { return opPopRegister(TargetRegister::A); }
+inline auto opPopRegisterB() noexcept -> decltype(opPopRegister(TargetRegister::B)) { return opPopRegister(TargetRegister::B); }
+inline auto opPopRegisterC() noexcept -> decltype(opPopRegister(TargetRegister::C)) { return opPopRegister(TargetRegister::C); }
+inline auto opPushRegisterA() noexcept -> decltype(opPushRegister(TargetRegister::A)) { return opPushRegister(TargetRegister::A); }
+inline auto opPushRegisterB() noexcept -> decltype(opPushRegister(TargetRegister::B)) { return opPushRegister(TargetRegister::B); }
+inline auto opPushRegisterC() noexcept -> decltype(opPushRegister(TargetRegister::C)) { return opPushRegister(TargetRegister::C); }
+inline auto opPopRegisterAB() noexcept -> EagerInstruction {
+    return [](AssemblerBuilder& ab) {
+        ab.addInstruction(opPopRegisterA(), 
+                opPopRegisterB());
+    };
+}
+
 } // end namespace forth
 
 #endif

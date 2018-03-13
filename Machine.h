@@ -24,6 +24,7 @@ namespace forth {
 			static constexpr Address subroutineStackFullLocation = Core::sp2StackFull;
 			static constexpr Address parameterStackEmptyLocation = Core::spStackEmpty;
 			static constexpr Address parameterStackFullLocation = Core::spStackFull;
+            static constexpr Address jitCacheLocation = 0x1000;
 			static constexpr Address jumpTableBase = 0x1000; // byte based
             static constexpr Address builtinRoutinesStart = 0x2000; 
             // capacity variables for the two stacks, each one has 64k worth of data

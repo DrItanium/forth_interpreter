@@ -2,6 +2,7 @@
 #include "Instruction.h"
 #include "Assembler.h"
 #include "Core.h"
+#include "Machine.h"
 
 namespace forth {
 	constexpr bool outOfRange16(Integer value) noexcept {
@@ -102,25 +103,10 @@ namespace forth {
 							  opPopRegister(reg));
 		};
 	}
-	EagerInstruction popAB() noexcept {
-		return [](AssemblerBuilder& ab) {
-			ab.addInstruction(popA(), popB());
-		};
-	}
-
-	Core::Swap swapAB() noexcept {
-		return opSwap({TargetRegister::A, TargetRegister::B});
-	}
 
 	EagerInstruction label(const std::string& str) {
 		return [str](auto& ab) { ab.labelHere(str); };
 	}
-	Core::PopRegister popA() noexcept { return opPopRegister(TargetRegister::A, TargetRegister::SP); }
-	Core::PopRegister popB() noexcept { return opPopRegister(TargetRegister::B, TargetRegister::SP); }
-	Core::PopRegister popC() noexcept { return opPopRegister(TargetRegister::C, TargetRegister::SP); }
-	Core::PushRegister pushA() noexcept { return opPushRegister(TargetRegister::A, TargetRegister::SP); }
-	Core::PushRegister pushB() noexcept { return opPushRegister(TargetRegister::B, TargetRegister::SP); }
-	Core::PushRegister pushC() noexcept { return opPushRegister(TargetRegister::C, TargetRegister::SP); }
 	void AssemblerBuilder::addInstruction(EagerInstruction fn) { fn(*this); }
 	void AssemblerBuilder::addInstruction(ResolvableLazyFunction fn) {
 		_toResolve.emplace_back([from = _currentLocation, fn](AssemblerBuilder& ab) {
@@ -339,6 +325,43 @@ namespace forth {
 			};
 		}
 	}
+
+    EagerInstruction opEquals(TargetRegister dest, TargetRegister src, Address addr) {
+        if (dest == TargetRegister::Temporary2 || src == TargetRegister::Temporary2) {
+            throw Problem("opEquals", "Cannot use temporary2 as destination or source!");
+        }
+        if (addr == 0) {
+            return [dest, src](AssemblerBuilder& ab) { ab.addInstruction(opEquals(dest, src, TargetRegister::Zero)); };
+        } else {
+            return [dest, src, addr](AssemblerBuilder& ab) {
+                ab.addInstruction(opLoadImmediate(TargetRegister::Temporary2, addr),
+                                  opEquals(dest, src, TargetRegister::Temporary2));
+            };
+        }
+    }
+    EagerInstruction opMemoryEquals(TargetRegister dest, TargetRegister src, Address addr) {
+        if (dest == TargetRegister::Temporary2 || src == TargetRegister::Temporary2) {
+            throw Problem("opEquals", "Cannot use temporary2 as destination or source!");
+        }
+        return [dest, src, addr](AssemblerBuilder& ab) {
+            ab.addInstruction(opLoadImmediate(TargetRegister::Temporary2, addr),
+                              opLoad(TargetRegister::Temporary2, TargetRegister::Temporary2),
+                              opEquals(dest, src, TargetRegister::Temporary2));
+        };
+    }
+
+    EagerInstruction opSubroutineStackEmpty(TargetRegister dest) {
+        return opMemoryEquals(dest, TargetRegister::SP2, Machine::subroutineStackEmptyLocation);
+    }
+    EagerInstruction opSubroutineStackFull(TargetRegister dest) {
+        return opMemoryEquals(dest, TargetRegister::SP2, Machine::subroutineStackFullLocation);
+    }
+    EagerInstruction opParameterStackEmpty(TargetRegister dest) {
+        return opMemoryEquals(dest, TargetRegister::SP, Machine::parameterStackEmptyLocation);
+    }
+    EagerInstruction opParameterStackFull(TargetRegister dest) {
+        return opMemoryEquals(dest, TargetRegister::SP, Machine::parameterStackFullLocation);
+    }
 
 
 } // end namespace forth

@@ -246,7 +246,7 @@ namespace forth {
             if (inCompilationMode()) {
                 _compileTarget->addSpaceEntry(value.address);
             } else {
-			    dispatchInstruction(opLoadImmediate64(TargetRegister::C, value.address), pushC());
+			    dispatchInstruction(opLoadImmediate64(TargetRegister::C, value.address), opPushRegisterC());
             }
         };
 		if (word.empty()) { 
@@ -260,7 +260,7 @@ namespace forth {
             if (inCompilationMode()) {
                 _compileTarget->addSpaceEntry(true);
             } else {
-			    //dispatchInstruction(addiu(TargetRegister::C, TargetRegister::Zero, 1), pushC());
+			    //dispatchInstruction(addiu(TargetRegister::C, TargetRegister::Zero, 1), opPushRegisterC());
             }
 			return true;
 		}
@@ -268,7 +268,7 @@ namespace forth {
             if (inCompilationMode()) {
                 _compileTarget->addSpaceEntry(false);
             } else {
-			    dispatchInstruction(zeroRegister(TargetRegister::C), pushC());
+			    dispatchInstruction(zeroRegister(TargetRegister::C), opPushRegisterC());
             }
 			return true;
 		}

@@ -139,6 +139,10 @@ EagerInstruction opStoreImmediate64(Address addr, const std::string& value);
 EagerInstruction opStoreImmediate(TargetRegister addr, Address value);
 EagerInstruction opStoreImmediate(Address addr, Address value);
 EagerInstruction opLoadImmediate(TargetRegister addr, Address value);
+EagerInstruction opParameterStackEmpty(Address emptyAddress);
+EagerInstruction opParameterStackFull(Address fullAddress);
+EagerInstruction opSubroutineStackEmpty(Address emptyAddress);
+EagerInstruction opSubroutineStackFull(Address fullAddress);
 } // end namespace forth
 
 #endif

@@ -10,7 +10,6 @@
 #include <sstream>
 #include "Core.h"
 #include "Assembler.h"
-#include <stack>
 
 namespace forth {
 	class Machine {
@@ -25,8 +24,104 @@ namespace forth {
 			static constexpr Address subroutineStackFullLocation = Core::sp2StackFull;
 			static constexpr Address parameterStackEmptyLocation = Core::spStackEmpty;
 			static constexpr Address parameterStackFullLocation = Core::spStackFull;
-			static constexpr Address jitCacheLocation = 0x1000; // byte based
+			static constexpr Address jumpTableBase = 0x1000; // byte based
+            static constexpr Address builtinRoutinesStart = 0x2000; 
             // capacity variables for the two stacks, each one has 64k worth of data
+        public:
+            // list of builtins with assembly routines
+            enum class BuiltinRoutines {
+                StoreValue, // ( addr value -- )
+                /*
+                 * pop A, SP
+                 * pop B, SP
+                 * store B, A
+                 * ret
+                 */
+                LoadValue, // ( addr -- value )
+                /*
+                 * pop A, SP
+                 * load C, A
+                 * push C, SP
+                 * ret
+                 */
+                WriteFalse, // ( addr -- )
+                /*
+                 * push Zero, SP
+                 * call StoreValue
+                 * ret
+                 */
+                WriteTrue, // ( addr -- )
+                /*
+                 * addiu A = Zero, 1
+                 * push A, SP
+                 * call StoreValue
+                 * ret
+                 */
+                GetParameterStackFull, // ( -- addr)
+                /* 
+                 * loadimm64 A, Core::spStackFull
+                 * push A, SP
+                 * call LoadValue
+                 * ret
+                 */
+                GetParameterStackEmpty, // ( -- addr)
+                /* 
+                 * loadimm64 A, Core::spStackEmpty
+                 * push A, SP
+                 * call LoadValue
+                 * ret
+                 */
+                GetSubroutineStackFull, // ( -- addr)
+                /* 
+                 * loadimm64 A, Core::sp2StackFull
+                 * push A, SP
+                 * call LoadValue
+                 * ret
+                 */
+                GetSubroutineStackEmpty, // ( -- addr)
+                /* 
+                 * loadimm64 A, Core::sp2StackEmpty
+                 * push A, SP
+                 * call LoadValue
+                 * ret
+                 */
+                ClearSubroutineStack, // ( -- )
+                /*
+                 * call GetSubroutineStackEmpty
+                 * pop A, SP
+                 * move SP2, A
+                 * ret
+                 */
+                ClearParameterStack, // ( -- )
+                /*
+                 * call GetParameterStackEmpty
+                 * pop A, SP
+                 * move SP, A
+                 * ret
+                 */
+                EqualsAddress, // ( a b -- t )
+                /* 
+                 * pop A, SP
+                 * pop B, SP
+                 * cmpeq C = A, B
+                 * push C, SP
+                 * ret
+                 */
+                ParameterStackEmpty,
+                ParameterStackFull,
+                ActivateCompilationMode,
+                DeactivateCompilationMode,
+                InCompilationMode,
+                DispatchInstruction, // ( addr -- )
+                /*
+                 * pop A, SP
+                 * calli A
+                 * ret
+                 */
+                ShouldKeepExecuting,
+                PrintRegisters,
+                PrintStack,
+            };
 		public:
 			Machine(std::ostream& output, std::istream& input);
 			~Machine() = default;
@@ -68,8 +163,6 @@ namespace forth {
 				ab.addInstruction(first, std::move(rest)...);
 				dispatchInstruction(ab);
 			}
-
-			
 		private:
 			template<typename ... Rest>
 			void tryCompileWord(const std::string& word, Rest ... words) {
@@ -163,7 +256,6 @@ namespace forth {
 			Core _core;
 			const DictionaryEntry* _microcodeInvoke = nullptr;
             std::list<std::string> _stringCache;
-            std::stack<Address, std::list<Address>> _jitCacheAddresses;
 	};
 } // end namespace forth
 

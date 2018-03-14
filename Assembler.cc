@@ -98,11 +98,9 @@ namespace forth {
 	}
 
 	EagerInstruction useRegister(TargetRegister reg, EagerInstruction body) noexcept {
-		return [reg, body](AssemblerBuilder& ab) {
-			ab.addInstruction(opPushRegister(reg),
-							  body,
-							  opPopRegister(reg));
-		};
+        return instructions(opPushRegister(reg),
+                            body,
+                            opPopRegister(reg));
 	}
 
 	EagerInstruction label(const std::string& str) {
@@ -152,13 +150,11 @@ namespace forth {
 		};
 	}
 	EagerInstruction opLoadImmediate16(TargetRegister r, QuarterAddress value) {
-		return [r, value](AssemblerBuilder& ab) {
-			if (value == 0) {
-				ab.addInstruction(zeroRegister(r));
-			} else {
-				ab.addInstruction(opUnsignedAddImmediate(r, TargetRegister::Zero, value));
-			}
-		};
+        if (value == 0) {
+            return instructions(zeroRegister(r));
+        } else {
+            return instructions(opUnsignedAddImmediate(r, TargetRegister::Zero, value));
+        }
 	}
 	EagerInstruction opLoadImmediate16(TargetRegister r, const std::string& name) {
 		return [r, name](AssemblerBuilder& ab) {
@@ -193,33 +189,26 @@ namespace forth {
 	}
     EagerInstruction indirectLoad(TargetRegister dest, TargetRegister src) {
         if (dest == src) {
-            return [dest, src](AssemblerBuilder& ab) {
-                ab.addInstruction(opLoad(dest, src), opLoad(dest, dest));
-            };
+            return instructions(opLoad(dest, src), 
+                    opLoad(dest, dest));
         } else {
             if (src == TargetRegister::Temporary) {
                 throw Problem("indirectLoad", "Temporary already in use!");
             }
-            return [dest, src](AssemblerBuilder& ab) {
-                ab.addInstruction(opLoad(TargetRegister::Temporary, src),
-                        opLoad(dest, TargetRegister::Temporary));
-            };
+            return instructions(opLoad(TargetRegister::Temporary, src),
+                    opLoad(dest, TargetRegister::Temporary));
         }
     }
     EagerInstruction opPushImmediate64(Address value, TargetRegister sp) {
-        return [value, sp](AssemblerBuilder& ab) {
-            ab.addInstruction(opLoadImmediate64(TargetRegister::Temporary, value),
-                              opPushRegister(TargetRegister::Temporary, sp));
-        };
+        return instructions(opLoadImmediate64(TargetRegister::Temporary, value),
+                opPushRegister(TargetRegister::Temporary, sp));
     }
     EagerInstruction opPushImmediate64(const Datum& value, TargetRegister sp) {
         return opPushImmediate64(value.address, sp);
     }
     EagerInstruction opPrintChar(char c) {
-        return [c](AssemblerBuilder& ab) {
-            ab.addInstruction(opAddImmediate(TargetRegister::Temporary, TargetRegister::Zero, QuarterAddress(c)),
-                              opPrintChar(TargetRegister::Temporary));
-        };
+        return instructions(opAddImmediate(TargetRegister::Temporary, TargetRegister::Zero, QuarterAddress(c)),
+                opPrintChar(TargetRegister::Temporary));
     }
     EagerInstruction opPrintChar(const std::string& str) {
         return [str](AssemblerBuilder& ab) {
@@ -232,32 +221,24 @@ namespace forth {
 		if (dest == TargetRegister::Temporary) {
 			throw Problem("opStoreImmediate64", "Destination cannot be temp as it will lead to unpredictable behavior");
 		}
-		return [dest, value](AssemblerBuilder& ab) {
-			ab.addInstruction(opLoadImmediate64(TargetRegister::Temporary, value),
-							  opStore(dest, TargetRegister::Temporary));
-		};
+        return instructions(opLoadImmediate64(TargetRegister::Temporary, value),
+                opStore(dest, TargetRegister::Temporary));
 	}
 
 	EagerInstruction opStoreImmediate64(Address addr, Address value) {
-		return [addr, value](AssemblerBuilder& ab) {
-			ab.addInstruction(opLoadImmediate64(TargetRegister::Temporary2, addr),
-							  opStoreImmediate64(TargetRegister::Temporary2, value));
-		};
+        return instructions( opLoadImmediate64(TargetRegister::Temporary2, addr),
+                opStoreImmediate64(TargetRegister::Temporary2, value));
 	}
 
 	EagerInstruction opStoreImmediate64(TargetRegister addr, const std::string& value) {
-		return [addr, value](AssemblerBuilder& ab) {
-			ab.addInstruction(opLoadImmediate64(TargetRegister::Temporary, value),
-							  opStore(addr, TargetRegister::Temporary));
-		};
+        return instructions(opLoadImmediate64(TargetRegister::Temporary, value),
+                opStore(addr, TargetRegister::Temporary));
 	}
 
 	EagerInstruction opStoreImmediate64(Address addr, const std::string& value) {
-		return [addr, value](AssemblerBuilder& ab) {
-			ab.addInstruction(opLoadImmediate64(TargetRegister::Temporary2, addr),
-							  opLoadImmediate64(TargetRegister::Temporary, value),
-							  opStore(TargetRegister::Temporary2, TargetRegister::Temporary));
-		};
+        return instructions(opLoadImmediate64(TargetRegister::Temporary2, addr),
+                opLoadImmediate64(TargetRegister::Temporary, value),
+                opStore(TargetRegister::Temporary2, TargetRegister::Temporary));
 	}
 
 	EagerInstruction subroutineCall(Address addr) {
@@ -274,7 +255,7 @@ namespace forth {
 		};
 	}
 	EagerInstruction semicolon() {
-		return [](AssemblerBuilder& ab) { ab.addInstruction(opReturnSubroutine()); };
+        return instructions(opReturnSubroutine());
 	}
 
 	static constexpr Address mask16 = 0xFFFF;
@@ -285,45 +266,33 @@ namespace forth {
 			throw Problem("storeImmediate", "Cannot use Temporary2 as the address");
 		}
 		if (value == 0) {
-			return [addr](AssemblerBuilder& ab) {
-				ab.addInstruction(opStore(addr, TargetRegister::Zero));
-			};
+            return instructions(opStore(addr, TargetRegister::Zero));
 		} else {
-			return [addr, value](AssemblerBuilder& ab) {
-				ab.addInstruction(opLoadImmediate(TargetRegister::Temporary2, value),
-								  opStore(addr, TargetRegister::Temporary2));
-			};
+            return instructions(opLoadImmediate(TargetRegister::Temporary2, value),
+                    opStore(addr, TargetRegister::Temporary2));
 		}
 	}
 
 	EagerInstruction opLoadImmediate(TargetRegister addr, Address value) {
 		if (value == 0) {
-			return [addr](AssemblerBuilder& ab) {
-				ab.addInstruction(zeroRegister(addr));
-			};
-		} else {
-			return [addr, value](AssemblerBuilder& ab) {
-				if (value <= mask16) {
-					ab.addInstruction(opLoadImmediate16(addr, QuarterAddress(value)));
-				} else if (value <= mask32) {
-					ab.addInstruction(opLoadImmediate32(addr, HalfAddress(value)));
-				} else if (value == mask64) {
-					ab.addInstruction(opNot(addr, TargetRegister::Zero));
-				} else {
-					ab.addInstruction(opLoadImmediate64(addr, value));
-				}
-			};
-		}
+            return instructions(zeroRegister(addr));
+        } else if (value <= mask16) {
+            return instructions(opLoadImmediate16(addr, QuarterAddress(value)));
+        } else if (value <= mask32) {
+            return instructions(opLoadImmediate32(addr, HalfAddress(value)));
+        } else if (value == mask64) {
+            return instructions(opNot(addr, TargetRegister::Zero));
+        } else {
+            return instructions(opLoadImmediate64(addr, value));
+        }
 	}
 
 	EagerInstruction opStoreImmediate(Address addr, Address value) {
 		if (addr == 0) {
 			return opStoreImmediate(TargetRegister::Zero, value);
 		} else {
-			return [addr, value](AssemblerBuilder& ab) {
-				ab.addInstruction(opLoadImmediate(TargetRegister::Temporary, addr),
-								  opStoreImmediate(TargetRegister::Temporary, value));
-			};
+            return instructions(opLoadImmediate(TargetRegister::Temporary, addr),
+                    opStoreImmediate(TargetRegister::Temporary, value));
 		}
 	}
 
@@ -371,35 +340,29 @@ namespace forth {
                         opConditionalCallSubroutineIndirect(cond, TargetRegister::Temporary));
             };
         } else {
-            return [cond, onTrue, onFalse](auto& ab) {
-                constexpr auto t = TargetRegister::Temporary;
-                constexpr auto f = TargetRegister::Temporary2;
-                ab.addInstruction(opLoadImmediate(t, onTrue),
-                                  opLoadImmediate(t, onFalse),
-                                  opCallIfStatement(cond, t, f));
-            };
+            constexpr auto t = TargetRegister::Temporary;
+            constexpr auto f = TargetRegister::Temporary2;
+            return instructions(opLoadImmediate(t, onTrue),
+                                opLoadImmediate(f, onFalse),
+                                opCallIfStatement(cond, t, f));
         }
     }
 
     EagerInstruction opNotEquals(TargetRegister dest, TargetRegister a, TargetRegister b) {
-        return [dest, a, b](auto& ab) {
-            ab.addInstruction(opEquals(dest, a, b),
-                              opNot(dest, dest));
-        };
+        return instructions(opEquals(dest, a, b),
+                            opNot(dest, dest));
     }
     EagerInstruction opMultiplyImmediate(TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept {
         auto fn = [dest, src](auto count) {
-            return [dest, src, count](auto& ab) {
-                ab.addInstruction(opShiftLeftImmediate(dest, src, count));
-            };
+            return instructions(opShiftLeftImmediate(dest, src, count));
         };
         switch (value) {
             case 0:
-                return [dest](auto& ab) { ab.addInstruction(zeroRegister(dest)); };
+                return instructions(zeroRegister(dest));
             case 1:
-                return [dest, src](auto& ab) { ab.addInstruction(opMove(dest, src)); };
+                return instructions(opMove(dest, src));
             case 2:
-                return [dest, src](auto& ab) { ab.addInstruction(opAdd(dest, src, src)); };
+                return instructions(opAdd(dest, src, src));
             case 4: return fn(2);
             case 8: return fn(3);
             case 16: return fn(4);
@@ -413,24 +376,21 @@ namespace forth {
             case 8192: return fn(12);
             case 16384: return fn(13);
             case 32768: return fn(14);
-            default:
-                return [dest, src, value](auto& ab) { ab.addInstruction(opMultiplyImmediate({dest, src, value})); };
+            default: return instructions(opMultiplyImmediate({dest, src, value}));
         }
     }
 
     EagerInstruction opUnsignedMultiplyImmediate(TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept {
         auto fn = [dest, src](auto count) {
-            return [dest, src, count](auto& ab) {
-                ab.addInstruction(opUnsignedShiftLeftImmediate(dest, src, count));
-            };
+            return instructions(opUnsignedShiftLeftImmediate(dest, src, count));
         };
         switch (value) {
             case 0:
-                return [dest](auto& ab) { ab.addInstruction(zeroRegister(dest)); };
+                return instructions(zeroRegister(dest));
             case 1:
-                return [dest, src](auto& ab) { ab.addInstruction(opMove(dest, src)); };
+                return instructions(opMove(dest, src));
             case 2:
-                return [dest, src](auto& ab) { ab.addInstruction(opAddUnsigned(dest, src, src)); };
+                return instructions(opAddUnsigned(dest, src, src));
             case 4: return fn(2);
             case 8: return fn(3);
             case 16: return fn(4);
@@ -444,8 +404,7 @@ namespace forth {
             case 8192: return fn(12);
             case 16384: return fn(13);
             case 32768: return fn(14);
-            default:
-                return [dest, src, value](auto& ab) { ab.addInstruction(opUnsignedMultiplyImmediate({dest, src, value})); };
+            default: return instructions(opUnsignedMultiplyImmediate({dest, src, value}));
         }
     }
 

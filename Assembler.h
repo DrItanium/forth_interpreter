@@ -46,6 +46,7 @@ class AssemblerBuilder {
 				addInstruction(std::move(rest)...);
 			}
 		}
+        bool labelDefined(const std::string& name) noexcept;
 
 	private:
 		Address _baseAddress, _currentLocation;

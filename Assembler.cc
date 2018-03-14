@@ -115,37 +115,57 @@ namespace forth {
 		byte result = std::visit([](auto&& value) constexpr { return value.size(); }, op);
 		_currentLocation += result;
 	}
+    bool AssemblerBuilder::labelDefined(const std::string& name) noexcept {
+        return _names.find(name) != _names.cend();
+    }
 	EagerInstruction opJump(const std::string& name) {
 		return [name](AssemblerBuilder& ab) {
-			auto jmp = opJump(Core::SignedImm16(0));
-			ResolvableLazyFunction fn = [name, &jmp](AssemblerBuilder& ab, Address from) {
-								auto addr = ab.relativeLabelAddress(name);
-								if (outOfRange16(addr)) {
-									throw Problem("jumpRelative", "Can't encode label address into 16-bits");
-								} else {
-									jmp.args.value = addr;
-								}
-							  };
-			ab.addInstruction(jmp, fn);
+            if (ab.labelDefined(name)) {
+                auto addr = ab.relativeLabelAddress(name);
+                if (outOfRange16(addr)) {
+                    throw Problem("jumpRelative", "Can't encode label address into 16-bits");
+                } else {
+                    ab.addInstruction(opJump(safeExtract(addr)));
+                }
+            } else {
+			    auto jmp = opJump(Core::SignedImm16(0));
+			    ResolvableLazyFunction fn = [name, &jmp](AssemblerBuilder& ab, Address from) {
+			    					auto addr = ab.relativeLabelAddress(name);
+			    					if (outOfRange16(addr)) {
+			    						throw Problem("jumpRelative", "Can't encode label address into 16-bits");
+			    					} else {
+			    						jmp.args.value = addr;
+			    					}
+			    				  };
+			    ab.addInstruction(jmp, fn);
+            }
 		};
 	}
 	EagerInstruction opJumpAbsolute(const std::string& name) {
 		return [name](AssemblerBuilder& ab) {
-			auto jmp = opJumpAbsolute({HalfAddress(0)});
-			ResolvableLazyFunction fn = [name, &jmp](AssemblerBuilder& ab, Address from) {
-				jmp.args.imm24 = make24bit(ab.absoluteLabelAddress(name));
-			};
-			ab.addInstruction(jmp, fn);
+            if (ab.labelDefined(name)) {
+                ab.addInstruction(opJumpAbsolute(make24bit(ab.absoluteLabelAddress(name))));
+            } else {
+			    auto jmp = opJumpAbsolute({HalfAddress(0)});
+			    ResolvableLazyFunction fn = [name, &jmp](AssemblerBuilder& ab, Address from) {
+			    	jmp.args.imm24 = make24bit(ab.absoluteLabelAddress(name));
+			    };
+			    ab.addInstruction(jmp, fn);
+            }
 		};
 	}
 	EagerInstruction opLoadImmediate32(TargetRegister r, const std::string& name) {
-		return [r, name](AssemblerBuilder& ab) {
-			auto ld = opLoadImmediate32(r, 0);
-			ResolvableLazyFunction fn = [name, &ld](AssemblerBuilder& ab, Address _) {
-				ld.args.imm32 = forth::getLowerHalf(ab.absoluteLabelAddress(name));
-			};
-			ab.addInstruction(ld, fn);
-		};
+        return [r, name](AssemblerBuilder& ab) {
+            if (ab.labelDefined(name)) {
+                ab.addInstruction(opLoadImmediate32(r, forth::getLowerHalf(ab.absoluteLabelAddress(name))));
+            } else {
+                auto ld = opLoadImmediate32(r, 0);
+                ResolvableLazyFunction fn = [name, &ld](AssemblerBuilder& ab, Address _) {
+                    ld.args.imm32 = forth::getLowerHalf(ab.absoluteLabelAddress(name));
+                };
+                ab.addInstruction(ld, fn);
+            }
+        };
 	}
 	EagerInstruction opLoadImmediate16(TargetRegister r, QuarterAddress value) {
         if (value == 0) {

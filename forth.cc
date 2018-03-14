@@ -223,6 +223,13 @@ void systemSetup(forth::Machine& machine) {
 		// setup the code fragment routines here
 	machine.dispatchInstruction(init);
 }
+
+template<typename T>
+EagerInstruction binaryOperationFunction(const std::string& name, T op) {
+	return function(name, opPopRegisterAB(), 
+						  op,
+						  opPushRegisterC());
+}
 void builtInOperations(AssemblerBuilder& ab) {
 	auto makeFunctionPrinter = [](const std::string& name, TargetRegister reg) {
 		return instructions(opPrintChar(name),
@@ -259,14 +266,10 @@ void builtInOperations(AssemblerBuilder& ab) {
 					opSubroutineCall("GetParameterStackEmpty"),
 					opPopRegisterA(),
 					opMove(TargetRegister::SP, TargetRegister::A)),
-			function("EqualsAddress",
-					opPopRegisterAB(),
-					opEquals(TargetRegister::C, TargetRegister::A, TargetRegister::B),
-					opPushRegisterC()),
-			function("NotEqualsAddress",
-					opPopRegisterAB(),
-					opNotEqual(TargetRegister::C, TargetRegister::A, TargetRegister::B),
-					opPushRegisterC()),
+			binaryOperationFunction("EqualsAddress", 
+					opEquals(TargetRegister::C, TargetRegister::A, TargetRegister::B)),
+			binaryOperationFunction("NotEqualsAddress", 
+					opNotEqual(TargetRegister::C, TargetRegister::A, TargetRegister::B)),
 			function("NotEqualZero",
 					opPopRegisterA(),
 					opNotEqual(TargetRegister::C, TargetRegister::A, TargetRegister::Zero),

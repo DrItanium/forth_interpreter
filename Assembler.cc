@@ -98,9 +98,7 @@ namespace forth {
 	}
 
 	EagerInstruction useRegister(TargetRegister reg, EagerInstruction body) noexcept {
-        return instructions(opPushRegister(reg),
-                            body,
-                            opPopRegister(reg));
+        return instructions(opPushRegister(reg), body, opPopRegister(reg));
 	}
 
 	EagerInstruction label(const std::string& str) {
@@ -301,23 +299,19 @@ namespace forth {
             throw Problem("opEquals", "Cannot use temporary2 as destination or source!");
         }
         if (addr == 0) {
-            return [dest, src](AssemblerBuilder& ab) { ab.addInstruction(opEquals(dest, src, TargetRegister::Zero)); };
+            return instructions(opEquals(dest, src, TargetRegister::Zero));
         } else {
-            return [dest, src, addr](AssemblerBuilder& ab) {
-                ab.addInstruction(opLoadImmediate(TargetRegister::Temporary2, addr),
-                                  opEquals(dest, src, TargetRegister::Temporary2));
-            };
+            return instructions(opLoadImmediate(TargetRegister::Temporary2, addr),
+                    opEquals(dest, src, TargetRegister::Temporary2));
         }
     }
     EagerInstruction opMemoryEquals(TargetRegister dest, TargetRegister src, Address addr) {
         if (dest == TargetRegister::Temporary2 || src == TargetRegister::Temporary2) {
             throw Problem("opEquals", "Cannot use temporary2 as destination or source!");
         }
-        return [dest, src, addr](AssemblerBuilder& ab) {
-            ab.addInstruction(opLoadImmediate(TargetRegister::Temporary2, addr),
-                              opLoad(TargetRegister::Temporary2, TargetRegister::Temporary2),
-                              opEquals(dest, src, TargetRegister::Temporary2));
-        };
+        return instructions(opLoadImmediate(TargetRegister::Temporary2, addr),
+                opLoad(TargetRegister::Temporary2, TargetRegister::Temporary2),
+                opEquals(dest, src, TargetRegister::Temporary2));
     }
 
     EagerInstruction opSubroutineStackEmpty(TargetRegister dest) {
@@ -335,10 +329,8 @@ namespace forth {
 
     EagerInstruction ifThenElseStatement(TargetRegister cond, Address onTrue, Address onFalse) {
         if (onFalse == Address(-1)) {
-            return [cond, onTrue](auto& ab) {
-                ab.addInstruction(opLoadImmediate(TargetRegister::Temporary, onTrue),
-                        opConditionalCallSubroutineIndirect(cond, TargetRegister::Temporary));
-            };
+            return instructions(opLoadImmediate(TargetRegister::Temporary, onTrue),
+                    opConditionalCallSubroutineIndirect(cond, TargetRegister::Temporary));
         } else {
             constexpr auto t = TargetRegister::Temporary;
             constexpr auto f = TargetRegister::Temporary2;

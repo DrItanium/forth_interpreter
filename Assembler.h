@@ -29,6 +29,7 @@ class AssemblerBuilder {
 		~AssemblerBuilder();
 		void installIntoCore(Core& core);
 		void labelHere(const std::string& name);
+		const std::string& gensym() noexcept;
 		Address absoluteLabelAddress(const std::string& name) const;
 		Integer relativeLabelAddress(const std::string& name) const;
 		Integer relativeLabelAddress(const std::string& name, Address from) const;
@@ -37,15 +38,6 @@ class AssemblerBuilder {
 		void addInstruction(EagerInstruction fn);
 		void addInstruction(ResolvableLazyFunction fn);
 		void addInstruction(const Core::DecodedOperation& op);
-		//template<typename T>
-		//void addInstruction(T first) {
-        //    if constexpr (std::is_same<EagerInstruction, T>::value) {
-		//		addInstruction(EagerInstruction(first));
-        //    } else {
-		//	    _operations.emplace(_currentLocation, first);
-		//		_currentLocation += first.size();
-        //    }
-		//}
 		template<typename T, typename ... Rest>
 		void addInstruction(T first, Rest&& ... rest) {
 			addInstruction(first);
@@ -55,7 +47,7 @@ class AssemblerBuilder {
 		}
 
 	private:
-		Address _baseAddress, _currentLocation;
+		Address _baseAddress, _currentLocation, _gensymIndex;
 		std::map<std::string, Address> _names;
 		std::map<Address, Core::DecodedOperation> _operations;
 		std::vector<EagerInstruction> _toResolve;
@@ -165,6 +157,14 @@ EagerInstruction instructions(T value, Rest&& ... rest) {
     return [value, rest...](auto& ab) {
         ab.addInstruction(value, std::move(rest)...);
     };
+}
+
+template<typename T, typename ... Rest>
+EagerInstruction deffunction(const std::string& name, T value, Rest&& ... rest) {
+	return instructions(label(name), 
+						value,
+						std::move(rest)...,
+						opSemicolon());
 }
 
 

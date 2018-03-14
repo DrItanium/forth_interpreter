@@ -18,7 +18,7 @@ namespace forth {
 			return HalfAddress(input) & mask24;
 		}
 	}
-	AssemblerBuilder::AssemblerBuilder(Address baseAddress) : _baseAddress(baseAddress), _currentLocation(baseAddress) {}
+	AssemblerBuilder::AssemblerBuilder(Address baseAddress) : _baseAddress(baseAddress), _currentLocation(baseAddress), _gensymIndex(0) {}
 	AssemblerBuilder::~AssemblerBuilder() {
 
 	}
@@ -440,6 +440,14 @@ namespace forth {
 		} else {
 			return instructions(opUnsignedGreaterThanOrEqualToImmediate({dest, src, value}));
 		}
+	}
+
+	std::string AssemblerBuilder::gensym() noexcept {
+		std::stringstream str;
+		str << "gensym" << _gensymIndex;
+		auto x = str.str();
+		++_gensymIndex;
+		return x;
 	}
 
 

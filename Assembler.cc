@@ -18,7 +18,7 @@ namespace forth {
 			return HalfAddress(input) & mask24;
 		}
 	}
-	AssemblerBuilder::AssemblerBuilder(Address baseAddress) : _baseAddress(baseAddress), _currentLocation(baseAddress), _gensymIndex(0) {}
+	AssemblerBuilder::AssemblerBuilder(Address baseAddress) : _baseAddress(baseAddress), _currentLocation(baseAddress) {}
 	AssemblerBuilder::~AssemblerBuilder() {
 
 	}
@@ -239,7 +239,7 @@ namespace forth {
                 opStore(TargetRegister::Temporary2, TargetRegister::Temporary));
 	}
 
-	EagerInstruction subroutineCall(Address addr) {
+	EagerInstruction opSubroutineCall(Address addr) {
 		return [addr](AssemblerBuilder& ab) {
 			if (addr <= mask24) {
 				// do a non indirect call!
@@ -252,7 +252,7 @@ namespace forth {
 			}
 		};
 	}
-	EagerInstruction semicolon() {
+	EagerInstruction opSemicolon() {
         return instructions(opReturnSubroutine());
 	}
 
@@ -328,16 +328,11 @@ namespace forth {
     }
 
     EagerInstruction ifThenElseStatement(TargetRegister cond, Address onTrue, Address onFalse) {
-        if (onFalse == Address(-1)) {
-            return instructions(opLoadImmediate(TargetRegister::Temporary, onTrue),
-                    opConditionalCallSubroutineIndirect(cond, TargetRegister::Temporary));
-        } else {
-            constexpr auto t = TargetRegister::Temporary;
-            constexpr auto f = TargetRegister::Temporary2;
-            return instructions(opLoadImmediate(t, onTrue),
-                                opLoadImmediate(f, onFalse),
-                                opCallIfStatement(cond, t, f));
-        }
+		constexpr auto t = TargetRegister::Temporary;
+		constexpr auto f = TargetRegister::Temporary2;
+		return instructions(opLoadImmediate(t, onTrue),
+				opLoadImmediate(f, onFalse),
+				opCallIfStatement(cond, t, f));
     }
 
     EagerInstruction opMultiplyImmediate(TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept {
@@ -442,12 +437,32 @@ namespace forth {
 		}
 	}
 
-	std::string AssemblerBuilder::gensym() noexcept {
+	static Address _gensymIndex = 0;
+	std::string gensym() noexcept {
 		std::stringstream str;
 		str << "gensym" << _gensymIndex;
 		auto x = str.str();
 		++_gensymIndex;
 		return x;
+	}
+	Address getGensymIndex() noexcept {
+		return _gensymIndex;
+	}
+	
+	EagerInstruction ifThenElseStatement(TargetRegister cond, const std::string& onTrue, const std::string& onFalse) {
+		constexpr auto t = TargetRegister::Temporary;
+		constexpr auto f = TargetRegister::Temporary2;
+		return instructions(opLoadImmediate(t, onTrue),
+				opLoadImmediate(f, onFalse),
+				opCallIfStatement(cond, t, f));
+	}
+
+	EagerInstruction opSubroutineCall(const std::string& name) {
+		return instructions(opLoadImmediate64(TargetRegister::Temporary, name),
+				opCallSubroutineIndirect(TargetRegister::Temporary));
+	}
+	EagerInstruction opLoadImmediate(TargetRegister addr, const std::string& value) {
+		return instructions(opLoadImmediate64(addr, value));
 	}
 
 

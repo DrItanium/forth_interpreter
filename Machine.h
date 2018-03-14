@@ -58,23 +58,9 @@ namespace forth {
                  * call StoreValue
                  * ret
                  */
-                GetParameterStackFull, // ( -- addr)
-                /* 
-                 * loadimm64 A, Core::spStackFull
-                 * push A, SP
-                 * call LoadValue
-                 * ret
-                 */
                 GetParameterStackEmpty, // ( -- addr)
                 /* 
                  * loadimm64 A, Core::spStackEmpty
-                 * push A, SP
-                 * call LoadValue
-                 * ret
-                 */
-                GetSubroutineStackFull, // ( -- addr)
-                /* 
-                 * loadimm64 A, Core::sp2StackFull
                  * push A, SP
                  * call LoadValue
                  * ret
@@ -108,8 +94,6 @@ namespace forth {
                  * push C, SP
                  * ret
                  */
-                ParameterStackEmpty,
-                ParameterStackFull,
                 ActivateCompilationMode,
                 DeactivateCompilationMode,
                 InCompilationMode,

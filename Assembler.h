@@ -16,6 +16,8 @@
 namespace forth {
 class AssemblerBuilder;
 using ResolvableLazyFunction = std::function<void(AssemblerBuilder&, Address from)>;
+std::string gensym() noexcept;
+Address getGensymIndex() noexcept;
 /**
  * Used to denote a modifier to an instruction to be performed then and there
  * useful for macros!
@@ -29,7 +31,6 @@ class AssemblerBuilder {
 		~AssemblerBuilder();
 		void installIntoCore(Core& core);
 		void labelHere(const std::string& name);
-		const std::string& gensym() noexcept;
 		Address absoluteLabelAddress(const std::string& name) const;
 		Integer relativeLabelAddress(const std::string& name) const;
 		Integer relativeLabelAddress(const std::string& name, Address from) const;
@@ -47,11 +48,17 @@ class AssemblerBuilder {
 		}
 
 	private:
-		Address _baseAddress, _currentLocation, _gensymIndex;
+		Address _baseAddress, _currentLocation;
 		std::map<std::string, Address> _names;
 		std::map<Address, Core::DecodedOperation> _operations;
 		std::vector<EagerInstruction> _toResolve;
 };
+template<typename T, typename ... Rest>
+EagerInstruction instructions(T value, Rest&& ... rest) {
+    return [value, rest...](auto& ab) {
+        ab.addInstruction(value, std::move(rest)...);
+    };
+}
 #define DispatchOneRegister(title) 
 #define DispatchTwoRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src) noexcept;
 #define DispatchThreeRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1) noexcept;
@@ -103,6 +110,7 @@ EagerInstruction opIndirectLoad(TargetRegister dest, TargetRegister src = Target
 EagerInstruction opPushImmediate64(const Datum& value, TargetRegister sp = TargetRegister::SP);
 EagerInstruction opPushImmediate64(Address value, TargetRegister sp = TargetRegister::SP);
 EagerInstruction opSubroutineCall(Address value);
+EagerInstruction opSubroutineCall(const std::string& name);
 EagerInstruction opSemicolon();
 inline auto opPopRegister(TargetRegister reg) noexcept -> decltype(opPopRegister(reg, TargetRegister::SP)) { 
     return opPopRegister(reg, TargetRegister::SP); 
@@ -125,6 +133,7 @@ EagerInstruction opStoreImmediate64(Address addr, const std::string& value);
 EagerInstruction opStoreImmediate(TargetRegister addr, Address value);
 EagerInstruction opStoreImmediate(Address addr, Address value);
 EagerInstruction opLoadImmediate(TargetRegister addr, Address value);
+EagerInstruction opLoadImmediate(TargetRegister addr, const std::string& value);
 EagerInstruction opEquals(TargetRegister destination, TargetRegister src, Address addr);
 EagerInstruction opMemoryEquals(TargetRegister destination, TargetRegister src, Address memLoc);
 EagerInstruction opSubroutineStackEmpty(TargetRegister dest);
@@ -138,35 +147,23 @@ inline auto opPushRegisterA() noexcept -> decltype(opPushRegister(TargetRegister
 inline auto opPushRegisterB() noexcept -> decltype(opPushRegister(TargetRegister::B)) { return opPushRegister(TargetRegister::B); }
 inline auto opPushRegisterC() noexcept -> decltype(opPushRegister(TargetRegister::C)) { return opPushRegister(TargetRegister::C); }
 inline auto opPopRegisterAB() noexcept -> EagerInstruction {
-    return [](AssemblerBuilder& ab) {
-        ab.addInstruction(opPopRegisterA(), 
-                opPopRegisterB());
-    };
+	return instructions(opPopRegisterA(), opPopRegisterB());
 }
 inline auto opPopRegisterCAB() noexcept -> EagerInstruction {
-    return [](AssemblerBuilder& ab) {
-        ab.addInstruction(opPopRegisterC(),
-                          opPopRegisterAB());
-    };
+	return instructions(opPopRegisterC(), opPopRegisterAB());
 }
 
-EagerInstruction ifThenElseStatement(TargetRegister cond, Address onTrue, Address onFalse = Address(-1));
+EagerInstruction ifThenElseStatement(TargetRegister cond, Address onTrue, Address onFalse);
+EagerInstruction ifThenElseStatement(TargetRegister cond, const std::string& onTrue, const std::string& onFalse);
+
 
 template<typename T, typename ... Rest>
-EagerInstruction instructions(T value, Rest&& ... rest) {
-    return [value, rest...](auto& ab) {
-        ab.addInstruction(value, std::move(rest)...);
-    };
-}
-
-template<typename T, typename ... Rest>
-EagerInstruction deffunction(const std::string& name, T value, Rest&& ... rest) {
+EagerInstruction function(const std::string& name, T value, Rest&& ... rest) {
 	return instructions(label(name), 
 						value,
 						std::move(rest)...,
 						opSemicolon());
 }
-
 
 } // end namespace forth
 

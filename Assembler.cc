@@ -104,6 +104,11 @@ namespace forth {
 	EagerInstruction label(const std::string& str) {
 		return [str](auto& ab) { ab.labelHere(str); };
 	}
+    void AssemblerBuilder::addInstruction(std::shared_ptr<Core::DecodedOperation> op) {
+        _operations.emplace(_currentLocation, op);
+        byte result = std::visit([](auto&& value) constexpr { return value.size(); }, *op);
+        _currentLocation += result;
+    }
 	void AssemblerBuilder::addInstruction(EagerInstruction fn) { fn(*this); }
 	void AssemblerBuilder::addInstruction(ResolvableLazyFunction fn) {
 		_toResolve.emplace_back([from = _currentLocation, fn](AssemblerBuilder& ab) {
@@ -125,7 +130,7 @@ namespace forth {
                 if (outOfRange16(addr)) {
                     throw Problem("jumpRelative", "Can't encode label address into 16-bits");
                 } else {
-                    ab.addInstruction(opJump(safeExtract(addr)));
+                    ab.addInstruction(opJump(safeExtract(QuarterInteger(addr))));
                 }
             } else {
 			    auto jmp = opJump(Core::SignedImm16(0));
@@ -176,33 +181,46 @@ namespace forth {
 	}
 	EagerInstruction opLoadImmediate16(TargetRegister r, const std::string& name) {
 		return [r, name](AssemblerBuilder& ab) {
-			auto add = opUnsignedAddImmediate(r, TargetRegister::Zero, 0);
-			ResolvableLazyFunction fn = [name, &add](auto& ab, auto from) {
-				add.args.imm16 = QuarterAddress(ab.absoluteLabelAddress(name));
-			};
-			ab.addInstruction(add, fn);
+            if (ab.labelDefined(name)) {
+                ab.addInstruction(opUnsignedAddImmediate(r, TargetRegister::Zero, QuarterAddress(ab.absoluteLabelAddress(name))));
+            } else {
+                auto add = opUnsignedAddImmediate(r, TargetRegister::Zero, 0);
+                ResolvableLazyFunction fn = [name, &add](auto& ab, auto from) {
+                    add.args.imm16 = QuarterAddress(ab.absoluteLabelAddress(name));
+                };
+                ab.addInstruction(add, fn);
+            }
 		};
 	}
 	EagerInstruction opLoadImmediate64(TargetRegister r, const std::string& name) {
 		return [name, r](AssemblerBuilder& ab) {
-			auto ld = opLoadImmediate64(r, 0);
-			ResolvableLazyFunction fn = [name, &ld](AssemblerBuilder& ab, Address _) {
-				ld.args.imm64 = ab.absoluteLabelAddress(name);
-			};
+            if (ab.labelDefined(name)) {
+                ab.addInstruction(opLoadImmediate64(r, ab.absoluteLabelAddress(name)));
+            } else {
+			    auto ld = opLoadImmediate64(r, 0);
+			    ResolvableLazyFunction fn = [name, &ld](AssemblerBuilder& ab, Address _) {
+			    	ld.args.imm64 = ab.absoluteLabelAddress(name);
+			    };
+                ab.addInstruction(ld, fn);
+            }
 		};
 	}
 	EagerInstruction opConditionalBranch(TargetRegister r, const std::string& name) {
 		return [r, name](auto& ab) {
-			auto cond = opConditionalBranch(r, 0);
-			ResolvableLazyFunction fn = [name, &cond](auto& ab, auto from) {
-				auto addr = ab.relativeLabelAddress(name, from);
-				if (outOfRange16(addr)) {
-					throw Problem("opConditionalBranch", "Can't encode label into a relative 16-bit offset!");
-				} else {
-					cond.args.imm16 = safeExtract(QuarterInteger(addr));
-				}
-			};
-			ab.addInstruction(cond, fn);
+            if (ab.labelDefined(name)) {
+
+            } else {
+			    auto cond = opConditionalBranch(r, 0);
+			    ResolvableLazyFunction fn = [name, &cond](auto& ab, auto from) {
+			    	auto addr = ab.relativeLabelAddress(name, from);
+			    	if (outOfRange16(addr)) {
+			    		throw Problem("opConditionalBranch", "Can't encode label into a relative 16-bit offset!");
+			    	} else {
+			    		cond.args.imm16 = safeExtract(QuarterInteger(addr));
+			    	}
+			    };
+			    ab.addInstruction(cond, fn);
+            }
 		};
 	}
     EagerInstruction indirectLoad(TargetRegister dest, TargetRegister src) {

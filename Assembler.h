@@ -26,6 +26,8 @@ using EagerInstruction = std::function<void(AssemblerBuilder&)>;
 class AssemblerBuilder {
 	public:
 		using NameToAddress = std::tuple<std::string, Address>;
+        using DataEntry = std::variant<std::shared_ptr<Core::DecodedOperation>, 
+                                       Core::DecodedOperation>;
 	public:
 		AssemblerBuilder(Address baseAddress);
 		~AssemblerBuilder();
@@ -39,6 +41,7 @@ class AssemblerBuilder {
 		void addInstruction(EagerInstruction fn);
 		void addInstruction(ResolvableLazyFunction fn);
 		void addInstruction(const Core::DecodedOperation& op);
+        void addInstruction(std::shared_ptr<Core::DecodedOperation> op);
 		template<typename T, typename ... Rest>
 		void addInstruction(T first, Rest&& ... rest) {
 			addInstruction(first);
@@ -51,7 +54,7 @@ class AssemblerBuilder {
 	private:
 		Address _baseAddress, _currentLocation;
 		std::map<std::string, Address> _names;
-		std::map<Address, Core::DecodedOperation> _operations;
+		std::map<Address, DataEntry> _operations;
 		std::vector<EagerInstruction> _toResolve;
 };
 template<typename T, typename ... Rest>

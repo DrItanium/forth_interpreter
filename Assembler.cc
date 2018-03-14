@@ -5,19 +5,6 @@
 #include "Machine.h"
 
 namespace forth {
-	constexpr bool outOfRange16(Integer value) noexcept {
-		constexpr Integer maxRange = 32767;
-		constexpr Integer minRange = -32768;
-		return (value > maxRange) || (value < minRange);
-	}
-	static constexpr HalfAddress mask24 = 0x00FF'FFFF;
-	HalfAddress make24bit(Address input) {
-		if (input > mask24) {
-			throw Problem("make24bit", "Provided address is larger than 24-bits");
-		} else {
-			return HalfAddress(input) & mask24;
-		}
-	}
 	AssemblerBuilder::AssemblerBuilder(Address baseAddress) : _baseAddress(baseAddress), _currentLocation(baseAddress) {}
 	AssemblerBuilder::~AssemblerBuilder() {
 
@@ -71,9 +58,7 @@ namespace forth {
 #define DispatchNoArguments(title) Core:: title op ## title () noexcept { return Core:: title () ; }
 #define X(title, b) \
 	Core:: title op ## title (const Core:: b & x) noexcept { \
-		Core:: title value; \
-		value.args = x; \
-		return value; \
+        return Core:: title (x) ; \
 	} \
 	INDIRECTION(Dispatch, b)(title)
 #define FirstX(title, b) X(title, b)
@@ -133,13 +118,13 @@ namespace forth {
                     ab.addInstruction(opJump(safeExtract(QuarterInteger(addr))));
                 }
             } else {
-			    auto jmp = opJump(Core::SignedImm16(0));
-			    ResolvableLazyFunction fn = [name, &jmp](AssemblerBuilder& ab, Address from) {
+                auto jmp = std::make_shared<Core::Jump>(Core::SignedImm16(0));
+			    ResolvableLazyFunction fn = [name, jmp](AssemblerBuilder& ab, Address from) {
 			    					auto addr = ab.relativeLabelAddress(name);
 			    					if (outOfRange16(addr)) {
 			    						throw Problem("jumpRelative", "Can't encode label address into 16-bits");
 			    					} else {
-			    						jmp.args.value = addr;
+			    						jmp->args.value = addr;
 			    					}
 			    				  };
 			    ab.addInstruction(jmp, fn);
@@ -151,9 +136,9 @@ namespace forth {
             if (ab.labelDefined(name)) {
                 ab.addInstruction(opJumpAbsolute(make24bit(ab.absoluteLabelAddress(name))));
             } else {
-			    auto jmp = opJumpAbsolute({HalfAddress(0)});
-			    ResolvableLazyFunction fn = [name, &jmp](AssemblerBuilder& ab, Address from) {
-			    	jmp.args.imm24 = make24bit(ab.absoluteLabelAddress(name));
+                auto jmp = std::make_shared<Core::JumpAbsolute>(HalfAddress(0));
+			    ResolvableLazyFunction fn = [name, jmp](AssemblerBuilder& ab, Address from) {
+                    jmp->args.setImm24(ab.absoluteLabelAddress(name));
 			    };
 			    ab.addInstruction(jmp, fn);
             }

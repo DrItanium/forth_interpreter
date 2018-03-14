@@ -192,6 +192,15 @@ namespace forth {
     struct AlwaysFalse : std::false_type { };
     QuarterInteger safeExtract(QuarterAddress addr) noexcept;
     QuarterAddress safeExtract(QuarterInteger addr) noexcept;
+
+	static constexpr HalfAddress mask24 = 0x00FF'FFFF;
+    HalfAddress make24bit(Address input);
+
+	constexpr bool outOfRange16(Integer value) noexcept {
+		constexpr Integer maxRange = 32767;
+		constexpr Integer minRange = -32768;
+		return (value > maxRange) || (value < minRange);
+	}
 }
 
 #endif // end TYPES_H__

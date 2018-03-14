@@ -734,7 +734,7 @@ void Core::decodeArguments(SignedImm16& args) {
 void Core::decodeArguments(Immediate24& args) {
 	auto lower16 = HalfAddress(extractQuarterAddressFromMolecule());
 	auto upper8 = HalfAddress(extractByteFromMolecule() << 16); 
-	args.imm24 = (upper8 | lower16) & 0x00FF'FFFF;
+    args.setImm24((upper8 | lower16));
 }
 
 void Core::decodeArguments(OneRegisterWithImm16& args) {
@@ -817,9 +817,9 @@ void Core::encodeArguments(const SignedImm16& args) {
     storeAndAdvance(_pc, forth::getUpperHalf(args.value));
 }
 void Core::encodeArguments(const Immediate24& args) { 
-    storeAndAdvance(_pc, forth::getLowerHalf(forth::getLowerHalf(args.imm24)));
-    storeAndAdvance(_pc, forth::getUpperHalf(forth::getLowerHalf(args.imm24)));
-    storeAndAdvance(_pc, forth::getLowerHalf(forth::getUpperHalf(args.imm24)));
+    storeAndAdvance(_pc, forth::getLowerHalf(forth::getLowerHalf(args.getImm24())));
+    storeAndAdvance(_pc, forth::getUpperHalf(forth::getLowerHalf(args.getImm24())));
+    storeAndAdvance(_pc, forth::getLowerHalf(forth::getUpperHalf(args.getImm24())));
 }
 void Core::encodeArguments(const OneRegisterWithImm16& args) { 
     encodeArguments(args.destination);
@@ -853,6 +853,10 @@ void Core::encodeInstruction(const Core::DecodedOperation& op) {
 			}, op);
 }
 void Core::encodeArguments(const NoArguments&) { }
+
+void Core::Immediate24::setImm24(HalfAddress value) {
+    imm24 = make24bit(value);
+}
 
 
 } // namespace forth

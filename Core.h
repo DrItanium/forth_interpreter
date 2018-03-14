@@ -96,35 +96,39 @@ class Core {
         using DestinationRegister = forth::OptionalRegister;
         using SourceRegister = forth::OptionalRegister;
 		struct NoArguments final { };
-        struct TwoRegister final {
-		    TwoRegister() = default;
-		    TwoRegister(DestinationRegister dest, SourceRegister src) : destination(dest), source(src) { };
-		    TwoRegister(TargetRegister dest, TargetRegister src) : destination(dest), source(src) { };
-		    DestinationRegister destination;
-		    SourceRegister source;
-        };
         struct OneRegister final {
             OneRegister() = default;
             OneRegister(DestinationRegister dest) : destination(dest) { };
             OneRegister(TargetRegister dest) : destination(dest) { };
+            OneRegister(const OneRegister& other) : destination(other.destination) { }
             DestinationRegister destination;
         };
-        struct FourRegister final {
-			FourRegister() = default;
-			FourRegister(DestinationRegister dest, SourceRegister src, SourceRegister src2, SourceRegister src3) : destination(dest), source(src), source2(src2), source3(src3) { }
-			FourRegister(TargetRegister dest, TargetRegister src, TargetRegister src2, TargetRegister src3) : destination(dest), source(src), source2(src2), source3(src3) { }
-            DestinationRegister destination;
-            SourceRegister source;
-            SourceRegister source2;
-            SourceRegister source3;
+        struct TwoRegister final {
+		    TwoRegister() = default;
+		    TwoRegister(DestinationRegister dest, SourceRegister src) : destination(dest), source(src) { };
+		    TwoRegister(TargetRegister dest, TargetRegister src) : destination(dest), source(src) { };
+            TwoRegister(const TwoRegister& other) : destination(other.destination), source(other.source) { }
+		    DestinationRegister destination;
+		    SourceRegister source;
         };
         struct ThreeRegister final {
 			ThreeRegister() = default;
 			ThreeRegister(DestinationRegister dest, SourceRegister src, SourceRegister src2) : destination(dest), source(src), source2(src2) { }
 			ThreeRegister(TargetRegister dest, TargetRegister src, TargetRegister src2) : destination(dest), source(src), source2(src2) { }
+            ThreeRegister(const ThreeRegister& other) : ThreeRegister(other.destination, other.source, other.source2) { }
             DestinationRegister destination;
             SourceRegister source;
             SourceRegister source2;
+        };
+        struct FourRegister final {
+			FourRegister() = default;
+			FourRegister(DestinationRegister dest, SourceRegister src, SourceRegister src2, SourceRegister src3) : destination(dest), source(src), source2(src2), source3(src3) { }
+			FourRegister(TargetRegister dest, TargetRegister src, TargetRegister src2, TargetRegister src3) : destination(dest), source(src), source2(src2), source3(src3) { }
+            FourRegister(const FourRegister& other) : FourRegister(other.destination, other.source, other.source2, other.source3) { }
+            DestinationRegister destination;
+            SourceRegister source;
+            SourceRegister source2;
+            SourceRegister source3;
         };
 		struct SignedImm16 final {
 			SignedImm16() = default;
@@ -135,21 +139,28 @@ class Core {
 			FiveRegister() = default;
 			FiveRegister(DestinationRegister dest, SourceRegister src, SourceRegister src2, SourceRegister src3, SourceRegister src4) : destination(dest), source(src), source2(src2), source3(src3), source4(src4) { }
 			FiveRegister(TargetRegister dest, TargetRegister src, TargetRegister src2, TargetRegister src3, TargetRegister src4) : destination(dest), source(src), source2(src2), source3(src3), source4(src4) { }
+            FiveRegister(const FiveRegister& other) : FiveRegister(other.destination, other.source, other.source2, other.source3, other.source4) { }
             DestinationRegister destination;
 			SourceRegister source;
 			SourceRegister source2;
 			SourceRegister source3;
 			SourceRegister source4;
         };
-        struct Immediate24 final {
-			Immediate24() = default;
-			Immediate24(HalfAddress addr) : imm24(addr) { };
-            HalfAddress imm24;
+        class Immediate24 final {
+            public:
+                Immediate24() = default;
+                Immediate24(HalfAddress addr) : imm24(addr) { };
+                Immediate24(const Immediate24& other) : imm24(other.imm24) { }
+                void setImm24(HalfAddress value);
+                HalfAddress getImm24() const noexcept { return imm24; }
+            private:
+                HalfAddress imm24;
         };
         struct TwoRegisterWithImm16 {
 			TwoRegisterWithImm16() = default;
 			TwoRegisterWithImm16(DestinationRegister dest, SourceRegister src, QuarterAddress imm) : destination(dest), source(src), imm16(imm) { }
 			TwoRegisterWithImm16(TargetRegister dest, TargetRegister src, QuarterAddress imm) : destination(dest), source(src), imm16(imm) { }
+            TwoRegisterWithImm16(const TwoRegisterWithImm16& other) : TwoRegisterWithImm16(other.destination, other.source, other.imm16) { }
             DestinationRegister destination;
             SourceRegister source;
             QuarterAddress imm16;
@@ -161,6 +172,7 @@ class Core {
 			OneRegisterWithImm16() = default;
 			OneRegisterWithImm16(DestinationRegister dest, QuarterAddress imm) : destination(dest), imm16(imm) { }
 			OneRegisterWithImm16(TargetRegister dest, QuarterAddress imm) : destination(dest), imm16(imm) { }
+            OneRegisterWithImm16(const OneRegisterWithImm16& other) : OneRegisterWithImm16(other.destination, other.imm16) { }
             DestinationRegister destination;
             QuarterAddress imm16;
         };
@@ -168,6 +180,7 @@ class Core {
 			OneRegisterWithImm32() = default;
 			OneRegisterWithImm32(DestinationRegister dest, HalfAddress imm) : destination(dest), imm32(imm) { }
 			OneRegisterWithImm32(TargetRegister dest, HalfAddress imm) : destination(dest), imm32(imm) { }
+            OneRegisterWithImm32(const OneRegisterWithImm32& other) : OneRegisterWithImm32(other.destination, other.imm32) { }
             DestinationRegister destination;
             HalfAddress imm32;
         };
@@ -175,10 +188,13 @@ class Core {
 			OneRegisterWithImm64() = default;
 			OneRegisterWithImm64(DestinationRegister dest, Address imm) : destination(dest), imm64(imm) { }
 			OneRegisterWithImm64(TargetRegister dest, Address imm) : destination(dest), imm64(imm) { }
+            OneRegisterWithImm64(const OneRegisterWithImm64& other) : OneRegisterWithImm64(other.destination, other.imm64) { }
             DestinationRegister destination;
             Address imm64;
         };
 #define X(title, b) struct title final { \
+    title() = default; \
+    title(const Core:: b& value) : args(value) { } \
 	constexpr Opcode getOpcode() const noexcept { return Opcode:: title ; } \
 	constexpr byte size() const noexcept { return determineInstructionWidth(getOpcode()).size(); } \
 	Core:: b args; };

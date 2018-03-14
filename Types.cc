@@ -18,5 +18,13 @@ QuarterAddress safeExtract(QuarterInteger i) noexcept {
     return k.a;
 }
 
+HalfAddress make24bit(Address input) {
+    if (input > mask24) {
+        throw Problem("make24bit", "Provided address is larger than 24-bits");
+    } else {
+        return HalfAddress(input) & mask24;
+    }
+}
+
 
 } // end namespace forth

@@ -340,10 +340,6 @@ namespace forth {
         }
     }
 
-    EagerInstruction opNotEquals(TargetRegister dest, TargetRegister a, TargetRegister b) {
-        return instructions(opEquals(dest, a, b),
-                            opNot(dest, dest));
-    }
     EagerInstruction opMultiplyImmediate(TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept {
         auto fn = [dest, src](auto count) {
             return instructions(opShiftLeftImmediate(dest, src, count));
@@ -399,7 +395,52 @@ namespace forth {
             default: return instructions(opUnsignedMultiplyImmediate({dest, src, value}));
         }
     }
+	EagerInstruction opNotEqualImmediate(TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept {
+		if (value == 0) {
+			return instructions(opNotEqual(dest, src, TargetRegister::Zero));
+		} else {
+			return instructions(opNotEqualImmediate({dest, src, value}));
+		}
+	}
 
+	EagerInstruction opUnsignedNotEqualImmediate(TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept {
+		if (value == 0) {
+			return instructions(opNotEqualUnsigned(dest, src, TargetRegister::Zero));
+		} else {
+			return instructions(opUnsignedNotEqualImmediate({dest, src, value}));
+		}
+	}
+	EagerInstruction opLessThanOrEqualToImmediate(TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept {
+		if (value == 0) {
+			return instructions(opLessThanOrEqualTo(dest, src, TargetRegister::Zero));
+		} else {
+			return instructions(opLessThanOrEqualToImmediate({dest, src, value}));
+		}
+	}
+
+	EagerInstruction opUnsignedLessThanOrEqualToImmediate(TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept {
+		if (value == 0) {
+			return instructions(opLessThanOrEqualToUnsigned(dest, src, TargetRegister::Zero));
+		} else {
+			return instructions(opUnsignedLessThanOrEqualToImmediate({dest, src, value}));
+		}
+	}
+
+	EagerInstruction opGreaterThanOrEqualToImmediate(TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept {
+		if (value == 0) {
+			return instructions(opGreaterThanOrEqualTo(dest, src, TargetRegister::Zero));
+		} else {
+			return instructions(opGreaterThanOrEqualToImmediate({dest, src, value}));
+		}
+	}
+
+	EagerInstruction opUnsignedGreaterThanOrEqualToImmediate(TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept {
+		if (value == 0) {
+			return instructions(opGreaterThanOrEqualToUnsigned(dest, src, TargetRegister::Zero));
+		} else {
+			return instructions(opUnsignedGreaterThanOrEqualToImmediate({dest, src, value}));
+		}
+	}
 
 
 } // end namespace forth

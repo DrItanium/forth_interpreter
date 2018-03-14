@@ -159,7 +159,6 @@ inline auto opPopRegisterCAB() noexcept -> EagerInstruction {
 }
 
 EagerInstruction ifThenElseStatement(TargetRegister cond, Address onTrue, Address onFalse = Address(-1));
-EagerInstruction opNotEquals(TargetRegister destination, TargetRegister src0, TargetRegister src1);
 
 template<typename T, typename ... Rest>
 EagerInstruction instructions(T value, Rest&& ... rest) {
@@ -167,6 +166,7 @@ EagerInstruction instructions(T value, Rest&& ... rest) {
         ab.addInstruction(value, std::move(rest)...);
     };
 }
+
 
 } // end namespace forth
 

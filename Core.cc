@@ -624,6 +624,70 @@ void Core::dispatchInstruction() {
                     _pc.setValue(getDestinationRegister(value.args).getTruth() ?
                             getSourceRegister(value.args).getAddress() : 
                             getSource2Register(value.args).getAddress());
+				} else if constexpr (std::is_same_v<T, GreaterThanOrEqualTo>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getInt() >=
+							getSource2Register(value.args).getInt());
+				} else if constexpr (std::is_same_v<T, GreaterThanOrEqualToUnsigned>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getAddress() >=
+							getSource2Register(value.args).getAddress());
+				} else if constexpr (std::is_same_v<T, FloatingPointGreaterThanOrEqualTo>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getFP() >=
+							getSource2Register(value.args).getFP());
+				} else if constexpr (std::is_same_v<T, LessThanOrEqualTo>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getInt() <=
+							getSource2Register(value.args).getInt());
+				} else if constexpr (std::is_same_v<T, LessThanOrEqualToUnsigned>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getAddress() <=
+							getSource2Register(value.args).getAddress());
+				} else if constexpr (std::is_same_v<T, FloatingPointLessThanOrEqualTo>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getFP() <=
+							getSource2Register(value.args).getFP());
+				} else if constexpr (std::is_same_v<T, NotEqual>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getInt() !=
+							getSource2Register(value.args).getInt());
+				} else if constexpr (std::is_same_v<T, NotEqualUnsigned>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getAddress() !=
+							getSource2Register(value.args).getAddress());
+				} else if constexpr (std::is_same_v<T, FloatingPointNotEqual>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getFP() !=
+							getSource2Register(value.args).getFP());
+				} else if constexpr (std::is_same_v<T, NotEqualBoolean>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getTruth() !=
+							getSource2Register(value.args).getTruth());
+				} else if constexpr (std::is_same_v<T, NotEqualImmediate>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getInt() !=
+							Integer(value.args.imm16));
+				} else if constexpr (std::is_same_v<T, UnsignedNotEqualImmediate>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getAddress() !=
+							Address(value.args.imm16));
+				} else if constexpr (std::is_same_v<T, GreaterThanOrEqualToImmediate>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getInt() >=
+							Integer(value.args.imm16));
+				} else if constexpr (std::is_same_v<T, UnsignedGreaterThanOrEqualToImmediate>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getAddress() >=
+							Address(value.args.imm16));
+				} else if constexpr (std::is_same_v<T, LessThanOrEqualToImmediate>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getInt() <=
+							Integer(value.args.imm16));
+				} else if constexpr (std::is_same_v<T, UnsignedLessThanOrEqualToImmediate>) {
+					getDestinationRegister(value.args).setValue(
+							getSourceRegister(value.args).getAddress() <=
+							Address(value.args.imm16));
 				} else {
 					static_assert(AlwaysFalse<T>::value, "Unimplemented instruction!");
 				}

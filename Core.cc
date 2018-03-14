@@ -291,6 +291,7 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
 #define XSignedImm16(title) PerformDecode(title)
 #define XImmediate24(title) PerformDecode(title)
 #define XTwoRegisterWithImm16(title) PerformDecode(title) 
+#define XCustomTwoRegisterWithImm16(title) PerformDecode(title) 
 #define XOneRegisterWithImm16(title) PerformDecode(title) 
 #define XFourRegister(title) PerformDecode(title) 
 #define XFiveRegister(title) PerformDecode(title) 
@@ -307,6 +308,7 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
 #include "InstructionData.def"
 #undef X
 #undef FirstX
+#undef XCustomTwoRegisterWithImm16
 #undef XNoArguments
 #undef XOneRegister
 #undef XTwoRegister

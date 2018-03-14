@@ -83,6 +83,7 @@ constexpr InstructionWidth determineInstructionWidth(Opcode op) noexcept {
 #define DispatchSignedImm16(title) return  FourByteInstruction() ;
 #define DispatchImmediate24(title) return  FourByteInstruction() ;
 #define DispatchTwoRegisterWithImm16(title) return  FourByteInstruction();
+#define DispatchCustomTwoRegisterWithImm16(title) return  FourByteInstruction();
 #define DispatchOneRegisterWithImm16(title) return  FourByteInstruction();
 #define DispatchFourRegister(title) return  ThreeByteInstruction();
 #define DispatchFiveRegister(title) return  FourByteInstruction();
@@ -94,6 +95,7 @@ constexpr InstructionWidth determineInstructionWidth(Opcode op) noexcept {
 #include "InstructionData.def"
 #undef FirstX
 #undef X
+#undef DispatchCustomTwoRegisterWithImm16
 #undef DispatchNoArguments
 #undef DispatchOneRegister
 #undef DispatchTwoRegister

@@ -95,22 +95,21 @@ class Core {
 	public:
         using DestinationRegister = forth::OptionalRegister;
         using SourceRegister = forth::OptionalRegister;
-#define OperationKind(x) struct x final
-		OperationKind(NoArguments) { };
-        OperationKind(TwoRegister) {
-		TwoRegister() = default;
-		TwoRegister(DestinationRegister dest, SourceRegister src) : destination(dest), source(src) { };
-		TwoRegister(TargetRegister dest, TargetRegister src) : destination(dest), source(src) { };
-		DestinationRegister destination;
-		SourceRegister source;
+		struct NoArguments final { };
+        struct TwoRegister final {
+		    TwoRegister() = default;
+		    TwoRegister(DestinationRegister dest, SourceRegister src) : destination(dest), source(src) { };
+		    TwoRegister(TargetRegister dest, TargetRegister src) : destination(dest), source(src) { };
+		    DestinationRegister destination;
+		    SourceRegister source;
         };
-        OperationKind(OneRegister) {
-		OneRegister() = default;
-		OneRegister(DestinationRegister dest) : destination(dest) { };
-		OneRegister(TargetRegister dest) : destination(dest) { };
-		DestinationRegister destination;
+        struct OneRegister final {
+            OneRegister() = default;
+            OneRegister(DestinationRegister dest) : destination(dest) { };
+            OneRegister(TargetRegister dest) : destination(dest) { };
+            DestinationRegister destination;
         };
-        OperationKind(FourRegister) {
+        struct FourRegister final {
 			FourRegister() = default;
 			FourRegister(DestinationRegister dest, SourceRegister src, SourceRegister src2, SourceRegister src3) : destination(dest), source(src), source2(src2), source3(src3) { }
 			FourRegister(TargetRegister dest, TargetRegister src, TargetRegister src2, TargetRegister src3) : destination(dest), source(src), source2(src2), source3(src3) { }
@@ -119,7 +118,7 @@ class Core {
             SourceRegister source2;
             SourceRegister source3;
         };
-        OperationKind(ThreeRegister) {
+        struct ThreeRegister final {
 			ThreeRegister() = default;
 			ThreeRegister(DestinationRegister dest, SourceRegister src, SourceRegister src2) : destination(dest), source(src), source2(src2) { }
 			ThreeRegister(TargetRegister dest, TargetRegister src, TargetRegister src2) : destination(dest), source(src), source2(src2) { }
@@ -127,12 +126,12 @@ class Core {
             SourceRegister source;
             SourceRegister source2;
         };
-		OperationKind(SignedImm16) {
+		struct SignedImm16 final {
 			SignedImm16() = default;
 			SignedImm16(QuarterInteger imm16) : value(imm16) { }
 			QuarterInteger value;
 		};
-        OperationKind(FiveRegister) {
+        struct FiveRegister final {
 			FiveRegister() = default;
 			FiveRegister(DestinationRegister dest, SourceRegister src, SourceRegister src2, SourceRegister src3, SourceRegister src4) : destination(dest), source(src), source2(src2), source3(src3), source4(src4) { }
 			FiveRegister(TargetRegister dest, TargetRegister src, TargetRegister src2, TargetRegister src3, TargetRegister src4) : destination(dest), source(src), source2(src2), source3(src3), source4(src4) { }
@@ -142,12 +141,12 @@ class Core {
 			SourceRegister source3;
 			SourceRegister source4;
         };
-        OperationKind(Immediate24) {
+        struct Immediate24 final {
 			Immediate24() = default;
 			Immediate24(HalfAddress addr) : imm24(addr) { };
             HalfAddress imm24;
         };
-        OperationKind(TwoRegisterWithImm16) {
+        struct TwoRegisterWithImm16 {
 			TwoRegisterWithImm16() = default;
 			TwoRegisterWithImm16(DestinationRegister dest, SourceRegister src, QuarterAddress imm) : destination(dest), source(src), imm16(imm) { }
 			TwoRegisterWithImm16(TargetRegister dest, TargetRegister src, QuarterAddress imm) : destination(dest), source(src), imm16(imm) { }
@@ -155,29 +154,30 @@ class Core {
             SourceRegister source;
             QuarterAddress imm16;
         };
-        OperationKind(OneRegisterWithImm16) {
+        struct CustomTwoRegisterWithImm16 final : public TwoRegisterWithImm16 {
+            using TwoRegisterWithImm16::TwoRegisterWithImm16;
+        };
+        struct OneRegisterWithImm16 final {
 			OneRegisterWithImm16() = default;
 			OneRegisterWithImm16(DestinationRegister dest, QuarterAddress imm) : destination(dest), imm16(imm) { }
 			OneRegisterWithImm16(TargetRegister dest, QuarterAddress imm) : destination(dest), imm16(imm) { }
             DestinationRegister destination;
             QuarterAddress imm16;
         };
-        OperationKind(OneRegisterWithImm32) {
+        struct OneRegisterWithImm32 final {
 			OneRegisterWithImm32() = default;
 			OneRegisterWithImm32(DestinationRegister dest, HalfAddress imm) : destination(dest), imm32(imm) { }
 			OneRegisterWithImm32(TargetRegister dest, HalfAddress imm) : destination(dest), imm32(imm) { }
             DestinationRegister destination;
             HalfAddress imm32;
         };
-        OperationKind(OneRegisterWithImm64) {
+        struct OneRegisterWithImm64 final {
 			OneRegisterWithImm64() = default;
 			OneRegisterWithImm64(DestinationRegister dest, Address imm) : destination(dest), imm64(imm) { }
 			OneRegisterWithImm64(TargetRegister dest, Address imm) : destination(dest), imm64(imm) { }
             DestinationRegister destination;
             Address imm64;
-
         };
-#undef OperationKind
 #define X(title, b) struct title final { \
 	constexpr Opcode getOpcode() const noexcept { return Opcode:: title ; } \
 	constexpr byte size() const noexcept { return determineInstructionWidth(getOpcode()).size(); } \

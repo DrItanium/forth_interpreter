@@ -61,6 +61,7 @@ namespace forth {
 #define DispatchSignedImm16(title)
 #define DispatchImmediate24(title) Core::title op ## title (HalfAddress addr) noexcept { return op ## title ({addr}); }
 #define DispatchTwoRegisterWithImm16(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept { return op ## title ( {dest, src, value}); }
+#define DispatchCustomTwoRegisterWithImm16(title) 
 #define DispatchOneRegisterWithImm16(title) Core:: title op ## title (TargetRegister dest, QuarterAddress value) noexcept { return op ## title ( {dest, value}); }
 #define DispatchFourRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1, TargetRegister src2) noexcept { return op ## title ( { dest, src, src1, src2 }); }
 #define DispatchFiveRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1, TargetRegister src2, TargetRegister src3) noexcept { return op ## title ( { dest, src, src1, src2, src3 }); }
@@ -377,6 +378,74 @@ namespace forth {
                                   opLoadImmediate(t, onFalse),
                                   opCallIfStatement(cond, t, f));
             };
+        }
+    }
+
+    EagerInstruction opNotEquals(TargetRegister dest, TargetRegister a, TargetRegister b) {
+        return [dest, a, b](auto& ab) {
+            ab.addInstruction(opEquals(dest, a, b),
+                              opNot(dest, dest));
+        };
+    }
+    EagerInstruction opMultiplyImmediate(TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept {
+        auto fn = [dest, src](auto count) {
+            return [dest, src, count](auto& ab) {
+                ab.addInstruction(opShiftLeftImmediate(dest, src, count));
+            };
+        };
+        switch (value) {
+            case 0:
+                return [dest](auto& ab) { ab.addInstruction(zeroRegister(dest)); };
+            case 1:
+                return [dest, src](auto& ab) { ab.addInstruction(opMove(dest, src)); };
+            case 2:
+                return [dest, src](auto& ab) { ab.addInstruction(opAdd(dest, src, src)); };
+            case 4: return fn(2);
+            case 8: return fn(3);
+            case 16: return fn(4);
+            case 32: return fn(5);
+            case 64: return fn(6);
+            case 128: return fn(7);
+            case 256: return fn(8);
+            case 512: return fn(9);
+            case 1024: return fn(10);
+            case 4096: return fn(11);
+            case 8192: return fn(12);
+            case 16384: return fn(13);
+            case 32768: return fn(14);
+            default:
+                return [dest, src, value](auto& ab) { ab.addInstruction(opMultiplyImmediate({dest, src, value})); };
+        }
+    }
+
+    EagerInstruction opUnsignedMultiplyImmediate(TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept {
+        auto fn = [dest, src](auto count) {
+            return [dest, src, count](auto& ab) {
+                ab.addInstruction(opUnsignedShiftLeftImmediate(dest, src, count));
+            };
+        };
+        switch (value) {
+            case 0:
+                return [dest](auto& ab) { ab.addInstruction(zeroRegister(dest)); };
+            case 1:
+                return [dest, src](auto& ab) { ab.addInstruction(opMove(dest, src)); };
+            case 2:
+                return [dest, src](auto& ab) { ab.addInstruction(opAddUnsigned(dest, src, src)); };
+            case 4: return fn(2);
+            case 8: return fn(3);
+            case 16: return fn(4);
+            case 32: return fn(5);
+            case 64: return fn(6);
+            case 128: return fn(7);
+            case 256: return fn(8);
+            case 512: return fn(9);
+            case 1024: return fn(10);
+            case 4096: return fn(11);
+            case 8192: return fn(12);
+            case 16384: return fn(13);
+            case 32768: return fn(14);
+            default:
+                return [dest, src, value](auto& ab) { ab.addInstruction(opUnsignedMultiplyImmediate({dest, src, value})); };
         }
     }
 

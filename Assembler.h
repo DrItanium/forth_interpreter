@@ -68,6 +68,7 @@ class AssemblerBuilder {
 #define DispatchSignedImm16(title)
 #define DispatchImmediate24(title) Core:: title op ## title (HalfAddress addr) noexcept;
 #define DispatchTwoRegisterWithImm16(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept;
+#define DispatchCustomTwoRegisterWithImm16(title) EagerInstruction op ## title (TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept;
 #define DispatchOneRegisterWithImm16(title) Core:: title op ## title (TargetRegister dest, QuarterAddress value) noexcept;
 #define DispatchOneRegisterWithImm64(title) Core:: title op ## title (TargetRegister dest, Address addr) noexcept;
 #define DispatchOneRegisterWithImm48(title) Core:: title op ## title (TargetRegister dest, Address addr) noexcept;
@@ -92,6 +93,7 @@ class AssemblerBuilder {
 #undef DispatchOneRegisterWithImm48
 #undef DispatchOneRegisterWithImm32
 #undef DispatchOneRegisterWithImm64
+#undef DispatchCustomTwoRegisterWithImm16
 
 Core::Move zeroRegister(TargetRegister reg) noexcept;
 EagerInstruction useRegister(TargetRegister reg, EagerInstruction body) noexcept;
@@ -157,6 +159,7 @@ inline auto opPopRegisterCAB() noexcept -> EagerInstruction {
 }
 
 EagerInstruction ifThenElseStatement(TargetRegister cond, Address onTrue, Address onFalse = Address(-1));
+EagerInstruction opNotEquals(TargetRegister destination, TargetRegister src0, TargetRegister src1);
 
 } // end namespace forth
 

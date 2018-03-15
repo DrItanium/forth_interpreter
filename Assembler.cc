@@ -574,12 +574,12 @@ namespace forth {
     EagerInstruction directiveString(const std::string& value) {
         return [value](auto& x) {
             for (const auto& c : value) {
-                ab.addInstruction(directiveByte(c));
+                x.addInstruction(directiveByte(c));
             }
         };
     }
-    EagerInstruction directiveLabeledString(const std::string& label, const std::string& str) {
-        return instructions(label(label),
+    EagerInstruction directiveLabeledString(const std::string& l, const std::string& str) {
+        return instructions(label(l),
                             directiveString(str));
     }
 } // end namespace forth

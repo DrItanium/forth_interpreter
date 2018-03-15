@@ -23,6 +23,7 @@ enum class TargetRegister : byte {
     Index, // Index Pointer
     Temporary, // used to store temporary data we requested
     Temporary2, // for the cases where the assembler needs another temporary register
+    Compile, // used to denote the address of the word to use in the dictionary
     Count,
 };
 using OptionalRegister = std::optional<TargetRegister>;

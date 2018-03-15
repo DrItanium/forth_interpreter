@@ -7,11 +7,11 @@
 
 namespace forth {
     template<typename T>
-    EagerInstruction binaryOperationFunction(const std::string& name, T op) {
-        return function(name, opPopRegisterAB(), 
-                op,
-                opPushRegisterC());
-    }
+        EagerInstruction binaryOperationFunction(const std::string& name, T op) {
+            return function(name, opPopRegisterAB(), 
+                    op,
+                    opPushRegisterC());
+        }
 #define DEFAULT_REGISTER_ARGS3 TargetRegister::C, TargetRegister::A, TargetRegister::B
     void systemSetup(forth::Machine& machine) {
         // initial system values that we need to use
@@ -23,7 +23,7 @@ namespace forth {
                     opSubroutineCall("PrintNewline"));
         };
         init.addInstruction(
-				directiveOrg(0),
+                directiveOrg(0),
                 opStoreImmediate64(forth::Machine::shouldKeepExecutingLocation, 1),
                 opStoreImmediate64(forth::Machine::isCompilingLocation, 0),
                 opStoreImmediate64(forth::Machine::ignoreInputLocation, 0),
@@ -38,14 +38,14 @@ namespace forth {
                 opStoreImmediate64(forth::Machine::terminateControlLoopLocation, "TerminateControlLoop"),
                 // now start using the other system variables to 
                 forth::opLeaveExecutionLoop(),
-				directiveOrg(0x01000),
+                directiveOrg(0x01000),
                 label("InvokeAndReturnToMicrocode"),
                 // the S register has been prepped by the microcode to execute a routine
                 opCallSubroutineIndirect(TargetRegister::S),
                 forth::opLeaveExecutionLoop(),
                 function("StoreValue",
-                    opPopRegisterAB(),
-                    opStore(TargetRegister::B, TargetRegister::A)),
+                        opPopRegisterAB(),
+                        opStore(TargetRegister::B, TargetRegister::A)),
                 function("LoadValue",
                         opPopRegisterA(),
                         opLoad(TargetRegister::C, TargetRegister::A),
@@ -218,7 +218,7 @@ namespace forth {
 #define DispatchOneRegisterWithImm32(title)
 #define DispatchNoArguments(title) 
 #define X(title, b) \
-	INDIRECTION(Dispatch, b)(title)
+                INDIRECTION(Dispatch, b)(title)
 #define FirstX(title, b) X(title, b)
 #include "InstructionData.def"
 #undef X
@@ -236,66 +236,66 @@ namespace forth {
 #undef DispatchOneRegisterWithImm48
 #undef DispatchOneRegisterWithImm32
 #undef DispatchOneRegisterWithImm64
-				directiveOrg(0x02000),
-				label("NativeDispatchTable"),
-				directiveAddresses(
-                        "StoreValue",
-						"LoadValue",
-						"WriteFalse",
-						"WriteTrue",
-						"GetParameterStackEmpty",
-						"GetSubroutineStackEmpty",
-						"ClearSubroutineStack",
-						"ActivateCompilationMode",
-						"DeactivateCompilationMode",
-						"InCompilationMode",
-						"DispatchInstruction",
-						"ShouldKeepExecuting",
-						"PrintNewline",
-						"PrintRegisters",
-						"PrintStack",
-						"TerminateControlLoop",
-						"InIgnoreInputMode"),
-#define DispatchOneRegister(title) 
-#define DispatchTwoRegister(title) 
-#define DispatchThreeRegister(title) directiveAddress( #title ) ,
-#define DispatchSignedImm16(title)
-#define DispatchImmediate24(title) 
-#define DispatchTwoRegisterWithImm16(title) 
-#define DispatchCustomTwoRegisterWithImm16(title) 
-#define DispatchOneRegisterWithImm16(title) 
-#define DispatchFourRegister(title) 
-#define DispatchFiveRegister(title)
-#define DispatchOneRegisterWithImm64(title) 
-#define DispatchOneRegisterWithImm48(title) 
-#define DispatchOneRegisterWithImm32(title)
-#define DispatchNoArguments(title) 
-#define FirstX(title, b) INDIRECTION(Dispatch, b)(title)
-#define X(title, b) FirstX(title, b)
-#include "InstructionData.def"
-#undef X
-#undef FirstX
-#undef DispatchNoArguments
-#undef DispatchOneRegister
-#undef DispatchTwoRegister
-#undef DispatchThreeRegister
-#undef DispatchSignedImm16
-#undef DispatchImmediate24
-#undef DispatchTwoRegisterWithImm16
-#undef DispatchOneRegisterWithImm16
-#undef DispatchFiveRegister
-#undef DispatchFourRegister
-#undef DispatchOneRegisterWithImm48
-#undef DispatchOneRegisterWithImm32
-#undef DispatchOneRegisterWithImm64
-                    directiveAddress(0),
-                    directiveOrg(0x100000),
-                    label("StringCacheBegin"),
-                    directiveOrg(0x200000),
-                    label("InstructionCacheBegin"),
-                    directiveOrg(0x900000)
-                        );
-		machine.installInCore(init);
+                function("NewWord", 
+                        opPushRegister(TargetRegister::Compile, TargetRegister::SP2),
+                        opUnsignedAddImmediate(TargetRegister::Compile, TargetRegister::DP, 32)),
+                function("FinishCompilingWord",
+                        opMove(TargetRegister::Temporary, TargetRegister::Compile),
+                        opUnsignedAddImmediate(TargetRegister::Temporary, TargetRegister::Temporary, 24),
+                        opStore(TargetRegister::Temporary, TargetRegister::DP),
+                        opMove(TargetRegister::DP, TargetRegister::Compile),
+                        opPopRegister(TargetRegister::Compile, TargetRegister::SP2)),
+                function("GetStringLength", // ( addr -- length )
+                        opPopRegisterA(),
+                        opLoad(TargetRegister::C, TargetRegister::A), 
+                        opPushRegisterC()),
+                function("GetStringStart", // ( addr -- length )
+                        opPopRegisterA(),
+                        opUnsignedAddImmediate(TargetRegister::A, TargetRegister::A, 8),
+                        opPushRegisterC()),
+                function("UnpackString", // ( addr -- str length )
+                        opSubroutineCall("DuplicateTopParameter"), // ( addr -- addr addr )
+                        opSubroutineCall("GetStringStart"), // ( addr addr -- addr str )
+                        opSubroutineCall("SwapTopAndLowerParameters"), // ( addr str -- str addr )
+                        opSubroutineCall("GetStringLength")), // ( str addr -- str len )
+                function("GetStringAddressFromDictionaryEntry", // ( dict -- addr )
+                        opSubroutineCall("LoadValue")),
+                function("GetFlagsFromDictionaryEntry", // ( dict -- flags)
+                        opPopRegisterA(),
+                        opUnsignedAddImmediate(TargetRegister::A, TargetRegister::A, 8),
+                        opPushRegisterA(),
+                        opSubroutineCall("LoadValue")),
+                function("GetNextFromDictionaryEntry", // ( dict -- next )
+                        opPopRegisterA(),
+                        opUnsignedAddImmediate(TargetRegister::A, TargetRegister::A, 16),
+                        opPushRegisterA(),
+                        opSubroutineCall("LoadValue")),
+                function("GetSubroutineFromDictionaryEntry", // ( dict -- next )
+                        opPopRegisterA(),
+                        opUnsignedAddImmediate(TargetRegister::A, TargetRegister::A, 24),
+                        opPushRegisterA(),
+                        opSubroutineCall("LoadValue")),
+
+                // Format of the string entries are
+                // address - length
+                // data
+                directiveOrg(0x1000000),
+                label("StringCacheEnd"),
+                directiveAddress("StringCacheBegin"),
+                label("StringCacheBegin"),
+                directiveOrg(0x2000000),
+                label("InstructionCacheBegin"),
+                directiveOrg(0x3000000),
+                // format is
+                // String Address
+                // Flags
+                // Next
+                // Subroutine to call
+                directiveAddress(0),
+                label("DictionaryFront"),
+                directiveOrg(0x4000000),
+                label("DictionaryFullEntry"));
+        machine.installInCore(init);
 #undef DEFAULT_REGISTER_ARGS3
     }
 }
@@ -304,7 +304,7 @@ int main() {
     try {
         forth::Machine machine (std::cout, std::cin);
         machine.initializeBaseDictionary();
-	    forth::systemSetup(machine);
+        forth::systemSetup(machine);
     } catch (forth::Problem& p) {
         std::cout << p.getWord() << ": " << p.getMessage() << std::endl;
         std::cout << "terminating...." << std::endl;

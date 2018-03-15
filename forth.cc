@@ -12,6 +12,7 @@ namespace forth {
                 op,
                 opPushRegisterC());
     }
+#define DEFAULT_REGISTER_ARGS3 TargetRegister::C, TargetRegister::A, TargetRegister::B
     void systemSetup(forth::Machine& machine) {
         // initial system values that we need to use
         forth::AssemblerBuilder init;
@@ -70,10 +71,6 @@ namespace forth {
                         opSubroutineCall("GetParameterStackEmpty"),
                         opPopRegisterA(),
                         opMove(TargetRegister::SP, TargetRegister::A)),
-                binaryOperationFunction("EqualsAddress", 
-                        opEquals(TargetRegister::C, TargetRegister::A, TargetRegister::B)),
-                binaryOperationFunction("NotEqualsAddress", 
-                        opNotEqual(TargetRegister::C, TargetRegister::A, TargetRegister::B)),
                 function("NotEqualZero",
                         opPopRegisterA(),
                         opNotEqual(TargetRegister::C, TargetRegister::A, TargetRegister::Zero),
@@ -129,16 +126,49 @@ namespace forth {
                 function("TerminateControlLoop",
                         opPushImmediate64(Machine::shouldKeepExecutingLocation),
                         opSubroutineCall("WriteFalse")),
+#define DispatchOneRegister(title) 
+#define DispatchTwoRegister(title) 
+#define DispatchThreeRegister(title) binaryOperationFunction( #title , op ## title ( DEFAULT_REGISTER_ARGS3 )),
+#define DispatchSignedImm16(title)
+#define DispatchImmediate24(title) 
+#define DispatchTwoRegisterWithImm16(title) 
+#define DispatchCustomTwoRegisterWithImm16(title) 
+#define DispatchOneRegisterWithImm16(title) 
+#define DispatchFourRegister(title) 
+#define DispatchFiveRegister(title)
+#define DispatchOneRegisterWithImm64(title) 
+#define DispatchOneRegisterWithImm48(title) 
+#define DispatchOneRegisterWithImm32(title)
+#define DispatchNoArguments(title) 
+#define X(title, b) \
+	INDIRECTION(Dispatch, b)(title)
+#define FirstX(title, b) X(title, b)
+#include "InstructionData.def"
+#undef X
+#undef FirstX
+#undef DispatchNoArguments
+#undef DispatchOneRegister
+#undef DispatchTwoRegister
+#undef DispatchThreeRegister
+#undef DispatchSignedImm16
+#undef DispatchImmediate24
+#undef DispatchTwoRegisterWithImm16
+#undef DispatchOneRegisterWithImm16
+#undef DispatchFiveRegister
+#undef DispatchFourRegister
+#undef DispatchOneRegisterWithImm48
+#undef DispatchOneRegisterWithImm32
+#undef DispatchOneRegisterWithImm64
 				directiveOrg(0x02000),
 				label("NativeDispatchTable"),
-				directiveAddresses("StoreValue",
+				directiveAddresses(
+                        "StoreValue",
 						"LoadValue",
 						"WriteFalse",
 						"WriteTrue",
 						"GetParameterStackEmpty",
 						"GetSubroutineStackEmpty",
 						"ClearSubroutineStack",
-						"EqualsAddress",
 						"ActivateCompilationMode",
 						"DeactivateCompilationMode",
 						"InCompilationMode",
@@ -148,30 +178,54 @@ namespace forth {
 						"PrintRegisters",
 						"PrintStack",
 						"TerminateControlLoop",
-						"InIgnoreInputMode")
-                    );
+						"InIgnoreInputMode"),
+#define DispatchOneRegister(title) 
+#define DispatchTwoRegister(title) 
+#define DispatchThreeRegister(title) directiveAddress( #title ) ,
+#define DispatchSignedImm16(title)
+#define DispatchImmediate24(title) 
+#define DispatchTwoRegisterWithImm16(title) 
+#define DispatchCustomTwoRegisterWithImm16(title) 
+#define DispatchOneRegisterWithImm16(title) 
+#define DispatchFourRegister(title) 
+#define DispatchFiveRegister(title)
+#define DispatchOneRegisterWithImm64(title) 
+#define DispatchOneRegisterWithImm48(title) 
+#define DispatchOneRegisterWithImm32(title)
+#define DispatchNoArguments(title) 
+#define FirstX(title, b) INDIRECTION(Dispatch, b)(title)
+#define X(title, b) FirstX(title, b)
+#include "InstructionData.def"
+#undef X
+#undef FirstX
+#undef DispatchNoArguments
+#undef DispatchOneRegister
+#undef DispatchTwoRegister
+#undef DispatchThreeRegister
+#undef DispatchSignedImm16
+#undef DispatchImmediate24
+#undef DispatchTwoRegisterWithImm16
+#undef DispatchOneRegisterWithImm16
+#undef DispatchFiveRegister
+#undef DispatchFourRegister
+#undef DispatchOneRegisterWithImm48
+#undef DispatchOneRegisterWithImm32
+#undef DispatchOneRegisterWithImm64
+                    directiveAddress(0));
 		machine.installInCore(init);
+#undef DEFAULT_REGISTER_ARGS3
     }
 }
 
 int main() {
-    forth::Machine machine (std::cout, std::cin);
-    machine.initializeBaseDictionary();
-	forth::systemSetup(machine);
-    //addBinaryOperation<forth::add()>(machine, "+");
-    //addBinaryOperation<forth::addf()>(machine, "+f");
-    //addBinaryOperation<forth::sub()>(machine, "-");
-    //addBinaryOperation<forth::subf()>(machine, "-f");
-    //machine.addMachineCodeWord<forth::addiu(forth::TargetRegister::C, forth::TargetRegister::Zero, 1), pushC>("true");
-    //machine.addMachineCodeWord<forth::zeroRegister(forth::TargetRegister::C), pushC>("false");
-    //machine.addMachineCodeWord<forth::popA()>("drop");
-    //machine.addMachineCodeWord<forth::popA(), forth::popA()>("2drop");
-    //machine.addMachineCodeWord<forth::popA(), forth::pushA(), forth::pushA()>("dup");
-    //microarchitectureWords(machine);
-    //arithmeticOperators(machine);
-    //stackOperators(machine);
-    //registerDecls(machine);
-    //machine.controlLoop();
+    try {
+        forth::Machine machine (std::cout, std::cin);
+        machine.initializeBaseDictionary();
+	    forth::systemSetup(machine);
+    } catch (forth::Problem& p) {
+        std::cout << p.getWord() << ": " << p.getMessage() << std::endl;
+        std::cout << "terminating...." << std::endl;
+    }
 
     return 0;
 }

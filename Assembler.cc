@@ -16,7 +16,10 @@ namespace forth {
 		if (auto result = _names.find(name); result == _names.cend()) {
 			_names.emplace(name, _currentLocation);
 		} else {
-			throw Problem("labelHere", "Requested label already registered!");
+            std::stringstream ss;
+            ss << "Requested label '" << name << "' already registered!";
+            auto str = ss.str();
+			throw Problem("labelHere", str);
 		}
 	}
 
@@ -24,7 +27,10 @@ namespace forth {
 		if (auto result = _names.find(name); result != _names.cend()) {
 			return result->second;
 		} else {
-			throw Problem("absoluteLabelAddress", "Can't find label name!");
+            std::stringstream ss;
+            ss << "Can't find label " << name << "!";
+            auto str = ss.str();
+			throw Problem("absoluteLabelAddress", str);
 		}
 	}
 	Integer AssemblerBuilder::relativeLabelAddress(const std::string& name) const {
@@ -41,7 +47,10 @@ namespace forth {
 				return 0;
 			}
 		} else {
-			throw Problem("relativeLabelAddress", "Can't find label name!");
+            std::stringstream ss;
+            ss << "Can't find label " << name << "!";
+            auto str = ss.str();
+			throw Problem("relativeLabelAddress", str);
 		}
 	}
 #define DispatchOneRegister(title) 

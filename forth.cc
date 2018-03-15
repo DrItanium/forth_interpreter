@@ -202,7 +202,7 @@ namespace forth {
     }
     void systemSetup(forth::Machine& machine) {
         // initial system values that we need to use
-        forth::AssemblerBuilder init(0);
+        forth::AssemblerBuilder init;
         auto makeFunctionPrinter = [](const std::string& name, TargetRegister reg) {
             return instructions(opPrintChar(name),
                     opPrintChar(": "),
@@ -210,7 +210,7 @@ namespace forth {
                     opSubroutineCall("PrintNewline"));
         };
         init.addInstruction(
-
+				directiveOrg(0),
                 opStoreImmediate64(forth::Machine::shouldKeepExecutingLocation, 1),
                 opStoreImmediate64(forth::Machine::isCompilingLocation, 0),
                 opStoreImmediate64(forth::Machine::ignoreInputLocation, 0),
@@ -225,6 +225,7 @@ namespace forth {
                 opStoreImmediate64(forth::Machine::terminateControlLoopLocation, "terminateControlLoop"),
                 // now start using the other system variables to 
                 forth::opLeaveExecutionLoop(),
+				directiveOrg(0x01000),
                 label("InvokeAndReturnToMicrocode"),
                 // the S register has been prepped by the microcode to execute a routine
                 opCallSubroutineIndirect(TargetRegister::S),
@@ -315,7 +316,26 @@ namespace forth {
                         label("PrintStack_Done")),
                 function("TerminateControlLoop",
                         opPushImmediate64(Machine::shouldKeepExecutingLocation),
-                        opSubroutineCall("WriteFalse"))
+                        opSubroutineCall("WriteFalse")),
+				directiveOrg(0x02000),
+				label("NativeDispatchTable"),
+				directiveAddresses("StoreValue",
+						"LoadValue",
+						"WriteFalse",
+						"WriteTrue",
+						"GetParameterStackEmpty",
+						"GetSubroutineStackEmpty",
+						"ClearSubroutineStack",
+						"EqualsAddress",
+						"ActivateCompilationMode",
+						"DeactivateCompilationMode",
+						"InCompilationMode",
+						"DispatchInstruction",
+						"ShouldKeepExecuting",
+						"PrintNewline",
+						"PrintRegisters",
+						"PrintStack",
+						"TerminateControlLoop")
                     );
     }
 }

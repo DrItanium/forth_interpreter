@@ -506,15 +506,6 @@ namespace forth {
                 };
         }
     }
-    EagerInstruction directiveMakeAddressSpace(Address count) noexcept { 
-        return directiveMakeSpaceForType<Address>(count); 
-    }
-    EagerInstruction directiveMakeHalfAddressSpace(Address count) noexcept {
-        return directiveMakeSpaceForType<HalfAddress>(count);
-    }
-    EagerInstruction directiveMakeQuarterAddressSpace(Address count) noexcept {
-        return directiveMakeSpaceForType<QuarterAddress>(count);
-    }
     EagerInstruction directiveOrg(Address addr) noexcept {
         return [addr](auto& ab) { ab.setCurrentLocation(addr); };
     }
@@ -522,18 +513,42 @@ namespace forth {
         return instructions(value);
     }
     EagerInstruction directiveQuarterAddress(QuarterAddress value) noexcept {
-        return instructions(getLowerHalf(value), getUpperHalf(value));
+		return instructions(value);
     }
     EagerInstruction directiveHalfAddress(HalfAddress value) noexcept {
-        return instructions(getLowestQuarter(value),
-                            getLowerQuarter(value),
-                            getHigherQuarter(value),
-                            getHighestQuarter(value));
+		return instructions(value);
     }
     EagerInstruction directiveAddress(Address value) noexcept {
-        return instructions(directiveQuarterAddress(getLowestQuarter(value)),
-                            directiveQuarterAddress(getLowerQuarter(value)),
-                            directiveQuarterAddress(getHigherQuarter(value)),
-                            directiveQuarterAddress(getHighestQuarter(value)));
+		return instructions(value);
     }
+	EagerInstruction directiveAddress(const std::string& name) noexcept {
+		return [name](auto& x) {
+			if (x.labelDefined(name)) {
+				x.addInstruction(directiveAddress(x.absoluteLabelAddress(name)));
+			} else {
+				auto v = std::make_shared<Address>();
+				*v = 0;
+				ResolvableLazyFunction fn = [name, v](auto& x, auto from) {
+					*v = x.absoluteLabelAddress(name);
+				};
+				x.addInstruction(v, fn);
+			}
+		};
+	}
+	void AssemblerBuilder::addInstruction(HalfAddress op) noexcept {
+		_operations.emplace(_currentLocation, op);
+		_currentLocation += sizeof(op);
+	}
+	void AssemblerBuilder::addInstruction(Address op) noexcept {
+		_operations.emplace(_currentLocation, op);
+		_currentLocation += sizeof(op);
+	}
+	void AssemblerBuilder::addInstruction(std::shared_ptr<Address> op) noexcept {
+		_operations.emplace(_currentLocation, op);
+		_currentLocation += sizeof(Address);
+	}
+	void AssemblerBuilder::addInstruction(QuarterAddress op) noexcept {
+		_operations.emplace(_currentLocation, op);
+		_currentLocation += sizeof(op);
+	}
 } // end namespace forth

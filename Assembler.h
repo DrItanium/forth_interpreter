@@ -28,6 +28,10 @@ class AssemblerBuilder {
 		using NameToAddress = std::tuple<std::string, Address>;
         using DataEntry = std::variant<std::shared_ptr<Core::DecodedOperation>, 
                                        Core::DecodedOperation,
+									   std::shared_ptr<Address>,
+									   Address,
+									   HalfAddress,
+									   QuarterAddress,
                                        byte>;
 	public:
 		AssemblerBuilder(Address baseAddress = 0);
@@ -43,6 +47,10 @@ class AssemblerBuilder {
 		void addInstruction(ResolvableLazyFunction fn);
 		void addInstruction(const Core::DecodedOperation& op);
         void addInstruction(std::shared_ptr<Core::DecodedOperation> op);
+		void addInstruction(HalfAddress op) noexcept;
+		void addInstruction(std::shared_ptr<Address> op) noexcept;
+		void addInstruction(Address op) noexcept;
+		void addInstruction(QuarterAddress op) noexcept;
         void addInstruction(byte value) noexcept;
 		template<typename T, typename ... Rest>
 		void addInstruction(T first, Rest&& ... rest) {
@@ -169,26 +177,26 @@ inline auto opPopRegisterCAB() noexcept -> EagerInstruction {
 
 EagerInstruction ifThenElseStatement(TargetRegister cond, Address onTrue, Address onFalse);
 EagerInstruction ifThenElseStatement(TargetRegister cond, const std::string& onTrue, const std::string& onFalse);
-EagerInstruction directiveSkipByte(Address count = 1) noexcept;
-template<typename T>
-EagerInstruction directiveMakeSpaceForType(Address count = 1) noexcept {
-    return [count](auto& ab) {
-        for (auto i = 0; i < count; ++i) {
-            ab.addInstruction(directiveSkipByte(sizeof(T)));
-        }
-    };
-}
-
-EagerInstruction directiveMakeHalfAddressSpace(Address count = 1) noexcept;
-EagerInstruction directiveMakeQuarterAddressSpace(Address count = 1) noexcept;
-EagerInstruction directiveMakeAddressSpace(Address count = 1) noexcept;
-
+EagerInstruction directiveSkip(Address count = 1) noexcept;
 EagerInstruction directiveOrg(Address location) noexcept;
 
 EagerInstruction directiveByte(byte value) noexcept;
 EagerInstruction directiveQuarterAddress(QuarterAddress value) noexcept;
 EagerInstruction directiveHalfAddress(HalfAddress value) noexcept;
 EagerInstruction directiveAddress(Address value) noexcept;
+EagerInstruction directiveAddress(const std::string& name) noexcept;
+template<typename T, typename ... Rest>
+EagerInstruction directiveAddresses(T first, Rest&& ... rest) {
+	return [first, rest...](auto& x) {
+		if constexpr (sizeof...(rest) > 0) {
+			x.addInstruction(directiveAddress(first),
+							 directiveAddresses(std::move(rest)...));
+		} else {
+			x.addInstruction(directiveAddress(first));
+		}
+						 
+	};
+}
 
 
 } // end namespace forth

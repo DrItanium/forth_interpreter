@@ -78,6 +78,13 @@ namespace forth {
                 function("MemoryLocationNotEqualZero", // ( addr -- c )
                         opSubroutineCall("LoadValue"),
                         opSubroutineCall("NotEqualZero")),
+                function("EqualZero",
+                        opPopRegisterA(),
+                        opEquals(TargetRegister::C, TargetRegister::A, TargetRegister::Zero),
+                        opPushRegisterC()),
+                function("MemoryLocationEqualZero", // ( addr -- c )
+                        opSubroutineCall("LoadValue"),
+                        opSubroutineCall("EqualZero")),
                 function("ActivateCompilationMode",
                         opPushImmediate64(Machine::isCompilingLocation),
                         opSubroutineCall("WriteTrue")),
@@ -126,6 +133,70 @@ namespace forth {
                 function("TerminateControlLoop",
                         opPushImmediate64(Machine::shouldKeepExecutingLocation),
                         opSubroutineCall("WriteFalse")),
+                function("IndirectLoad", // ( addr -- v )
+                        opPopRegisterA(),
+                        opLoad(TargetRegister::A, TargetRegister::A),
+                        opLoad(TargetRegister::A, TargetRegister::A),
+                        opPushRegisterA()),
+                function("IndirectStore", // ( addr value -- )
+                        opPopRegisterAB(), // A = value, B = addr
+                        opLoad(TargetRegister::B, TargetRegister::B),
+                        opStore(TargetRegister::B, TargetRegister::A)),
+                function("DropTopParameter",
+                        opPopRegisterA()),
+                function("DuplicateTopParameter",
+                        opPopRegisterA(),
+                        opPushRegisterA(),
+                        opPushRegisterA()),
+                function("SwapTopAndLowerParameters", // ( b a -- a b )
+                        opPopRegisterAB(), // A = top, B = lower
+                        opPushRegisterA(),
+                        opPushRegisterB()),
+                function("MoveLowerParameterOverTopParameter", // ( b a -- b a b )
+                        opPopRegisterAB(), // A = top, B = lower
+                        opPushRegisterB(),
+                        opPushRegisterA(),
+                        opPushRegisterB()),
+
+                function("RotateTopThreeParameters", // ( b a c -- a c b )
+                        opPopRegisterCAB(), // c = Top, a = lower, b = third
+                        opPushRegisterA(),
+                        opPushRegisterC(),
+                        opPushRegisterB()),
+                function("ReverseRotateTopThreeParameters",
+                        opSubroutineCall("RotateTopThreeParameters"),
+                        opSubroutineCall("RotateTopThreeParameters")),
+                function("ConditionalDispatch", // ( cond onFalse onTrue -- )
+                        // we want to put the cond first!
+                        opSubroutineCall("RotateTopThreeParameters"), // ( cond onFalse onTrue -- onFalse onTrue cond )
+                        opSubroutineCall("EqualZero"), // ( onFalse onTrue cond -- onFalse onTrue cond )
+                        opPopRegisterCAB(), // C = cond, A = onTrue, B = onFalse
+                        opCallIfStatement(TargetRegister::C, TargetRegister::A, TargetRegister::B)),
+                function("DropLowerParameter", // ( b a -- a )
+                        opPopRegisterAB(),
+                        opPushRegisterA()),
+                function("CopyTopParameterToBelowLowerParameter", // ( b a -- a b a )
+                        opPopRegisterAB(),
+                        opPushRegisterA(),
+                        opPushRegisterB(),
+                        opPushRegisterA()),
+                function("EmitCharacter", // ( character-code -- )
+                        opPopRegisterA(),
+                        opPrintChar(TargetRegister::A)),
+                function("PrintString", // ( length string -- )
+                        opPopRegisterAB(), // A = string, B = length
+                        opPrintString(TargetRegister::A, TargetRegister::B)),
+                function("MemorySwap", // ( addr0 addr1 -- )
+                        opPopRegisterAB(),
+                        opEquals(TargetRegister::C, TargetRegister::A, TargetRegister::B),
+                        // don't do the memory swap if it is the same addresses!
+                        opConditionalBranch(TargetRegister::C, "MemorySwapSkip"),
+                        opLoad(TargetRegister::Temporary, TargetRegister::A),
+                        opLoad(TargetRegister::Temporary2, TargetRegister::B),
+                        opStore(TargetRegister::B, TargetRegister::Temporary),
+                        opStore(TargetRegister::A, TargetRegister::Temporary2),
+                        label("MemorySwapSkip")),
+                        
 #define DispatchOneRegister(title) 
 #define DispatchTwoRegister(title) 
 #define DispatchThreeRegister(title) binaryOperationFunction( #title , op ## title ( DEFAULT_REGISTER_ARGS3 )),

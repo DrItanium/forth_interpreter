@@ -216,7 +216,6 @@ EagerInstruction directiveAddresses(T first, Rest&& ... rest) {
 	};
 }
 
-
 } // end namespace forth
 
 #endif

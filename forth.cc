@@ -335,7 +335,8 @@ namespace forth {
 						"PrintNewline",
 						"PrintRegisters",
 						"PrintStack",
-						"TerminateControlLoop")
+						"TerminateControlLoop",
+						"InIgnoreInputMode")
                     );
     }
 }

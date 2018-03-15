@@ -8,6 +8,7 @@
 #include <memory>
 namespace forth {
 class Core {
+
 	public:
         static constexpr Address largestByteAddress = 0x7FF'FFFF;
 		static constexpr Address largestAddress = largestByteAddress >> 3;
@@ -210,7 +211,15 @@ class Core {
 #undef X
 #undef FirstX
 			>;
-
+		using DataEntry = std::variant<std::shared_ptr<DecodedOperation>, 
+						 			   DecodedOperation,
+						 		  	   std::shared_ptr<Address>,
+						 		  	   Address,
+						 		  	   HalfAddress,
+						 		  	   QuarterAddress,
+						 		  	   byte>;
+		void installIntoMemory(Address addr, DataEntry entry);
+	private:
 	private:
         void decodeArguments(OneRegister& args);
         void decodeArguments(TwoRegister& args);

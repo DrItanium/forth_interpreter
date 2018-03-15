@@ -858,5 +858,9 @@ void Core::Immediate24::setImm24(HalfAddress value) {
     imm24 = make24bit(value);
 }
 
+void Core::installIntoMemory(Address addr, Core::DataEntry entry) {
+	
+}
+
 
 } // namespace forth

@@ -26,13 +26,6 @@ using EagerInstruction = std::function<void(AssemblerBuilder&)>;
 class AssemblerBuilder {
 	public:
 		using NameToAddress = std::tuple<std::string, Address>;
-        using DataEntry = std::variant<std::shared_ptr<Core::DecodedOperation>, 
-                                       Core::DecodedOperation,
-									   std::shared_ptr<Address>,
-									   Address,
-									   HalfAddress,
-									   QuarterAddress,
-                                       byte>;
 	public:
 		AssemblerBuilder(Address baseAddress = 0);
 		~AssemblerBuilder();
@@ -60,12 +53,12 @@ class AssemblerBuilder {
 			}
 		}
         bool labelDefined(const std::string& name) noexcept;
-
 	private:
 		Address _currentLocation;
 		std::map<std::string, Address> _names;
-		std::map<Address, DataEntry> _operations;
+		std::map<Address, Core::DataEntry> _operations;
 		std::vector<EagerInstruction> _toResolve;
+		bool _resolvedEntries = false;
 };
 template<typename T, typename ... Rest>
 EagerInstruction instructions(T value, Rest&& ... rest) {

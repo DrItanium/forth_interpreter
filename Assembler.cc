@@ -551,4 +551,15 @@ namespace forth {
 		_operations.emplace(_currentLocation, op);
 		_currentLocation += sizeof(op);
 	}
+	void AssemblerBuilder::installIntoCore(Core& core) {
+		if (!_resolvedEntries) {
+			for(auto& a : _toResolve) {
+				a(*this);
+			}
+			_resolvedEntries = true;
+		}
+		for (auto& a : _operations) {
+			core.installIntoMemory(a.first, a.second);
+		}
+	}
 } // end namespace forth

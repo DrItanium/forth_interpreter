@@ -111,6 +111,7 @@ EagerInstruction opConditionalBranch(TargetRegister reg, const std::string& name
 EagerInstruction opPrintChar(char c);
 EagerInstruction opPrintChar(const std::string& str);
 EagerInstruction opIndirectLoad(TargetRegister dest, TargetRegister src = TargetRegister::X);
+EagerInstruction opIndirectLoad(TargetRegister dest, Address addr);
 EagerInstruction opPushImmediate64(const Datum& value, TargetRegister sp = TargetRegister::SP);
 EagerInstruction opPushImmediate64(Address value, TargetRegister sp = TargetRegister::SP);
 EagerInstruction opSubroutineCall(Address value);
@@ -159,7 +160,19 @@ inline auto opPopRegisterCAB() noexcept -> EagerInstruction {
 
 EagerInstruction ifThenElseStatement(TargetRegister cond, Address onTrue, Address onFalse);
 EagerInstruction ifThenElseStatement(TargetRegister cond, const std::string& onTrue, const std::string& onFalse);
+EagerInstruction directiveSkipByte(Address count = 1) noexcept;
+template<typename T>
+EagerInstruction directiveMakeSpaceForType(Address count = 1) noexcept {
+    return [count](auto& ab) {
+        for (auto i = 0; i < count; ++i) {
+            ab.addInstruction(directiveSkipByte(sizeof(T)));
+        }
+    };
+}
 
+EagerInstruction directiveMakeHalfAddressSpace(Address count = 1) noexcept;
+EagerInstruction directiveMakeQuarterAddressSpace(Address count = 1) noexcept;
+EagerInstruction directiveMakeAddressSpace(Address count = 1) noexcept;
 
 template<typename T, typename ... Rest>
 EagerInstruction function(const std::string& name, T value, Rest&& ... rest) {

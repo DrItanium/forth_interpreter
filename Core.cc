@@ -512,10 +512,10 @@ void Core::dispatchInstruction() {
 					savePositionToSubroutineStack();
 					_pc.setValue(_pc.getInt() + value.args.value);
 				} else if constexpr (std::is_same_v<T, JumpAbsolute>) {
-					_pc.setValue(Address(value.args.imm24));
+					_pc.setValue(Address(value.args.getImm24()));
 				} else if constexpr (std::is_same_v<T, CallSubroutineAbsolute>) {
 					savePositionToSubroutineStack();
-					_pc.setValue(Address(value.args.imm24));
+					_pc.setValue(Address(value.args.getImm24()));
 				} else if constexpr (std::is_same_v<T, JumpAbsolute>) {
                     _pc.setValue(value.args.value);
 				} else if constexpr (std::is_same_v<T, ConditionalBranch>) {

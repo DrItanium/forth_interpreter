@@ -108,28 +108,26 @@ namespace forth {
     bool AssemblerBuilder::labelDefined(const std::string& name) noexcept {
         return _names.find(name) != _names.cend();
     }
+	EagerInstruction opLoadImmediate16(TargetRegister r, QuarterAddress value) {
+        if (value == 0) {
+            return instructions(zeroRegister(r));
+        } else {
+            return instructions(opUnsignedAddImmediate(r, TargetRegister::Zero, value));
+        }
+	}
 	EagerInstruction opJump(const std::string& name) {
-		return [name](AssemblerBuilder& ab) {
-            if (ab.labelDefined(name)) {
+        return [name](AssemblerBuilder& ab) {
+            auto jmp = std::make_shared<Core::Jump>(Core::SignedImm16(0));
+            ResolvableLazyFunction fn = [name, jmp](AssemblerBuilder& ab, Address from) {
                 auto addr = ab.relativeLabelAddress(name);
                 if (outOfRange16(addr)) {
                     throw Problem("jumpRelative", "Can't encode label address into 16-bits");
                 } else {
-                    ab.addInstruction(opJump(safeExtract(QuarterInteger(addr))));
+                    jmp->args.value = addr;
                 }
-            } else {
-                auto jmp = std::make_shared<Core::Jump>(Core::SignedImm16(0));
-			    ResolvableLazyFunction fn = [name, jmp](AssemblerBuilder& ab, Address from) {
-			    					auto addr = ab.relativeLabelAddress(name);
-			    					if (outOfRange16(addr)) {
-			    						throw Problem("jumpRelative", "Can't encode label address into 16-bits");
-			    					} else {
-			    						jmp->args.value = addr;
-			    					}
-			    				  };
-			    ab.addInstruction(jmp, fn);
-            }
-		};
+            };
+            ab.addInstruction(jmp, fn);
+        };
 	}
 	EagerInstruction opJumpAbsolute(const std::string& name) {
 		return [name](AssemblerBuilder& ab) {
@@ -149,29 +147,24 @@ namespace forth {
             if (ab.labelDefined(name)) {
                 ab.addInstruction(opLoadImmediate32(r, forth::getLowerHalf(ab.absoluteLabelAddress(name))));
             } else {
-                auto ld = opLoadImmediate32(r, 0);
-                ResolvableLazyFunction fn = [name, &ld](AssemblerBuilder& ab, Address _) {
-                    ld.args.imm32 = forth::getLowerHalf(ab.absoluteLabelAddress(name));
+                auto ld = std::make_shared<Core::LoadImmediate32>();
+                ld->args = {r, 0};
+                ResolvableLazyFunction fn = [name, ld](AssemblerBuilder& ab, Address _) {
+                    ld->args.imm32 = forth::getLowerHalf(ab.absoluteLabelAddress(name));
                 };
                 ab.addInstruction(ld, fn);
             }
         };
-	}
-	EagerInstruction opLoadImmediate16(TargetRegister r, QuarterAddress value) {
-        if (value == 0) {
-            return instructions(zeroRegister(r));
-        } else {
-            return instructions(opUnsignedAddImmediate(r, TargetRegister::Zero, value));
-        }
 	}
 	EagerInstruction opLoadImmediate16(TargetRegister r, const std::string& name) {
 		return [r, name](AssemblerBuilder& ab) {
             if (ab.labelDefined(name)) {
                 ab.addInstruction(opUnsignedAddImmediate(r, TargetRegister::Zero, QuarterAddress(ab.absoluteLabelAddress(name))));
             } else {
-                auto add = opUnsignedAddImmediate(r, TargetRegister::Zero, 0);
-                ResolvableLazyFunction fn = [name, &add](auto& ab, auto from) {
-                    add.args.imm16 = QuarterAddress(ab.absoluteLabelAddress(name));
+                auto add = std::make_shared<Core::UnsignedAddImmediate>();
+                add->args = {r, TargetRegister::Zero, 0};
+                ResolvableLazyFunction fn = [name, add](auto& ab, auto from) {
+                    add->args.imm16 = QuarterAddress(ab.absoluteLabelAddress(name));
                 };
                 ab.addInstruction(add, fn);
             }
@@ -182,9 +175,10 @@ namespace forth {
             if (ab.labelDefined(name)) {
                 ab.addInstruction(opLoadImmediate64(r, ab.absoluteLabelAddress(name)));
             } else {
-			    auto ld = opLoadImmediate64(r, 0);
-			    ResolvableLazyFunction fn = [name, &ld](AssemblerBuilder& ab, Address _) {
-			    	ld.args.imm64 = ab.absoluteLabelAddress(name);
+                auto ld = std::make_shared<Core::LoadImmediate64>();
+                ld->args = {r, 0};
+			    ResolvableLazyFunction fn = [name, ld](AssemblerBuilder& ab, Address _) {
+			    	ld->args.imm64 = ab.absoluteLabelAddress(name);
 			    };
                 ab.addInstruction(ld, fn);
             }
@@ -192,33 +186,26 @@ namespace forth {
 	}
 	EagerInstruction opConditionalBranch(TargetRegister r, const std::string& name) {
 		return [r, name](auto& ab) {
-            if (ab.labelDefined(name)) {
-
-            } else {
-			    auto cond = opConditionalBranch(r, 0);
-			    ResolvableLazyFunction fn = [name, &cond](auto& ab, auto from) {
-			    	auto addr = ab.relativeLabelAddress(name, from);
-			    	if (outOfRange16(addr)) {
-			    		throw Problem("opConditionalBranch", "Can't encode label into a relative 16-bit offset!");
-			    	} else {
-			    		cond.args.imm16 = safeExtract(QuarterInteger(addr));
-			    	}
-			    };
-			    ab.addInstruction(cond, fn);
-            }
+            auto cond = std::make_shared<Core::ConditionalBranch>();
+            cond->args = {r, 0};
+            ResolvableLazyFunction fn = [name, cond](auto& ab, auto from) {
+                auto addr = ab.relativeLabelAddress(name, from);
+                if (outOfRange16(addr)) {
+                    throw Problem("opConditionalBranch", "Can't encode label into a relative 16-bit offset!");
+                } else {
+                    cond->args.imm16 = safeExtract(QuarterInteger(addr));
+                }
+            };
+            ab.addInstruction(cond, fn);
 		};
 	}
-    EagerInstruction indirectLoad(TargetRegister dest, TargetRegister src) {
-        if (dest == src) {
-            return instructions(opLoad(dest, src), 
-                    opLoad(dest, dest));
-        } else {
-            if (src == TargetRegister::Temporary) {
-                throw Problem("indirectLoad", "Temporary already in use!");
-            }
-            return instructions(opLoad(TargetRegister::Temporary, src),
-                    opLoad(dest, TargetRegister::Temporary));
-        }
+    EagerInstruction opIndirectLoad(TargetRegister dest, TargetRegister src) {
+        return instructions(opLoad(dest, src), 
+                opLoad(dest, dest));
+    }
+    EagerInstruction opIndirectLoad(TargetRegister dest, Address base) {
+        return instructions(opLoadImmediate(TargetRegister::Temporary, base),
+                            opIndirectLoad(dest, TargetRegister::Temporary));
     }
     EagerInstruction opPushImmediate64(Address value, TargetRegister sp) {
         return instructions(opLoadImmediate64(TargetRegister::Temporary, value),
@@ -487,6 +474,39 @@ namespace forth {
 	EagerInstruction opLoadImmediate(TargetRegister addr, const std::string& value) {
 		return instructions(opLoadImmediate64(addr, value));
 	}
-
-
+    EagerInstruction directiveSkipByte(Address count) noexcept {
+        switch (count) {
+            case 1:
+                return instructions(opNop());
+            case 2:
+                return instructions(opNop(), opNop());
+            case 3:
+                return instructions(opNop(), opNop(), opNop());
+            case 4:
+                return instructions(opNop(), opNop(), opNop(), opNop());
+            case 5:
+                return instructions(opNop(), opNop(), opNop(), opNop(), opNop());
+            case 6:
+                return instructions(opNop(), opNop(), opNop(), opNop(), opNop(), opNop());
+            case 7:
+                return instructions(opNop(), opNop(), opNop(), opNop(), opNop(), opNop(), opNop());
+            case 8:
+                return instructions(opNop(), opNop(), opNop(), opNop(), opNop(), opNop(), opNop(), opNop());
+            default:
+                return [count](auto& ab) {
+                    for (auto i = 0; i < count; ++i) {
+                        ab.addInstruction(opNop());
+                    }
+                };
+        }
+    }
+    EagerInstruction directiveMakeAddressSpace(Address count) noexcept { 
+        return directiveMakeSpaceForType<Address>(count); 
+    }
+    EagerInstruction directiveMakeHalfAddressSpace(Address count) noexcept {
+        return directiveMakeSpaceForType<HalfAddress>(count);
+    }
+    EagerInstruction directiveMakeQuarterAddressSpace(Address count) noexcept {
+        return directiveMakeSpaceForType<QuarterAddress>(count);
+    }
 } // end namespace forth

@@ -222,7 +222,7 @@ namespace forth {
                 opLoad(forth::TargetRegister::SP2, TargetRegister::X),
                 opLoadImmediate64(TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
                 opLoad(forth::TargetRegister::SP, TargetRegister::X),
-                opStoreImmediate64(forth::Machine::terminateControlLoopLocation, "terminateControlLoop"),
+                opStoreImmediate64(forth::Machine::terminateControlLoopLocation, "TerminateControlLoop"),
                 // now start using the other system variables to 
                 forth::opLeaveExecutionLoop(),
 				directiveOrg(0x01000),
@@ -338,6 +338,7 @@ namespace forth {
 						"TerminateControlLoop",
 						"InIgnoreInputMode")
                     );
+		machine.installInCore(init);
     }
 }
 
@@ -352,8 +353,9 @@ namespace forth {
 //		forth::pushC()>(name);
 //}
 int main() {
-    //forth::Machine machine (std::cout, std::cin);
-    //machine.initializeBaseDictionary();
+    forth::Machine machine (std::cout, std::cin);
+    machine.initializeBaseDictionary();
+	forth::systemSetup(machine);
     //addBinaryOperation<forth::add()>(machine, "+");
     //addBinaryOperation<forth::addf()>(machine, "+f");
     //addBinaryOperation<forth::sub()>(machine, "-");
@@ -367,7 +369,6 @@ int main() {
     //arithmeticOperators(machine);
     //stackOperators(machine);
     //registerDecls(machine);
-    //forth::systemSetup(machine);
     //machine.controlLoop();
 
     return 0;

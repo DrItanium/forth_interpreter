@@ -47,7 +47,32 @@ class AssemblerBuilder {
         void addInstruction(byte value) noexcept;
 		template<typename T, typename ... Rest>
 		void addInstruction(T first, Rest&& ... rest) {
-			addInstruction(first);
+			if constexpr (std::is_same_v<T, EagerInstruction>) {
+				auto op = (EagerInstruction)first;
+				addInstruction(op);
+			} else if constexpr (std::is_same_v<T, ResolvableLazyFunction>) {
+				auto op = (ResolvableLazyFunction)first;
+				addInstruction(op);
+			} else if constexpr (std::is_integral_v<T>) {
+				addInstruction(first);
+			} 
+#define X(title, b) \
+			else if constexpr (std::is_same_v<std::decay_t<T>, Core:: title>) { \
+				Core::DecodedOperation tmp; \
+				tmp = first; \
+				addInstruction(tmp); \
+			} else if constexpr (std::is_same_v<std::decay_t<T>, std::shared_ptr<Core:: title>>) { \
+				Core::DecodedOperation tmp; \
+				tmp = *first; \
+				addInstruction(tmp); \
+			}
+#define FirstX(title, b) X(title, b)
+#include "InstructionData.def"
+#undef FirstX
+#undef X
+			else {
+				addInstruction(first);
+			}
 			if constexpr (sizeof...(rest) > 0) {
 				addInstruction(std::move(rest)...);
 			}

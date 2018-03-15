@@ -665,10 +665,7 @@ endLoopTop:
 				label("done"));
 				*/
 	}
-	std::function<void(Address, Address)> Machine::getMemoryInstallationFunction() {
-		return _core.getMemoryInstallationFunction();
+	void Machine::installInCore(AssemblerBuilder& ab) {
+		ab.installIntoCore(_core);
 	}
-	//std::function<void(Address, Address)> Machine::getInstructionInstallationFunction() {
-	//	return _core.getInstructionInstallationFunction();
-	//}
 } // end namespace forth

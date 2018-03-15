@@ -215,6 +215,8 @@ EagerInstruction directiveAddresses(T first, Rest&& ... rest) {
 						 
 	};
 }
+EagerInstruction directiveString(const std::string& name);
+EagerInstruction directiveLabeledString(const std::string& label, const std::string& str);
 
 } // end namespace forth
 

@@ -203,7 +203,6 @@ namespace forth {
                         opPushRegisterA(),
                         label("DuplicateTopParameterIfNonZeroSkip"),
                         opPushRegisterA()),
-                        
 #define DispatchOneRegister(title) 
 #define DispatchTwoRegister(title) 
 #define DispatchThreeRegister(title) binaryOperationFunction( #title , op ## title ( DEFAULT_REGISTER_ARGS3 )),
@@ -289,7 +288,13 @@ namespace forth {
 #undef DispatchOneRegisterWithImm48
 #undef DispatchOneRegisterWithImm32
 #undef DispatchOneRegisterWithImm64
-                    directiveAddress(0));
+                    directiveAddress(0),
+                    directiveOrg(0x100000),
+                    label("StringCacheBegin"),
+                    directiveOrg(0x200000),
+                    label("InstructionCacheBegin"),
+                    directiveOrg(0x900000)
+                        );
 		machine.installInCore(init);
 #undef DEFAULT_REGISTER_ARGS3
     }

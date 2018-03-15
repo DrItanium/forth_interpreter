@@ -571,4 +571,15 @@ namespace forth {
 			core.installIntoMemory(a.first, a.second);
 		}
 	}
+    EagerInstruction directiveString(const std::string& value) {
+        return [value](auto& x) {
+            for (const auto& c : value) {
+                ab.addInstruction(directiveByte(c));
+            }
+        };
+    }
+    EagerInstruction directiveLabeledString(const std::string& label, const std::string& str) {
+        return instructions(label(label),
+                            directiveString(str));
+    }
 } // end namespace forth

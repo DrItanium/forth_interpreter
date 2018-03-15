@@ -142,6 +142,16 @@ namespace forth {
                         opPopRegisterAB(), // A = value, B = addr
                         opLoad(TargetRegister::B, TargetRegister::B),
                         opStore(TargetRegister::B, TargetRegister::A)),
+                function("MemorySwap", // ( addr0 addr1 -- )
+                        opPopRegisterAB(),
+                        opEquals(TargetRegister::C, TargetRegister::A, TargetRegister::B),
+                        // don't do the memory swap if it is the same addresses!
+                        opConditionalBranch(TargetRegister::C, "MemorySwapSkip"),
+                        opLoad(TargetRegister::Temporary, TargetRegister::A),
+                        opLoad(TargetRegister::Temporary2, TargetRegister::B),
+                        opStore(TargetRegister::B, TargetRegister::Temporary),
+                        opStore(TargetRegister::A, TargetRegister::Temporary2),
+                        label("MemorySwapSkip")),
                 function("DropTopParameter",
                         opPopRegisterA()),
                 function("DuplicateTopParameter",
@@ -186,16 +196,13 @@ namespace forth {
                 function("PrintString", // ( length string -- )
                         opPopRegisterAB(), // A = string, B = length
                         opPrintString(TargetRegister::A, TargetRegister::B)),
-                function("MemorySwap", // ( addr0 addr1 -- )
-                        opPopRegisterAB(),
-                        opEquals(TargetRegister::C, TargetRegister::A, TargetRegister::B),
-                        // don't do the memory swap if it is the same addresses!
-                        opConditionalBranch(TargetRegister::C, "MemorySwapSkip"),
-                        opLoad(TargetRegister::Temporary, TargetRegister::A),
-                        opLoad(TargetRegister::Temporary2, TargetRegister::B),
-                        opStore(TargetRegister::B, TargetRegister::Temporary),
-                        opStore(TargetRegister::A, TargetRegister::Temporary2),
-                        label("MemorySwapSkip")),
+                function("DuplicateTopParameterIfNonZero",
+                        opPopRegisterA(),
+                        opEquals(TargetRegister::C, TargetRegister::A, TargetRegister::Zero),
+                        opConditionalBranch(TargetRegister::C, "DuplicateTopParameterIfNonZeroSkip"),
+                        opPushRegisterA(),
+                        label("DuplicateTopParameterIfNonZeroSkip"),
+                        opPushRegisterA()),
                         
 #define DispatchOneRegister(title) 
 #define DispatchTwoRegister(title) 

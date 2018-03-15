@@ -859,8 +859,39 @@ void Core::Immediate24::setImm24(HalfAddress value) {
 }
 
 void Core::installIntoMemory(Address addr, Core::DataEntry entry) {
-	
+	std::visit([this, addr](auto&& value) { encodeAndInstallIntoMemory(addr, value); }, entry);
 }
+
+void Core::encodeAndInstallIntoMemory(Address addr, byte value) {
+	storeByte(addr, value);
+}
+
+void Core::encodeAndInstallIntoMemory(Address addr, Address a) {
+	store(addr, a);
+}
+
+void Core::encodeAndInstallIntoMemory(Address addr, std::shared_ptr<Address> a) {
+	encodeAndInstallIntoMemory(addr, *a);
+}
+
+void Core::encodeAndInstallIntoMemory(Address addr, QuarterAddress a) {
+	storeByte(addr, getLowerHalf(a));
+	storeByte(addr + 1, getUpperHalf(a));
+}
+void Core::encodeAndInstallIntoMemory(Address addr, HalfAddress a) {
+	encodeAndInstallIntoMemory(addr, getLowerHalf(a));
+	encodeAndInstallIntoMemory(addr + 2, getUpperHalf(a));
+}
+void Core::encodeAndInstallIntoMemory(Address addr, std::shared_ptr<DecodedOperation> a) {
+	encodeAndInstallIntoMemory(addr, *a);
+}
+void Core::encodeAndInstallIntoMemory(Address addr, DecodedOperation a) {
+	auto originalLoc = _pc.getAddress();
+	_pc.setValue(addr);
+	encodeInstruction(a);
+	_pc.setValue(originalLoc);
+}
+
 
 
 } // namespace forth

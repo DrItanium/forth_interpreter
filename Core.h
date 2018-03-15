@@ -220,6 +220,13 @@ class Core {
 						 		  	   byte>;
 		void installIntoMemory(Address addr, DataEntry entry);
 	private:
+		void encodeAndInstallIntoMemory(Address addr, byte a);
+		void encodeAndInstallIntoMemory(Address addr, Address a);
+		void encodeAndInstallIntoMemory(Address addr, std::shared_ptr<Address> a);
+		void encodeAndInstallIntoMemory(Address addr, QuarterAddress a);
+		void encodeAndInstallIntoMemory(Address addr, HalfAddress a);
+		void encodeAndInstallIntoMemory(Address addr, std::shared_ptr<DecodedOperation> a);
+		void encodeAndInstallIntoMemory(Address addr, DecodedOperation a);
 	private:
         void decodeArguments(OneRegister& args);
         void decodeArguments(TwoRegister& args);

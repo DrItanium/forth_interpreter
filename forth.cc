@@ -226,7 +226,6 @@ namespace forth {
                 // now start using the other system variables to 
                 forth::opLeaveExecutionLoop(),
                 label("InvokeAndReturnToMicrocode"),
-                
                 // the S register has been prepped by the microcode to execute a routine
                 opCallSubroutineIndirect(TargetRegister::S),
                 forth::opLeaveExecutionLoop(),

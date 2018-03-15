@@ -57,6 +57,7 @@ namespace forth {
 		return decodeBits<QuarterAddress, byte, 0x00'FF>(input);
 	}
 
+
 	constexpr QuarterAddress getLowerHalf(HalfAddress input) noexcept {
 		return decodeBits<HalfAddress, QuarterAddress, 0x0000'FFFF>(input);
 	}

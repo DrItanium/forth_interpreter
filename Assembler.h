@@ -27,9 +27,10 @@ class AssemblerBuilder {
 	public:
 		using NameToAddress = std::tuple<std::string, Address>;
         using DataEntry = std::variant<std::shared_ptr<Core::DecodedOperation>, 
-                                       Core::DecodedOperation>;
+                                       Core::DecodedOperation,
+                                       byte>;
 	public:
-		AssemblerBuilder(Address baseAddress);
+		AssemblerBuilder(Address baseAddress = 0);
 		~AssemblerBuilder();
 		void installIntoCore(Core& core);
 		void labelHere(const std::string& name);
@@ -37,11 +38,12 @@ class AssemblerBuilder {
 		Integer relativeLabelAddress(const std::string& name) const;
 		Integer relativeLabelAddress(const std::string& name, Address from) const;
 		Address here() const noexcept { return _currentLocation; }
-		Address getBaseAddress() const noexcept { return _baseAddress; }
+        void setCurrentLocation(Address addr) noexcept;
 		void addInstruction(EagerInstruction fn);
 		void addInstruction(ResolvableLazyFunction fn);
 		void addInstruction(const Core::DecodedOperation& op);
         void addInstruction(std::shared_ptr<Core::DecodedOperation> op);
+        void addInstruction(byte value) noexcept;
 		template<typename T, typename ... Rest>
 		void addInstruction(T first, Rest&& ... rest) {
 			addInstruction(first);
@@ -52,7 +54,7 @@ class AssemblerBuilder {
         bool labelDefined(const std::string& name) noexcept;
 
 	private:
-		Address _baseAddress, _currentLocation;
+		Address _currentLocation;
 		std::map<std::string, Address> _names;
 		std::map<Address, DataEntry> _operations;
 		std::vector<EagerInstruction> _toResolve;
@@ -62,6 +64,15 @@ EagerInstruction instructions(T value, Rest&& ... rest) {
     return [value, rest...](auto& ab) {
         ab.addInstruction(value, std::move(rest)...);
     };
+}
+EagerInstruction label(const std::string&);
+EagerInstruction opSemicolon();
+template<typename T, typename ... Rest>
+EagerInstruction function(const std::string& name, T value, Rest&& ... rest) {
+	return instructions(label(name), 
+						value,
+						std::move(rest)...,
+						opSemicolon());
 }
 #define DispatchOneRegister(title) 
 #define DispatchTwoRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src) noexcept;
@@ -100,7 +111,6 @@ EagerInstruction instructions(T value, Rest&& ... rest) {
 
 Core::Move zeroRegister(TargetRegister reg) noexcept;
 EagerInstruction useRegister(TargetRegister reg, EagerInstruction body) noexcept;
-EagerInstruction label(const std::string&);
 EagerInstruction opLoadImmediate16(TargetRegister r, QuarterAddress value);
 EagerInstruction opLoadImmediate16(TargetRegister r, const std::string& name);
 EagerInstruction opLoadImmediate32(TargetRegister r, const std::string& name);
@@ -116,7 +126,6 @@ EagerInstruction opPushImmediate64(const Datum& value, TargetRegister sp = Targe
 EagerInstruction opPushImmediate64(Address value, TargetRegister sp = TargetRegister::SP);
 EagerInstruction opSubroutineCall(Address value);
 EagerInstruction opSubroutineCall(const std::string& name);
-EagerInstruction opSemicolon();
 inline auto opPopRegister(TargetRegister reg) noexcept -> decltype(opPopRegister(reg, TargetRegister::SP)) { 
     return opPopRegister(reg, TargetRegister::SP); 
 }
@@ -174,13 +183,13 @@ EagerInstruction directiveMakeHalfAddressSpace(Address count = 1) noexcept;
 EagerInstruction directiveMakeQuarterAddressSpace(Address count = 1) noexcept;
 EagerInstruction directiveMakeAddressSpace(Address count = 1) noexcept;
 
-template<typename T, typename ... Rest>
-EagerInstruction function(const std::string& name, T value, Rest&& ... rest) {
-	return instructions(label(name), 
-						value,
-						std::move(rest)...,
-						opSemicolon());
-}
+EagerInstruction directiveOrg(Address location) noexcept;
+
+EagerInstruction directiveByte(byte value) noexcept;
+EagerInstruction directiveQuarterAddress(QuarterAddress value) noexcept;
+EagerInstruction directiveHalfAddress(HalfAddress value) noexcept;
+EagerInstruction directiveAddress(Address value) noexcept;
+
 
 } // end namespace forth
 

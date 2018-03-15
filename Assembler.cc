@@ -5,11 +5,13 @@
 #include "Machine.h"
 
 namespace forth {
-	AssemblerBuilder::AssemblerBuilder(Address baseAddress) : _baseAddress(baseAddress), _currentLocation(baseAddress) {}
+	AssemblerBuilder::AssemblerBuilder(Address baseAddress) : _currentLocation(baseAddress) {}
 	AssemblerBuilder::~AssemblerBuilder() {
 
 	}
-
+    void AssemblerBuilder::setCurrentLocation(Address addr) noexcept {
+        _currentLocation = addr;
+    }
 	void AssemblerBuilder::labelHere(const std::string& name) {
 		if (auto result = _names.find(name); result == _names.cend()) {
 			_names.emplace(name, _currentLocation);
@@ -105,6 +107,10 @@ namespace forth {
 		byte result = std::visit([](auto&& value) constexpr { return value.size(); }, op);
 		_currentLocation += result;
 	}
+    void AssemblerBuilder::addInstruction(byte value) noexcept {
+        _operations.emplace(_currentLocation, value);
+        ++_currentLocation;
+    }
     bool AssemblerBuilder::labelDefined(const std::string& name) noexcept {
         return _names.find(name) != _names.cend();
     }
@@ -508,5 +514,26 @@ namespace forth {
     }
     EagerInstruction directiveMakeQuarterAddressSpace(Address count) noexcept {
         return directiveMakeSpaceForType<QuarterAddress>(count);
+    }
+    EagerInstruction directiveOrg(Address addr) noexcept {
+        return [addr](auto& ab) { ab.setCurrentLocation(addr); };
+    }
+    EagerInstruction directiveByte(byte value) noexcept {
+        return instructions(value);
+    }
+    EagerInstruction directiveQuarterAddress(QuarterAddress value) noexcept {
+        return instructions(getLowerHalf(value), getUpperHalf(value));
+    }
+    EagerInstruction directiveHalfAddress(HalfAddress value) noexcept {
+        return instructions(getLowestQuarter(value),
+                            getLowerQuarter(value),
+                            getHigherQuarter(value),
+                            getHighestQuarter(value));
+    }
+    EagerInstruction directiveAddress(Address value) noexcept {
+        return instructions(directiveQuarterAddress(getLowestQuarter(value)),
+                            directiveQuarterAddress(getLowerQuarter(value)),
+                            directiveQuarterAddress(getHigherQuarter(value)),
+                            directiveQuarterAddress(getHighestQuarter(value)));
     }
 } // end namespace forth

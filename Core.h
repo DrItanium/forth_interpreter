@@ -266,9 +266,10 @@ class Core {
         void decodeArguments(TaggedOneRegister& args);
         std::optional<DecodedOperation> decodeInstruction(byte top);
         template<typename T>
-        void populateDestination(T& args) {
+        byte populateDestination(T& args) {
             auto nextByte = extractByteFromMolecule();
             args.destination = forth::getDestinationRegister(nextByte);
+            return nextByte;
         }
         template<typename T>
         void populateDestinationAndSource(T& args) {

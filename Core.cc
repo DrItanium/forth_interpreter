@@ -907,6 +907,14 @@ void Core::encodeAndInstallIntoMemory(Address addr, DecodedOperation a) {
 	_pc.setValue(originalLoc);
 }
 
+void Core::encodeArguments(const Core::TaggedOneRegister& args) {
+    // a bit of a hack but it will work well :D
+    encodeArguments(args.destination, TargetRegister(byte(args.type) & 0xF));
+}
+
+void Core::decodeArguments(Core::TaggedOneRegister& args) {
+    args.type = decodeBits<byte, TypeTag, 0xF0, 4>(populateDestination(args));
+}
 
 
 } // namespace forth

@@ -286,8 +286,10 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
 	switch (Opcode(control)) {
 #define PerformDecode(title) decodeArguments(std::get< Core:: title > (op.value()) .args )
 #define XOneRegister(title) PerformDecode(title)
+#define XTaggedOneRegister(title) PerformDecode(title)
 #define XTwoRegister(title) PerformDecode(title)
 #define XThreeRegister(title) PerformDecode(title)
+#define XTaggedThreeRegister(title) PerformDecode(title)
 #define XSignedImm16(title) PerformDecode(title)
 #define XImmediate24(title) PerformDecode(title)
 #define XTwoRegisterWithImm16(title) PerformDecode(title) 
@@ -309,6 +311,8 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
 #undef X
 #undef FirstX
 #undef XCustomTwoRegisterWithImm16
+#undef XTaggedOneRegister
+#undef XTaggedThreeRegister
 #undef XNoArguments
 #undef XOneRegister
 #undef XTwoRegister
@@ -379,13 +383,31 @@ auto minus(auto a) noexcept -> decltype(-a) { return -a; }
 auto notOp(auto a) noexcept -> decltype(~a) { return ~a; }
 bool notOp(bool a) noexcept { return !a; }
 
-
+void Core::typeValue(const TypeValue& value) {
+    auto flags = std::cout.flags();
+    switch (value.args.type) {
+        case Core::TypeTag::Integer:
+            std::cout << std::dec << getDestinationRegister(value.args).getInt();
+            break;
+        case Core::TypeTag::Unsigned:
+            std::cout << std::hex << getDestinationRegister(value.args).getAddress() << "#";
+            break;
+        case Core::TypeTag::FloatingPoint:
+            std::cout << getDestinationRegister(value.args).getFP();
+            break;
+        case Core::TypeTag::Boolean:
+            std::cout << std::boolalpha << getDestinationRegister(value.args).getTruth() << std::noboolalpha;
+            break;
+        default:
+            throw Problem("typeValue", "Illegal type specified!");
+    }
+    std::cout.setf(flags);
+}
 void Core::dispatchInstruction() {
 	auto control = extractByteFromMolecule();
 	auto result = decodeInstruction(control);
 	if (result) {
 		std::visit([this](auto&& value) { 
-				auto flags = std::cout.flags();
 				auto intFunction = [](const Register& value) { return value.getInt(); };
 				auto floatFunction = [](const Register& value) { return value.getFP(); };
 				auto unsignedFunction = [](const Register& value) { return value.getAddress(); };
@@ -399,13 +421,7 @@ void Core::dispatchInstruction() {
 					_pc.setValue(pop(TargetRegister::SP2));
 				} 
 					else if constexpr (std::is_same_v<T,Core::TypeValue>) {
-						std::cout << std::dec << getDestinationRegister(value.args).getInt();
-					} else if constexpr (std::is_same_v<T,Core::TypeValueUnsigned>) {
-						std::cout << std::hex << getDestinationRegister(value.args).getAddress() << "#";
-					} else if constexpr (std::is_same_v<T,Core::TypeValueBoolean>) {
-						std::cout << std::boolalpha << getDestinationRegister(value.args).getTruth() << std::noboolalpha;
-					} else if constexpr (std::is_same_v<T,Core::TypeValueFloatingPoint>) {
-						std::cout << getDestinationRegister(value.args).getFP();
+                        typeValue(value);
 					} else if constexpr (std::is_same_v<T,Core::PrintChar>) {
 						auto c = char(getDestinationRegister(value.args).getAddress());
 						std::cout << c;
@@ -691,7 +707,6 @@ void Core::dispatchInstruction() {
 				} else {
 					static_assert(AlwaysFalse<T>::value, "Unimplemented instruction!");
 				}
-					std::cout.setf(flags);
 				}, result.value());
 	} else {
 		throw Problem("dispatchInstruction", "Bad Instruction!");

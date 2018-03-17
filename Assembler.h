@@ -101,6 +101,7 @@ EagerInstruction function(const std::string& name, T value, Rest&& ... rest) {
 						opSemicolon());
 }
 #define DispatchOneRegister(title) 
+#define DispatchTaggedOneRegister(title) Core:: title op ## title (TargetRegister dest, Core::TypeTag type);
 #define DispatchTwoRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src) noexcept;
 #define DispatchThreeRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1) noexcept;
 #define DispatchFourRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1, TargetRegister src2) noexcept;
@@ -122,6 +123,7 @@ EagerInstruction function(const std::string& name, T value, Rest&& ... rest) {
 #undef FirstX
 #undef X
 #undef DispatchOneRegister
+#undef DispatchTaggedOneRegister
 #undef DispatchTwoRegister 
 #undef DispatchThreeRegister
 #undef DispatchSignedImm16
@@ -218,6 +220,10 @@ EagerInstruction directiveAddresses(T first, Rest&& ... rest) {
 EagerInstruction directiveString(const std::string& name);
 EagerInstruction directiveLabeledString(const std::string& label, const std::string& str);
 EagerInstruction dictionaryName(const std::string& str);
+EagerInstruction typeInteger(TargetRegister dest);
+EagerInstruction typeFloatingPoint(TargetRegister dest);
+EagerInstruction typeUnsigned(TargetRegister dest);
+EagerInstruction typeBoolean(TargetRegister dest);
 
 } // end namespace forth
 

@@ -54,6 +54,7 @@ namespace forth {
 		}
 	}
 #define DispatchOneRegister(title) 
+#define DispatchTaggedOneRegister(title) Core:: title op ## title (TargetRegister dest, Core::TypeTag type) { return op ## title ({dest, type}); }
 #define DispatchTwoRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src) noexcept { return op ## title ({dest, src}); }
 #define DispatchThreeRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1) noexcept { return op ## title ({dest, src, src1}); }
 #define DispatchSignedImm16(title)
@@ -76,6 +77,7 @@ namespace forth {
 #include "InstructionData.def"
 #undef X
 #undef FirstX
+#undef DispatchTaggedOneRegister
 #undef DispatchNoArguments
 #undef DispatchOneRegister
 #undef DispatchTwoRegister
@@ -581,5 +583,17 @@ namespace forth {
     EagerInstruction directiveLabeledString(const std::string& l, const std::string& str) {
         return instructions(label(l),
                             directiveString(str));
+    }
+    EagerInstruction typeInteger(TargetRegister dest) {
+        return instructions(opTypeValue(dest, Core::TypeTag::Integer));
+    }
+    EagerInstruction typeFloatingPoint(TargetRegister dest) {
+        return instructions(opTypeValue(dest, Core::TypeTag::FloatingPoint));
+    }
+    EagerInstruction typeUnsigned(TargetRegister dest) {
+        return instructions(opTypeValue(dest, Core::TypeTag::Unsigned));
+    }
+    EagerInstruction typeBoolean(TargetRegister dest) {
+        return instructions(opTypeValue(dest, Core::TypeTag::Boolean));
     }
 } // end namespace forth

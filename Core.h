@@ -104,6 +104,20 @@ class Core {
             OneRegister(const OneRegister& other) : destination(other.destination) { }
             DestinationRegister destination;
         };
+        enum class TypeTag {
+            Integer,
+            Unsigned,
+            FloatingPoint,
+            Boolean,
+        };
+        struct TaggedOneRegister final {
+            TaggedOneRegister() = default;
+            TaggedOneRegister(DestinationRegister dest, TypeTag tag) : destination(dest), type(tag) { };
+            TaggedOneRegister(TargetRegister dest, TypeTag tag) : destination(dest), type(tag) { };
+            TaggedOneRegister(const TaggedOneRegister& other) : destination(other.destination), type(other.type) { }
+            DestinationRegister destination;
+            TypeTag type;
+        };
         struct TwoRegister final {
 		    TwoRegister() = default;
 		    TwoRegister(DestinationRegister dest, SourceRegister src) : destination(dest), source(src) { };
@@ -120,6 +134,16 @@ class Core {
             DestinationRegister destination;
             SourceRegister source;
             SourceRegister source2;
+        };
+        struct TaggedThreeRegister final {
+			TaggedThreeRegister() = default;
+			TaggedThreeRegister(DestinationRegister dest, SourceRegister src, SourceRegister src2, TypeTag tag) : destination(dest), source(src), source2(src2), type(tag) { }
+			TaggedThreeRegister(TargetRegister dest, TargetRegister src, TargetRegister src2, TypeTag tag) : destination(dest), source(src), source2(src2), type(tag) { }
+            TaggedThreeRegister(const TaggedThreeRegister& other) : TaggedThreeRegister(other.destination, other.source, other.source2, other.type)  { }
+            DestinationRegister destination;
+            SourceRegister source;
+            SourceRegister source2;
+            TypeTag type;
         };
         struct FourRegister final {
 			FourRegister() = default;
@@ -239,6 +263,7 @@ class Core {
 		void decodeArguments(TwoRegisterWithImm16&);
 		void decodeArguments(OneRegisterWithImm32&);
 		void decodeArguments(OneRegisterWithImm64&);
+        void decodeArguments(TaggedOneRegister& args);
         std::optional<DecodedOperation> decodeInstruction(byte top);
         template<typename T>
         void populateDestination(T& args) {
@@ -267,8 +292,10 @@ class Core {
 		void encodeArguments(const OneRegisterWithImm32& args);
 		void encodeArguments(const OneRegisterWithImm64& args);
 		void encodeArguments(const NoArguments& args);
+        void encodeArguments(const TaggedOneRegister& args);
 		void encodeInstruction(const DecodedOperation& op);
     private:
+        void typeValue(const TypeValue& args);
 		Register& getDestinationRegister(const DestinationRegister& reg);
 		Register& getSourceRegister(const SourceRegister& reg);
 		template<typename T>

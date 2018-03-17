@@ -79,8 +79,10 @@ static_assert(byte(Opcode::Count) <= 256, "Too many opcodes defined!");
 constexpr InstructionWidth determineInstructionWidth(Opcode op) noexcept {
 	switch (op) {
 #define DispatchOneRegister(title) return TwoByteInstruction() ;
+#define DispatchTaggedOneRegister(title) return TwoByteInstruction() ;
 #define DispatchTwoRegister(title) return  TwoByteInstruction() ;
 #define DispatchThreeRegister(title) return  ThreeByteInstruction() ;
+#define DispatchTaggedThreeRegister(title) return  ThreeByteInstruction() ;
 #define DispatchSignedImm16(title) return  FourByteInstruction() ;
 #define DispatchImmediate24(title) return  FourByteInstruction() ;
 #define DispatchTwoRegisterWithImm16(title) return  FourByteInstruction();
@@ -99,8 +101,10 @@ constexpr InstructionWidth determineInstructionWidth(Opcode op) noexcept {
 #undef DispatchCustomTwoRegisterWithImm16
 #undef DispatchNoArguments
 #undef DispatchOneRegister
+#undef DispatchTaggedOneRegister
 #undef DispatchTwoRegister
 #undef DispatchThreeRegister
+#undef DispatchTaggedThreeRegister 
 #undef DispatchSignedImm16
 #undef DispatchImmediate24
 #undef DispatchTwoRegisterWithImm16

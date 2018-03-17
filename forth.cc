@@ -204,8 +204,10 @@ namespace forth {
                         label("DuplicateTopParameterIfNonZeroSkip"),
                         opPushRegisterA()),
 #define DispatchOneRegister(title) 
+#define DispatchTaggedOneRegister(title) 
 #define DispatchTwoRegister(title) 
 #define DispatchThreeRegister(title) binaryOperationFunction( #title , op ## title ( DEFAULT_REGISTER_ARGS3 )),
+#define DispatchTaggedThreeRegister(title) 
 #define DispatchSignedImm16(title)
 #define DispatchImmediate24(title) 
 #define DispatchTwoRegisterWithImm16(title) 
@@ -223,6 +225,8 @@ namespace forth {
 #include "InstructionData.def"
 #undef X
 #undef FirstX
+#undef DispatchTaggedThreeRegister
+#undef DispatchTaggedOneRegister
 #undef DispatchNoArguments
 #undef DispatchOneRegister
 #undef DispatchTwoRegister

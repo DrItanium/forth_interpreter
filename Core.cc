@@ -398,6 +398,12 @@ void Core::typeValue(const TypeValue& value) {
         case Core::TypeTag::Boolean:
             std::cout << std::boolalpha << getDestinationRegister(value.args).getTruth() << std::noboolalpha;
             break;
+        case Core::TypeTag::Char:
+            std::cout << char(getDestinationRegister(value.args).getAddress());
+            break;
+        case Core::TypeTag::Datum:
+            std::cout << getDestinationRegister(value.args).getValue();
+            break;
         default:
             throw Problem("typeValue", "Illegal type specified!");
     }
@@ -422,11 +428,6 @@ void Core::dispatchInstruction() {
 				} 
 					else if constexpr (std::is_same_v<T,Core::TypeValue>) {
                         typeValue(value);
-					} else if constexpr (std::is_same_v<T,Core::PrintChar>) {
-						auto c = char(getDestinationRegister(value.args).getAddress());
-						std::cout << c;
-					} else if constexpr (std::is_same_v<T,Core::TypeDatum>) {
-						std::cout << getDestinationRegister(value.args).getValue();
 					} else if constexpr (std::is_same_v<T, Core::ConditionalReturnSubroutine>) {
 						if (getDestinationRegister(value.args).getTruth()) {
 							_pc.setValue(pop(TargetRegister::SP2));

@@ -8,8 +8,6 @@ X(LeaveExecutionLoop, NoArguments) // a hack to support returning to native code
 // TaggedOneRegister [ op: 8 | dest: 4 | tag: 4 ]
 // TwoRegister [ op: 8 | dest: 4 | src: 4 ] // not as many allowed here
 X(TypeValue, TaggedOneRegister)
-X(PrintChar, OneRegister)          // print a character stored in a register
-X(TypeDatum, OneRegister)          // print the register with all of its contents
 X(Load, TwoRegister)
 X(Store, TwoRegister)
 X(Move, TwoRegister)

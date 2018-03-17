@@ -109,6 +109,8 @@ class Core {
             Unsigned,
             FloatingPoint,
             Boolean,
+            Char,
+            Datum,
         };
         struct TaggedOneRegister final {
             TaggedOneRegister() = default;

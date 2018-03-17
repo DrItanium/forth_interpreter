@@ -146,6 +146,8 @@ EagerInstruction opLoadImmediate64(TargetRegister r, const std::string& name);
 EagerInstruction opJumpAbsolute(const std::string& name);
 EagerInstruction opJump(const std::string& name);
 EagerInstruction opConditionalBranch(TargetRegister reg, const std::string& name);
+EagerInstruction opTypeDatum(TargetRegister reg);
+EagerInstruction opPrintChar(TargetRegister reg);
 EagerInstruction opPrintChar(char c);
 EagerInstruction opPrintChar(const std::string& str);
 EagerInstruction opIndirectLoad(TargetRegister dest, TargetRegister src = TargetRegister::X);
@@ -220,10 +222,10 @@ EagerInstruction directiveAddresses(T first, Rest&& ... rest) {
 EagerInstruction directiveString(const std::string& name);
 EagerInstruction directiveLabeledString(const std::string& label, const std::string& str);
 EagerInstruction dictionaryName(const std::string& str);
-EagerInstruction typeInteger(TargetRegister dest);
-EagerInstruction typeFloatingPoint(TargetRegister dest);
-EagerInstruction typeUnsigned(TargetRegister dest);
-EagerInstruction typeBoolean(TargetRegister dest);
+EagerInstruction opTypeInteger(TargetRegister dest);
+EagerInstruction opTypeFloatingPoint(TargetRegister dest);
+EagerInstruction opTypeUnsigned(TargetRegister dest);
+EagerInstruction opTypeBoolean(TargetRegister dest);
 
 } // end namespace forth
 

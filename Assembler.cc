@@ -231,6 +231,9 @@ namespace forth {
     EagerInstruction opPushImmediate64(const Datum& value, TargetRegister sp) {
         return opPushImmediate64(value.address, sp);
     }
+    EagerInstruction opPrintChar(TargetRegister value) {
+        return instructions(opTypeValue(value, Core::TypeTag::Char));
+    }
     EagerInstruction opPrintChar(char c) {
         return instructions(opAddImmediate(TargetRegister::Temporary, TargetRegister::Zero, QuarterAddress(c)),
                 opPrintChar(TargetRegister::Temporary));
@@ -584,16 +587,19 @@ namespace forth {
         return instructions(label(l),
                             directiveString(str));
     }
-    EagerInstruction typeInteger(TargetRegister dest) {
+    EagerInstruction opTypeInteger(TargetRegister dest) {
         return instructions(opTypeValue(dest, Core::TypeTag::Integer));
     }
-    EagerInstruction typeFloatingPoint(TargetRegister dest) {
+    EagerInstruction opTypeFloatingPoint(TargetRegister dest) {
         return instructions(opTypeValue(dest, Core::TypeTag::FloatingPoint));
     }
-    EagerInstruction typeUnsigned(TargetRegister dest) {
+    EagerInstruction opTypeUnsigned(TargetRegister dest) {
         return instructions(opTypeValue(dest, Core::TypeTag::Unsigned));
     }
-    EagerInstruction typeBoolean(TargetRegister dest) {
+    EagerInstruction opTypeBoolean(TargetRegister dest) {
         return instructions(opTypeValue(dest, Core::TypeTag::Boolean));
+    }
+    EagerInstruction opTypeDatum(TargetRegister dest) {
+        return instructions(opTypeValue(dest, Core::TypeTag::Datum));
     }
 } // end namespace forth

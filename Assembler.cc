@@ -57,6 +57,7 @@ namespace forth {
 #define DispatchTaggedOneRegister(title) Core:: title op ## title (TargetRegister dest, Core::TypeTag type) { return op ## title ({dest, type}); }
 #define DispatchTwoRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src) noexcept { return op ## title ({dest, src}); }
 #define DispatchThreeRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1) noexcept { return op ## title ({dest, src, src1}); }
+#define DispatchTaggedThreeRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1, Core::TypeTag type) noexcept { return op ## title ({dest, src, src1, type}); }
 #define DispatchSignedImm16(title)
 #define DispatchImmediate24(title) Core::title op ## title (HalfAddress addr) noexcept { return op ## title ({addr}); }
 #define DispatchTwoRegisterWithImm16(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept { return op ## title ( {dest, src, value}); }
@@ -78,6 +79,7 @@ namespace forth {
 #undef X
 #undef FirstX
 #undef DispatchTaggedOneRegister
+#undef DispatchTaggedThreeRegister
 #undef DispatchNoArguments
 #undef DispatchOneRegister
 #undef DispatchTwoRegister

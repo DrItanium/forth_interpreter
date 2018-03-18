@@ -404,9 +404,7 @@ void Core::typeValue(const TypeValue& value) {
     std::cout.setf(flags);
 }
 void Core::dispatchInstruction() {
-	auto control = extractByteFromMolecule();
-	auto result = decodeInstruction(control);
-	if (result) {
+	if (auto result = decodeInstruction(extractByteFromMolecule()); result) {
 		std::visit([this](auto&& value) { 
 				auto intFunction = [](const Register& value) { return value.getInt(); };
 				auto floatFunction = [](const Register& value) { return value.getFP(); };
@@ -419,8 +417,7 @@ void Core::dispatchInstruction() {
 					store(Core::returnToMicrocode, Address(1));
 				} else if constexpr (std::is_same_v<T, Core::ReturnSubroutine>) {
 					_pc.setValue(pop(TargetRegister::SP2));
-				} 
-					else if constexpr (std::is_same_v<T,Core::TypeValue>) {
+				} else if constexpr (std::is_same_v<T,Core::TypeValue>) {
                         typeValue(value);
 					} else if constexpr (std::is_same_v<T, Core::ConditionalReturnSubroutine>) {
 						if (getDestinationRegister(value.args).getTruth()) {
@@ -460,6 +457,123 @@ void Core::dispatchInstruction() {
 						auto& stackPointer = getDestinationRegister(value.args);
 						stackPointer.decrement(sizeof(Address));
 						store(stackPointer.getAddress(), getSourceRegister(value.args).getValue());
+					} else if constexpr (std::is_same_v<T, Jump>) {
+						_pc.setValue(_pc.getInt() + value.args.value);
+					} else if constexpr (std::is_same_v<T, CallSubroutine>) {
+						savePositionToSubroutineStack();
+						_pc.setValue(_pc.getInt() + value.args.value);
+					} else if constexpr (std::is_same_v<T, JumpAbsolute>) {
+						_pc.setValue(Address(value.args.getImm24()));
+					} else if constexpr (std::is_same_v<T, CallSubroutineAbsolute>) {
+						savePositionToSubroutineStack();
+						_pc.setValue(Address(value.args.getImm24()));
+					} else if constexpr (std::is_same_v<T, JumpAbsolute>) {
+						_pc.setValue(value.args.value);
+					} else if constexpr (std::is_same_v<T, ConditionalBranch>) {
+						if (getDestinationRegister(value.args).getTruth()) {
+							_pc.setValue(_pc.getInt() + safeExtract(value.args.imm16));
+						}
+					} else if constexpr (std::is_same_v<T, ConditionalCallSubroutine>) { 
+						if (getDestinationRegister(value.args).getTruth()) {
+							savePositionToSubroutineStack();
+							_pc.setValue(_pc.getInt() + safeExtract(value.args.imm16));
+						}
+					} else if constexpr (std::is_same_v<T, PrintString>) {
+						auto begin = getDestinationRegister(value.args).getAddress();
+						auto length = getSourceRegister(value.args).getAddress();
+						auto end = begin + length;
+						for (auto loc = begin; loc < end; ++loc) {
+							std::cout << char(loadByte(loc));
+						}
+					} else if constexpr (std::is_same_v<T, Minus>) {
+						getDestinationRegister(value.args).setValue(minus(getSourceRegister(value.args).getInt()));
+					} else if constexpr (std::is_same_v<T, MinusUnsigned>) {
+						getDestinationRegister(value.args).setValue(minus(getSourceRegister(value.args).getAddress()));
+					} else if constexpr (std::is_same_v<T, MinusFloatingPoint>) {
+						getDestinationRegister(value.args).setValue(minus(getSourceRegister(value.args).getFP()));
+					} else if constexpr (std::is_same_v<T, Not>) {
+						getDestinationRegister(value.args).setValue(notOp(getSourceRegister(value.args).getAddress()));
+					} else if constexpr (std::is_same_v<T, NotBoolean>) {
+						getDestinationRegister(value.args).setValue(notOp(getSourceRegister(value.args).getTruth()));
+					} else if constexpr (std::is_same_v<T, NotSigned>) {
+						getDestinationRegister(value.args).setValue(notOp(getSourceRegister(value.args).getInt()));
+					} else if constexpr (std::is_same_v<T, LoadImmediate32>) {
+						getDestinationRegister(value.args).setValue(Address(value.args.imm32));
+					} else if constexpr (std::is_same_v<T, LoadImmediate64>) {
+						getDestinationRegister(value.args).setValue(Address(value.args.imm64));
+					} else if constexpr (std::is_same_v<T, IfStatement>) {
+						_pc.setValue(getDestinationRegister(value.args).getTruth() ?
+								getSourceRegister(value.args).getAddress() : 
+								getSource2Register(value.args).getAddress());
+					} else if constexpr (std::is_same_v<T, CallIfStatement>) {
+						savePositionToSubroutineStack();
+						_pc.setValue(getDestinationRegister(value.args).getTruth() ?
+								getSourceRegister(value.args).getAddress() : 
+								getSource2Register(value.args).getAddress());
+					} else if constexpr (std::is_same_v<T, GreaterThanOrEqualTo>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getInt() >=
+								getSource2Register(value.args).getInt());
+					} else if constexpr (std::is_same_v<T, GreaterThanOrEqualToUnsigned>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getAddress() >=
+								getSource2Register(value.args).getAddress());
+					} else if constexpr (std::is_same_v<T, FloatingPointGreaterThanOrEqualTo>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getFP() >=
+								getSource2Register(value.args).getFP());
+					} else if constexpr (std::is_same_v<T, LessThanOrEqualTo>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getInt() <=
+								getSource2Register(value.args).getInt());
+					} else if constexpr (std::is_same_v<T, LessThanOrEqualToUnsigned>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getAddress() <=
+								getSource2Register(value.args).getAddress());
+					} else if constexpr (std::is_same_v<T, FloatingPointLessThanOrEqualTo>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getFP() <=
+								getSource2Register(value.args).getFP());
+					} else if constexpr (std::is_same_v<T, NotEqual>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getInt() !=
+								getSource2Register(value.args).getInt());
+					} else if constexpr (std::is_same_v<T, NotEqualUnsigned>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getAddress() !=
+								getSource2Register(value.args).getAddress());
+					} else if constexpr (std::is_same_v<T, FloatingPointNotEqual>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getFP() !=
+								getSource2Register(value.args).getFP());
+					} else if constexpr (std::is_same_v<T, NotEqualBoolean>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getTruth() !=
+								getSource2Register(value.args).getTruth());
+					} else if constexpr (std::is_same_v<T, NotEqualImmediate>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getInt() !=
+								Integer(value.args.imm16));
+					} else if constexpr (std::is_same_v<T, UnsignedNotEqualImmediate>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getAddress() !=
+								Address(value.args.imm16));
+					} else if constexpr (std::is_same_v<T, GreaterThanOrEqualToImmediate>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getInt() >=
+								Integer(value.args.imm16));
+					} else if constexpr (std::is_same_v<T, UnsignedGreaterThanOrEqualToImmediate>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getAddress() >=
+								Address(value.args.imm16));
+					} else if constexpr (std::is_same_v<T, LessThanOrEqualToImmediate>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getInt() <=
+								Integer(value.args.imm16));
+					} else if constexpr (std::is_same_v<T, UnsignedLessThanOrEqualToImmediate>) {
+						getDestinationRegister(value.args).setValue(
+								getSourceRegister(value.args).getAddress() <=
+								Address(value.args.imm16));
 					} 
 #define IsType(t) std::is_same_v<T, t>
 #define InvokeConv(bfun, cfun) \
@@ -517,28 +631,6 @@ void Core::dispatchInstruction() {
 #define InvokeSU(t, func) \
 				InvokeS(t, func) \
 				InvokeU(t, func)
-				 else if constexpr (std::is_same_v<T, Jump>) {
-					_pc.setValue(_pc.getInt() + value.args.value);
-				} else if constexpr (std::is_same_v<T, CallSubroutine>) {
-					savePositionToSubroutineStack();
-					_pc.setValue(_pc.getInt() + value.args.value);
-				} else if constexpr (std::is_same_v<T, JumpAbsolute>) {
-					_pc.setValue(Address(value.args.getImm24()));
-				} else if constexpr (std::is_same_v<T, CallSubroutineAbsolute>) {
-					savePositionToSubroutineStack();
-					_pc.setValue(Address(value.args.getImm24()));
-				} else if constexpr (std::is_same_v<T, JumpAbsolute>) {
-                    _pc.setValue(value.args.value);
-				} else if constexpr (std::is_same_v<T, ConditionalBranch>) {
-                    if (getDestinationRegister(value.args).getTruth()) {
-                        _pc.setValue(_pc.getInt() + safeExtract(value.args.imm16));
-                    }
-				} else if constexpr (std::is_same_v<T, ConditionalCallSubroutine>) { 
-                    if (getDestinationRegister(value.args).getTruth()) {
-                        savePositionToSubroutineStack();
-                        _pc.setValue(_pc.getInt() + safeExtract(value.args.imm16));
-                    }
-				}
 				InvokeSU(Add, add)
 				InvokeSU(Subtract, subtract)
 				InvokeSU(Multiply, multiply)
@@ -590,103 +682,7 @@ void Core::dispatchInstruction() {
 #undef InvokeSUB
 #undef InvokeConv
 #undef IsType
-				else if constexpr (std::is_same_v<T, PrintString>) {
-						auto begin = getDestinationRegister(value.args).getAddress();
-						auto length = getSourceRegister(value.args).getAddress();
-						auto end = begin + length;
-						for (auto loc = begin; loc < end; ++loc) {
-							std::cout << char(loadByte(loc));
-						}
-				} else if constexpr (std::is_same_v<T, Minus>) {
-					getDestinationRegister(value.args).setValue(minus(getSourceRegister(value.args).getInt()));
-				} else if constexpr (std::is_same_v<T, MinusUnsigned>) {
-					getDestinationRegister(value.args).setValue(minus(getSourceRegister(value.args).getAddress()));
-				} else if constexpr (std::is_same_v<T, MinusFloatingPoint>) {
-					getDestinationRegister(value.args).setValue(minus(getSourceRegister(value.args).getFP()));
-				} else if constexpr (std::is_same_v<T, Not>) {
-					getDestinationRegister(value.args).setValue(notOp(getSourceRegister(value.args).getAddress()));
-				} else if constexpr (std::is_same_v<T, NotBoolean>) {
-					getDestinationRegister(value.args).setValue(notOp(getSourceRegister(value.args).getTruth()));
-				} else if constexpr (std::is_same_v<T, NotSigned>) {
-					getDestinationRegister(value.args).setValue(notOp(getSourceRegister(value.args).getInt()));
-				} else if constexpr (std::is_same_v<T, LoadImmediate32>) {
-					getDestinationRegister(value.args).setValue(Address(value.args.imm32));
-				} else if constexpr (std::is_same_v<T, LoadImmediate64>) {
-					getDestinationRegister(value.args).setValue(Address(value.args.imm64));
-                } else if constexpr (std::is_same_v<T, IfStatement>) {
-                    _pc.setValue(getDestinationRegister(value.args).getTruth() ?
-                            getSourceRegister(value.args).getAddress() : 
-                            getSource2Register(value.args).getAddress());
-                } else if constexpr (std::is_same_v<T, CallIfStatement>) {
-                    savePositionToSubroutineStack();
-                    _pc.setValue(getDestinationRegister(value.args).getTruth() ?
-                            getSourceRegister(value.args).getAddress() : 
-                            getSource2Register(value.args).getAddress());
-				} else if constexpr (std::is_same_v<T, GreaterThanOrEqualTo>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getInt() >=
-							getSource2Register(value.args).getInt());
-				} else if constexpr (std::is_same_v<T, GreaterThanOrEqualToUnsigned>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getAddress() >=
-							getSource2Register(value.args).getAddress());
-				} else if constexpr (std::is_same_v<T, FloatingPointGreaterThanOrEqualTo>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getFP() >=
-							getSource2Register(value.args).getFP());
-				} else if constexpr (std::is_same_v<T, LessThanOrEqualTo>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getInt() <=
-							getSource2Register(value.args).getInt());
-				} else if constexpr (std::is_same_v<T, LessThanOrEqualToUnsigned>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getAddress() <=
-							getSource2Register(value.args).getAddress());
-				} else if constexpr (std::is_same_v<T, FloatingPointLessThanOrEqualTo>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getFP() <=
-							getSource2Register(value.args).getFP());
-				} else if constexpr (std::is_same_v<T, NotEqual>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getInt() !=
-							getSource2Register(value.args).getInt());
-				} else if constexpr (std::is_same_v<T, NotEqualUnsigned>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getAddress() !=
-							getSource2Register(value.args).getAddress());
-				} else if constexpr (std::is_same_v<T, FloatingPointNotEqual>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getFP() !=
-							getSource2Register(value.args).getFP());
-				} else if constexpr (std::is_same_v<T, NotEqualBoolean>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getTruth() !=
-							getSource2Register(value.args).getTruth());
-				} else if constexpr (std::is_same_v<T, NotEqualImmediate>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getInt() !=
-							Integer(value.args.imm16));
-				} else if constexpr (std::is_same_v<T, UnsignedNotEqualImmediate>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getAddress() !=
-							Address(value.args.imm16));
-				} else if constexpr (std::is_same_v<T, GreaterThanOrEqualToImmediate>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getInt() >=
-							Integer(value.args.imm16));
-				} else if constexpr (std::is_same_v<T, UnsignedGreaterThanOrEqualToImmediate>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getAddress() >=
-							Address(value.args.imm16));
-				} else if constexpr (std::is_same_v<T, LessThanOrEqualToImmediate>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getInt() <=
-							Integer(value.args.imm16));
-				} else if constexpr (std::is_same_v<T, UnsignedLessThanOrEqualToImmediate>) {
-					getDestinationRegister(value.args).setValue(
-							getSourceRegister(value.args).getAddress() <=
-							Address(value.args.imm16));
-				} else {
+				else {
 					static_assert(AlwaysFalse<T>::value, "Unimplemented instruction!");
 				}
 				}, result.value());

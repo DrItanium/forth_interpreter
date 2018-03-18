@@ -82,14 +82,11 @@ constexpr InstructionWidth determineInstructionWidth(Opcode op) noexcept {
 #define DispatchTaggedOneRegister(title) return TwoByteInstruction() ;
 #define DispatchTwoRegister(title) return  TwoByteInstruction() ;
 #define DispatchThreeRegister(title) return  ThreeByteInstruction() ;
-#define DispatchTaggedThreeRegister(title) return  ThreeByteInstruction() ;
 #define DispatchSignedImm16(title) return  FourByteInstruction() ;
 #define DispatchImmediate24(title) return  FourByteInstruction() ;
 #define DispatchTwoRegisterWithImm16(title) return  FourByteInstruction();
 #define DispatchCustomTwoRegisterWithImm16(title) return  FourByteInstruction();
 #define DispatchOneRegisterWithImm16(title) return  FourByteInstruction();
-#define DispatchFourRegister(title) return  ThreeByteInstruction();
-#define DispatchFiveRegister(title) return  FourByteInstruction();
 #define DispatchOneRegisterWithImm64(title) return  TenByteInstruction();
 #define DispatchOneRegisterWithImm32(title) return  SixByteInstruction();
 #define DispatchNoArguments(title) return  OneByteInstruction();
@@ -104,13 +101,10 @@ constexpr InstructionWidth determineInstructionWidth(Opcode op) noexcept {
 #undef DispatchTaggedOneRegister
 #undef DispatchTwoRegister
 #undef DispatchThreeRegister
-#undef DispatchTaggedThreeRegister 
 #undef DispatchSignedImm16
 #undef DispatchImmediate24
 #undef DispatchTwoRegisterWithImm16
 #undef DispatchOneRegisterWithImm16
-#undef DispatchFiveRegister
-#undef DispatchFourRegister
 #undef DispatchOneRegisterWithImm32
 #undef DispatchOneRegisterWithImm64
 		default:

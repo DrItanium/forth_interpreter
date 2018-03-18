@@ -57,14 +57,11 @@ namespace forth {
 #define DispatchTaggedOneRegister(title) Core:: title op ## title (TargetRegister dest, Core::TypeTag type) { return op ## title ({dest, type}); }
 #define DispatchTwoRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src) noexcept { return op ## title ({dest, src}); }
 #define DispatchThreeRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1) noexcept { return op ## title ({dest, src, src1}); }
-#define DispatchTaggedThreeRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1, Core::TypeTag type) noexcept { return op ## title ({dest, src, src1, type}); }
 #define DispatchSignedImm16(title)
 #define DispatchImmediate24(title) Core::title op ## title (HalfAddress addr) noexcept { return op ## title ({addr}); }
 #define DispatchTwoRegisterWithImm16(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept { return op ## title ( {dest, src, value}); }
 #define DispatchCustomTwoRegisterWithImm16(title) 
 #define DispatchOneRegisterWithImm16(title) Core:: title op ## title (TargetRegister dest, QuarterAddress value) noexcept { return op ## title ( {dest, value}); }
-#define DispatchFourRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1, TargetRegister src2) noexcept { return op ## title ( { dest, src, src1, src2 }); }
-#define DispatchFiveRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1, TargetRegister src2, TargetRegister src3) noexcept { return op ## title ( { dest, src, src1, src2, src3 }); }
 #define DispatchOneRegisterWithImm64(title) Core:: title op ## title (TargetRegister dest, Address addr) noexcept { return op ## title ( {dest, addr}); }
 #define DispatchOneRegisterWithImm48(title) Core:: title op ## title (TargetRegister dest, Address addr) noexcept { return op ## title ( {dest, addr}); }
 #define DispatchOneRegisterWithImm32(title) Core:: title op ## title (TargetRegister dest, HalfAddress addr) noexcept { return op ## title ( {dest, addr}); }
@@ -79,7 +76,6 @@ namespace forth {
 #undef X
 #undef FirstX
 #undef DispatchTaggedOneRegister
-#undef DispatchTaggedThreeRegister
 #undef DispatchNoArguments
 #undef DispatchOneRegister
 #undef DispatchTwoRegister
@@ -88,8 +84,6 @@ namespace forth {
 #undef DispatchImmediate24
 #undef DispatchTwoRegisterWithImm16
 #undef DispatchOneRegisterWithImm16
-#undef DispatchFiveRegister
-#undef DispatchFourRegister
 #undef DispatchOneRegisterWithImm48
 #undef DispatchOneRegisterWithImm32
 #undef DispatchOneRegisterWithImm64

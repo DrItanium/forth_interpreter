@@ -137,16 +137,6 @@ class Core {
             SourceRegister source;
             SourceRegister source2;
         };
-        struct TaggedThreeRegister final {
-			TaggedThreeRegister() = default;
-			TaggedThreeRegister(DestinationRegister dest, SourceRegister src, SourceRegister src2, TypeTag tag) : destination(dest), source(src), source2(src2), type(tag) { }
-			TaggedThreeRegister(TargetRegister dest, TargetRegister src, TargetRegister src2, TypeTag tag) : destination(dest), source(src), source2(src2), type(tag) { }
-            TaggedThreeRegister(const TaggedThreeRegister& other) : TaggedThreeRegister(other.destination, other.source, other.source2, other.type)  { }
-            DestinationRegister destination;
-            SourceRegister source;
-            SourceRegister source2;
-            TypeTag type;
-        };
 		struct SignedImm16 final {
 			SignedImm16() = default;
 			SignedImm16(QuarterInteger imm16) : value(imm16) { }

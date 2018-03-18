@@ -289,7 +289,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
 #define XTaggedOneRegister(title) PerformDecode(title)
 #define XTwoRegister(title) PerformDecode(title)
 #define XThreeRegister(title) PerformDecode(title)
-#define XTaggedThreeRegister(title) PerformDecode(title)
 #define XSignedImm16(title) PerformDecode(title)
 #define XImmediate24(title) PerformDecode(title)
 #define XTwoRegisterWithImm16(title) PerformDecode(title) 
@@ -310,7 +309,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
 #undef FirstX
 #undef XCustomTwoRegisterWithImm16
 #undef XTaggedOneRegister
-#undef XTaggedThreeRegister
 #undef XNoArguments
 #undef XOneRegister
 #undef XTwoRegister
@@ -592,20 +590,7 @@ void Core::dispatchInstruction() {
 #undef InvokeSUB
 #undef InvokeConv
 #undef IsType
-				else if constexpr (std::is_same_v<T, DecodeBits>) {
-					auto& dest = getDestinationRegister(value.args);
-					auto& src = getSourceRegister(value.args);
-					auto& src2 = getSource2Register(value.args);
-					auto& src3 = getSourceRegister(value.args.source3);
-					dest.setValue(forth::decodeBits<Address, Address> (src.getAddress(), src2.getAddress(), src3.getAddress()));
-				} else if constexpr (std::is_same_v<T, EncodeBits>) {
-					auto& dest = getDestinationRegister(value.args);
-					auto& src = getSourceRegister(value.args);
-					auto& src2 = getSource2Register(value.args);
-					auto& src3 = getSourceRegister(value.args.source3);
-					auto& src4 = getSourceRegister(value.args.source4);
-					dest.setValue(forth::encodeBits<Address, Address>(src.getAddress(), src2.getAddress(), src3.getAddress(), src4.getAddress()));
-				} else if constexpr (std::is_same_v<T, PrintString>) {
+				else if constexpr (std::is_same_v<T, PrintString>) {
 						auto begin = getDestinationRegister(value.args).getAddress();
 						auto length = getSourceRegister(value.args).getAddress();
 						auto end = begin + length;
@@ -725,6 +710,7 @@ void Core::decodeArguments(ThreeRegister& args) {
 
 
 void Core::decodeArguments(SignedImm16& args) {
+	extractByteFromMolecule();
 	args.value = extractQuarterIntegerFromMolecule();
 }
 
@@ -801,6 +787,7 @@ void Core::encodeArguments(const ThreeRegister& args) {
     encodeArguments(args.source2);
 }
 void Core::encodeArguments(const SignedImm16& args) { 
+	_pc.increment(); // skip ahead one byte
     storeAndAdvance(_pc, forth::getLowerHalf(args.value));
     storeAndAdvance(_pc, forth::getUpperHalf(args.value));
 }
@@ -821,8 +808,7 @@ void Core::encodeArguments(const OneRegisterWithImm32& args) {
     encodeArguments(args.destination);
     encodeArguments(args.imm32);
 }
-void Core::encodeArguments(const OneRegisterWithImm64& args) 
-{ 
+void Core::encodeArguments(const OneRegisterWithImm64& args) { 
     encodeArguments(args.destination);
     encodeArguments(getLowerHalf(args.imm64));
     encodeArguments(getUpperHalf(args.imm64));

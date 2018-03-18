@@ -207,14 +207,11 @@ namespace forth {
 #define DispatchTaggedOneRegister(title) 
 #define DispatchTwoRegister(title) 
 #define DispatchThreeRegister(title) binaryOperationFunction( #title , op ## title ( DEFAULT_REGISTER_ARGS3 )),
-#define DispatchTaggedThreeRegister(title) 
 #define DispatchSignedImm16(title)
 #define DispatchImmediate24(title) 
 #define DispatchTwoRegisterWithImm16(title) 
 #define DispatchCustomTwoRegisterWithImm16(title) 
 #define DispatchOneRegisterWithImm16(title) 
-#define DispatchFourRegister(title) 
-#define DispatchFiveRegister(title)
 #define DispatchOneRegisterWithImm64(title) 
 #define DispatchOneRegisterWithImm48(title) 
 #define DispatchOneRegisterWithImm32(title)
@@ -225,7 +222,6 @@ namespace forth {
 #include "InstructionData.def"
 #undef X
 #undef FirstX
-#undef DispatchTaggedThreeRegister
 #undef DispatchTaggedOneRegister
 #undef DispatchNoArguments
 #undef DispatchOneRegister
@@ -235,8 +231,6 @@ namespace forth {
 #undef DispatchImmediate24
 #undef DispatchTwoRegisterWithImm16
 #undef DispatchOneRegisterWithImm16
-#undef DispatchFiveRegister
-#undef DispatchFourRegister
 #undef DispatchOneRegisterWithImm48
 #undef DispatchOneRegisterWithImm32
 #undef DispatchOneRegisterWithImm64

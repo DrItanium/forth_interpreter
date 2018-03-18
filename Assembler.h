@@ -104,8 +104,6 @@ EagerInstruction function(const std::string& name, T value, Rest&& ... rest) {
 #define DispatchTaggedOneRegister(title) Core:: title op ## title (TargetRegister dest, Core::TypeTag type);
 #define DispatchTwoRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src) noexcept;
 #define DispatchThreeRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1) noexcept;
-#define DispatchFourRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1, TargetRegister src2) noexcept;
-#define DispatchFiveRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1, TargetRegister src2, TargetRegister src3) noexcept;
 #define DispatchSignedImm16(title)
 #define DispatchImmediate24(title) Core:: title op ## title (HalfAddress addr) noexcept;
 #define DispatchTwoRegisterWithImm16(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, QuarterAddress value) noexcept;
@@ -130,8 +128,6 @@ EagerInstruction function(const std::string& name, T value, Rest&& ... rest) {
 #undef DispatchImmediate24
 #undef DispatchTwoRegisterWithImm16
 #undef DispatchOneRegisterWithImm16
-#undef DispatchFiveRegister
-#undef DispatchFourRegister
 #undef DispatchOneRegisterWithImm48
 #undef DispatchOneRegisterWithImm32
 #undef DispatchOneRegisterWithImm64

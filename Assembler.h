@@ -29,7 +29,7 @@ class AssemblerBuilder {
 	public:
 		AssemblerBuilder(Address baseAddress = 0);
 		~AssemblerBuilder();
-		void installIntoCore(Core& core);
+		virtual void installIntoCore(Core& core);
 		void labelHere(const std::string& name);
 		Address absoluteLabelAddress(const std::string& name) const;
 		Integer relativeLabelAddress(const std::string& name) const;
@@ -84,6 +84,35 @@ class AssemblerBuilder {
 		std::map<Address, Core::DataEntry> _operations;
 		std::vector<EagerInstruction> _toResolve;
 		bool _resolvedEntries = false;
+};
+
+class StringCache {
+	public:
+		using Self = StringCache;
+	public:
+		StringCache();
+		Address installString(const std::string& str);
+		void installIntoCore(Core& core);
+		/// @todo add support for making this string cache resumable/use the
+		///       memory address
+	private:
+		AssemblerBuilder _builder;
+		std::map<std::string, Address> _lookupTable;
+};
+
+class Compiler : public AssemblerBuilder {
+	public:
+		using Self = Compiler;
+		using Parent = AssemblerBuilder;
+	public:
+		Compiler();
+		virtual void installIntoCore(Core& c) override;
+		Address installString(const std::string& str);
+		void addDictionaryWord(const std::string& title, Address flags, Address next, Address subroutineAddress);
+	private:
+		AssemblerBuilder _dictionary;
+		AssemblerBuilder _instructionCache;
+		StringCache _cache;
 };
 template<typename T, typename ... Rest>
 EagerInstruction instructions(T value, Rest&& ... rest) {

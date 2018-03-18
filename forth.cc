@@ -7,15 +7,22 @@
 
 namespace forth {
     template<typename T>
-        EagerInstruction binaryOperationFunction(const std::string& name, T op) {
-            return function(name, opPopRegisterAB(), 
-                    op,
-                    opPushRegisterC());
-        }
-#define DEFAULT_REGISTER_ARGS3 TargetRegister::C, TargetRegister::A, TargetRegister::B
+    EagerInstruction binaryOperationFunction(const std::string& name, T op) {
+        return function(name, opPopRegisterAB(), 
+                op,
+                opPushRegisterC());
+    }
+    template<typename T>
+    EagerInstruction unaryOperationFunction(const std::string& name, T op) {
+        return function(name, opPopRegisterA(), 
+                op,
+                opPushRegisterC());
+    }
+#define DEFAULT_REGISTER_ARGS2 TargetRegister::C, TargetRegister::A
+#define DEFAULT_REGISTER_ARGS3 DEFAULT_REGISTER_ARGS2 , TargetRegister::B
     void systemSetup(forth::Machine& machine) {
+		forth::Compiler init;
         // initial system values that we need to use
-        forth::AssemblerBuilder init;
         auto makeFunctionPrinter = [](const std::string& name, TargetRegister reg) {
             return instructions(opPrintChar(name),
                     opPrintChar(": "),
@@ -114,6 +121,18 @@ namespace forth {
                         makeFunctionPrinter("S", TargetRegister::S),
                         makeFunctionPrinter("Index", TargetRegister::Index),
                         makeFunctionPrinter("DP", TargetRegister::DP)),
+				function("TypeInteger",
+						opPopRegisterA(),
+						opTypeInteger(TargetRegister::A)),
+				function("TypeFloatingPoint",
+						opPopRegisterA(),
+						opTypeFloatingPoint(TargetRegister::A)),
+				function("TypeBoolean",
+						opPopRegisterA(),
+						opTypeBoolean(TargetRegister::A)),
+				function("TypeUnsigned",
+						opPopRegisterA(),
+						opTypeUnsigned(TargetRegister::A)),
                 function("PrintStack",
                         opLoadImmediate(TargetRegister::X, Machine::parameterStackEmptyLocation),
                         opLoad(TargetRegister::X, TargetRegister::X),
@@ -203,6 +222,12 @@ namespace forth {
                         opPushRegisterA(),
                         label("DuplicateTopParameterIfNonZeroSkip"),
                         opPushRegisterA()),
+				unaryOperationFunction("NotOperation", opNot(DEFAULT_REGISTER_ARGS2)),
+				unaryOperationFunction("NotBooleanOperation", opNotBoolean(DEFAULT_REGISTER_ARGS2)),
+				unaryOperationFunction("NotSignedOperation", opNotSigned(DEFAULT_REGISTER_ARGS2)),
+				unaryOperationFunction("MinusOperation", opMinus(DEFAULT_REGISTER_ARGS2)),
+				unaryOperationFunction("MinusUnsignedOperation", opMinusUnsigned(DEFAULT_REGISTER_ARGS2)),
+				unaryOperationFunction("MinusFloatingPoint", opMinusFloatingPoint(DEFAULT_REGISTER_ARGS2)),
 #define DispatchOneRegister(title) 
 #define DispatchTaggedOneRegister(title) 
 #define DispatchTwoRegister(title) 
@@ -234,6 +259,7 @@ namespace forth {
 #undef DispatchOneRegisterWithImm48
 #undef DispatchOneRegisterWithImm32
 #undef DispatchOneRegisterWithImm64
+
                 function("NewWord", 
                         opPushRegister(TargetRegister::Compile, TargetRegister::SP2),
                         opUnsignedAddImmediate(TargetRegister::Compile, TargetRegister::DP, 32)),
@@ -272,29 +298,10 @@ namespace forth {
                         opPopRegisterA(),
                         opUnsignedAddImmediate(TargetRegister::A, TargetRegister::A, 24),
                         opPushRegisterA(),
-                        opSubroutineCall("LoadValue")),
-
-                // Format of the string entries are
-                // address - length
-                // data
-                directiveOrg(0x1000000),
-                label("StringCacheEnd"),
-                directiveAddress("StringCacheBegin"),
-                label("StringCacheBegin"),
-                directiveOrg(0x2000000),
-                label("InstructionCacheBegin"),
-                directiveOrg(0x3000000),
-                // format is
-                // String Address
-                // Flags
-                // Next
-                // Subroutine to call
-                directiveAddress(0),
-                label("DictionaryFront"),
-                directiveOrg(0x4000000),
-                label("DictionaryFullEntry"));
+                        opSubroutineCall("LoadValue")));
         machine.installInCore(init);
 #undef DEFAULT_REGISTER_ARGS3
+#undef DEFAULT_REGISTER_ARGS2
     }
 }
 

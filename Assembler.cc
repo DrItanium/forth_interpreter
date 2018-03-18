@@ -598,4 +598,83 @@ namespace forth {
     EagerInstruction opTypeDatum(TargetRegister dest) {
         return instructions(opTypeValue(dest, Core::TypeTag::Datum));
     }
+	StringCache::StringCache() : _builder(0x100'0000) {
+		// setup the code to stash the final string location once we are
+		// going to install!
+		_builder.addInstruction([this](auto& x) {
+					auto value = std::make_shared<Address>(0);
+					ResolvableLazyFunction fn = [this, value](auto& x, auto from) {
+						// when we do the installation, we are done so shove
+						// that value into memory
+						*value = this->_builder.here();
+					};
+					x.addInstruction(
+							directiveOrg(Core::stringBack), 
+							value, 
+							fn,
+							directiveOrg(0x100'0000));
+				});
+	}
+
+	void StringCache::installIntoCore(Core& c) {
+		_builder.installIntoCore(c);
+	}
+	Address StringCache::installString(const std::string& str) {
+		if (auto m = _lookupTable.find(str); m != _lookupTable.end()) {
+			return m->second;
+		} else {
+			auto loc = _builder.here();
+			// install the length and then the set of characters!
+			_builder.addInstruction(directiveAddress(str.length()),
+									directiveString(str));
+			_lookupTable.emplace(str, loc);
+			return loc;
+		}
+	}
+	Address Compiler::installString(const std::string& str) {
+		_cache.installString(str);
+	}
+	void Compiler::installIntoCore(Core& c) {
+		Parent::installIntoCore(c);
+		_cache.installIntoCore(c);
+		_dictionary.installIntoCore(c);
+	}
+	Compiler::Compiler() : Parent(0), _dictionary(0x200'0000), _instructionCache(0x300'0000) { 
+		_dictionary.addInstruction([this](auto& x) {
+					auto value = std::make_shared<Address>(0);
+					ResolvableLazyFunction fn = [this, value](auto& x, auto from) {
+						// when we do the installation, we are done so shove
+						// that value into memory
+						*value = _dictionary.here();
+					};
+					x.addInstruction(
+							directiveOrg(Core::dictionaryStart), 
+							value, 
+							fn,
+							directiveOrg(0x200'0000));
+				});
+		_instructionCache.addInstruction([this](auto& x) {
+					auto value = std::make_shared<Address>(0);
+					ResolvableLazyFunction fn = [this, value](auto& x, auto from) {
+						// when we do the installation, we are done so shove
+						// that value into memory
+						*value = _instructionCache.here();
+					};
+					x.addInstruction(
+							directiveOrg(Core::instructionCacheBack), 
+							value, 
+							fn,
+							directiveOrg(0x300'0000));
+
+				});
+		// install into a new Core system variable
+	}
+	void Compiler::addDictionaryWord(const std::string& title, Address flags, Address next, Address subroutineAddress) {
+		_dictionary.addInstruction(directiveAddress(installString(title)),
+				directiveAddress(flags),
+				directiveAddress(next), 
+				directiveAddress(subroutineAddress));
+	}
+
+
 } // end namespace forth

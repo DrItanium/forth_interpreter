@@ -147,32 +147,11 @@ class Core {
             SourceRegister source2;
             TypeTag type;
         };
-        struct FourRegister final {
-			FourRegister() = default;
-			FourRegister(DestinationRegister dest, SourceRegister src, SourceRegister src2, SourceRegister src3) : destination(dest), source(src), source2(src2), source3(src3) { }
-			FourRegister(TargetRegister dest, TargetRegister src, TargetRegister src2, TargetRegister src3) : destination(dest), source(src), source2(src2), source3(src3) { }
-            FourRegister(const FourRegister& other) : FourRegister(other.destination, other.source, other.source2, other.source3) { }
-            DestinationRegister destination;
-            SourceRegister source;
-            SourceRegister source2;
-            SourceRegister source3;
-        };
 		struct SignedImm16 final {
 			SignedImm16() = default;
 			SignedImm16(QuarterInteger imm16) : value(imm16) { }
 			QuarterInteger value;
 		};
-        struct FiveRegister final {
-			FiveRegister() = default;
-			FiveRegister(DestinationRegister dest, SourceRegister src, SourceRegister src2, SourceRegister src3, SourceRegister src4) : destination(dest), source(src), source2(src2), source3(src3), source4(src4) { }
-			FiveRegister(TargetRegister dest, TargetRegister src, TargetRegister src2, TargetRegister src3, TargetRegister src4) : destination(dest), source(src), source2(src2), source3(src3), source4(src4) { }
-            FiveRegister(const FiveRegister& other) : FiveRegister(other.destination, other.source, other.source2, other.source3, other.source4) { }
-            DestinationRegister destination;
-			SourceRegister source;
-			SourceRegister source2;
-			SourceRegister source3;
-			SourceRegister source4;
-        };
         class Immediate24 final {
             public:
                 Immediate24() = default;
@@ -257,8 +236,6 @@ class Core {
         void decodeArguments(OneRegister& args);
         void decodeArguments(TwoRegister& args);
         void decodeArguments(ThreeRegister& args);
-        void decodeArguments(FourRegister& args);
-        void decodeArguments(FiveRegister& args);
         void decodeArguments(SignedImm16& args);
         void decodeArguments(Immediate24& args);
 		void decodeArguments(OneRegisterWithImm16&);
@@ -286,8 +263,6 @@ class Core {
         void encodeArguments(const OneRegister& args);
         void encodeArguments(const TwoRegister& args);
         void encodeArguments(const ThreeRegister& args);
-        void encodeArguments(const FourRegister& args);
-        void encodeArguments(const FiveRegister& args);
         void encodeArguments(const SignedImm16& args);
         void encodeArguments(const Immediate24& args);
 		void encodeArguments(const OneRegisterWithImm16& args);

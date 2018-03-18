@@ -295,8 +295,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
 #define XTwoRegisterWithImm16(title) PerformDecode(title) 
 #define XCustomTwoRegisterWithImm16(title) PerformDecode(title) 
 #define XOneRegisterWithImm16(title) PerformDecode(title) 
-#define XFourRegister(title) PerformDecode(title) 
-#define XFiveRegister(title) PerformDecode(title) 
 #define XOneRegisterWithImm64(title) PerformDecode(title)
 #define XOneRegisterWithImm48(title) PerformDecode(title)
 #define XOneRegisterWithImm32(title) PerformDecode(title)
@@ -321,8 +319,6 @@ std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
 #undef XImmediate24
 #undef XTwoRegisterWithImm16
 #undef XOneRegisterWithImm16
-#undef XFourRegister
-#undef XFiveRegister
 #undef XOneRegisterWithImm64
 #undef XOneRegisterWithImm48
 #undef XOneRegisterWithImm32
@@ -727,21 +723,6 @@ void Core::decodeArguments(ThreeRegister& args) {
 	args.source2 = forth::getDestinationRegister(b2);
 }
 
-void Core::decodeArguments(FourRegister& args) {
-    populateDestinationAndSource(args);
-	auto b2 = extractByteFromMolecule();
-	args.source2 = forth::getDestinationRegister(b2);
-	args.source3 = forth::getDestinationRegister(b2);
-}
-
-void Core::decodeArguments(FiveRegister& args) {
-    populateDestinationAndSource(args);
-	auto b2 = extractByteFromMolecule();
-	args.source2 = forth::getDestinationRegister(b2);
-	args.source3 = forth::getDestinationRegister(b2);
-	auto b3 = extractByteFromMolecule();
-	args.source4 = forth::getDestinationRegister(b3);
-}
 
 void Core::decodeArguments(SignedImm16& args) {
 	args.value = extractQuarterIntegerFromMolecule();
@@ -818,15 +799,6 @@ void Core::encodeArguments(const TwoRegister& args) {
 void Core::encodeArguments(const ThreeRegister& args) { 
     encodeArguments(args.destination, args.source);
     encodeArguments(args.source2);
-}
-void Core::encodeArguments(const FourRegister& args) { 
-    encodeArguments(args.destination, args.source);
-    encodeArguments(args.source2, args.source3);
-}
-void Core::encodeArguments(const FiveRegister& args) { 
-    encodeArguments(args.destination, args.source);
-    encodeArguments(args.source2, args.source3);
-    encodeArguments(args.source4);
 }
 void Core::encodeArguments(const SignedImm16& args) { 
     storeAndAdvance(_pc, forth::getLowerHalf(args.value));

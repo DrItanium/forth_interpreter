@@ -626,7 +626,7 @@ namespace forth {
         ResolvableLazyFunction dictResolve = [this, dictionaryStart](auto& x, auto from) {
             *dictionaryStart = _dictionary.here();
         };
-        auto instructionCacheBack = std::make_shared<Core::LoadImmediate64>();
+        auto instructionCacheBack = std::make_shared<Address>(0);
         ResolvableLazyFunction icacheResolve = [this, instructionCacheBack](auto& x, auto from) {
             *instructionCacheBack = _instructionCache.here();
         };

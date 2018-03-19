@@ -31,13 +31,14 @@ namespace forth {
         };
         init.addInstruction(
                 directiveOrg(0),
-                opStoreImmediate64(forth::Machine::shouldKeepExecutingLocation, 1),
-                opStoreImmediate64(forth::Machine::isCompilingLocation, 0),
-                opStoreImmediate64(forth::Machine::ignoreInputLocation, 0),
-                opStoreImmediate64(forth::Machine::subroutineStackEmptyLocation, 0xFF0000),
-                opStoreImmediate64(forth::Machine::subroutineStackFullLocation, 0xFE0000),
-                opStoreImmediate64(forth::Machine::parameterStackEmptyLocation, 0xFE0000),
-                opStoreImmediate64(forth::Machine::parameterStackFullLocation, 0xFD0000),
+                opStoreImmediate64(forth::Machine::locationSubroutineStackEmpty, 0xFF0000),
+                opStoreImmediate64(forth::Machine::locationSubroutineStackFull, 0xFE0000),
+                opStoreImmediate64(forth::Machine::locationParameterStackEmpty, 0xFE0000),
+                opStoreImmediate64(forth::Machine::locationParameterStackFull, 0xFD0000),
+                // User variable defines start!
+                opStoreImmediate64(forth::Machine::locationShouldKeepExecuting, 1),
+                opStoreImmediate64(forth::Machine::locationInCompilationMode, 0),
+                opStoreImmediate64(forth::Machine::locationInIgnoreInputMode, 0),
 #define UserVariable(x) \
                 opLoadImmediate64(TargetRegister::Temporary, forth::Machine:: location ## x ), \
                 opLoadImmediate64(TargetRegister::Temporary2, #x ), \
@@ -46,11 +47,10 @@ namespace forth {
 #include "UserVariables.def"
 #undef UserVariableFirst
 #undef UserVariable
-                opLoadImmediate64(TargetRegister::X, forth::Machine::subroutineStackEmptyLocation),
+                opLoadImmediate64(TargetRegister::X, forth::Machine::locationSubroutineStackEmpty),
                 opLoad(forth::TargetRegister::SP2, TargetRegister::X),
-                opLoadImmediate64(TargetRegister::X, forth::Machine::parameterStackEmptyLocation),
+                opLoadImmediate64(TargetRegister::X, forth::Machine::locationParameterStackEmpty),
                 opLoad(forth::TargetRegister::SP, TargetRegister::X),
-                opStoreImmediate64(forth::Machine::terminateControlLoopLocation, "TerminateControlLoop"),
                 // now start using the other system variables to 
                 forth::opLeaveExecutionLoop(),
                 directiveOrg(0x01000),
@@ -101,22 +101,22 @@ namespace forth {
                         opSubroutineCall("LoadValue"),
                         opSubroutineCall("EqualZero")),
                 function("ActivateCompilationMode",
-                        opPushImmediate64(Machine::isCompilingLocation),
+                        opPushImmediate64(Machine::locationInCompilationMode),
                         opSubroutineCall("WriteTrue")),
                 function("DeactivateCompilationMode",
-                        opPushImmediate64(Machine::isCompilingLocation),
+                        opPushImmediate64(Machine::locationInCompilationMode),
                         opSubroutineCall("WriteFalse")),
                 function("InCompilationMode",
-                        opPushImmediate64(Machine::isCompilingLocation),
+                        opPushImmediate64(Machine::locationInCompilationMode),
                         opSubroutineCall("MemoryLocationNotEqualZero")),
                 function("InIgnoreInputMode",
-                        opPushImmediate64(Machine::ignoreInputLocation),
+                        opPushImmediate64(Machine::locationInIgnoreInputMode),
                         opSubroutineCall("MemoryLocationNotEqualZero")),
                 function("DispatchInstruction",
                         opPopRegisterA(),
                         opCallSubroutineIndirect(TargetRegister::A)),
                 function("ShouldKeepExecuting",
-                        opPushImmediate64(Machine::shouldKeepExecutingLocation),
+                        opPushImmediate64(Machine::locationShouldKeepExecuting),
                         opSubroutineCall("MemoryLocationNotEqualZero")),
                 function("PrintNewline", opPrintChar("\n")),
                 function("PrintRegisters",
@@ -142,7 +142,7 @@ namespace forth {
 						opPopRegisterA(),
 						opTypeUnsigned(TargetRegister::A)),
                 function("PrintStack",
-                        opLoadImmediate(TargetRegister::X, Machine::parameterStackEmptyLocation),
+                        opLoadImmediate(TargetRegister::X, Machine::locationParameterStackEmpty),
                         opLoad(TargetRegister::X, TargetRegister::X),
                         zeroRegister(TargetRegister::A),
                         opMove(TargetRegister::B, TargetRegister::SP),
@@ -158,7 +158,7 @@ namespace forth {
                         opConditionalBranch(TargetRegister::C, "PrintStack_LoopRestart"),
                         label("PrintStack_Done")),
                 function("TerminateControlLoop",
-                        opPushImmediate64(Machine::shouldKeepExecutingLocation),
+                        opPushImmediate64(Machine::locationShouldKeepExecuting),
                         opSubroutineCall("WriteFalse")),
                 function("IndirectLoad", // ( addr -- v )
                         opPopRegisterA(),
@@ -235,11 +235,11 @@ namespace forth {
 				unaryOperationFunction("NotSignedOperation", opNotSigned(DEFAULT_REGISTER_ARGS2)),
 				unaryOperationFunction("MinusOperation", opMinus(DEFAULT_REGISTER_ARGS2)),
 				unaryOperationFunction("MinusUnsignedOperation", opMinusUnsigned(DEFAULT_REGISTER_ARGS2)),
-				unaryOperationFunction("MinusFloatingPoint", opMinusFloatingPoint(DEFAULT_REGISTER_ARGS2)),
+				unaryOperationFunction("MinusFloatingPointOperation", opMinusFloatingPoint(DEFAULT_REGISTER_ARGS2)),
 #define DispatchOneRegister(title) 
 #define DispatchTaggedOneRegister(title) 
 #define DispatchTwoRegister(title) 
-#define DispatchThreeRegister(title) binaryOperationFunction( #title , op ## title ( DEFAULT_REGISTER_ARGS3 )),
+#define DispatchThreeRegister(title) binaryOperationFunction( #title "Operation" , op ## title ( DEFAULT_REGISTER_ARGS3 )),
 #define DispatchSignedImm16(title)
 #define DispatchImmediate24(title) 
 #define DispatchTwoRegisterWithImm16(title) 

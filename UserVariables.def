@@ -1,8 +1,93 @@
 // user variables within the user variable section
 UserVariableFirst(ShouldKeepExecuting)
-UserVariable(IsCompiling)
-UserVariable(IgnoreInput)
-UserVariable(TerminateControlLoop)
+UserVariable(InCompilationMode)
+UserVariable(InIgnoreInputMode)
 UserVariable(InvokeAndReturnToMicrocode)
 UserVariable(StoreValue)
 UserVariable(LoadValue)
+UserVariable(WriteFalse)
+UserVariable(WriteTrue)
+UserVariable(GetParameterStackEmpty)
+UserVariable(GetSubroutineStackEmpty)
+UserVariable(ClearSubroutineStack)
+UserVariable(ClearParameterStack)
+UserVariable(NotEqualZero)
+UserVariable(MemoryLocationNotEqualZero)
+UserVariable(EqualZero)
+UserVariable(MemoryLocationEqualZero)
+UserVariable(ActivateCompilationMode)
+UserVariable(DeactivateCompilationMode)
+UserVariable(DispatchInstruction)
+UserVariable(PrintNewline)
+UserVariable(PrintRegisters)
+UserVariable(TypeInteger)
+UserVariable(TypeFloatingPoint)
+UserVariable(TypeBoolean)
+UserVariable(TypeUnsigned)
+UserVariable(PrintStack)
+UserVariable(TerminateControlLoop)
+UserVariable(IndirectLoad)
+UserVariable(IndirectStore)
+UserVariable(MemorySwap)
+UserVariable(DropTopParameter)
+UserVariable(DuplicateTopParameter)
+UserVariable(SwapTopAndLowerParameters)
+UserVariable(MoveLowerParameterOverTopParameter)
+UserVariable(RotateTopThreeParameters)
+UserVariable(ReverseRotateTopThreeParameters)
+UserVariable(ConditionalDispatch)
+UserVariable(DropLowerParameter)
+UserVariable(CopyTopParameterToBelowLowerParameter)
+UserVariable(EmitCharacter)
+UserVariable(PrintString)
+UserVariable(DuplicateTopParameterIfNonZero)
+UserVariable(NotOperation)
+UserVariable(NotBooleanOperation)
+UserVariable(NotSignedOperation)
+UserVariable(MinusOperation)
+UserVariable(MinusUnsignedOperation)
+UserVariable(MinusFloatingPointOperation)
+#define DispatchOneRegister(title) 
+#define DispatchTaggedOneRegister(title) 
+#define DispatchTwoRegister(title) 
+#define DispatchThreeRegister(title) UserVariable(title ## Operation)
+#define DispatchSignedImm16(title)
+#define DispatchImmediate24(title) 
+#define DispatchTwoRegisterWithImm16(title) 
+#define DispatchCustomTwoRegisterWithImm16(title) 
+#define DispatchOneRegisterWithImm16(title) 
+#define DispatchOneRegisterWithImm64(title) 
+#define DispatchOneRegisterWithImm48(title) 
+#define DispatchOneRegisterWithImm32(title)
+#define DispatchNoArguments(title) 
+#define X(title, b) INDIRECTION(Dispatch, b)(title)
+#define FirstX(title, b) X(title, b)
+#include "InstructionData.def"
+#undef X
+#undef FirstX
+#undef DispatchTaggedOneRegister
+#undef DispatchNoArguments
+#undef DispatchOneRegister
+#undef DispatchTwoRegister
+#undef DispatchThreeRegister
+#undef DispatchSignedImm16
+#undef DispatchImmediate24
+#undef DispatchTwoRegisterWithImm16
+#undef DispatchOneRegisterWithImm16
+#undef DispatchOneRegisterWithImm48
+#undef DispatchOneRegisterWithImm32
+#undef DispatchOneRegisterWithImm64
+
+UserVariable(NewWord)
+UserVariable(FinishCompilingWord)
+UserVariable(GetStringLength)
+UserVariable(UnpackString)
+UserVariable(GetStringAddressFromDictionaryEntry)
+UserVariable(GetFlagsFromDictionaryEntry)
+UserVariable(GetNextFromDictioanryEntry)
+UserVariable(GetSubroutineFromDictionaryEntry)
+
+
+UserVariable(StringBack)
+UserVariable(DictionaryStart)
+UserVariable(InstructionCacheBack)

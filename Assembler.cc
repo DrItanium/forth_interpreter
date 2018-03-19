@@ -609,7 +609,7 @@ namespace forth {
 						*value = this->_builder.here();
 					};
 					x.addInstruction(
-							directiveOrg(Core::stringBack), 
+							directiveOrg(Core::locationStringBack), 
 							value, 
 							fn,
 							directiveOrg(0x100'0000));
@@ -648,7 +648,7 @@ namespace forth {
 						*value = _dictionary.here();
 					};
 					x.addInstruction(
-							directiveOrg(Core::dictionaryStart), 
+							directiveOrg(Core::locationDictionaryStart), 
 							value, 
 							fn,
 							directiveOrg(0x200'0000));
@@ -661,7 +661,7 @@ namespace forth {
 						*value = _instructionCache.here();
 					};
 					x.addInstruction(
-							directiveOrg(Core::instructionCacheBack), 
+							directiveOrg(Core::locationInstructionCacheBack), 
 							value, 
 							fn,
 							directiveOrg(0x300'0000));

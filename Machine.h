@@ -15,15 +15,15 @@ namespace forth {
 	class Machine {
 		public:
             enum UserVariableDecls {
-#define UserVariableFirst(x) x = 0,
-#define UserVariable(x) x,
+#define UserVariableFirst(x) location ## x = 0,
+#define UserVariable(x) location ## x,
 #include "UserVariables.def"
 #undef UserVariable
 #undef UserVariableFirst
             };
             template<Address index>
             static constexpr auto userVariableAddress = Core::userVariableStart + Core::wordToByteOffset<index>;
-#define UserVariable(x) static constexpr Address x = userVariableAddress<UserVariableDecls:: x > ;
+#define UserVariable(x) static constexpr Address location ## x = userVariableAddress<UserVariableDecls:: x > ;
 #define UserVariableFirst(x) UserVariable(x)
 #include "UserVariables.def"
 #undef UserVariableFirst

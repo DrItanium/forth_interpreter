@@ -38,6 +38,14 @@ namespace forth {
                 opStoreImmediate64(forth::Machine::subroutineStackFullLocation, 0xFE0000),
                 opStoreImmediate64(forth::Machine::parameterStackEmptyLocation, 0xFE0000),
                 opStoreImmediate64(forth::Machine::parameterStackFullLocation, 0xFD0000),
+#define UserVariable(x) \
+                opLoadImmediate64(TargetRegister::Temporary, forth::Machine:: location ## x ), \
+                opLoadImmediate64(TargetRegister::Temporary2, #x ), \
+                opStore(TargetRegister::Temporary, TargetRegister::Temporary2),
+#define UserVariableFirst(x) UserVariable(x)
+#include "UserVariables.def"
+#undef UserVariableFirst
+#undef UserVariable
                 opLoadImmediate64(TargetRegister::X, forth::Machine::subroutineStackEmptyLocation),
                 opLoad(forth::TargetRegister::SP2, TargetRegister::X),
                 opLoadImmediate64(TargetRegister::X, forth::Machine::parameterStackEmptyLocation),

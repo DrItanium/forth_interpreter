@@ -322,11 +322,17 @@ class Core {
 		}
 		Datum& getSystemVariable(Address index);
 	private:
-		Register _a, _b, _c, _s, _x;
-		Register _sp, _sp2, _imm, _pc;
-        Register _dp, _index;
-		Register _tmp0, _tmp1;
-        ReadOnlyRegister _zero;
+        Register _pc, _imm;
+#define RegisterFirst(x) ReadOnlyRegister _ ## x;
+#define Register(x) Register _ ## x;
+#include "Registers.def"
+#undef Register
+#undef RegisterFirst
+		//Register _a, _b, _c, _s, _x;
+		//Register _sp, _sp2, _imm, _pc;
+        //Register _dp, _index;
+		//Register _tmp0, _tmp1;
+        //ReadOnlyRegister _zero;
 		// mapped to 0xFFFFFFFFFFFF0000
 		std::unique_ptr<Datum[]> _memory, _systemVariables;
 };

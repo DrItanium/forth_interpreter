@@ -14,30 +14,11 @@ Core::Core() : _memory(new Datum[memoryCapacity]), _systemVariables(new Datum[sy
 Register& Core::getRegister(TargetRegister reg) {
 	using Type = decltype(reg);
 	switch (reg) {
-		case Type::A:
-			return _a;
-		case Type::B:
-			return _b;
-		case Type::C:
-			return _c;
-		case Type::S:
-			return _s;
-		case Type::X:
-			return _x;
-		case Type::SP:
-			return _sp;
-		case Type::SP2:
-			return _sp2;
-        case Type::Temporary:
-            return _tmp0;
-        case Type::Temporary2:
-            return _tmp1;
-        case Type::DP:
-            return _dp;
-        case Type::Index:
-            return _index;
-        case Type::Zero:
-            return _zero;
+#define Register(x) case Type :: x : return _ ## x ;
+#define RegisterFirst(x) Register(x)
+#include "Registers.def"
+#undef Register
+#undef RegisterFirst
 		default:
 			throw Problem("getRegister", "Undefined register!");
 	}

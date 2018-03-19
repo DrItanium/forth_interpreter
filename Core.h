@@ -110,15 +110,15 @@ class Core {
             DestinationRegister destination;
             void print(std::ostream& out);
         };
-        enum class TypeTag {
-            Integer,
-            Unsigned,
-            FloatingPoint,
-            Boolean,
-            Char,
-            Datum,
-        };
         struct TaggedOneRegister final {
+            enum class TypeTag {
+                Integer,
+                Unsigned,
+                FloatingPoint,
+                Boolean,
+                Char,
+                Datum,
+            };
             TaggedOneRegister() = default;
             TaggedOneRegister(DestinationRegister dest, TypeTag tag) : destination(dest), type(tag) { };
             TaggedOneRegister(TargetRegister dest, TypeTag tag) : destination(dest), type(tag) { };

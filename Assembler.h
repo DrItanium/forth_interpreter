@@ -131,7 +131,7 @@ EagerInstruction function(const std::string& name, T value, Rest&& ... rest) {
 						opSemicolon());
 }
 #define DispatchOneRegister(title) 
-#define DispatchTaggedOneRegister(title) Core:: title op ## title (TargetRegister dest, Core::TypeTag type);
+#define DispatchTaggedOneRegister(title) Core:: title op ## title (TargetRegister dest, Core::TaggedOneRegister::TypeTag type);
 #define DispatchTwoRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src) noexcept;
 #define DispatchThreeRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1) noexcept;
 #define DispatchSignedImm16(title)

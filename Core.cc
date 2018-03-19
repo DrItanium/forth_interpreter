@@ -871,5 +871,76 @@ void Core::decodeArguments(Core::TaggedOneRegister& args) {
     args.type = decodeBits<byte, TypeTag, 0xF0, 4>(populateDestination(args));
 }
 
+void Core::OneRegister::print(std::ostream& out) {
+    out << " " << destination;
+}
+
+void Core::TwoRegister::print(std::ostream& out) {
+    out << " " << destination << " = " << source;
+}
+void Core::ThreeRegister::print(std::ostream& out) {
+    out << " " << destination << " = " << source << ", " << source2;
+}
+
+void Core::TaggedOneRegister::print(std::ostream& out) {
+    using T = Core::TaggedOneRegister::TypeTag;
+    switch (type) {
+        case T::Integer:
+            out << ".integer ";
+            break;
+        case T::Unsigned:
+            out << ".unsigned ";
+            break;
+        case T::FloatingPoint:
+            out << ".floating_point ";
+            break;
+        case T::Boolean:
+            out << ".boolean ";
+            break;
+        case T::Char:
+            out << ".char ";
+            break;
+        case T::Datum:
+            out << ".datum ";
+        default:
+            throw Problem("TaggedOneRegister::print", "Illegal operation!");
+    }
+    out << destination;
+}
+
+void Core::SignedImm16::print(std::ostream& out) {
+    auto flags = out.flags();
+    out << " " << value;
+    out.setf(flags); // restore after done
+}
+
+void Core::Immediate24::print(std::ostream& out) {
+    auto flags = out.flags();
+    out << " 0x" << std::hex << imm24;
+    out.setf(flags); // restore after done
+}
+
+void Core::TwoRegisterWithImm16::print(std::ostream& out) {
+    auto flags = out.flags();
+    out << " " << destination << " = " << source << ", 0x" << std::hex << imm16;
+    out.setf(flags); // restore after done
+}
+
+void Core::OneRegisterWithImm16::print(std::ostream& out) {
+    auto flags = out.flags();
+    out << " " << destination << " = 0x" << std::hex << imm16;
+    out.setf(flags); // restore after done
+}
+void Core::OneRegisterWithImm32::print(std::ostream& out) {
+    auto flags = out.flags();
+    out << " " << destination << " = 0x" << std::hex << imm32;
+    out.setf(flags); // restore after done
+}
+void Core::OneRegisterWithImm64::print(std::ostream& out) {
+    auto flags = out.flags();
+    out << " " << destination << " = 0x" << std::hex << imm64;
+    out.setf(flags); // restore after done
+}
+
 
 } // namespace forth

@@ -54,7 +54,7 @@ namespace forth {
 		}
 	}
 #define DispatchOneRegister(title) 
-#define DispatchTaggedOneRegister(title) Core:: title op ## title (TargetRegister dest, Core::TypeTag type) { return op ## title ({dest, type}); }
+#define DispatchTaggedOneRegister(title) Core:: title op ## title (TargetRegister dest, Core::TaggedOneRegister::TypeTag type) { return op ## title ({dest, type}); }
 #define DispatchTwoRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src) noexcept { return op ## title ({dest, src}); }
 #define DispatchThreeRegister(title) Core:: title op ## title (TargetRegister dest, TargetRegister src, TargetRegister src1) noexcept { return op ## title ({dest, src, src1}); }
 #define DispatchSignedImm16(title)

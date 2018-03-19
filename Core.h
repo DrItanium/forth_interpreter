@@ -6,6 +6,7 @@
 #include <tuple>
 #include "Instruction.h"
 #include <memory>
+#include <ostream>
 namespace forth {
 class Core {
 
@@ -98,13 +99,16 @@ class Core {
 	public:
         using DestinationRegister = forth::OptionalRegister;
         using SourceRegister = forth::OptionalRegister;
-		struct NoArguments final { };
+		struct NoArguments final { 
+            void print(std::ostream& out) { }
+        };
         struct OneRegister final {
             OneRegister() = default;
             OneRegister(DestinationRegister dest) : destination(dest) { };
             OneRegister(TargetRegister dest) : destination(dest) { };
             OneRegister(const OneRegister& other) : destination(other.destination) { }
             DestinationRegister destination;
+            void print(std::ostream& out);
         };
         enum class TypeTag {
             Integer,
@@ -121,6 +125,7 @@ class Core {
             TaggedOneRegister(const TaggedOneRegister& other) : destination(other.destination), type(other.type) { }
             DestinationRegister destination;
             TypeTag type;
+            void print(std::ostream& out);
         };
         struct TwoRegister final {
 		    TwoRegister() = default;
@@ -129,6 +134,7 @@ class Core {
             TwoRegister(const TwoRegister& other) : destination(other.destination), source(other.source) { }
 		    DestinationRegister destination;
 		    SourceRegister source;
+            void print(std::ostream& out);
         };
         struct ThreeRegister final {
 			ThreeRegister() = default;
@@ -138,11 +144,13 @@ class Core {
             DestinationRegister destination;
             SourceRegister source;
             SourceRegister source2;
+            void print(std::ostream& out);
         };
 		struct SignedImm16 final {
 			SignedImm16() = default;
 			SignedImm16(QuarterInteger imm16) : value(imm16) { }
 			QuarterInteger value;
+            void print(std::ostream& out);
 		};
         class Immediate24 final {
             public:
@@ -151,6 +159,7 @@ class Core {
                 Immediate24(const Immediate24& other) : imm24(other.imm24) { }
                 void setImm24(HalfAddress value);
                 HalfAddress getImm24() const noexcept { return imm24; }
+                void print(std::ostream& out);
             private:
                 HalfAddress imm24;
         };
@@ -162,6 +171,7 @@ class Core {
             DestinationRegister destination;
             SourceRegister source;
             QuarterAddress imm16;
+            void print(std::ostream& out);
         };
         struct CustomTwoRegisterWithImm16 final : public TwoRegisterWithImm16 {
             using TwoRegisterWithImm16::TwoRegisterWithImm16;
@@ -173,6 +183,7 @@ class Core {
             OneRegisterWithImm16(const OneRegisterWithImm16& other) : OneRegisterWithImm16(other.destination, other.imm16) { }
             DestinationRegister destination;
             QuarterAddress imm16;
+            void print(std::ostream& out);
         };
         struct OneRegisterWithImm32 final {
 			OneRegisterWithImm32() = default;
@@ -181,6 +192,7 @@ class Core {
             OneRegisterWithImm32(const OneRegisterWithImm32& other) : OneRegisterWithImm32(other.destination, other.imm32) { }
             DestinationRegister destination;
             HalfAddress imm32;
+            void print(std::ostream& out);
         };
         struct OneRegisterWithImm64 final {
 			OneRegisterWithImm64() = default;
@@ -189,13 +201,31 @@ class Core {
             OneRegisterWithImm64(const OneRegisterWithImm64& other) : OneRegisterWithImm64(other.destination, other.imm64) { }
             DestinationRegister destination;
             Address imm64;
+            void print(std::ostream& out);
         };
-#define X(title, b) struct title final { \
-    title() = default; \
-    title(const Core:: b& value) : args(value) { } \
-	constexpr Opcode getOpcode() const noexcept { return Opcode:: title ; } \
-	constexpr byte size() const noexcept { return determineInstructionWidth(getOpcode()).size(); } \
-	Core:: b args; };
+        template<typename Args, Opcode code>
+        struct PrintableInstruction {
+            public:
+                explicit PrintableInstruction() { }
+                explicit PrintableInstruction(const Args& value) : args(value) { }
+                ~PrintableInstruction() { }
+                void print(std::ostream& out) { 
+                    printOpcode(out);
+                    printArguments(out);
+                }
+                void printArguments(std::ostream& out) { args.print(out); }
+                virtual void printOpcode(std::ostream& out) = 0;
+                constexpr Opcode getOpcode() const noexcept { return code; }
+                constexpr byte size() const noexcept { return determineInstructionWidth(getOpcode()).size(); }
+                Args args;
+        };
+#define X(title, b) struct title final : public PrintableInstruction<b, Opcode:: title > { \
+    using Parent = PrintableInstruction<b, Opcode:: title >; \
+    using Parent::Parent; \
+    virtual void printOpcode(std::ostream& out) override { \
+        out << #title; \
+    } \
+};
 #define FirstX(title, b) X(title, b)
 #include "InstructionData.def"
 #undef X

@@ -19,5 +19,12 @@ byte encodeSourceRegister(const OptionalRegister& value) {
     }
 }
 
+	std::ostream& operator<<(std::ostream& out, const TargetRegister& dt) {
+		// save flags
+		auto flags = out.flags();
+		out.setf(flags); // restore after done
+		return out;
+	}
+
 
 } // end namespace forth

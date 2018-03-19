@@ -26,6 +26,7 @@ enum class TargetRegister : byte {
     Compile, // used to denote the address of the word to use in the dictionary
     Count,
 };
+std::ostream& operator<<(std::ostream& out, const TargetRegister& d);
 using OptionalRegister = std::optional<TargetRegister>;
 static_assert(byte(TargetRegister::Count) <= 16, "Too many registers defined!");
 constexpr byte encodeDestinationRegister(byte value) noexcept {

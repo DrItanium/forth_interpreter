@@ -614,7 +614,7 @@ endLoopTop:
 	}
 	void Machine::pushSubroutine(Datum value) {
 		try {
-			pushOntoStack(TargetRegister::SP2, value, subroutineStackFullLocation);
+			pushOntoStack(TargetRegister::SP2, value, locationSubroutineStackFull);
 		} catch (Problem& p) {
 			throw Problem("pushSubroutine", p.getMessage());
 		}
@@ -628,16 +628,16 @@ endLoopTop:
 	}
 	Datum Machine::popSubroutine() {
 		try {
-			return popOffStack(TargetRegister::SP2, subroutineStackEmptyLocation);
+			return popOffStack(TargetRegister::SP2, locationSubroutineStackEmpty);
 		} catch (Problem& p) {
 			throw Problem ("popSubroutine", p.getMessage());
 		}
 	}
 	bool Machine::subroutineStackEmpty() {
-		return stackEmpty(TargetRegister::SP2, subroutineStackEmptyLocation);
+		return stackEmpty(TargetRegister::SP2, locationSubroutineStackEmpty);
 	}
 	bool Machine::subroutineStackFull() {
-		return stackFull(TargetRegister::SP2, subroutineStackFullLocation);
+		return stackFull(TargetRegister::SP2, locationSubroutineStackFull);
 	}
 	void Machine::clearSubroutineStack() {
 		//dispatchInstruction(loadImmediate64(TargetRegister::X, subroutineStackEmptyLocation),

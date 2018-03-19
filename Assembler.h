@@ -93,6 +93,7 @@ class StringCache {
 		StringCache();
 		Address installString(const std::string& str);
 		void installIntoCore(Core& core);
+        Address getBack() const noexcept { return _builder.here(); }
 		/// @todo add support for making this string cache resumable/use the
 		///       memory address
 	private:
@@ -205,10 +206,6 @@ EagerInstruction opLoadImmediate(TargetRegister addr, Address value);
 EagerInstruction opLoadImmediate(TargetRegister addr, const std::string& value);
 EagerInstruction opEquals(TargetRegister destination, TargetRegister src, Address addr);
 EagerInstruction opMemoryEquals(TargetRegister destination, TargetRegister src, Address memLoc);
-EagerInstruction opSubroutineStackEmpty(TargetRegister dest);
-EagerInstruction opSubroutineStackFull(TargetRegister dest);
-EagerInstruction opParameterStackEmpty(TargetRegister dest);
-EagerInstruction opParameterStackFull(TargetRegister dest);
 inline auto opPopRegisterA() noexcept -> decltype(opPopRegister(TargetRegister::A)) { return opPopRegister(TargetRegister::A); }
 inline auto opPopRegisterB() noexcept -> decltype(opPopRegister(TargetRegister::B)) { return opPopRegister(TargetRegister::B); }
 inline auto opPopRegisterC() noexcept -> decltype(opPopRegister(TargetRegister::C)) { return opPopRegister(TargetRegister::C); }

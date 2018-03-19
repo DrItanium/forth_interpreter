@@ -340,19 +340,6 @@ namespace forth {
                 opEquals(dest, src, TargetRegister::Temporary2));
     }
 
-    EagerInstruction opSubroutineStackEmpty(TargetRegister dest) {
-        return opMemoryEquals(dest, TargetRegister::SP2, Machine::subroutineStackEmptyLocation);
-    }
-    EagerInstruction opSubroutineStackFull(TargetRegister dest) {
-        return opMemoryEquals(dest, TargetRegister::SP2, Machine::subroutineStackFullLocation);
-    }
-    EagerInstruction opParameterStackEmpty(TargetRegister dest) {
-        return opMemoryEquals(dest, TargetRegister::SP, Machine::parameterStackEmptyLocation);
-    }
-    EagerInstruction opParameterStackFull(TargetRegister dest) {
-        return opMemoryEquals(dest, TargetRegister::SP, Machine::parameterStackFullLocation);
-    }
-
     EagerInstruction ifThenElseStatement(TargetRegister cond, Address onTrue, Address onFalse) {
 		constexpr auto t = TargetRegister::Temporary;
 		constexpr auto f = TargetRegister::Temporary2;
@@ -599,21 +586,6 @@ namespace forth {
         return instructions(opTypeValue(dest, Core::TypeTag::Datum));
     }
 	StringCache::StringCache() : _builder(0x100'0000) {
-		// setup the code to stash the final string location once we are
-		// going to install!
-		_builder.addInstruction([this](auto& x) {
-					auto value = std::make_shared<Address>(0);
-					ResolvableLazyFunction fn = [this, value](auto& x, auto from) {
-						// when we do the installation, we are done so shove
-						// that value into memory
-						*value = this->_builder.here();
-					};
-					x.addInstruction(
-							directiveOrg(Core::locationStringBack), 
-							value, 
-							fn,
-							directiveOrg(0x100'0000));
-				});
 	}
 
 	void StringCache::installIntoCore(Core& c) {
@@ -640,33 +612,36 @@ namespace forth {
 		_dictionary.installIntoCore(c);
 	}
 	Compiler::Compiler() : Parent(0), _dictionary(0x200'0000), _instructionCache(0x300'0000) { 
-		_dictionary.addInstruction([this](auto& x) {
-					auto value = std::make_shared<Address>(0);
-					ResolvableLazyFunction fn = [this, value](auto& x, auto from) {
-						// when we do the installation, we are done so shove
-						// that value into memory
-						*value = _dictionary.here();
-					};
-					x.addInstruction(
-							directiveOrg(Core::locationDictionaryStart), 
-							value, 
-							fn,
-							directiveOrg(0x200'0000));
-				});
-		_instructionCache.addInstruction([this](auto& x) {
-					auto value = std::make_shared<Address>(0);
-					ResolvableLazyFunction fn = [this, value](auto& x, auto from) {
-						// when we do the installation, we are done so shove
-						// that value into memory
-						*value = _instructionCache.here();
-					};
-					x.addInstruction(
-							directiveOrg(Core::locationInstructionCacheBack), 
-							value, 
-							fn,
-							directiveOrg(0x300'0000));
+		// setup the code to stash the final string location once we are
+		// going to install!
+        auto strCacheBack = std::make_shared<Core::LoadImmediate64>(TargetRegister::Temporary2, 0);
+        ResolvableLazyFunction strCacheResolve = [this, strCacheBack](auto& x, auto from) {
+            // when we do the installation, we are done so shove
+            // that value into memory
+            strCacheBack->args.imm64 = _cache.getBack();
+        };
+        auto dictionaryStart = std::make_shared<Core::LoadImmediate64>(TargetRegister::Temporary2, 0);
+        ResolvableLazyFunction dictResolve = [this, dictionaryStart](auto& x, auto from) {
+            dictionaryStart->args.imm64 = _dictionary.here();
+        };
+        auto instructionCacheBack = std::make_shared<Core::LoadImmediate64>(TargetRegister::Temporary3, 0);
+        ResolvableLazyFunction icacheResolve = [this, instructionCacheBack](auto& x, auto from) {
+            instructionCacheBack->args.imm64 = _instructionCache.here();
+        };
+        addInstruction(
+                opLoadImmediate(TargetRegister::Temporary, Machine::locationStringBack),
+                strCacheBack,
+                strCacheResolve,
+                opStore(TargetRegister::Temporary, TargetRegister::Temporary2),
+                opLoadImmediate(TargetRegister::Temporary, Machine::locationDictionaryStart),
+                dictionaryStart,
+                dictResolve,
+                opStore(TargetRegister::Temporary, TargetRegister::Temporary2),
+                opLoadImmediate(TargetRegister::Temporary, Machine::locationDictionaryStart),
+                instructionCacheBack,
+                icacheResolve,
+                opStore(TargetRegister::Temporary, TargetRegister::Temporary2));
 
-				});
 		// install into a new Core system variable
 	}
 	void Compiler::addDictionaryWord(const std::string& title, Address flags, Address next, Address subroutineAddress) {

@@ -87,14 +87,14 @@ namespace forth {
 		return nullptr;
 	}
 	void Machine::chooseRegister() {
-        auto& dest = _core.getRegister(TargetRegister::C);
-        auto& onTrue = _core.getRegister(TargetRegister::A);
-        auto& onFalse = _core.getRegister(TargetRegister::B);
-        if (dest.getTruth()) {
-            dest.setValue(onTrue.getValue());
-        } else {
-            dest.setValue(onFalse.getValue());
-        }
+        //auto& dest = _core.getRegister(TargetRegister::C);
+        //auto& onTrue = _core.getRegister(TargetRegister::A);
+        //auto& onFalse = _core.getRegister(TargetRegister::B);
+        //if (dest.getTruth()) {
+        //    dest.setValue(onTrue.getValue());
+        //} else {
+        //    dest.setValue(onFalse.getValue());
+        //}
 	}
 	void Machine::invokeCRegister() {
         // SUPER FUCKING DANGEROUS!
@@ -106,19 +106,19 @@ namespace forth {
 		//		popA(),
 		//		popC()>();
 		// if we're not in compilation mode then error out
-		if (!inCompilationMode()) {
-			throw Problem("if", "must be defining a word!");
-		}
-		auto currentTarget = _compileTarget;
-		pushSubroutine(currentTarget);
-		_compileTarget = new DictionaryEntry("");
-		_compileTarget->markFakeEntry();
-		auto* elseBlock = new DictionaryEntry("");
-		elseBlock->markFakeEntry();
-		pushSubroutine(elseBlock);
+		//if (!inCompilationMode()) {
+		//	throw Problem("if", "must be defining a word!");
+		//}
+		//auto currentTarget = _compileTarget;
+		//pushSubroutine(currentTarget);
+		//_compileTarget = new DictionaryEntry("");
+		//_compileTarget->markFakeEntry();
+		//auto* elseBlock = new DictionaryEntry("");
+		//elseBlock->markFakeEntry();
+		//pushSubroutine(elseBlock);
 
-        currentTarget->wordToPush(_compileTarget);
-        currentTarget->wordToPush(elseBlock);
+        //currentTarget->wordToPush(_compileTarget);
+        //currentTarget->wordToPush(elseBlock);
 		//compileMicrocodeInvoke(prepRegisters, currentTarget);
 	}
 	//void Machine::compileMicrocodeInvoke(const Molecule& m, DictionaryEntry* current) {
@@ -126,34 +126,34 @@ namespace forth {
 	//	current->wordToInvoke(_microcodeInvoke);
 	//}
 	void Machine::elseCondition() {
-		if (!inCompilationMode()) {
-			throw Problem("else", "must be defining a word!");
-		}
-		if (subroutineStackEmpty()) {
-            throw Problem("else", "subroutine stack is empty!");
-        }
-		// pop the else block off of the subroutine stack
-		auto* elseBlock = popSubroutine().subroutine;
-		pushSubroutine(new DictionaryEntry(""));
-		// let the if block dangle off since it is referenced else where
-		addWord(_compileTarget);
-		_compileTarget = elseBlock;
+		//if (!inCompilationMode()) {
+		//	throw Problem("else", "must be defining a word!");
+		//}
+		//if (subroutineStackEmpty()) {
+        //    throw Problem("else", "subroutine stack is empty!");
+        //}
+		//// pop the else block off of the subroutine stack
+		//auto* elseBlock = popSubroutine().subroutine;
+		//pushSubroutine(new DictionaryEntry(""));
+		//// let the if block dangle off since it is referenced else where
+		//addWord(_compileTarget);
+		//_compileTarget = elseBlock;
 	}
 
 	void Machine::thenStatement() {
-		if (!inCompilationMode()) {
-			throw Problem("then", "must be defining a word!");
-		}
-		if (subroutineStackEmpty()) {
-			throw Problem("then", "Not in a function");
-		}
-		// there will always be a garbage entry at the top of the subroutine stack, just eliminate it
-		popSubroutine();
-		auto parent = popSubroutine();
-		addWord(_compileTarget);
-		_compileTarget = parent.subroutine;
-		_compileTarget->wordToInvoke(lookupWord("choose.c"));
-		_compileTarget->wordToInvoke(lookupWord("invoke.c"));
+		//if (!inCompilationMode()) {
+		//	throw Problem("then", "must be defining a word!");
+		//}
+		//if (subroutineStackEmpty()) {
+		//	throw Problem("then", "Not in a function");
+		//}
+		//// there will always be a garbage entry at the top of the subroutine stack, just eliminate it
+		//popSubroutine();
+		//auto parent = popSubroutine();
+		//addWord(_compileTarget);
+		//_compileTarget = parent.subroutine;
+		//_compileTarget->wordToInvoke(lookupWord("choose.c"));
+		//_compileTarget->wordToInvoke(lookupWord("invoke.c"));
 	}
 	std::string Machine::readWord(bool allowEscapedQuotes) {
 		std::string word;
@@ -164,23 +164,22 @@ namespace forth {
         }
 		return word;
 	}
-	void Machine::printRegisters() {
-	}
+	void Machine::printRegisters() { }
 	void Machine::defineWord() {
-		if (inCompilationMode() || _compileTarget != nullptr) {
-			throw Problem(":", "already compiling");
-		}
-		activateCompileMode();
-		// pass address "execute" to the entry subroutine
-		_compileTarget = new DictionaryEntry(readWord());
+		//if (inCompilationMode() || _compileTarget != nullptr) {
+		//	throw Problem(":", "already compiling");
+		//}
+		//activateCompileMode();
+		//// pass address "execute" to the entry subroutine
+		//_compileTarget = new DictionaryEntry(readWord());
 	}
 	void Machine::endDefineWord() {
-		if (!inCompilationMode() || _compileTarget == nullptr) {
-			throw Problem(";", "not compiling!");
-		}
-		deactivateCompileMode();
-		addWord(_compileTarget);
-		_compileTarget = nullptr;
+		//if (!inCompilationMode() || _compileTarget == nullptr) {
+		//	throw Problem(";", "not compiling!");
+		//}
+		//deactivateCompileMode();
+		//addWord(_compileTarget);
+		//_compileTarget = nullptr;
 	}
 	void Machine::listWords() {
 		if (_words == nullptr) {
@@ -325,7 +324,7 @@ namespace forth {
 							// add a new spaceEntry to push this value onto the data stack
 							entry->operator()(this);
 						} else {
-                            _compileTarget->wordToInvoke(entry);
+                            //_compileTarget->wordToInvoke(entry);
 							if (finishedCompiling) {
 								endDefineWord();
                                 printOk();
@@ -393,26 +392,26 @@ namespace forth {
         _output << *(popParameter()._string);
     }
     void Machine::constructString() {
-			auto flags = _output.flags();
-            // keep reading until we get a word that ends with "
-            std::stringstream input;
-            while (true) {
-                auto str = readWord();
-                input << str << " ";
-                if (!str.empty() && str.back() == '"') {
-                    // remove the ending "
-                    auto s = input.str();
-                    _stringCache.emplace_back(s.substr(0, s.size() - 2));
-                    // place the reference onto the stack
-                    if (inCompilationMode()) {
-                        _compileTarget->addSpaceEntry(_stringCache.back());
-                    } else {
-                        pushParameter(_stringCache.back());
-                    }
-                    break;
-                }
-            }
-            _output.setf(flags);
+        //auto flags = _output.flags();
+        //// keep reading until we get a word that ends with "
+        //std::stringstream input;
+        //while (true) {
+        //    auto str = readWord();
+        //    input << str << " ";
+        //    if (!str.empty() && str.back() == '"') {
+        //        // remove the ending "
+        //        auto s = input.str();
+        //        _stringCache.emplace_back(s.substr(0, s.size() - 2));
+        //        // place the reference onto the stack
+        //        if (inCompilationMode()) {
+        //            _compileTarget->addSpaceEntry(_stringCache.back());
+        //        } else {
+        //            pushParameter(_stringCache.back());
+        //        }
+        //        break;
+        //    }
+        //}
+        //_output.setf(flags);
     }
     void Machine::terminateControlLoop() {
         // dispatchInstruction
@@ -426,12 +425,12 @@ namespace forth {
         //dispatchInstruction(value);
     }
 	void Machine::doStatement() {
-		if (!inCompilationMode()) {
-			throw Problem("do", "Not compiling!");
-		}
-		pushSubroutine(_compileTarget);
-		_compileTarget = new DictionaryEntry("");
-		_compileTarget->markFakeEntry();
+		//if (!inCompilationMode()) {
+		//	throw Problem("do", "Not compiling!");
+		//}
+		//pushSubroutine(_compileTarget);
+		//_compileTarget = new DictionaryEntry("");
+		//_compileTarget->markFakeEntry();
 	}
 	//void Machine::microcodeInvoke(const Molecule& m) {
     //    if (inCompilationMode()) {
@@ -445,6 +444,7 @@ namespace forth {
     //    }
 	//}
 	void Machine::continueStatement() {
+        /*
 		if (!inCompilationMode()) {
 			throw Problem("continue", "not compiling!");
 		} 
@@ -476,17 +476,18 @@ loopTop:
 		addWord(container);
 		_compileTarget = parent.subroutine;
 		_compileTarget->addSpaceEntry(container);
-
+        */
 	}
 	void Machine::beginStatement() {
-		if (!inCompilationMode()) {
-			throw Problem("begin", "Must be compiling!");
-		}
-		pushSubroutine(_compileTarget);
-		_compileTarget = new DictionaryEntry("");
-		_compileTarget->markFakeEntry();
+		//if (!inCompilationMode()) {
+		//	throw Problem("begin", "Must be compiling!");
+		//}
+		//pushSubroutine(_compileTarget);
+		//_compileTarget = new DictionaryEntry("");
+		//_compileTarget->markFakeEntry();
 	}
 	void Machine::endStatement() {
+        /*
 		if (!inCompilationMode()) {
 			throw Problem("end", "Must be compiling!");
 		}
@@ -495,7 +496,7 @@ loopTop:
 		}
 
 		auto parent = popSubroutine();
-		addWord(_compileTarget);
+		//addWord(_compileTarget);
 		auto container = new DictionaryEntry("", [this, body = _compileTarget](Machine* m) {
 				//static constexpr auto checkCondition = preCompileOperation< popA(), notl()>();
 				//static_assert(0x061c == checkCondition, "conditional operation failed!");
@@ -511,9 +512,10 @@ endLoopTop:
 				});
 		container->markFakeEntry();
 		addWord(container);
-		_compileTarget = parent.subroutine;
-		_compileTarget->addSpaceEntry(container);
+		//_compileTarget = parent.subroutine;
+		//_compileTarget->addSpaceEntry(container);
 		// now we have to construct a single entry for the parent which has the conditional code added as well
+        */
 	}
 	void Machine::dispatchInstruction(const IndirectAddress& loc) {
         dispatchInstruction(_core.loadWord(loc.getLocation()));

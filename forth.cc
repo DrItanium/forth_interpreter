@@ -323,7 +323,22 @@ namespace forth {
                         opLoadImmediate16(TargetRegister::C, 1),
                         opPushRegister(TargetRegister::C)),
                 function("PushFalse",
-                        opPushRegister(TargetRegister::Zero))
+                        opPushRegister(TargetRegister::Zero)),
+                function("ComputeBitPosition", // ( position -- pos )
+                        opPushImmediate64(1), // ( position -- position 1 )
+                        opSubroutineCall("ShiftLeftOperation")),
+                function("BitSet", // ( addr position -- truth )
+                        opSubroutineCall("ComputeBitPosition"),
+                        opSubroutineCall("AndUnsignedOperation"),
+                        opSubroutineCall("NotEqualZero")),
+                function("IsFakeEntry", // ( addr -- truth )
+                        opPushRegister(TargetRegister::Zero),
+                        opSubroutineCall("BitSet")),
+                function("HasCompileTimeInvoke", // ( addr -- truth )
+                        opLoadImmediate16(TargetRegister::A, 1), 
+                        opPushRegisterA(), // ( addr -- addr 1 )
+                        opSubroutineCall("BitSet"))
+                        // the first byte 
                 );
         machine.installInCore(init);
 #undef DEFAULT_REGISTER_ARGS3
@@ -336,7 +351,8 @@ int main() {
         forth::Machine machine (std::cout, std::cin);
         machine.initializeBaseDictionary();
         forth::systemSetup(machine);
-        machine.controlLoop();
+        machine.dispatchInstruction(0);
+        //machine.controlLoop();
     } catch (forth::Problem& p) {
         std::cout << p.getWord() << ": " << p.getMessage() << std::endl;
         std::cout << "terminating...." << std::endl;

@@ -124,6 +124,7 @@ namespace forth {
 			bool _initializedBaseDictionary = false;
             Compiler* _compileTarget = nullptr;
 			Core _core;
+            // TODO: update the compiler to use this cache when necessary!
             std::map<std::string, Address> _stringCache;
 	};
 } // end namespace forth

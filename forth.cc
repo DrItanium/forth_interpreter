@@ -311,6 +311,20 @@ namespace forth {
                         opPushImmediate64(init.installString("ok")),
                         opSubroutineCall("UnpackString"),
                         opSubroutineCall("PrintString")),
+                function("PushParameterXOntoStack",
+                        opPushRegister(TargetRegister::X)),
+                function("PopParameterIntoX",
+                        opPopRegister(TargetRegister::X)),
+                function("PushSubroutineXOntoStack",
+                        opPushRegister(TargetRegister::X, TargetRegister::SP2)),
+                function("PopSubroutineIntoX",
+                        opPopRegister(TargetRegister::X, TargetRegister::SP2)),
+                function("PushTrue",
+                        opLoadImmediate16(TargetRegister::C, 1),
+                        opPushRegister(TargetRegister::C)),
+                function("PushFalse",
+                        opPushRegister(TargetRegister::Zero))
+                );
         machine.installInCore(init);
 #undef DEFAULT_REGISTER_ARGS3
 #undef DEFAULT_REGISTER_ARGS2

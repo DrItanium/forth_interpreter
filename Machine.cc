@@ -165,24 +165,6 @@ namespace forth {
 		return word;
 	}
 	void Machine::printRegisters() {
-		auto printRegister = [](const std::string& title, TargetRegister reg) noexcept -> forth::EagerInstruction {
-			return [title, reg](AssemblerBuilder& ab) {
-				//ab.addInstruction(printChar(title),
-				//				  printChar(": "),
-				//				  typeDatum(reg),
-				//				  printChar("\n"));
-			};
-		};
-		//dispatchInstruction(
-		//		printRegister("SP", TargetRegister::SP),
-		//		printRegister("SP2", TargetRegister::SP2),
-		//		printRegister("A", TargetRegister::A),
-		//		printRegister("B", TargetRegister::B),
-		//		printRegister("C", TargetRegister::C),
-		//		printRegister("X", TargetRegister::X),
-		//		printRegister("S", TargetRegister::S),
-		//		printRegister("Index", TargetRegister::Index),
-		//		printRegister("DP", TargetRegister::DP));
 	}
 	void Machine::defineWord() {
 		if (inCompilationMode() || _compileTarget != nullptr) {
@@ -244,9 +226,10 @@ namespace forth {
 	bool Machine::numberRoutine(const std::string& word) noexcept {
         auto saveToStack = [this](const Datum& value) {
             if (inCompilationMode()) {
-                _compileTarget->addSpaceEntry(value.address);
+                _compileTarget->addInstruction(opPushImmediate64(value.address));
             } else {
-			    dispatchInstruction(opLoadImmediate64(TargetRegister::C, value.address), opPushRegisterC());
+                _core.getRegister(TargetRegister::X).setValue(value);
+                dispatchInstruction(IndirectAddress(Machine::locationPushParameterXOntoStack));
             }
         };
 		if (word.empty()) { 
@@ -258,17 +241,18 @@ namespace forth {
 		// We need to load into c and then push it to the stack
 		if (word == "true") {
             if (inCompilationMode()) {
-                _compileTarget->addSpaceEntry(true);
+                _compileTarget->addInstruction(opLoadImmediate(TargetRegister::Temporary, 1),
+                                               opPushRegister(TargetRegister::Temporary));
             } else {
-			    //dispatchInstruction(addiu(TargetRegister::C, TargetRegister::Zero, 1), opPushRegisterC());
+                dispatchInstruction(IndirectAddress(Machine::locationPushTrue));
             }
 			return true;
 		}
 		if (word == "false") {
             if (inCompilationMode()) {
-                _compileTarget->addSpaceEntry(false);
+                _compileTarget->addInstruction(opPushRegister(TargetRegister::Zero));
             } else {
-			    dispatchInstruction(zeroRegister(TargetRegister::C), opPushRegisterC());
+                dispatchInstruction(IndirectAddress(Machine::locationPushFalse));
             }
 			return true;
 		}
@@ -344,6 +328,7 @@ namespace forth {
                             _compileTarget->wordToInvoke(entry);
 							if (finishedCompiling) {
 								endDefineWord();
+                                printOk();
 							}
 						}
 						continue;
@@ -351,12 +336,14 @@ namespace forth {
 				} else {
 					if (entry != nullptr) {
 						entry->operator()(this);
+                        printOk();
 						continue;
 					}
 				}
 				// okay, we need to see if it is a value to compile in or
 				// add to the stack
 				if (numberRoutine(result)) {
+                    printOk();
 					continue;
 				}
 				// fall through case, we couldn't figure it out!
@@ -391,12 +378,12 @@ namespace forth {
             addWord("'", std::mem_fn(&Machine::injectWord));
             addWord("execute", std::mem_fn(&Machine::executeTop));
             addWord("raiseError", std::mem_fn(&Machine::raiseError));
-            addWord("uc", std::mem_fn(&Machine::invokeCore));
+            //addWord("uc", std::mem_fn(&Machine::invokeCore));
             addWord("quit", std::mem_fn(&Machine::terminateControlLoop));
             addWord("\"", std::mem_fn(&Machine::constructString), true);
             addWord(",str", std::mem_fn(&Machine::printString));
             addWord(".CR", std::mem_fn(&Machine::printNewLine));
-			_microcodeInvoke = lookupWord("uc");
+			//_microcodeInvoke = lookupWord("uc");
 		}
 	}
     void Machine::printNewLine() {
@@ -528,11 +515,13 @@ endLoopTop:
 		_compileTarget->addSpaceEntry(container);
 		// now we have to construct a single entry for the parent which has the conditional code added as well
 	}
-	void Machine::dispatchInstruction(AssemblerBuilder& ab) {
-		//ab.addInstruction(forth::returnToNative());
-		//ab.installIntoMemory(_core.getInstructionInstallationFunction());
-		//_core.executionCycle(ab.getBaseAddress());
+	void Machine::dispatchInstruction(const IndirectAddress& loc) {
+        dispatchInstruction(_core.loadWord(loc.getLocation()));
 	}
+    void Machine::dispatchInstruction(Address directAddress) {
+        _core.getRegister(TargetRegister::S).setValue(directAddress);
+        _core.executionCycle(_core.loadWord(Machine::locationInvokeAndReturnToMicrocode));
+    }
     void Machine::injectWord() {
         // read the next word and then lookup that entry
 		auto word = readWord();
@@ -552,15 +541,14 @@ endLoopTop:
         top.entry->operator()(this);
     }
 	bool Machine::keepExecuting() noexcept {
-		//dispatchInstruction(loadImmediate64(TargetRegister::X, shouldKeepExecutingLocation),
-		//		forth::load(TargetRegister::X, TargetRegister::X));
+        dispatchInstruction(IndirectAddress(Machine::locationShouldKeepExecuting),
+                            IndirectAddress(Machine::locationPopParameterIntoX));
 		return _core.getRegister(TargetRegister::X).getTruth();
 	}
 
 	void Machine::handleError(const std::string& word, const std::string& msg) noexcept {
 		// clear the stacks and the input pointer
-		//dispatchInstruction(loadImmediate64(TargetRegister::X, parameterStackEmptyLocation),
-		//				  forth::load(TargetRegister::SP, TargetRegister::X));
+        dispatchInstruction(Machine::locationClearParameterStack);
 		clearSubroutineStack();
 		_input.clear();
 		_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -569,28 +557,23 @@ endLoopTop:
 			delete _compileTarget;
 			_compileTarget = nullptr;
 		}
-		//dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation), 
-		//		forth::store(TargetRegister::X, TargetRegister::Zero));
+        deactivateCompileMode();
 	}
 	void Machine::dispatchInstruction() {
 		// just pop a molecule off of the stack and pass it to
 		// dispatchInstruction
-		//Molecule tmp(popParameter().address);
-		//dispatchInstruction(tmp);
+        dispatchInstruction(IndirectAddress(Machine::locationDispatchInstruction));
 	}
 	bool Machine::inCompilationMode() noexcept {
-		//dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
-		//				  forth::load(TargetRegister::X, TargetRegister::X));
+        dispatchInstruction(IndirectAddress(Machine::locationInCompilationMode));
+        dispatchInstruction(IndirectAddress(Machine::locationPopParameterIntoX));
 		return _core.getRegister(TargetRegister::X).getTruth();
 	}
 	void Machine::activateCompileMode() {
-		//dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
-		//		loadImmediate16(TargetRegister::C, 1),
-		//		forth::store(TargetRegister::X, TargetRegister::C));
+        dispatchInstruction(IndirectAddress(Machine::locationActivateCompilationMode));
 	}
 	void Machine::deactivateCompileMode() {
-		//dispatchInstruction(loadImmediate64(TargetRegister::X, isCompilingLocation),
-		//		forth::store(TargetRegister::X, TargetRegister::Zero));
+        dispatchInstruction(IndirectAddress(Machine::locationDeactivateCompilationMode));
 	}
 
 	bool Machine::stackEmpty(TargetRegister sp, Address location) {
@@ -609,6 +592,7 @@ endLoopTop:
 		if (stackFull(sp, fullLocation)) {
 			throw Problem("pushOntoStack", "STACK FULL!!!");
 		}
+
 		//dispatchInstruction(loadImmediate64(TargetRegister::X, value.address),
 		//		pushRegister(TargetRegister::X, sp));
 	}
@@ -640,8 +624,7 @@ endLoopTop:
 		return stackFull(TargetRegister::SP2, locationSubroutineStackFull);
 	}
 	void Machine::clearSubroutineStack() {
-		//dispatchInstruction(loadImmediate64(TargetRegister::X, subroutineStackEmptyLocation),
-		//		forth::load(TargetRegister::SP2, TargetRegister::X));
+        dispatchInstruction(Machine::locationClearSubroutineStack);
 	}
 
 	void Machine::printStack() {
@@ -650,4 +633,6 @@ endLoopTop:
 	void Machine::installInCore(AssemblerBuilder& ab) {
 		ab.installIntoCore(_core);
 	}
+    void Machine::printOk() {
+    }
 } // end namespace forth

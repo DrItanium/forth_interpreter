@@ -12,6 +12,13 @@
 #include "Assembler.h"
 
 namespace forth {
+    class IndirectAddress {
+        public:
+            explicit IndirectAddress(Address value) : _location(value) { };
+            Address getLocation() const noexcept { return _location; }
+        private:
+            Address _location;
+    };
 	class Machine {
 		public:
             enum class UserVariableLocations : Address {
@@ -48,71 +55,21 @@ namespace forth {
 			bool numberRoutine(const std::string& word) noexcept;
 			void addWord(DictionaryEntry* entry);
 			void addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke = false);
-			template<typename T, typename ... Rest>
-			void buildWord(const std::string& name, T word, Rest ... words) {
-				// compile up a series of words from c++
-				activateCompileMode();
-				_compileTarget = new DictionaryEntry(name);
-				tryCompileWord(word, words..., ";");
-				endDefineWord();
-			}
-            /**
-             * Compile a sequence of microcode instructions into a word :D
-             */
-            template<auto first, auto ... rest>
-            void addMachineCodeWord(const std::string& name, bool compileTimeInvoke = false) {
-                addWord(name, [this](Machine* _) { dispatchInstruction(first, rest...); }, compileTimeInvoke);
-            }
 			void addition(Discriminant type);
 			void listWords();
 			void defineWord();
 			void endDefineWord();
 			void initializeBaseDictionary();
-			void dispatchInstruction(AssemblerBuilder&);
+            void dispatchInstruction(const IndirectAddress& targetRoutine);
+            void dispatchInstruction(Address targetRoutine);
 			template<typename T, typename ... Rest>
 			void dispatchInstruction(T first, Rest&& ... rest) {
-				AssemblerBuilder ab(jitCacheLocation);
-				ab.addInstruction(first, std::move(rest)...);
-				dispatchInstruction(ab);
+				dispatchInstruction(first);
+                if constexpr (sizeof...(rest) > 0) {
+                    dispatchInstruction(std::move(rest)...);
+                }
 			}
 		private:
-			template<typename ... Rest>
-			void tryCompileWord(const std::string& word, Rest ... words) {
-				auto entry = lookupWord(word);
-				if (entry) {
-					// replace with the DictionaryEntry
-					tryCompileWord(entry, words...);
-				} else {
-					std::stringstream ss;
-					ss << "unknown word to compile: " << word << "?";
-					auto str = ss.str();
-					throw Problem(_compileTarget->getName(), str);
-				}
-			}
-			template<typename ... Rest>
-			void tryCompileWord(const char* word, Rest ... words) {
-				auto entry = lookupWord(word);
-				if (entry) {
-					// replace with the DictionaryEntry
-					tryCompileWord(entry, words...);
-				} else {
-					std::stringstream ss;
-					ss << "unknown word to compile: " << word << "?";
-					auto str = ss.str();
-					throw Problem(_compileTarget->getName(), str);
-				}
-			}
-			template<typename T, typename ... Rest>
-			void tryCompileWord(T word, Rest ... words) {
-				if constexpr (std::is_enum<T>::value) {
-					_compileTarget->addSpaceEntry(static_cast<Address>(word));
-				} else {
-					_compileTarget->addSpaceEntry(word);
-				}
-				if constexpr (sizeof...(words) > 0) {
-					tryCompileWord(words...);
-				}
-			}
             void raiseError();
             void chooseRegister();
             void invokeCRegister();
@@ -157,6 +114,7 @@ namespace forth {
             void constructString();
             void printString();
             void printNewLine();
+            void printOk();
 		private:
 			// define the CPU that the forth interpreter sits on top of
 			std::ostream& _output;
@@ -164,10 +122,9 @@ namespace forth {
 			DictionaryEntry* _words;
 			// no need for the subroutine stack
 			bool _initializedBaseDictionary = false;
-			DictionaryEntry* _compileTarget = nullptr;
+            Compiler* _compileTarget = nullptr;
 			Core _core;
-			const DictionaryEntry* _microcodeInvoke = nullptr;
-            std::list<std::string> _stringCache;
+            std::map<std::string, Address> _stringCache;
 	};
 } // end namespace forth
 

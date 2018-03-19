@@ -87,6 +87,12 @@ UserVariable(GetFlagsFromDictionaryEntry)
 UserVariable(GetNextFromDictioanryEntry)
 UserVariable(GetSubroutineFromDictionaryEntry)
 UserVariable(PrintOk)
+UserVariable(PopParameterIntoX)
+UserVariable(PushParameterXOntoStack)
+UserVariable(PopSubroutineIntoX)
+UserVariable(PushSubroutineXOntoStack)
+UserVariable(PushTrue)
+UserVariable(PushFalse)
 
 
 UserVariable(StringBack)

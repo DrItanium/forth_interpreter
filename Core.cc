@@ -243,25 +243,6 @@ void Core::executionCycle(Address startAddress) {
     // we've halted at this point
 }
 
-
-std::function<void(Address, Address)> Core::getMemoryInstallationFunction() noexcept {
-	return [this](Address location, Address value) { store(location, value); };
-}
-
-//std::function<void(Address, Address)> Core::getInstructionInstallationFunction() noexcept {
-//	return [this](Address location, Address instruction) {
-//		auto width = getInstructionWidth(instruction);
-//		if (width == 0) {
-//			throw Problem("Core::getInstructionInstallationFunction", "Got an \"instruction\" with zero width!");
-//		}
-//		Datum conv(instruction);
-//		for (auto curr = location, i = Address(0); curr < (location + width); ++curr, ++i) {
-//			auto value = conv.getField(byte(i));
-//			storeByte(curr, value);
-//		}
-//	};
-//}
-
 std::optional<Core::DecodedOperation> Core::decodeInstruction(byte control) {
 	std::optional<Core::DecodedOperation> op;
 	switch (Opcode(control)) {

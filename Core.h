@@ -86,8 +86,6 @@ class Core {
 		void push(const Datum& d, TargetRegister sp);
 		Datum pop(TargetRegister sp);
         void executionCycle(Address startAddress = 0);
-		std::function<void(Address, Address)> getMemoryInstallationFunction() noexcept;
-		//std::function<void(Address, Address)> getInstructionInstallationFunction() noexcept;
 	private:
         void storeAndAdvance(Register& reg, byte value);
         void storeAndAdvance(Register& reg, QuarterAddress value);

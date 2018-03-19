@@ -34,9 +34,9 @@ clean:
 
 .PHONY: options clean all
 
-forth.o: forth.cc Machine.h Instruction.h Assembler.h InstructionData.def
+forth.o: forth.cc Machine.h Instruction.h Assembler.h InstructionData.def UserVariables.def
 Datum.o: Datum.cc Types.h Datum.h Instruction.h
-Machine.o: Machine.cc Machine.h Types.h DictionaryEntry.h Datum.h Instruction.h Problem.h Core.h Assembler.h
+Machine.o: Machine.cc Machine.h Types.h DictionaryEntry.h Datum.h Instruction.h Problem.h Core.h Assembler.h UserVariables.def
 DictionaryEntry.o: DictionaryEntry.cc DictionaryEntry.h Types.h Datum.h Problem.h Machine.h Instruction.h Problem.h Assembler.h
 Problem.o: Problem.cc Problem.h
 Core.o: Core.cc Core.h Instruction.h Datum.h Types.h Problem.h InstructionData.def

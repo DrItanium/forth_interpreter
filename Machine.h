@@ -14,12 +14,20 @@
 namespace forth {
 	class Machine {
 		public:
+            enum UserVariableDecls {
+#define UserVariableFirst(x) x = 0,
+#define UserVariable(x) x,
+#include "UserVariables.def"
+#undef UserVariable
+#undef UserVariableFirst
+            };
             template<Address index>
             static constexpr auto userVariableAddress = Core::userVariableStart + Core::wordToByteOffset<index>;
-			static constexpr Address shouldKeepExecutingLocation = userVariableAddress<0>;
-			static constexpr Address isCompilingLocation = userVariableAddress<1>;
-			static constexpr Address ignoreInputLocation = userVariableAddress<2>;
-			static constexpr Address terminateControlLoopLocation = userVariableAddress<3>;
+#define UserVariable(x) static constexpr Address x = userVariableAddress<UserVariableDecls:: x > ;
+#define UserVariableFirst(x) UserVariable(x)
+#include "UserVariables.def"
+#undef UserVariableFirst
+#undef UserVariable
 			static constexpr Address subroutineStackEmptyLocation = Core::sp2StackEmpty;
 			static constexpr Address subroutineStackFullLocation = Core::sp2StackFull;
 			static constexpr Address parameterStackEmptyLocation = Core::spStackEmpty;

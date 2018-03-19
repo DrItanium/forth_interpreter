@@ -93,6 +93,10 @@ UserVariable(PopSubroutineIntoX)
 UserVariable(PushSubroutineXOntoStack)
 UserVariable(PushTrue)
 UserVariable(PushFalse)
+UserVariable(ComputeBitPosition)
+UserVariable(BitSet)
+UserVariable(IsFakeEntry)
+UserVariable(HasCompileTimeInvoke)
 
 
 UserVariable(StringBack)

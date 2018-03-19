@@ -518,11 +518,11 @@ endLoopTop:
         */
 	}
 	void Machine::dispatchInstruction(const IndirectAddress& loc) {
-        dispatchInstruction(_core.loadWord(loc.getLocation()));
+        dispatchInstruction(_core.loadWord(loc.getLocation()).address);
 	}
     void Machine::dispatchInstruction(Address directAddress) {
         _core.getRegister(TargetRegister::S).setValue(directAddress);
-        _core.executionCycle(_core.loadWord(Machine::locationInvokeAndReturnToMicrocode));
+        _core.executionCycle(_core.loadWord(Machine::locationInvokeAndReturnToMicrocode).address);
     }
     void Machine::injectWord() {
         // read the next word and then lookup that entry
@@ -579,10 +579,11 @@ endLoopTop:
 	}
 
 	bool Machine::stackEmpty(TargetRegister sp, Address location) {
+
 		//dispatchInstruction(loadImmediate64(TargetRegister::X, location),
 		//		forth::load(TargetRegister::Temporary, TargetRegister::X),
 		//		cmpeq(TargetRegister::C, TargetRegister::Temporary, sp));
-		return _core.getRegister(TargetRegister::C).getTruth();
+		return _core.getRegister(TargetRegister::X).getTruth();
 	}
 	bool Machine::stackFull(TargetRegister sp, Address location) {
 		//dispatchInstruction(loadImmediate64(TargetRegister::X, location),

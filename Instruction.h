@@ -11,22 +11,15 @@
 namespace forth {
 
 enum class TargetRegister : byte {
-    Zero, // always zero
-    A,
-    B,
-    C,
-    S, // register select
-    X, // misc data
-    SP, // stack pointer (parameter)
-    SP2, // second stack pointer (subroutine)
-    DP, // Dictionary Pointer 
-    Index, // Index Pointer
-    Temporary, // used to store temporary data we requested
-    Temporary2, // for the cases where the assembler needs another temporary register
-    Compile, // used to denote the address of the word to use in the dictionary
+#define RegisterFirst(x) x = 0,
+#define Register(x) x,
+#include "Registers.def"
+#undef Register
+#undef RegisterFirst
     Count,
 };
 std::ostream& operator<<(std::ostream& out, const TargetRegister& d);
+std::ostream& operator<<(std::ostream& out, const std::optional<TargetRegister>& d);
 using OptionalRegister = std::optional<TargetRegister>;
 static_assert(byte(TargetRegister::Count) <= 16, "Too many registers defined!");
 constexpr byte encodeDestinationRegister(byte value) noexcept {

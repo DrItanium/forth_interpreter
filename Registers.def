@@ -1,0 +1,13 @@
+RegisterFirst(Zero) // always zero
+Register(A)
+Register(B)
+Register(C)
+Register(S) // register select
+Register(X) // misc data
+Register(SP)  // stack pointer (parameter)
+Register(SP2) // second stack pointer (subroutine)
+Register(DP) // dictionary pointer
+Register(Index) // index pointer
+Register(Temporary) // store temporary data when performing macro ops
+Register(Temporary2) // further temporary storage register
+Register(Compile) // used to denote the address of the word to use in the dictionary

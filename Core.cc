@@ -379,23 +379,24 @@ bool notOp(bool a) noexcept { return !a; }
 
 void Core::typeValue(const TypeValue& value) {
     auto flags = std::cout.flags();
+    using T = Core::TaggedOneRegister::TypeTag;
     switch (value.args.type) {
-        case Core::TypeTag::Integer:
+        case T::Integer:
             std::cout << std::dec << getDestinationRegister(value.args).getInt();
             break;
-        case Core::TypeTag::Unsigned:
+        case T::Unsigned:
             std::cout << std::hex << getDestinationRegister(value.args).getAddress() << "#";
             break;
-        case Core::TypeTag::FloatingPoint:
+        case T::FloatingPoint:
             std::cout << getDestinationRegister(value.args).getFP();
             break;
-        case Core::TypeTag::Boolean:
+        case T::Boolean:
             std::cout << std::boolalpha << getDestinationRegister(value.args).getTruth() << std::noboolalpha;
             break;
-        case Core::TypeTag::Char:
+        case T::Char:
             std::cout << char(getDestinationRegister(value.args).getAddress());
             break;
-        case Core::TypeTag::Datum:
+        case T::Datum:
             std::cout << getDestinationRegister(value.args).getValue();
             break;
         default:
@@ -868,7 +869,7 @@ void Core::encodeArguments(const Core::TaggedOneRegister& args) {
 }
 
 void Core::decodeArguments(Core::TaggedOneRegister& args) {
-    args.type = decodeBits<byte, TypeTag, 0xF0, 4>(populateDestination(args));
+    args.type = decodeBits<byte, Core::TaggedOneRegister::TypeTag, 0xF0, 4>(populateDestination(args));
 }
 
 void Core::OneRegister::print(std::ostream& out) {

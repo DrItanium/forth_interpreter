@@ -228,7 +228,7 @@ namespace forth {
         return opPushImmediate64(value.address, sp);
     }
     EagerInstruction opPrintChar(TargetRegister value) {
-        return instructions(opTypeValue(value, Core::TypeTag::Char));
+        return instructions(opTypeValue(value, Core::TaggedOneRegister::TypeTag::Char));
     }
     EagerInstruction opPrintChar(char c) {
         return instructions(opAddImmediate(TargetRegister::Temporary, TargetRegister::Zero, QuarterAddress(c)),
@@ -571,22 +571,21 @@ namespace forth {
                             directiveString(str));
     }
     EagerInstruction opTypeInteger(TargetRegister dest) {
-        return instructions(opTypeValue(dest, Core::TypeTag::Integer));
+        return instructions(opTypeValue(dest, Core::TaggedOneRegister::TypeTag::Integer));
     }
     EagerInstruction opTypeFloatingPoint(TargetRegister dest) {
-        return instructions(opTypeValue(dest, Core::TypeTag::FloatingPoint));
+        return instructions(opTypeValue(dest, Core::TaggedOneRegister::TypeTag::FloatingPoint));
     }
     EagerInstruction opTypeUnsigned(TargetRegister dest) {
-        return instructions(opTypeValue(dest, Core::TypeTag::Unsigned));
+        return instructions(opTypeValue(dest, Core::TaggedOneRegister::TypeTag::Unsigned));
     }
     EagerInstruction opTypeBoolean(TargetRegister dest) {
-        return instructions(opTypeValue(dest, Core::TypeTag::Boolean));
+        return instructions(opTypeValue(dest, Core::TaggedOneRegister::TypeTag::Boolean));
     }
     EagerInstruction opTypeDatum(TargetRegister dest) {
-        return instructions(opTypeValue(dest, Core::TypeTag::Datum));
+        return instructions(opTypeValue(dest, Core::TaggedOneRegister::TypeTag::Datum));
     }
-	StringCache::StringCache() : _builder(0x100'0000) {
-	}
+	StringCache::StringCache() : _builder(0x100'0000) { }
 
 	void StringCache::installIntoCore(Core& c) {
 		_builder.installIntoCore(c);

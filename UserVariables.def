@@ -86,6 +86,7 @@ UserVariable(GetStringAddressFromDictionaryEntry)
 UserVariable(GetFlagsFromDictionaryEntry)
 UserVariable(GetNextFromDictioanryEntry)
 UserVariable(GetSubroutineFromDictionaryEntry)
+UserVariable(PrintOk)
 
 
 UserVariable(StringBack)

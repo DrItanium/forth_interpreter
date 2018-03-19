@@ -647,7 +647,7 @@ namespace forth {
 	void Compiler::addDictionaryWord(const std::string& title, Address flags, Address next, Address subroutineAddress) {
 		_dictionary.addInstruction(directiveAddress(installString(title)),
 				directiveAddress(flags),
-				directiveAddress(next), 
+				directiveAddress(next),
 				directiveAddress(subroutineAddress));
 	}
 

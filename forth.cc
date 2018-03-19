@@ -306,7 +306,11 @@ namespace forth {
                         opPopRegisterA(),
                         opUnsignedAddImmediate(TargetRegister::A, TargetRegister::A, 24),
                         opPushRegisterA(),
-                        opSubroutineCall("LoadValue")));
+                        opSubroutineCall("LoadValue")),
+                function("PrintOk",
+                        opPushImmediate64(init.installString("ok")),
+                        opSubroutineCall("UnpackString"),
+                        opSubroutineCall("PrintString")),
         machine.installInCore(init);
 #undef DEFAULT_REGISTER_ARGS3
 #undef DEFAULT_REGISTER_ARGS2
@@ -318,6 +322,7 @@ int main() {
         forth::Machine machine (std::cout, std::cin);
         machine.initializeBaseDictionary();
         forth::systemSetup(machine);
+        machine.controlLoop();
     } catch (forth::Problem& p) {
         std::cout << p.getWord() << ": " << p.getMessage() << std::endl;
         std::cout << "terminating...." << std::endl;

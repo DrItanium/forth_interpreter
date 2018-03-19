@@ -241,83 +241,17 @@ namespace forth {
 		_core.push(value, TargetRegister::SP);
 	}
 
-	bool Machine::numberRoutine(const std::string& word) noexcept {
-        auto saveToStack = [this](const Datum& value) {
-            if (inCompilationMode()) {
-                _compileTarget->addSpaceEntry(value.address);
-            } else {
-			    dispatchInstruction(opLoadImmediate64(TargetRegister::C, value.address), opPushRegisterC());
-            }
-        };
-		if (word.empty()) { 
-			return false; 
-		}
-		// floating point
-		// integers
-		// first do some inspection first
-		// We need to load into c and then push it to the stack
-		if (word == "true") {
-            if (inCompilationMode()) {
-                _compileTarget->addSpaceEntry(true);
-            } else {
-			    //dispatchInstruction(addiu(TargetRegister::C, TargetRegister::Zero, 1), opPushRegisterC());
-            }
-			return true;
-		}
-		if (word == "false") {
-            if (inCompilationMode()) {
-                _compileTarget->addSpaceEntry(false);
-            } else {
-			    dispatchInstruction(zeroRegister(TargetRegister::C), opPushRegisterC());
-            }
-			return true;
-		}
-		std::istringstream parseAttempt(word);
-		if (word.find('#') != std::string::npos) {
-			Address tmpAddress;
-			parseAttempt >> std::hex >> tmpAddress;
-			if (!parseAttempt.fail()) {
-				// TODO: do checks to compact parsing
-                saveToStack(tmpAddress);
-				return true;
-			}
-			return false;
-		}
-		if (word.find('u') != std::string::npos) {
-			Address tmpAddress;
-			parseAttempt >> tmpAddress;
-			if (!parseAttempt.fail()) {
-                saveToStack(tmpAddress);
-				return true;
-			}
-			return false;
-		}
-		parseAttempt.clear();
-		if (word.find('.') != std::string::npos) {
-			Floating tmpFloat;
-			parseAttempt >> tmpFloat;
-			if (!parseAttempt.fail() && parseAttempt.eof()) {
-                saveToStack(tmpFloat);
-				return true;
-			}
-			// get out of here early since we hit something that looks like
-			// a float
-			return false;
-		}
-		Integer tmpInt;
-		parseAttempt.clear();
-		parseAttempt >> tmpInt;
-		if (!parseAttempt.fail() && parseAttempt.eof()) {
-            saveToStack(tmpInt);
-			return true;
-		}
-		return false;
-	}
-
 	void Machine::controlLoop() noexcept {
 		// setup initial dictionary
 		initializeBaseDictionary();
         bool ignoreInput = false;
+        auto saveToStack = [this](const Datum& value) {
+            if (inCompilationMode()) {
+                _compileTarget->addSpaceEntry(value.address);
+            } else {
+                dispatchInstruction(opLoadImmediate64(TargetRegister::C, value.address), opPushRegisterC());
+            }
+        };
 		while (keepExecuting()) {
 			try {
 				auto result = readWord();
@@ -356,9 +290,70 @@ namespace forth {
 				}
 				// okay, we need to see if it is a value to compile in or
 				// add to the stack
-				if (numberRoutine(result)) {
-					continue;
-				}
+                //
+                if (word.empty()) { 
+                    goto badThingsHappened;
+                }
+                // floating point
+                // integers
+                // first do some inspection first
+                // We need to load into c and then push it to the stack
+                if (word == "true") {
+                    if (inCompilationMode()) {
+                        _compileTarget->addSpaceEntry(true);
+                    } else {
+                        //dispatchInstruction(addiu(TargetRegister::C, TargetRegister::Zero, 1), opPushRegisterC());
+                    }
+                    continue;
+                }
+                if (word == "false") {
+                    if (inCompilationMode()) {
+                        _compileTarget->addSpaceEntry(false);
+                    } else {
+                        dispatchInstruction(zeroRegister(TargetRegister::C), opPushRegisterC());
+                    }
+                    continue;
+                }
+                std::istringstream parseAttempt(word);
+                if (word.find('#') != std::string::npos) {
+                    Address tmpAddress;
+                    parseAttempt >> std::hex >> tmpAddress;
+                    if (!parseAttempt.fail()) {
+                        // TODO: do checks to compact parsing
+                        saveToStack(tmpAddress);
+                        continue;
+                    }
+                    goto badThingsHappened;
+                }
+                if (word.find('u') != std::string::npos) {
+                    Address tmpAddress;
+                    parseAttempt >> tmpAddress;
+                    if (!parseAttempt.fail()) {
+                        saveToStack(tmpAddress);
+                        continue;
+                    }
+                    goto badThingsHappened;
+                }
+                parseAttempt.clear();
+                if (word.find('.') != std::string::npos) {
+                    Floating tmpFloat;
+                    parseAttempt >> tmpFloat;
+                    if (!parseAttempt.fail() && parseAttempt.eof()) {
+                        saveToStack(tmpFloat);
+                        continue;
+                    }
+                    // get out of here early since we hit something that looks like
+                    // a float
+                    goto badThingsHappened;
+                }
+                Integer tmpInt;
+                parseAttempt.clear();
+                parseAttempt >> tmpInt;
+                if (!parseAttempt.fail() && parseAttempt.eof()) {
+                    saveToStack(tmpInt);
+                    continue;
+                }
+badThingsHappened:
 				// fall through case, we couldn't figure it out!
 				handleError(result, "?");
 			} catch(Problem& p) {

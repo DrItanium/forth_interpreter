@@ -585,7 +585,7 @@ namespace forth {
     EagerInstruction opTypeDatum(TargetRegister dest) {
         return instructions(opTypeValue(dest, Core::TaggedOneRegister::TypeTag::Datum));
     }
-	StringCache::StringCache() : _builder(0x100'0000) { }
+	StringCache::StringCache(Address start) : _builder(start) { }
 
 	void StringCache::installIntoCore(Core& c) {
 		_builder.installIntoCore(c);
@@ -610,39 +610,37 @@ namespace forth {
 		_cache.installIntoCore(c);
 		_dictionary.installIntoCore(c);
 	}
-	Compiler::Compiler() : Parent(0), _dictionary(0x200'0000), _instructionCache(0x300'0000) { 
+    Compiler::Compiler(Address baseAddress, 
+            Address stringCacheStart, 
+            Address dictStart,
+            Address instructionCacheStart) : Parent(baseAddress), _dictionary(dictStart), _instructionCache(instructionCacheStart), _cache(stringCacheStart) { 
 		// setup the code to stash the final string location once we are
 		// going to install!
-        auto strCacheBack = std::make_shared<Core::LoadImmediate64>();
-        strCacheBack->args = {TargetRegister::Temporary2, 0};
+        auto strCacheBack = std::make_shared<Address>(0);
         ResolvableLazyFunction strCacheResolve = [this, strCacheBack](auto& x, auto from) {
             // when we do the installation, we are done so shove
             // that value into memory
-            strCacheBack->args.imm64 = _cache.getBack();
+            *strCacheBack = _cache.getBack();
         };
-        auto dictionaryStart = std::make_shared<Core::LoadImmediate64>();
-        dictionaryStart->args = {TargetRegister::Temporary2, 0};
+        auto dictionaryStart = std::make_shared<Address>(0);
         ResolvableLazyFunction dictResolve = [this, dictionaryStart](auto& x, auto from) {
-            dictionaryStart->args.imm64 = _dictionary.here();
+            *dictionaryStart = _dictionary.here();
         };
         auto instructionCacheBack = std::make_shared<Core::LoadImmediate64>();
-        instructionCacheBack->args = {TargetRegister::Temporary2, 0};
         ResolvableLazyFunction icacheResolve = [this, instructionCacheBack](auto& x, auto from) {
-            instructionCacheBack->args.imm64 = _instructionCache.here();
+            *instructionCacheBack = _instructionCache.here();
         };
         addInstruction(
-                opLoadImmediate(TargetRegister::Temporary, Machine::locationStringBack),
+                directiveOrg(Machine::locationStringBack),
                 strCacheBack,
                 strCacheResolve,
-                opStore(TargetRegister::Temporary, TargetRegister::Temporary2),
-                opLoadImmediate(TargetRegister::Temporary, Machine::locationDictionaryStart),
+                directiveOrg(Machine::locationDictionaryStart),
                 dictionaryStart,
                 dictResolve,
-                opStore(TargetRegister::Temporary, TargetRegister::Temporary2),
-                opLoadImmediate(TargetRegister::Temporary, Machine::locationInstructionCacheBack),
+                directiveOrg(Machine::locationInstructionCacheBack),
                 instructionCacheBack,
                 icacheResolve,
-                opStore(TargetRegister::Temporary, TargetRegister::Temporary2));
+                directiveOrg(baseAddress));
 
 		// install into a new Core system variable
 	}

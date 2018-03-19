@@ -45,7 +45,6 @@ namespace forth {
 			void pushParameter(Datum value);
 			Datum popParameter();
 			void installInCore(AssemblerBuilder& ab);
-			bool numberRoutine(const std::string& word) noexcept;
 			void addWord(DictionaryEntry* entry);
 			void addWord(const std::string& name, NativeMachineOperation op, bool compileTimeInvoke = false);
 			template<typename T, typename ... Rest>

@@ -89,8 +89,9 @@ class AssemblerBuilder {
 class StringCache {
 	public:
 		using Self = StringCache;
+        static constexpr Address stringCacheStart = 0x100'0000;
 	public:
-		StringCache();
+		explicit StringCache(Address baseOffset = stringCacheStart);
 		Address installString(const std::string& str);
 		void installIntoCore(Core& core);
         Address getBack() const noexcept { return _builder.here(); }
@@ -105,8 +106,13 @@ class Compiler : public AssemblerBuilder {
 	public:
 		using Self = Compiler;
 		using Parent = AssemblerBuilder;
+        static constexpr Address dictionaryStart = 0x200'0000;
+        static constexpr Address instructionCacheStart = 0x300'0000;
 	public:
-		Compiler();
+        explicit Compiler(Address baseAddress = 0, 
+                Address stringCacheStart = StringCache::stringCacheStart, 
+                Address dictStart = dictionaryStart,
+                Address instructionCacheStart = instructionCacheStart);
 		virtual void installIntoCore(Core& c) override;
 		Address installString(const std::string& str);
 		void addDictionaryWord(const std::string& title, Address flags, Address next, Address subroutineAddress);

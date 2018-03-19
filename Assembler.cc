@@ -640,7 +640,7 @@ namespace forth {
                 dictionaryStart,
                 dictResolve,
                 opStore(TargetRegister::Temporary, TargetRegister::Temporary2),
-                opLoadImmediate(TargetRegister::Temporary, Machine::locationDictionaryStart),
+                opLoadImmediate(TargetRegister::Temporary, Machine::locationInstructionCacheBack),
                 instructionCacheBack,
                 icacheResolve,
                 opStore(TargetRegister::Temporary, TargetRegister::Temporary2));

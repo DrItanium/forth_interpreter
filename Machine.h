@@ -21,9 +21,9 @@ namespace forth {
 #undef UserVariable
 #undef UserVariableFirst
             };
-            template<Address index>
-            static constexpr auto userVariableAddress = Core::userVariableStart + Core::wordToByteOffset<index>;
-#define UserVariable(x) static constexpr Address location ## x = userVariableAddress<Address(UserVariableLocations:: x )> ;
+            template<UserVariableLocations loc>
+            static constexpr auto userVariableAddress = Core::userVariableStart + Core::wordToByteOffset<Address(loc)>;
+#define UserVariable(x) static constexpr Address location ## x = userVariableAddress<UserVariableLocations:: x>;
 #define UserVariableFirst(x) UserVariable(x)
 #include "UserVariables.def"
 #undef UserVariableFirst
@@ -35,85 +35,6 @@ namespace forth {
             static constexpr Address jitCacheLocation = 0x1000;
             static constexpr Address builtinRoutinesStart = 0x2000; 
             // capacity variables for the two stacks, each one has 64k worth of data
-        public:
-            // list of builtins with assembly routines
-            enum class BuiltinRoutines {
-                StoreValue, // ( addr value -- )
-                /*
-                 * pop A, SP
-                 * pop B, SP
-                 * store B, A
-                 * ret
-                 */
-                LoadValue, // ( addr -- value )
-                /*
-                 * pop A, SP
-                 * load C, A
-                 * push C, SP
-                 * ret
-                 */
-                WriteFalse, // ( addr -- )
-                /*
-                 * push Zero, SP
-                 * call StoreValue
-                 * ret
-                 */
-                WriteTrue, // ( addr -- )
-                /*
-                 * addiu A = Zero, 1
-                 * push A, SP
-                 * call StoreValue
-                 * ret
-                 */
-                GetParameterStackEmpty, // ( -- addr)
-                /* 
-                 * loadimm64 A, Core::spStackEmpty
-                 * push A, SP
-                 * call LoadValue
-                 * ret
-                 */
-                GetSubroutineStackEmpty, // ( -- addr)
-                /* 
-                 * loadimm64 A, Core::sp2StackEmpty
-                 * push A, SP
-                 * call LoadValue
-                 * ret
-                 */
-                ClearSubroutineStack, // ( -- )
-                /*
-                 * call GetSubroutineStackEmpty
-                 * pop A, SP
-                 * move SP2, A
-                 * ret
-                 */
-                ClearParameterStack, // ( -- )
-                /*
-                 * call GetParameterStackEmpty
-                 * pop A, SP
-                 * move SP, A
-                 * ret
-                 */
-                EqualsAddress, // ( a b -- t )
-                /* 
-                 * pop A, SP
-                 * pop B, SP
-                 * cmpeq C = A, B
-                 * push C, SP
-                 * ret
-                 */
-                ActivateCompilationMode,
-                DeactivateCompilationMode,
-                InCompilationMode,
-                DispatchInstruction, // ( addr -- )
-                /*
-                 * pop A, SP
-                 * calli A
-                 * ret
-                 */
-                ShouldKeepExecuting,
-                PrintRegisters,
-                PrintStack,
-            };
 		public:
 			Machine(std::ostream& output, std::istream& input);
 			~Machine() = default;

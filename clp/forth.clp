@@ -1,7 +1,23 @@
 ; A quick implementation of a forth interpreter in CLIPS
-(defgeneric MAIN::report-error)
+; some changes have to be made, the end function comment will use `
 (defgeneric MAIN::make-entry)
 (defgeneric MAIN::lookup-word)
+(defglobal MAIN
+           ?*dictionary-pointer* = FALSE
+           ?*keep-executing* = TRUE
+           ?*ignore-input* = FALSE
+           ?*compiling* = FALSE
+           ?*current-compilation-target* = FALSE
+           ?*has-setup-initial-dictionary* = FALSE
+           ?*error-happened* = FALSE
+           ?*error-message* = FALSE
+           )
+(deffunction MAIN::raise-error
+             (?message)
+             (bind ?*error-happened*
+                   TRUE)
+             (bind ?*error-message*
+                   ?message))
 (defclass stack
   (is-a USER)
   (multislot contents)
@@ -21,8 +37,7 @@
                     ()
                     (if (send ?self 
                               empty) then
-                      (report-error ?self
-                                    "Stack Empty!")
+                      (raise-error "STACK EMPTY!!")
                       FALSE
                       else
                       (bind ?front
@@ -43,33 +58,81 @@
                           push
                           ?self:value))
 
+(defclass MAIN::operation
+  (is-a USER)
+  (slot operation
+        (type SYMBOL)
+        (visibility public)
+        (storage local)
+        (default ?NONE)))
+
+(defclass MAIN::wrapped-unary-operation
+  (is-a operation)
+  (message-handler invoke primary))
+
+(defmessage-handler wrapped-unary-operation invoke primary
+                    ()
+                    (send [parameter]
+                          push
+                          (funcall (dynamic-get operation)
+                                   (send [parameter] pop))))
+
+(defclass MAIN::wrapped-binary-operation
+  (is-a operation)
+  (message-handler invoke primary))
+
+(defmessage-handler wrapped-binary-operation invoke primary
+                    ()
+                    (send [parameter]
+                          push
+                          (funcall (dynamic-get operation) 
+                                   (send [parameter] pop)
+                                   (send [parameter] pop))))
+(defclass MAIN::generic-operation
+  (is-a operation)
+  (message-handler invoke primary))
+
+(defmessage-handler generic-operation invoke primary
+                    ()
+                    (funcall (dynamic-get operation)))
+(deffunction MAIN::binary-operation
+             (?symbol)
+             (make-instance of wrapped-binary-operation
+                            (operation ?symbol)))
+(deffunction MAIN::unary-operation
+             (?symbol)
+             (make-instance of wrapped-unary-operation
+                            (operation ?symbol)))
+(deffunction MAIN::invoke-operation
+             (?symbol)
+             (make-instance of generic-operation
+                            (operation ?symbol)))
+
 (defclass dictionary-entry
   (is-a USER)
   (slot title
         (type SYMBOL)
-        (visibility public)
-        (storage local)
         (default ?NONE))
   (slot next
         (type INSTANCE
               SYMBOL)
-        (visibility public)
-        (storage local)
         (allowed-symbols FALSE)
-        (default ?NONE))
+        (visibility public))
   (slot fake
         (type SYMBOL)
-        (visibility public)
-        (storage local)
         (allowed-symbols FALSE
                          TRUE))
   (slot compile-time-invoke
         (type SYMBOL)
-        (visibility public)
-        (storage local)
+        (allowed-symbols FALSE
+                         TRUE))
+  (slot compiled
+        (type SYMBOL)
         (allowed-symbols FALSE
                          TRUE))
   (multislot contents)
+  (message-handler add-component primary)
+  (message-handler install primary)
   (message-handler has-next primary)
   (message-handler invoke primary))
 
@@ -79,11 +142,25 @@
 
 (defmessage-handler dictionary-entry invoke primary
                     ()
-                    (progn$ (?c ?self:contents)
-                            (send ?c invoke))) 
-(defglobal MAIN
-           ?*dictionary-pointer* = [unfound-word]
-           )
+                    (if ?self:compiled then
+                      (progn$ (?c ?self:contents)
+                              (send ?c invoke))))
+(defmessage-handler dictionary-entry add-component primary
+                    (?component)
+                    (if (not ?self:compiled) then
+                      (bind ?self:contents
+                            ?self:contents
+                            (make-entry ?component))))
+(defmessage-handler dictionary-entry install primary
+                    ()
+                    (if (not ?self:compiled) then
+                      (bind ?self:compiled
+                            TRUE)
+                      (bind ?self:next
+                            ?*dictionary-pointer*)
+                      (bind ?*dictionary-pointer*
+                            (instance-name ?self))))
+
 (deftemplate MAIN::order
              (slot current
                    (type SYMBOL)
@@ -99,16 +176,10 @@
                  (rest ?rest)))
 (definstances MAIN::stacks
               (parameter of stack)
-              (unfound-word of dictionary-entry
-                            (title FALSE)
-                            (next FALSE)
-                            (fake TRUE)
-                            (compile-time-invoke FALSE)
-                            (native-funcall FALSE)))
+              (subroutine of stack))
 (defmethod lookup-word
   ((?name SYMBOL)
    (?target SYMBOL))
-  (handle-error ?name "?")
   FALSE)
 
 (defmethod lookup-word
@@ -126,8 +197,15 @@
       (lookup-word ?name
                    (send ?target
                          get-next)))))
+(defmethod lookup-word
+  (?value)
+  FALSE)
 
 
+(defmethod lookup-word
+  ((?name SYMBOL))
+  (lookup-word ?name
+               ?*dictionary-pointer*))
 (defmethod make-entry
   ((?word SYMBOL))
   (lookup-word ?word))
@@ -135,68 +213,199 @@
   ((?value NUMBER
            STRING))
   (make-instance of constant
-                 (value ?number)))
+                 (value ?value)))
 (defmethod make-entry
   ((?inst INSTANCE))
   ?inst)
-(deffunction clear-parameter-stack
+
+(deffunction MAIN::drop-top 
+             () 
+             (send [parameter] pop)) 
+(deffunction MAIN::swap-top-two
+             () 
+             (bind ?a 
+                   (send [parameter] pop))
+             (bind ?b
+                   (send [parameter] pop))
+             (send [parameter]
+                   push ?b)
+             (send [parameter]
+                   push ?a))
+(deffunction MAIN::duplicate-top
              ()
-             (send [parameter
-(defmethod handle-error
-  (?a ?b)
-  (printout werror 
-            ?a 
-            ?b crlf)
-  (halt))
+             (bind ?a
+                   (send [parameter] pop))
+             (send [parameter] push ?a)
+             (send [parameter] push ?a))
+(deffunction MAIN::print-top
+             ()
+             (printout t 
+                       (send [parameter]
+                             pop)))
+(deffunction MAIN::print-newline
+             ()
+             (printout t
+                       crlf))
+(deffunction MAIN::add-word
+             (?name ?fake ?compile-time-invoke $?contents)
+             (bind ?q 
+                   (make-instance of dictionary-entry
+                                  (title ?name)
+                                  (fake ?fake)
+                                  (compile-time-invoke ?compile-time-invoke)))
+             (progn$ (?c ?contents)
+                     (send ?q
+                           add-component ?c))
+             (send ?q 
+                   install))
+(deffunction MAIN::setup-dictionary
+             ()
+             (if (not ?*has-setup-initial-dictionary*) then
+               (add-word drop
+                         FALSE
+                         FALSE
+                         (invoke-operation drop-top))
+               (add-word swap
+                         FALSE
+                         FALSE
+                         (invoke-operation swap))
+               (add-word dup
+                         FALSE
+                         FALSE
+                         (invoke-operation duplicate-top))
+               (add-word 2dup
+                         FALSE
+                         FALSE
+                         dup
+                         dup)
+               (add-word 2drop
+                         FALSE
+                         FALSE
+                         drop drop)
+               (add-word +
+                         FALSE
+                         FALSE
+                         (binary-operation +))
+               (add-word -
+                         FALSE
+                         FALSE
+                         (binary-operation -))
+               (add-word *
+                         FALSE
+                         FALSE
+                         (binary-operation *))
+               (add-word /
+                         FALSE
+                         FALSE
+                         (binary-operation /))
+               (add-word %
+                         FALSE
+                         FALSE
+                         (binary-operation mod))
+               (add-word pow
+                         FALSE
+                         FALSE
+                         (binary-operation **))
+               (add-word /u
+                         FALSE
+                         FALSE
+                         (binary-operation div))
+               (add-word .
+                         FALSE
+                         FALSE
+                         (invoke-operation print-top))
+               (add-word quit
+                         FALSE
+                         FALSE
+                         (invoke-operation terminate-execution))
+               (bind ?*has-setup-initial-dictionary*
+                     TRUE)))
+(deffunction MAIN::terminate-execution
+             ()
+             (bind ?*keep-executing*
+                   FALSE))
+(deffunction MAIN::handle-compilation
+             (?word ?entry)
+             (bind ?finished-compiling 
+                   (eq ?word `))
+             (if ?entry then
+               (if (send ?entry
+                         get-compile-time-invoke) then
+                 (send ?entry invoke)
+                 else
+                 (if ?finished-compiling then
+                   (send ?*current-compilation-target* install)
+                   (bind ?*current-compilation-target*
+                         (send [subroutine] pop))
+                   (bind ?*compiling* 
+                         (instancep ?*current-compilation-target*))
+                   (printout t " ok" crlf)
+                   else
+                   (send ?*current-compilation-target*
+                         add-component 
+                         ?entry)))
+               else
+               (send ?*current-compilation-target* 
+                     add-component 
+                     ?entry)))
+(deffunction MAIN::push-to-stack
+             (?value)
+             (or (numberp ?value)
+                 (stringp ?value)
+                 (eq ?value
+                     TRUE)
+                 (eq ?value
+                     FALSE)))
+(deffunction MAIN::invoke-or-push
+             (?word ?entry)
+             (if ?entry then
+               (send ?entry
+                     invoke)
+               (printout t " ok" crlf)
+               else
+               (if (push-to-stack ?word) then
+                 (send [parameter] 
+                       push 
+                       ?word)
+                 else
+                 (raise-error (str-cat ?word "?")))))
 
-(defclass MAIN::wrapped-unary-operation
-  (is-a USER)
-  (slot operation
-        (type SYMBOL)
-        (default ?NONE))
-  (message-handler invoke primary))
-(defmessage-handler wrapped-unary-operation invoke primary
-                    ()
-                    (send [parameter]
-                          push
-                          (funcall operation
-                                   (send [parameter] pop))))
 
-(defclass MAIN::wrapped-binary-operation
-  (is-a USER)
-  (slot operation
-        (type SYMBOL)
-        (default ?NONE))
-  (message-handler invoke primary))
 
-(defmessage-handler wrapped-binary-operation invoke primary
-                    ()
-                    (send [parameter]
-                          push
-                          (funcall operation
-                                   (send [parameter] pop)
-                                   (send [parameter] pop))))
+(deffunction MAIN::control-loop
+             ()
+             (setup-dictionary)
+             (while ?*keep-executing* do
+                    (progn$ (?word (explode$ (readline)))
+                            (if ?*ignore-input* then
+                              (if (eq ?word ")") then
+                                (bind ?*ignore-input* FALSE))
+                              else
+                              (if (eq ?word "(") then
+                                (bind ?*ignore-input* TRUE)
+                                else
+                                (bind ?entry (lookup-word ?word))
+                                (if ?*compiling* then
+                                  (handle-compilation ?word
+                                                      ?entry)
+                                  (if ?*error-happened* then (break))
+                                  else
+                                  (invoke-or-push ?word
+                                                  ?entry)
+                                  (if ?*error-happened* then (break))))))
+                    (if ?*error-happened* then
+                      (send [parameter] put-contents (create$))
+                      (send [subroutine] put-contents (create$))
+                      (printout werror ?*error-message* crlf)
+                      (bind ?*error-happened* FALSE)
+                      (bind ?*error-message* FALSE)
+                      else
+                      (if (and (not ?*ignore-input*)
+                               (not ?*compiling*)) then
+                        (printout t " ok" crlf)))))
 
-(defrule MAIN::make-word
-         (stage (current construct-word))
-         ?f <- (make word
-                     ?name
-                     ?fake
-                     ?compile-time
-                     $?operations)
-         =>
-         (retract ?f)
-         (bind ?contents
-               (create$))
-         (progn$ (?a ?operations)
-                 (bind ?contents
-                       ?contents
-                       (make-entry ?a)))
-         (bind ?*dictionary-pointer*
-               (make-instance of dictionary-entry
-                              (next ?*dictionary-pointer*)
-                              (fake ?fake)
-                              (compile-time-invoke ?compile-time-invoke)
-                              (title ?title)
-                              (contents ?contents))))
+
+
+
+
 

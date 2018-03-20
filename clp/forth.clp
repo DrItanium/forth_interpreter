@@ -178,6 +178,12 @@
          (modify ?f
                  (current ?next)
                  (rest ?rest)))
+(defrule MAIN::done-with-flow
+         (declare (salience -10000))
+         ?f <- (order (rest))
+         =>
+         (retract ?f))
+
 (definstances MAIN::stacks
               (parameter of stack)
               (subroutine of stack))
@@ -418,9 +424,6 @@
 
 (deffunction MAIN::control-loop
              ()
-             (bind ?*keep-executing*
-                   TRUE)
-             (setup-dictionary)
              (while ?*keep-executing* do
                     (bind ?*current-input* 
                           (explode$ (readline)))
@@ -466,8 +469,20 @@
 
 
 
-
-
+(deffacts MAIN::control
+          (order (current setup)
+                 (rest control-loop)))
+(deffunction MAIN::continue
+             ()
+             (bind ?*keep-executing* 
+                   TRUE)
+             (assert (order (current control-loop)))
+             (run))
+(defrule MAIN::setup-dictionary
+         (order (current setup))
+         =>
+         (setup-dictionary))
 (defrule MAIN::invoke-control-loop
+         (order (current control-loop))
          =>
          (control-loop))

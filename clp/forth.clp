@@ -340,6 +340,14 @@
                          FALSE
                          TRUE
                          (invoke-operation handle-input-ignore-mode))
+               (add-word .CR
+                         FALSE
+                         FALSE
+                         (invoke-operation print-newline))
+               (add-word .SP
+                         FALSE
+                         FALSE
+                         " " .)
                (bind ?*has-setup-initial-dictionary*
                      TRUE)))
 (deffunction MAIN::handle-input-ignore-mode

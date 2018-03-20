@@ -34,12 +34,23 @@ clean:
 
 .PHONY: options clean all
 
-forth.o: forth.cc Machine.h Instruction.h Assembler.h InstructionData.def UserVariables.def
-Datum.o: Datum.cc Types.h Datum.h Instruction.h
-Machine.o: Machine.cc Machine.h Types.h DictionaryEntry.h Datum.h Instruction.h Problem.h Core.h Assembler.h UserVariables.def 
-DictionaryEntry.o: DictionaryEntry.cc DictionaryEntry.h Types.h Datum.h Problem.h Machine.h Instruction.h Problem.h Assembler.h
+Assembler.o: Assembler.cc Types.h Instruction.h Problem.h Registers.def \
+ InstructionData.def Assembler.h Datum.h Core.h Machine.h \
+ DictionaryEntry.h UserVariables.def
+Core.o: Core.cc Types.h Core.h Datum.h Instruction.h Problem.h \
+ Registers.def InstructionData.def DictionaryEntry.h
+Datum.o: Datum.cc Types.h Datum.h Instruction.h Problem.h Registers.def \
+ InstructionData.def
+DictionaryEntry.o: DictionaryEntry.cc Datum.h Types.h Instruction.h \
+ Problem.h Registers.def InstructionData.def DictionaryEntry.h Machine.h \
+ Core.h Assembler.h UserVariables.def
+Instruction.o: Instruction.cc Instruction.h Types.h Problem.h \
+ Registers.def InstructionData.def
+Machine.o: Machine.cc Types.h Problem.h Datum.h Instruction.h \
+ Registers.def InstructionData.def DictionaryEntry.h Machine.h Core.h \
+ Assembler.h UserVariables.def
 Problem.o: Problem.cc Problem.h
-Core.o: Core.cc Core.h Instruction.h Datum.h Types.h Problem.h InstructionData.def Registers.def
-Instruction.o: Instruction.cc Instruction.h Types.h Problem.h InstructionData.def Registers.def
-Assembler.o: Assembler.cc Assembler.h Types.h Instruction.h Datum.h Problem.h Core.h Machine.h InstructionData.def
 Types.o: Types.cc Types.h Problem.h
+forth.o: forth.cc Machine.h Types.h DictionaryEntry.h Datum.h \
+ Instruction.h Problem.h Registers.def InstructionData.def Core.h \
+ Assembler.h UserVariables.def

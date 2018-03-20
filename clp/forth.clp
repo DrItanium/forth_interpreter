@@ -600,24 +600,6 @@
                  (rest control-loop
                        handle-output
                        determination)))
-;(defrule MAIN::perform-determination:in-compilation-mode
-;         ?f <- (order (current determination))
-;         (test ?*compiling*)
-;         =>
-;         (modify ?f
-;                 (current get-input)
-;                 (rest compiler
-;                       handle-output
-;                       determination)))
-;(defrule MAIN::perform-determination:interpreter
-;         ?f <- (order (current determination))
-;         (test (not ?*compiling*))
-;         =>
-;         (modify ?f
-;                 (current get-input)
-;                 (rest interpreter
-;                       handle-output
-;                       determination)))
 (defrule MAIN::setup-input
          (order (current get-input))
          =>

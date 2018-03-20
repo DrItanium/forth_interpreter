@@ -64,7 +64,12 @@ namespace forth {
             void dispatchInstruction(Address targetRoutine);
 			template<typename T, typename ... Rest>
 			void dispatchInstruction(T first, Rest&& ... rest) {
-				dispatchInstruction(first);
+                if constexpr (std::is_integral_v<T>) {
+                    dispatchInstruction(Address(first));
+                } else {
+                    dispatchInstruction(first);
+                }
+
                 if constexpr (sizeof...(rest) > 0) {
                     dispatchInstruction(std::move(rest)...);
                 }

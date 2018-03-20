@@ -537,7 +537,28 @@ void Core::dispatchInstruction() {
 						getDestinationRegister(value.args).setValue(
 								getSourceRegister(value.args).getAddress() <=
 								Address(value.args.imm16));
-					} 
+					} else if constexpr (std::is_same_v<T, StringsEqual>) {
+                        auto a = getSourceRegister(value.args).address;
+                        auto b = getSource2Register(value.args).address;
+                        auto aLen = loadWord(a).address;
+                        auto bLen = loadWord(b).address;
+                        if (aLen != bLen) {
+                            getDestinationRegister(value.args).setValue(false);
+                        } else {
+                            auto len = aLen;
+                            auto aLoc = a + sizeof(Address);
+                            auto bLoc = b + sizeof(Address);
+                            for (auto i = 0; i < len; ++i, ++aLoc, ++bLoc) {
+                                auto aByte = loadByte(aLoc);
+                                auto bByte = loadByte(bLoc);
+                                if (aByte != bByte) {
+                                    getDestinationRegister(value.args).setValue(false);
+                                    return;
+                                }
+                            }
+                            getDestinationRegister(value.args).setValue(true);
+                        }
+                    }
 #define IsType(t) std::is_same_v<T, t>
 #define InvokeConv(bfun, cfun) \
 	getDestinationRegister(value.args).setValue( bfun ( cfun(getSourceRegister(value.args)) , cfun(getSource2Register(value.args)) ))

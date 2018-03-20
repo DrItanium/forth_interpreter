@@ -130,3 +130,4 @@ X(IfStatement, ThreeRegister) // jump to one of two locations based off of the c
 X(CallIfStatement, ThreeRegister) // call one of the two locations based off of the condition
 
 X(TypeValue, TaggedOneRegister)
+X(StringsEqual, ThreeRegister) // microcode assist routine to make my life much easier

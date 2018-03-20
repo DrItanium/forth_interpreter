@@ -1,5 +1,5 @@
 ; A quick implementation of a forth interpreter in CLIPS
-; some changes have to be made, the end function comment will use `
+; some changes have to be made, the end function comment will use }
 (defgeneric MAIN::make-entry)
 (defgeneric MAIN::lookup-word)
 (defglobal MAIN
@@ -11,7 +11,11 @@
            ?*has-setup-initial-dictionary* = FALSE
            ?*error-happened* = FALSE
            ?*error-message* = FALSE
-           )
+           ?*symbol-end-function* = }
+           ?*symbol-begin-function* = {
+           ?*current-input* = FALSE
+           ?*current-index* = 0
+           ?*current-length* = 0)
 (deffunction MAIN::raise-error
              (?message)
              (bind ?*error-happened*
@@ -318,35 +322,69 @@
                          FALSE
                          FALSE
                          (invoke-operation terminate-execution))
+               (add-word ?*symbol-end-function*
+                         FALSE
+                         TRUE
+                         (invoke-operation compile-or-end-function))
+               (add-word ?*symbol-begin-function*
+                         FALSE
+                         TRUE
+                         (invoke-operation new-compile-target))
                (bind ?*has-setup-initial-dictionary*
                      TRUE)))
 (deffunction MAIN::terminate-execution
              ()
              (bind ?*keep-executing*
                    FALSE))
+(deffunction MAIN::next-word
+             ()
+             (if (>= ?*current-index*
+                     ?*current-length*) then
+               (bind ?*current-input*
+                     (explode$ (readline)))
+               (bind ?*current-index* 1)
+               (bind ?*current-length* 
+                     (length$ ?*current-input*)))
+             (bind ?output
+                   (nth$ ?*current-index*
+                         ?*current-input*))
+             (bind ?*current-index*
+                   (+ ?*current-index* 1))
+             ?output)
+(deffunction MAIN::new-compile-target
+             ()
+             ; goto the next input set
+             (bind ?name 
+                   (next-word))
+             )
+(deffunction MAIN::compile-or-end-function
+             ()
+             (if ?*compiling* then
+               (send ?*current-compilation-target*
+                     add-component
+                     ?*symbol-end-function*)
+               (send ?*current-compilation-target*
+                     install)
+               (bind ?*current-compilation-target*
+                     (send [subroutine] pop))
+               (bind ?*compiling*
+                     (instancep ?*current-compilation-target*))))
 (deffunction MAIN::handle-compilation
              (?word ?entry)
-             (bind ?finished-compiling 
+             (bind ?finished-compiling
                    (eq ?word `))
              (if ?entry then
                (if (send ?entry
                          get-compile-time-invoke) then
-                 (send ?entry invoke)
+                 (send ?entry
+                       invoke)
                  else
-                 (if ?finished-compiling then
-                   (send ?*current-compilation-target* install)
-                   (bind ?*current-compilation-target*
-                         (send [subroutine] pop))
-                   (bind ?*compiling* 
-                         (instancep ?*current-compilation-target*))
-                   (printout t " ok" crlf)
-                   else
-                   (send ?*current-compilation-target*
-                         add-component 
-                         ?entry)))
+                 (send ?*current-compilation-target*
+                       add-component
+                       ?entry))
                else
-               (send ?*current-compilation-target* 
-                     add-component 
+               (send ?*current-compilation-target*
+                     add-component
                      ?entry)))
 (deffunction MAIN::push-to-stack
              (?value)
@@ -361,38 +399,49 @@
              (if ?entry then
                (send ?entry
                      invoke)
-               (printout t " ok" crlf)
                else
                (if (push-to-stack ?word) then
-                 (send [parameter] 
-                       push 
+                 (send [parameter]
+                       push
                        ?word)
                  else
                  (raise-error (str-cat ?word "?")))))
-
 
 
 (deffunction MAIN::control-loop
              ()
              (setup-dictionary)
              (while ?*keep-executing* do
-                    (progn$ (?word (explode$ (readline)))
-                            (if ?*ignore-input* then
-                              (if (eq ?word ")") then
-                                (bind ?*ignore-input* FALSE))
-                              else
-                              (if (eq ?word "(") then
-                                (bind ?*ignore-input* TRUE)
-                                else
-                                (bind ?entry (lookup-word ?word))
-                                (if ?*compiling* then
-                                  (handle-compilation ?word
-                                                      ?entry)
-                                  (if ?*error-happened* then (break))
-                                  else
-                                  (invoke-or-push ?word
-                                                  ?entry)
-                                  (if ?*error-happened* then (break))))))
+                    (bind ?*current-input* 
+                          (explode$ (readline)))
+                    (bind ?*current-index*
+                          1)
+                    (bind ?*current-length*
+                          (length$ ?*current-input*))
+                    (while (and (> ?*current-length* 0)
+                                (<= ?*current-index*
+                                    ?*current-length*)) do
+                           (bind ?word
+                                 (nth$ ?*current-index*
+                                       ?*current-input*))
+                           (if ?*ignore-input* then
+                             (if (eq ?word ")") then
+                               (bind ?*ignore-input* FALSE))
+                             else
+                             (if (eq ?word "(") then
+                               (bind ?*ignore-input* TRUE)
+                               else
+                               (bind ?entry (lookup-word ?word))
+                               (if ?*compiling* then
+                                 (handle-compilation ?word
+                                                     ?entry)
+                                 (if ?*error-happened* then (break))
+                                 else
+                                 (invoke-or-push ?word
+                                                 ?entry)
+                                 (if ?*error-happened* then (break)))))
+                           (bind ?*current-index*
+                                 (+ ?*current-index* 1)))
                     (if ?*error-happened* then
                       (send [parameter] put-contents (create$))
                       (send [subroutine] put-contents (create$))

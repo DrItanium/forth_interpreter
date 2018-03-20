@@ -336,8 +336,16 @@
                          FALSE
                          FALSE
                          (invoke-operation new-compile-target))
+               (add-word '
+                         FALSE
+                         TRUE
+                         (invoke-operation handle-input-ignore-mode))
                (bind ?*has-setup-initial-dictionary*
                      TRUE)))
+(deffunction MAIN::handle-input-ignore-mode
+             ()
+             (bind ?*ignore-input*
+                   (not ?*ignore-input*)))
 (deffunction MAIN::terminate-execution
              ()
              (bind ?*keep-executing*
@@ -422,56 +430,13 @@
                  (raise-error (str-cat ?word "?")))))
 
 
-(deffunction MAIN::control-loop
-             ()
-             (while ?*keep-executing* do
-                    (bind ?*current-input* 
-                          (explode$ (readline)))
-                    (bind ?*current-index*
-                          1)
-                    (bind ?*current-length*
-                          (length$ ?*current-input*))
-                    (while (and (> ?*current-length* 0)
-                                (<= ?*current-index*
-                                    ?*current-length*)) do
-                           (bind ?word
-                                 (nth$ ?*current-index*
-                                       ?*current-input*))
-                           (if ?*ignore-input* then
-                             (if (eq ?word ")") then
-                               (bind ?*ignore-input* FALSE))
-                             else
-                             (if (eq ?word "(") then
-                               (bind ?*ignore-input* TRUE)
-                               else
-                               (bind ?entry (lookup-word ?word))
-                               (if ?*compiling* then
-                                 (handle-compilation ?word
-                                                     ?entry)
-                                 (if ?*error-happened* then (break))
-                                 else
-                                 (invoke-or-push ?word
-                                                 ?entry)
-                                 (if ?*error-happened* then (break)))))
-                           (bind ?*current-index*
-                                 (+ ?*current-index* 1)))
-                    (if ?*error-happened* then
-                      (send [parameter] put-contents (create$))
-                      (send [subroutine] put-contents (create$))
-                      (printout werror ?*error-message* crlf)
-                      (bind ?*error-happened* FALSE)
-                      (bind ?*error-message* FALSE)
-                      else
-                      (if (and (not ?*ignore-input*)
-                               (not ?*compiling*)) then
-                        (printout t " ok" crlf)))))
 
 
 
 
 (deffacts MAIN::control
           (order (current setup)
-                 (rest control-loop)))
+                 (rest determination)))
 (deffunction MAIN::continue
              ()
              (bind ?*keep-executing* 
@@ -482,7 +447,81 @@
          (order (current setup))
          =>
          (setup-dictionary))
+(defrule MAIN::stop-executing
+         (declare (salience 10000))
+         ?f <- (order (current determination))
+         (test (not ?*keep-executing*))
+         =>
+         (retract ?f))
+(defrule MAIN::continue-execution
+         ?f <- (order (current determination))
+         (test (eq ?*keep-executing*
+                   TRUE))
+         =>
+         (modify ?f
+                 (current get-input)
+                 (rest control-loop
+                       handle-output
+                       determination)))
+;(defrule MAIN::perform-determination:in-compilation-mode
+;         ?f <- (order (current determination))
+;         (test ?*compiling*)
+;         =>
+;         (modify ?f
+;                 (current get-input)
+;                 (rest compiler
+;                       handle-output
+;                       determination)))
+;(defrule MAIN::perform-determination:interpreter
+;         ?f <- (order (current determination))
+;         (test (not ?*compiling*))
+;         =>
+;         (modify ?f
+;                 (current get-input)
+;                 (rest interpreter
+;                       handle-output
+;                       determination)))
+(defrule MAIN::setup-input
+         (order (current get-input))
+         =>
+         (bind ?*current-input* 
+               (explode$ (readline)))
+         (bind ?*current-index*
+               1)
+         (bind ?*current-length*
+               (length$ ?*current-input*)))
+(defrule MAIN::check-output
+         (order (current handle-output))
+         =>
+         (if ?*error-happened* then
+           (send [parameter] put-contents (create$))
+           (send [subroutine] put-contents (create$))
+           (printout werror ?*error-message* crlf)
+           (bind ?*error-happened* FALSE)
+           (bind ?*error-message* FALSE)
+           else
+           (if (and (not ?*ignore-input*)
+                    (not ?*compiling*)) then
+             (printout t " ok" crlf))))
 (defrule MAIN::invoke-control-loop
          (order (current control-loop))
          =>
-         (control-loop))
+         (while (and (> ?*current-length* 0)
+                     (<= ?*current-index*
+                         ?*current-length*)) do
+                (bind ?word
+                      (nth$ ?*current-index*
+                            ?*current-input*))
+                (if ?*ignore-input* then
+                  (if (eq ?word ') then
+                    (bind ?*ignore-input* FALSE))
+                  else
+                  (bind ?entry (lookup-word ?word))
+                  (if ?*compiling* then
+                    (handle-compilation ?word
+                                        ?entry)
+                    else
+                    (invoke-or-push ?word
+                                    ?entry)))
+                (bind ?*current-index*
+                      (+ ?*current-index* 1))))

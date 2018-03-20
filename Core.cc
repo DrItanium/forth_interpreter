@@ -538,8 +538,8 @@ void Core::dispatchInstruction() {
 								getSourceRegister(value.args).getAddress() <=
 								Address(value.args.imm16));
 					} else if constexpr (std::is_same_v<T, StringsEqual>) {
-                        auto a = getSourceRegister(value.args).address;
-                        auto b = getSource2Register(value.args).address;
+                        auto a = getSourceRegister(value.args).getAddress();
+                        auto b = getSource2Register(value.args).getAddress();
                         auto aLen = loadWord(a).address;
                         auto bLen = loadWord(b).address;
                         if (aLen != bLen) {

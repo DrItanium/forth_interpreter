@@ -328,6 +328,10 @@
                          FALSE
                          FALSE
                          (invoke-operation terminate-execution))
+               (add-word bye
+                         FALSE
+                         FALSE
+                         quit)
                (add-word ?*symbol-end-function*
                          FALSE
                          TRUE
@@ -348,6 +352,10 @@
                          FALSE
                          FALSE
                          " " .)
+               (add-word @
+                         FALSE
+                         FALSE
+                         (invoke-operation load-word-onto-stack))
                (bind ?*has-setup-initial-dictionary*
                      TRUE)))
 (deffunction MAIN::handle-input-ignore-mode
@@ -389,6 +397,18 @@
                                   (contents)))
              (bind ?*compiling*
                    TRUE))
+(deffunction MAIN::load-word-onto-stack
+             ()
+             (bind ?name
+                   (next-word))
+             (bind ?sym
+                   (lookup-word ?name))
+             (if ?sym then
+                 (send [parameter]
+                       push
+                       ?sym)
+                 else
+                 (raise-error (sym-cat ?name "?"))))
 (deffunction MAIN::compile-or-end-function
              ()
              (if ?*compiling* then

@@ -22,18 +22,18 @@ namespace forth {
 	class Machine {
 		public:
             enum class UserVariableLocations : Address {
-#define UserVariableFirst(x) x = 0,
 #define UserVariable(x) x,
+#define UserRoutine(x) x,
 #include "UserVariables.def"
 #undef UserVariable
-#undef UserVariableFirst
+#undef UserRoutine 
             };
             template<UserVariableLocations loc>
             static constexpr auto userVariableAddress = Core::userVariableStart + Core::wordToByteOffset<Address(loc)>;
 #define UserVariable(x) static constexpr Address location ## x = userVariableAddress<UserVariableLocations:: x>;
-#define UserVariableFirst(x) UserVariable(x)
+#define UserRoutine(x) UserVariable(x)
 #include "UserVariables.def"
-#undef UserVariableFirst
+#undef UserRoutine
 #undef UserVariable
 			static constexpr Address locationSubroutineStackEmpty = Core::sp2StackEmpty;
 			static constexpr Address locationSubroutineStackFull = Core::sp2StackFull;

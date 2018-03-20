@@ -39,13 +39,13 @@ namespace forth {
                 opStoreImmediate64(forth::Machine::locationShouldKeepExecuting, 1),
                 opStoreImmediate64(forth::Machine::locationInCompilationMode, 0),
                 opStoreImmediate64(forth::Machine::locationInIgnoreInputMode, 0),
-#define UserVariable(x) \
+#define UserRoutine(x) \
                 opLoadImmediate64(TargetRegister::Temporary, forth::Machine:: location ## x ), \
                 opLoadImmediate64(TargetRegister::Temporary2, #x ), \
                 opStore(TargetRegister::Temporary, TargetRegister::Temporary2),
-#define UserVariableFirst(x) UserVariable(x)
+#define UserVariable(x)
 #include "UserVariables.def"
-#undef UserVariableFirst
+#undef UserRoutine 
 #undef UserVariable
                 opLoadImmediate64(TargetRegister::X, forth::Machine::locationSubroutineStackEmpty),
                 opLoad(forth::TargetRegister::SP2, TargetRegister::X),

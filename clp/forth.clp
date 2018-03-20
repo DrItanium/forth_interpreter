@@ -320,6 +320,18 @@
                          FALSE
                          FALSE
                          (binary-operation div))
+               (add-word cos
+                         FALSE
+                         FALSE
+                         (unary-operation cos))
+               (add-word sin
+                         FALSE
+                         FALSE
+                         (unary-operation sin))
+               (add-word tan
+                         FALSE
+                         FALSE
+                         (unary-operation tan))
                (add-word .
                          FALSE
                          FALSE
@@ -356,6 +368,19 @@
                          FALSE
                          FALSE
                          (invoke-operation load-word-onto-stack))
+               (add-word if
+                         FALSE
+                         TRUE
+                         (invoke-operation if-condition))
+               (add-word then
+                         FALSE
+                         TRUE
+                         (invoke-operation then-condition))
+               (add-word else
+                         FALSE
+                         TRUE
+                         (invoke-operation else-condition))
+
                (bind ?*has-setup-initial-dictionary*
                      TRUE)))
 (deffunction MAIN::handle-input-ignore-mode
@@ -409,6 +434,90 @@
                        ?sym)
                  else
                  (raise-error (sym-cat ?name "?"))))
+(defclass MAIN::if-statement
+          (is-a USER)
+          (slot on-true
+                (type INSTANCE))
+          (slot on-false
+                (type INSTANCE))
+          (message-handler invoke primary))
+(defmessage-handler if-statement invoke primary
+                    ()
+                    (bind ?top
+                          (send [parameter] pop))
+                    (send (if (or (not ?top)
+                                  (eq ?top
+                                       0)) then
+                            ?self:on-false
+                            else
+                            ?self:on-true) invoke))
+(deffunction MAIN::if-condition
+             ()
+             (if (not ?*compiling*) then
+                 (raise-error "If outside of compilation mode!")
+                 (return FALSE))
+             (send [subroutine]
+                   push
+                   ?*current-compilation-target*)
+             (bind ?i 
+                   (make-instance of if-statement
+                                  (on-true (make-instance of dictionary-entry
+                                                          (title "")
+                                                          (fake TRUE)
+                                                          (compile-time-invoke FALSE)
+                                                          (contents)))
+                                  (on-false (make-instance of dictionary-entry
+                                                           (title "")
+                                                           (fake TRUE)
+                                                           (compile-time-invoke FALSE)
+                                                           (contents)))))
+             (send [subroutine]
+                   push
+                   ?i)
+             (bind ?*current-compilation-target*
+                   (send ?i
+                         get-on-true)))
+(deffunction MAIN::else-condition
+             ()
+             (if (not ?*compiling*) then
+                 (raise-error "Else outside of compilation mode!")
+                 (return FALSE))
+             (bind ?i
+                   (send [subroutine]
+                         pop))
+             (send ?*current-compilation-target*
+                   install)
+             (bind ?*current-compilation-target*
+                   (send ?i
+                         get-on-false))
+             (send [subroutine]
+                   push
+                   ?i))
+(deffunction MAIN::then-condition
+             ()
+             (if (not ?*compiling*) then
+                 (raise-error "then outside of compilation mode!")
+                 (return FALSE))
+             (send ?*current-compilation-target*
+                   install)
+             (bind ?i
+                   (send [subroutine]
+                         pop))
+             (if (not (send (send ?i 
+                             get-on-false) 
+                            get-compiled)) then
+               (send (send ?i 
+                           get-on-false) 
+                     install))
+             (bind ?*current-compilation-target*
+                   (send [subroutine]
+                         pop))
+             (send ?*current-compilation-target*
+                   add-component
+                   ?i))
+
+
+
 (deffunction MAIN::compile-or-end-function
              ()
              (if ?*compiling* then

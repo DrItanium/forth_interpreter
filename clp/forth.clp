@@ -328,7 +328,7 @@
                          (invoke-operation compile-or-end-function))
                (add-word ?*symbol-begin-function*
                          FALSE
-                         TRUE
+                         FALSE
                          (invoke-operation new-compile-target))
                (bind ?*has-setup-initial-dictionary*
                      TRUE)))
@@ -344,19 +344,29 @@
                      (explode$ (readline)))
                (bind ?*current-index* 1)
                (bind ?*current-length* 
-                     (length$ ?*current-input*)))
-             (bind ?output
-                   (nth$ ?*current-index*
-                         ?*current-input*))
-             (bind ?*current-index*
-                   (+ ?*current-index* 1))
-             ?output)
+                     (length$ ?*current-input*))
+               else
+               (bind ?*current-index*
+                     (+ ?*current-index*
+                        1)))
+             (nth$ ?*current-index*
+                   ?*current-input*))
 (deffunction MAIN::new-compile-target
              ()
              ; goto the next input set
              (bind ?name 
                    (next-word))
-             )
+             (send [subroutine] 
+                   push
+                   ?*current-compilation-target*)
+             (bind ?*current-compilation-target*
+                   (make-instance of dictionary-entry
+                                  (title ?name)
+                                  (fake FALSE)
+                                  (compile-time-invoke FALSE)
+                                  (contents)))
+             (bind ?*compiling*
+                   TRUE))
 (deffunction MAIN::compile-or-end-function
              ()
              (if ?*compiling* then
@@ -371,8 +381,6 @@
                      (instancep ?*current-compilation-target*))))
 (deffunction MAIN::handle-compilation
              (?word ?entry)
-             (bind ?finished-compiling
-                   (eq ?word `))
              (if ?entry then
                (if (send ?entry
                          get-compile-time-invoke) then
@@ -385,7 +393,7 @@
                else
                (send ?*current-compilation-target*
                      add-component
-                     ?entry)))
+                     ?word)))
 (deffunction MAIN::push-to-stack
              (?value)
              (or (numberp ?value)
@@ -410,6 +418,8 @@
 
 (deffunction MAIN::control-loop
              ()
+             (bind ?*keep-executing*
+                   TRUE)
              (setup-dictionary)
              (while ?*keep-executing* do
                     (bind ?*current-input* 
@@ -458,3 +468,6 @@
 
 
 
+(defrule MAIN::invoke-control-loop
+         =>
+         (control-loop))

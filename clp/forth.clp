@@ -8,7 +8,6 @@
            ?*ignore-input* = FALSE
            ?*compiling* = FALSE
            ?*current-compilation-target* = FALSE
-           ?*has-setup-initial-dictionary* = FALSE
            ?*error-happened* = FALSE
            ?*error-message* = FALSE
            ?*symbol-end-function* = }
@@ -16,39 +15,53 @@
            ?*comment-symbol-begin* = '
            ?*comment-symbol-end* = '
            ; bootstrapping default contents
-           ?*current-input* = (create$ { 1+ 1 + } 
+           ?*current-input* = (create$ { 0 ' -- 0 ' 0 }
+                                       { 1 ' -- 1 ' 1 }
+                                       { 2 ' -- 2 ' 2 }
+                                       { true TRUE }
+                                       { false FALSE }
+                                       { 1+ 1 + } 
                                        { 1- 1 - }
                                        { 2+ 2 + }
                                        { 2- 2 - }
                                        { 2* 2 * }
                                        { 2/ 2 / }
                                        { 2div 2 div }
+                                       { eqz ' n -- flag ' 0 = }
+                                       { ltz 0 swap < }
+                                       { gtz 0 swap > }
                                        { difference - abs }
-                                       { true TRUE }
-                                       { false FALSE }
                                        { on true swap store }
                                        { off false swap store }
-                                       { over swap ; n1 n2 -- n1 n2 n1
-                                              dup 0 store
-                                              swap 0 load }
-                                       { dup? ; a -- a a | 0
-                                         dup if dup then }
-                                       { nip ; a b -- b
-                                         swap drop }
-                                       { tuck ; a b -- b a b 
-                                         swap over }
-                                       { 2dup ; a b -- a b a b
-                                         over over }
-                                       { 2drop ; ' a b -- '
-                                         drop drop }
+                                       { over swap ' n1 n2 -- n1 n2 n1 ' dup 0 store swap 0 load }
+                                       { dup? ' a -- a a "|" 0 ' dup if dup then }
+                                       { nip ' a b -- b ' swap drop }
+                                       { tuck ' a b -- b a b ' swap over }
+                                       { 2dup ' a b -- a b a b ' over over }
+                                       { 2drop ' a b -- ' drop drop }
                                        { view dup . }
-                                       { SP " " . }
+                                       { space " " . }
                                        { bye quit }
-                                         )
+                                       { -rot ' n1 n2 n3 -- n3 n1 n2 ' rot rot }
+                                       )
            ?*current-length* = (length$ ?*current-input*)
            ?*current-index* = 1
            ?*memory-cell-count* = 4096
-           ?*memory* = (create$))
+           ?*memory* = (create$)
+           ?*no-arg-ops* = (create$ random 
+                                    pi 
+                                    time
+                                    operating-system)
+           ?*binary-ops* = (create$ + - * / mod ** div str-cat str-index max min
+                                    eq neq = <> > < >= <= and or)
+           ?*unary-ops* = (create$ abs integer float upcase lowcase str-length
+                                   grad-deg geg-grad deg-rad rad-deg sqrt exp log
+                                   log10 round seed length not
+                                   numberp floatp integerp lexemep stringp symbolp evenp
+                                   oddp multifieldp pointerp
+                                   cos sin tan sec csc cot atan asin asec acsc acot acos
+                                   cosh sinh tanh sech csch coth atanh asinh asech acsch acoth acosh)
+           )
 
 (deffunction MAIN::raise-error
              (?message)
@@ -59,12 +72,35 @@
 (defclass stack
   (is-a USER)
   (multislot contents)
+  (message-handler rotate-top-three primary)
   (message-handler depth primary)
   (message-handler empty primary)
   (message-handler push primary)
   (message-handler pop primary)
   (message-handler duplicate-top primary)
   (message-handler swap-top-two primary))
+(defmessage-handler stack rotate-top-three primary
+                    ()
+                    (if (>= (length$ ?self:contents) 3) then
+                      ; ( n1 n2 n3 -- n2 n3 n1 )
+                      (bind ?n3
+                            (nth$ 1
+                                  ?self:contents))
+                      (bind ?n2
+                            (nth$ 2
+                                  ?self:contents))
+                      (bind ?n1
+                            (nth$ 3
+                                  ?self:contents))
+                      (slot-direct-replace$ contents
+                                            1 3
+                                            ?n1
+                                            ?n3
+                                            ?n2)
+                      else
+                      (raise-error "Stack Underflow!")
+                      FALSE))
+
 (defmessage-handler stack duplicate-top primary
                     ()
                     (if (= (length$ ?self:contents) 0) then
@@ -77,16 +113,16 @@
 (defmessage-handler stack swap-top-two primary
                     ()
                     (if (>= (length$ ?self:contents) 2) then
-                        (bind ?top
-                              (nth$ 1 ?self:contents))
-                        (bind ?next
-                              (nth$ 2 ?self:contents))
-                        (slot-direct-replace contents
-                                             1 2
-                                             ?next ?top)
-                        else
-                        (raise-error "STACK UNDERFLOW!")
-                        FALSE))
+                      (bind ?top
+                            (nth$ 1 ?self:contents))
+                      (bind ?next
+                            (nth$ 2 ?self:contents))
+                      (slot-direct-replace$ contents
+                                           1 2
+                                           ?next ?top)
+                      else
+                      (raise-error "STACK UNDERFLOW!")
+                      FALSE))
 
 (defmessage-handler stack depth primary
                     ()
@@ -315,29 +351,12 @@
   ((?inst INSTANCE))
   ?inst)
 
-(deffunction MAIN::drop-top 
-             () 
-             (send [parameter] pop)) 
-
-(deffunction MAIN::swap-top-two
-             () 
-             (send [parameter] 
-                   swap-top-two))
-
-(deffunction MAIN::duplicate-top
-             ()
-             (send [parameter]
-                   duplicate-top))
-
-(deffunction MAIN::print-top
-             ()
-             (printout t 
-                       (send [parameter]
-                             pop)))
-
-(deffunction MAIN::print-newline
-             ()
-             (printout t crlf))
+(deffunction MAIN::drop-top () (send [parameter] pop)) 
+(deffunction MAIN::swap-top-two () (send [parameter] swap-top-two))
+(deffunction MAIN::duplicate-top () (send [parameter] duplicate-top))
+(deffunction MAIN::print-top () (printout t (send [parameter] pop)))
+(deffunction MAIN::print-newline () (printout t crlf)) 
+(deffunction MAIN::rot () (send [parameter] rotate-top-three))
 
 (deffunction MAIN::add-word
              (?name ?fake ?compile-time-invoke $?contents)
@@ -364,47 +383,92 @@
              (?symbol)
              (add-word ?symbol FALSE FALSE (no-arg-operation ?symbol)))
 
-(deffunction MAIN::setup-dictionary
-             ()
-             (if (not ?*has-setup-initial-dictionary*) then
-               (progn$ (?zop (create$ random pi time
-                                      operating-system
-                                      ))
-                       (add-clips-no-arg-word ?zop))
-               (progn$ (?bop (create$ + - * / mod ** div str-cat str-index max min
-                                      eq neq = <> > < >= <= and or 
-                                      ))
-                       (add-clips-binary-word ?bop))
-               (progn$ (?uop (create$ abs integer float upcase lowcase str-length
-                                      grad-deg geg-grad deg-rad rad-deg sqrt exp log
-                                      log10 round seed length not
-                                      numberp floatp integerp lexemep stringp symbolp evenp
-                                      oddp multifieldp pointerp
-                                      cos sin tan sec csc cot atan asin asec acsc acot acos
-                                      cosh sinh tanh sech csch coth atanh asinh asech acsch acoth acosh))
-                       (add-clips-unary-word ?uop))
-               (add-word random:range FALSE FALSE (binary-operation random))
-               (add-word drop FALSE FALSE (invoke-operation drop-top))
-               (add-word swap FALSE FALSE (invoke-operation swap-top-two))
-               (add-word dup FALSE FALSE (invoke-operation duplicate-top))
-               (add-word .  FALSE FALSE (invoke-operation print-top))
-               (add-word quit FALSE FALSE (invoke-operation terminate-execution))
-               (add-word ?*symbol-end-function* FALSE TRUE (invoke-operation compile-or-end-function))
-               (add-word ?*symbol-begin-function* FALSE FALSE (invoke-operation new-compile-target))
-               (add-word ?*comment-symbol-begin* FALSE TRUE (invoke-operation handle-input-ignore-mode))
-               (add-word CR FALSE FALSE (invoke-operation print-newline))
-               (add-word @ FALSE FALSE (invoke-operation load-word-onto-stack))
-               (add-word if FALSE TRUE (invoke-operation if-condition))
-               (add-word then FALSE TRUE (invoke-operation then-condition))
-               (add-word else FALSE TRUE (invoke-operation else-condition))
-               (add-word store FALSE FALSE (binary-operation mem-store) drop)
-               (add-word load FALSE FALSE (unary-operation mem-load))
-               (add-word words FALSE FALSE (invoke-operation print-words))
-               (add-word stack FALSE FALSE (invoke-operation stack-contents))
-               (add-word literal FALSE TRUE (invoke-operation add-literal-from-stack-into-definition))
-               (add-word depth FALSE FALSE (no-arg-operation get-stack-depth))
-               (bind ?*has-setup-initial-dictionary*
-                     TRUE)))
+(deffacts MAIN::initial-dictionary
+          (words clips-no-arg-word 
+                 ?*no-arg-ops*)
+          (words clips-binary-word
+                 ?*binary-ops*)
+          (words clips-unary-word
+                 ?*unary-ops*)
+               (word random:range FALSE FALSE binary-operation random)
+               (word drop FALSE FALSE invoke-operation drop-top)
+               (word swap FALSE FALSE invoke-operation swap-top-two)
+               (word dup FALSE FALSE invoke-operation duplicate-top)
+               (word .  FALSE FALSE invoke-operation print-top)
+               (word quit FALSE FALSE invoke-operation terminate-execution)
+               (word ?*symbol-end-function* FALSE TRUE invoke-operation compile-or-end-function)
+               (word ?*symbol-begin-function* FALSE FALSE invoke-operation new-compile-target)
+               (word ?*comment-symbol-begin* FALSE TRUE invoke-operation handle-input-ignore-mode)
+               (word CR FALSE FALSE invoke-operation print-newline)
+               (word @ FALSE FALSE invoke-operation load-word-onto-stack)
+               (word if FALSE TRUE invoke-operation if-condition)
+               (word then FALSE TRUE invoke-operation then-condition)
+               (word else FALSE TRUE invoke-operation else-condition)
+               (word store FALSE FALSE binary-operation mem-store drop)
+               (word load FALSE FALSE unary-operation mem-load)
+               (word words FALSE FALSE invoke-operation print-words)
+               (word stack FALSE FALSE invoke-operation stack-contents)
+               (word literal FALSE TRUE invoke-operation add-literal-from-stack-into-definition)
+               (word depth FALSE FALSE no-arg-operation get-stack-depth)
+               (word rot FALSE FALSE invoke-operation rot)
+               )
+
+(defrule MAIN::construct-call-operations
+         (declare (salience 10))
+         (order (current setup))
+         ?f <- (word ?title
+                     ?fake
+                     ?compile-time-invoke
+                     $?a 
+                     ?fn&:(not (neq ?fn
+                                    binary-operation
+                                    unary-operation
+                                    invoke-operation
+                                    no-arg-operation)) ?op $?b)
+         =>
+         (retract ?f)
+         (assert (word ?title
+                       ?fake
+                       ?compile-time-invoke
+                       $?a (funcall ?fn
+                                    ?op) $?b)))
+
+(defrule MAIN::add-word-to-initial-dictionary
+         (order (current setup))
+         ?f <- (word ?title 
+                     ?fake 
+                     ?compile-time-invoke 
+                     $?operations)
+         =>
+         (retract ?f)
+         (add-word ?title
+                   ?fake
+                   ?compile-time-invoke
+                   ?operations))
+
+(defrule MAIN::slice-off-of-massive-list
+         (order (current setup))
+         ?f <- (words ?op
+                      ?title $?rest)
+         =>
+         (retract ?f)
+         (assert (word ?op ?title)
+                 (words ?op $?rest)))
+
+(defrule MAIN::add-clips-short-form-word
+         (order (current setup))
+         ?f <- (word ?op&:(not (neq ?op
+                                    clips-no-arg-word
+                                    clips-binary-word
+                                    clips-unary-word))
+                     ?title)
+         =>
+         (retract ?f)
+         (funcall (sym-cat add- ?op)
+                  ?title))
+
+
+
 (deffunction MAIN::add-literal-from-stack-into-definition
              ()
              (if (not ?*compiling*) then 
@@ -414,6 +478,7 @@
                    add-component
                    (send [parameter]
                          pop)))
+
 (deffunction MAIN::print-title
              (?instance)
              (if ?instance then
@@ -648,16 +713,14 @@
                          (bind ?*memory*
                                ?*memory*
                                0)))
-(defrule MAIN::setup-dictionary
-         (order (current setup))
-         =>
-         (setup-dictionary))
+
 (defrule MAIN::stop-executing
          (declare (salience 10000))
          ?f <- (order (current determination))
          (test (not ?*keep-executing*))
          =>
          (retract ?f))
+
 (defrule MAIN::continue-execution
          ?f <- (order (current determination))
          (test (eq ?*keep-executing*

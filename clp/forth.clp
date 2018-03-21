@@ -13,9 +13,16 @@
            ?*error-message* = FALSE
            ?*symbol-end-function* = }
            ?*symbol-begin-function* = {
-           ?*current-input* = FALSE
-           ?*current-index* = 0
-           ?*current-length* = 0
+           ; bootstrapping default contents
+           ?*current-input* = (create$ { 1+ 1 + } 
+                                       { 1- 1 - }
+                                       { 2+ 2 + }
+                                       { 2- 2 - }
+                                       { 2* 2 * }
+                                       { 2/ 2 / }
+                                       { 2div 2 div })
+           ?*current-length* = (length$ ?*current-input*)
+           ?*current-index* = 1
            ?*memory-cell-count* = 4096
            ?*memory* = (create$))
 (deffunction MAIN::raise-error
@@ -321,8 +328,8 @@
                                       log10 round seed length not
                                       numberp floatp integerp lexemep stringp symbolp evenp
                                       oddp multifieldp pointerp
-                                     cos sin tan sec csc cot atan asin asec acsc acot acos
-                                     cosh sinh tanh sech csch coth atanh asinh asech acsch acoth acosh))
+                                      cos sin tan sec csc cot atan asin asec acsc acot acos
+                                      cosh sinh tanh sech csch coth atanh asinh asech acsch acoth acosh))
                        (add-clips-unary-word ?uop))
                (add-word drop
                          FALSE
@@ -401,10 +408,38 @@
                          FALSE
                          FALSE
                          (unary-operation mem-load))
-
-
+               (add-word words
+                         FALSE
+                         FALSE
+                         (invoke-operation print-words))
+               (add-word stack
+                         FALSE
+                         FALSE
+                         (invoke-operation stack-contents))
+               (add-word literal
+                         FALSE
+                         TRUE
+                         (invoke-operation add-literal-from-stack-into-definition))
                (bind ?*has-setup-initial-dictionary*
                      TRUE)))
+(deffunction MAIN::add-literal-from-stack-into-definition
+             ()
+             (if (not ?*compiling*) then 
+               (raise-error "literal can only be used during compilation!")
+               (return))
+             (send ?*current-compilation-target*
+                   add-component
+                   (send [parameter]
+                         pop)))
+(deffunction MAIN::print-title
+             (?instance)
+             (if ?instance then
+               (printout t "- " (send ?instance get-title) crlf)
+               (print-title (send ?instance get-next))))
+
+(deffunction MAIN::print-words
+             ()
+             (print-title ?*dictionary-pointer*))
 (deffunction MAIN::mem-store
              (?address ?value)
              (bind ?*memory*
@@ -419,6 +454,11 @@
              (nth$ (+ ?address
                       1)
                    ?*memory*))
+
+(deffunction MAIN::stack-contents
+             ()
+             (progn$ (?a (send [parameter] get-contents))
+                     (printout t "- " ?a crlf)))
 
 
 (deffunction MAIN::handle-input-ignore-mode
@@ -467,33 +507,33 @@
              (bind ?sym
                    (lookup-word ?name))
              (if ?sym then
-                 (send [parameter]
-                       push
-                       ?sym)
-                 else
-                 (raise-error (sym-cat ?name "?"))))
+               (send [parameter]
+                     push
+                     ?sym)
+               else
+               (raise-error (sym-cat ?name "?"))))
 (defclass MAIN::if-statement
-          (is-a USER)
-          (slot on-true
-                (type INSTANCE))
-          (slot on-false
-                (type INSTANCE))
-          (message-handler invoke primary))
+  (is-a USER)
+  (slot on-true
+        (type INSTANCE))
+  (slot on-false
+        (type INSTANCE))
+  (message-handler invoke primary))
 (defmessage-handler if-statement invoke primary
                     ()
                     (bind ?top
                           (send [parameter] pop))
                     (send (if (or (not ?top)
                                   (eq ?top
-                                       0)) then
+                                      0)) then
                             ?self:on-false
                             else
                             ?self:on-true) invoke))
 (deffunction MAIN::if-condition
              ()
              (if (not ?*compiling*) then
-                 (raise-error "If outside of compilation mode!")
-                 (return FALSE))
+               (raise-error "If outside of compilation mode!")
+               (return FALSE))
              (send [subroutine]
                    push
                    ?*current-compilation-target*)
@@ -518,8 +558,8 @@
 (deffunction MAIN::else-condition
              ()
              (if (not ?*compiling*) then
-                 (raise-error "Else outside of compilation mode!")
-                 (return FALSE))
+               (raise-error "Else outside of compilation mode!")
+               (return FALSE))
              (bind ?i
                    (send [subroutine]
                          pop))
@@ -534,15 +574,15 @@
 (deffunction MAIN::then-condition
              ()
              (if (not ?*compiling*) then
-                 (raise-error "then outside of compilation mode!")
-                 (return FALSE))
+               (raise-error "then outside of compilation mode!")
+               (return FALSE))
              (send ?*current-compilation-target*
                    install)
              (bind ?i
                    (send [subroutine]
                          pop))
              (if (not (send (send ?i 
-                             get-on-false) 
+                                  get-on-false) 
                             get-compiled)) then
                (send (send ?i 
                            get-on-false) 
@@ -646,8 +686,12 @@
                  (rest control-loop
                        handle-output
                        determination)))
+
 (defrule MAIN::setup-input
          (order (current get-input))
+         (test (or (= ?*current-length* 0)
+                   (>= ?*current-index*
+                       ?*current-length*)))
          =>
          (bind ?*current-input* 
                (explode$ (readline)))
@@ -655,6 +699,7 @@
                1)
          (bind ?*current-length*
                (length$ ?*current-input*)))
+
 (defrule MAIN::check-output
          (order (current handle-output))
          =>

@@ -45,8 +45,7 @@
                                    string-trim string-trim-front string-trim-back
                                    path-exists directoryp regular-filep)
            ?*current-output-router* = stdout
-           ?*current-input-router* = stdin
-           )
+           ?*current-input-router* = stdin)
 
 (deffunction MAIN::save-current-compilation-target
              ()

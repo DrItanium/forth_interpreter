@@ -21,13 +21,13 @@
                                        { true TRUE }
                                        { false FALSE }
                                        { 1+ 1 + } 
-                                       { 1- 1 - }
+                                       { 1- 1 swap - }
                                        { 2+ 2 + }
-                                       { 2- 2 - }
+                                       { 2- 2 swap - }
                                        { 2* 2 * }
-                                       { 2/ 2 / }
-                                       { 2div 2 div }
-                                       { eqz ' n -- flag ' 0 = }
+                                       { 2/ 2 swap / }
+                                       { 2div 2 swap div }
+                                       { eqz ' n -- flag ' 0 eq }
                                        { ltz 0 swap < }
                                        { gtz 0 swap > }
                                        { difference - abs }
@@ -251,7 +251,6 @@
   (message-handler add-component primary)
   (message-handler install primary)
   (message-handler invoke primary))
-
 (defmessage-handler dictionary-entry invoke primary
                     ()
                     (if ?self:compiled then
@@ -272,6 +271,24 @@
                             ?*dictionary-pointer*)
                       (bind ?*dictionary-pointer*
                             (instance-name ?self))))
+
+(defclass MAIN::if-statement
+  (is-a USER)
+  (slot on-true
+        (type INSTANCE))
+  (slot on-false
+        (type INSTANCE))
+  (message-handler invoke primary))
+(defmessage-handler if-statement invoke primary
+                    ()
+                    (bind ?top
+                          (send [parameter] pop))
+                    (send (if (or (not ?top)
+                                  (eq ?top
+                                      0)) then
+                            ?self:on-false
+                            else
+                            ?self:on-true) invoke))
 
 (deftemplate MAIN::order
              (slot current
@@ -396,7 +413,53 @@
           (word literal FALSE TRUE invoke-operation add-literal-from-stack-into-definition)
           (word depth FALSE FALSE no-arg-operation get-stack-depth)
           (word rot FALSE FALSE invoke-operation rot)
+          (word begin FALSE TRUE invoke-operation begin-statement)
+          (word end FALSE TRUE invoke-operation end-statement)
           )
+(deffunction MAIN::begin-statement
+             ()
+             (if (not ?*compiling*) then
+               (raise-error "Not Compiling!")
+               (return))
+             (send [subroutine] 
+                   push
+                   ?*current-compilation-target*)
+             (bind ?*current-compilation-target*
+                   (make-instance of dictionary-entry
+                                  (fake TRUE)
+                                  (title "")
+                                  (compile-time-invoke FALSE)
+                                  (contents))))
+(deffunction MAIN::end-statement
+             ()
+             (if (not ?*compiling*) then
+               (raise-error "Not Compiling!")
+               (return))
+             (send ?*current-compilation-target* install)
+             (bind ?i
+                   (make-instance of dictionary-entry
+                                  (fake TRUE)
+                                  (title "")
+                                  (compile-time-invoke FALSE)
+                                  (contents ?*current-compilation-target*)))
+             (send ?i
+                   add-component
+                   (make-instance of if-statement
+                                  (on-true (make-instance of dictionary-entry
+                                                         (fake TRUE)
+                                                         (title "")
+                                                         (compile-time-invoke FALSE)
+                                                         (compiled TRUE)
+                                                         (contents)))
+                                  (on-false ?i))) ; recursively call self for now, can cause call chain problems later on though!
+             (bind ?*current-compilation-target*
+                   (send [subroutine]
+                         pop))
+             (send ?i install)
+             (send ?*current-compilation-target*
+                   add-component
+                   ?i))
+
 
 (defrule MAIN::construct-call-operations
          (declare (salience 10))
@@ -547,23 +610,6 @@
                      ?sym)
                else
                (raise-error (sym-cat ?name "?"))))
-(defclass MAIN::if-statement
-  (is-a USER)
-  (slot on-true
-        (type INSTANCE))
-  (slot on-false
-        (type INSTANCE))
-  (message-handler invoke primary))
-(defmessage-handler if-statement invoke primary
-                    ()
-                    (bind ?top
-                          (send [parameter] pop))
-                    (send (if (or (not ?top)
-                                  (eq ?top
-                                      0)) then
-                            ?self:on-false
-                            else
-                            ?self:on-true) invoke))
 (deffunction MAIN::if-condition
              ()
              (if (not ?*compiling*) then

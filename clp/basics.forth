@@ -23,6 +23,7 @@
 : 2dup ( a b -- a b a b ) over over ;
 : 2drop ( a b -- ) drop drop ;
 : view ( a -- a ) dup . ;
-: space ( -- ) " " . ;
+: space ( -- ) 32 emit ;
+: CR ( -- ) 10 emit ;
 : bye ( -- ) quit ;
 : -rot ( n1 n2 n3 -- n3 n1 n2 ) rot rot ;

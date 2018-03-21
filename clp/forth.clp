@@ -15,35 +15,7 @@
            ?*comment-symbol-begin* = '
            ?*comment-symbol-end* = '
            ; bootstrapping default contents
-           ?*current-input* = (create$ { 0 ' -- 0 ' 0 }
-                                       { 1 ' -- 1 ' 1 }
-                                       { 2 ' -- 2 ' 2 }
-                                       { true TRUE }
-                                       { false FALSE }
-                                       { 1+ 1 + } 
-                                       { 1- 1 - }
-                                       { 2+ 2 + }
-                                       { 2- 2 - }
-                                       { 2* 2 * }
-                                       { 2/ 2 / }
-                                       { 2div 2 div }
-                                       { eqz ' n -- flag ' 0 eq }
-                                       { ltz 0 < }
-                                       { gtz 0 > }
-                                       { difference - abs }
-                                       { on true swap store }
-                                       { off false swap store }
-                                       { over swap ' n1 n2 -- n1 n2 n1 ' dup 0 store swap 0 load }
-                                       { dup? ' a -- a a "|" 0 ' dup if dup then }
-                                       { nip ' a b -- b ' swap drop }
-                                       { tuck ' a b -- b a b ' swap over }
-                                       { 2dup ' a b -- a b a b ' over over }
-                                       { 2drop ' a b -- ' drop drop }
-                                       { view dup . }
-                                       { space " " . }
-                                       { bye quit }
-                                       { -rot ' n1 n2 n3 -- n3 n1 n2 ' rot rot }
-                                       )
+           ?*current-input* = (create$) 
            ?*current-length* = (length$ ?*current-input*)
            ?*current-index* = 1
            ?*memory-cell-count* = 4096
@@ -62,6 +34,7 @@
                                    cos sin tan sec csc cot atan asin asec acsc acot acos
                                    cosh sinh tanh sech csch coth atanh asinh asech acsch acoth acosh)
            )
+
 (deffunction MAIN::save-current-compilation-target
              ()
              (send [subroutine]
@@ -78,6 +51,48 @@
                    TRUE)
              (bind ?*error-message*
                    ?message))
+
+(deffunction MAIN::is-white-space
+             (?value)
+             (not (neq ?value 32 10)))
+(deffunction MAIN::read-symbol
+             ()
+             (bind ?contents
+                   (create$))
+             ; strip away white space
+             (while (is-white-space (bind ?char
+                                          (get-char))) do
+                    (if (eq ?char -1) then
+                      (return FALSE)))
+             ; now that we are not at white space we have to use this data
+             (while TRUE do
+                    (if (eq ?char -1) then
+                      (return FALSE))
+                    (bind ?contents
+                          ?contents
+                          (format nil
+                                  "%c"
+                                  ?char))
+                    (if (is-white-space (bind ?char
+                                              (get-char))) then
+                      (break)))
+             (if (= (length$ ?contents) 0) then
+               (raise-error "REACHED END OF INPUT!!")
+               (return FALSE))
+             (if (and (= (length$ ?contents) 1)
+                      (not (neq (nth$ 1 
+                                      ?contents)
+                                "(" ")" ";"))) then
+               (sym-cat (nth$ 1
+                              ?contents))
+               else
+               (if (eq (nth$ 1 
+                             ?contents) 
+                       [) then
+                       (sym-cat (expand$ ?contents))
+                       else
+                       (string-to-field (str-cat (expand$ ?contents))))))
+
 (defclass stack
   (is-a USER)
   (multislot contents)
@@ -458,11 +473,11 @@
                    add-component
                    (make-instance of if-statement
                                   (on-true (make-instance of dictionary-entry
-                                                         (fake TRUE)
-                                                         (title "")
-                                                         (compile-time-invoke FALSE)
-                                                         (compiled TRUE)
-                                                         (contents)))
+                                                          (fake TRUE)
+                                                          (title "")
+                                                          (compile-time-invoke FALSE)
+                                                          (compiled TRUE)
+                                                          (contents)))
                                   (on-false ?i))) ; recursively call self for now, can cause call chain problems later on though!
              (restore-current-compilation-target)
              (send ?i install)
@@ -580,7 +595,7 @@
              (if (>= ?*current-index*
                      ?*current-length*) then
                (bind ?*current-input*
-                     (explode$ (readline)))
+                     (read-symbol))
                (bind ?*current-index* 1)
                (bind ?*current-length* 
                      (length$ ?*current-input*))
@@ -588,8 +603,11 @@
                (bind ?*current-index*
                      (+ ?*current-index*
                         1)))
-             (nth$ ?*current-index*
-                   ?*current-input*))
+             (if (multifieldp ?*current-input*) then
+               (nth$ ?*current-index*
+                     ?*current-input*)
+               else
+               ?*current-input*))
 (deffunction MAIN::new-compile-target
              ()
              ; goto the next input set
@@ -666,6 +684,8 @@
              (bind ?i
                    (send [subroutine]
                          pop))
+             (printout t "class of ?i: " (class ?i) crlf
+                       "value of ?i: " ?i crlf)
              (if (not (send (send ?i 
                                   get-on-false) 
                             get-compiled)) then
@@ -726,11 +746,6 @@
                  else
                  (raise-error (str-cat ?word "?")))))
 
-
-
-
-
-
 (deffunction MAIN::continue
              ()
              (bind ?*keep-executing* 
@@ -767,15 +782,18 @@
 (defrule MAIN::setup-input
          (order (current get-input))
          (test (or (= ?*current-length* 0)
-                   (>= ?*current-index*
-                       ?*current-length*)))
+                   (> ?*current-index*
+                      ?*current-length*)))
          =>
-         (bind ?*current-input* 
-               (explode$ (readline)))
+         (bind ?*current-input*
+               (read-symbol))
          (bind ?*current-index*
                1)
          (bind ?*current-length*
-               (length$ ?*current-input*)))
+               (if (multifieldp ?*current-input*) then
+                 (length$ ?*current-input*)
+                 else
+                 1)))
 
 (defrule MAIN::check-output
          (order (current handle-output))
@@ -797,8 +815,11 @@
                      (<= ?*current-index*
                          ?*current-length*)) do
                 (bind ?word
-                      (nth$ ?*current-index*
-                            ?*current-input*))
+                      (if (multifieldp ?*current-input*) then
+                        (nth$ ?*current-index*
+                              ?*current-input*)
+                        else
+                        ?*current-input*))
                 (if ?*ignore-input* then
                   (if (eq ?word 
                           ?*comment-symbol-end*) then
@@ -820,3 +841,33 @@
 (definstances MAIN::stacks
               (parameter of stack)
               (subroutine of stack))
+
+;{ 0 ' -- 0 ' 0 }
+;{ 1 ' -- 1 ' 1 }
+;{ 2 ' -- 2 ' 2 }
+;{ true TRUE }
+;{ false FALSE }
+;{ 1+ 1 + } 
+;{ 1- 1 - }
+;{ 2+ 2 + }
+;{ 2- 2 - }
+;{ 2* 2 * }
+;{ 2/ 2 / }
+;{ 2div 2 div }
+;{ eqz ' n -- flag ' 0 eq }
+;{ ltz 0 < }
+;{ gtz 0 > }
+;{ difference - abs }
+;{ on true swap store }
+;{ off false swap store }
+;{ over swap ' n1 n2 -- n1 n2 n1 ' dup 0 store swap 0 load }
+;{ dup? ' a -- a a "|" 0 ' dup if dup then }
+;{ nip ' a b -- b ' swap drop }
+;{ tuck ' a b -- b a b ' swap over }
+;{ 2dup ' a b -- a b a b ' over over }
+;{ 2drop ' a b -- ' drop drop }
+;{ view dup . }
+;{ space " " . }
+;{ bye quit }
+;{ -rot ' n1 n2 n3 -- n3 n1 n2 ' rot rot }
+;)

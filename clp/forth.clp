@@ -73,8 +73,6 @@
   (is-a USER)
   (multislot contents)
   (message-handler rotate-top-three primary)
-  (message-handler depth primary)
-  (message-handler empty primary)
   (message-handler push primary)
   (message-handler pop primary)
   (message-handler duplicate-top primary)
@@ -118,19 +116,11 @@
                       (bind ?next
                             (nth$ 2 ?self:contents))
                       (slot-direct-replace$ contents
-                                           1 2
-                                           ?next ?top)
+                                            1 2
+                                            ?next ?top)
                       else
                       (raise-error "STACK UNDERFLOW!")
                       FALSE))
-
-(defmessage-handler stack depth primary
-                    ()
-                    (length$ ?self:contents))
-
-(defmessage-handler stack empty primary
-                    ()
-                    (= (length$ ?self:contents) 0))
 
 (defmessage-handler stack push primary
                     (?value)
@@ -139,8 +129,7 @@
                                          ?value))
 (defmessage-handler stack pop primary
                     ()
-                    (if (send ?self 
-                              empty) then
+                    (if (= (length$ ?self:contents) 0) then
                       (raise-error "STACK EMPTY!!")
                       FALSE
                       else
@@ -211,8 +200,8 @@
 
 (deffunction get-stack-depth
              ()
-             (send [parameter]
-                   depth))
+             (length$ (send [parameter] 
+                            get-contents)))
 (deffunction MAIN::make-operation
              (?symbol ?type)
              (make-instance of ?type
@@ -261,12 +250,7 @@
   (multislot contents)
   (message-handler add-component primary)
   (message-handler install primary)
-  (message-handler has-next primary)
   (message-handler invoke primary))
-
-(defmessage-handler dictionary-entry has-next primary
-                    ()
-                    ?self:next)
 
 (defmessage-handler dictionary-entry invoke primary
                     ()
@@ -302,6 +286,7 @@
          (modify ?f
                  (current ?next)
                  (rest ?rest)))
+
 (defrule MAIN::done-with-flow
          (declare (salience -10000))
          ?f <- (order (rest))
@@ -390,28 +375,28 @@
                  ?*binary-ops*)
           (words clips-unary-word
                  ?*unary-ops*)
-               (word random:range FALSE FALSE binary-operation random)
-               (word drop FALSE FALSE invoke-operation drop-top)
-               (word swap FALSE FALSE invoke-operation swap-top-two)
-               (word dup FALSE FALSE invoke-operation duplicate-top)
-               (word .  FALSE FALSE invoke-operation print-top)
-               (word quit FALSE FALSE invoke-operation terminate-execution)
-               (word ?*symbol-end-function* FALSE TRUE invoke-operation compile-or-end-function)
-               (word ?*symbol-begin-function* FALSE FALSE invoke-operation new-compile-target)
-               (word ?*comment-symbol-begin* FALSE TRUE invoke-operation handle-input-ignore-mode)
-               (word CR FALSE FALSE invoke-operation print-newline)
-               (word @ FALSE FALSE invoke-operation load-word-onto-stack)
-               (word if FALSE TRUE invoke-operation if-condition)
-               (word then FALSE TRUE invoke-operation then-condition)
-               (word else FALSE TRUE invoke-operation else-condition)
-               (word store FALSE FALSE binary-operation mem-store drop)
-               (word load FALSE FALSE unary-operation mem-load)
-               (word words FALSE FALSE invoke-operation print-words)
-               (word stack FALSE FALSE invoke-operation stack-contents)
-               (word literal FALSE TRUE invoke-operation add-literal-from-stack-into-definition)
-               (word depth FALSE FALSE no-arg-operation get-stack-depth)
-               (word rot FALSE FALSE invoke-operation rot)
-               )
+          (word random:range FALSE FALSE binary-operation random)
+          (word drop FALSE FALSE invoke-operation drop-top)
+          (word swap FALSE FALSE invoke-operation swap-top-two)
+          (word dup FALSE FALSE invoke-operation duplicate-top)
+          (word .  FALSE FALSE invoke-operation print-top)
+          (word quit FALSE FALSE invoke-operation terminate-execution)
+          (word ?*symbol-end-function* FALSE TRUE invoke-operation compile-or-end-function)
+          (word ?*symbol-begin-function* FALSE FALSE invoke-operation new-compile-target)
+          (word ?*comment-symbol-begin* FALSE TRUE invoke-operation handle-input-ignore-mode)
+          (word CR FALSE FALSE invoke-operation print-newline)
+          (word @ FALSE FALSE invoke-operation load-word-onto-stack)
+          (word if FALSE TRUE invoke-operation if-condition)
+          (word then FALSE TRUE invoke-operation then-condition)
+          (word else FALSE TRUE invoke-operation else-condition)
+          (word store FALSE FALSE binary-operation mem-store drop)
+          (word load FALSE FALSE unary-operation mem-load)
+          (word words FALSE FALSE invoke-operation print-words)
+          (word stack FALSE FALSE invoke-operation stack-contents)
+          (word literal FALSE TRUE invoke-operation add-literal-from-stack-into-definition)
+          (word depth FALSE FALSE no-arg-operation get-stack-depth)
+          (word rot FALSE FALSE invoke-operation rot)
+          )
 
 (defrule MAIN::construct-call-operations
          (declare (salience 10))

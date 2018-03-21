@@ -27,10 +27,10 @@
                                     gensym
                                     gensym*)
            ?*binary-ops* = (create$ + - * / mod ** div str-cat str-index max min
-                                    eq neq = <> > < >= <= and or)
+                                    eq neq = <> > < >= <= and or rename)
            ?*unary-ops* = (create$ abs integer float upcase lowcase str-length
                                    grad-deg geg-grad deg-rad rad-deg sqrt exp log
-                                   log10 round seed length not
+                                   log10 round seed length not remove
                                    numberp floatp integerp lexemep stringp symbolp evenp
                                    oddp multifieldp pointerp
                                    cos sin tan sec csc cot atan asin asec acsc acot acos
@@ -778,7 +778,7 @@
              (implode$ ?string))
 
 (deffacts MAIN::initial-dictionary
-          (words clips-no-arg-word 
+          (words clips-no-arg-word
                  ?*no-arg-ops*)
           (words clips-binary-word
                  ?*binary-ops*)

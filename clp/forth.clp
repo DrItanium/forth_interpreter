@@ -15,7 +15,9 @@
            ?*symbol-begin-function* = {
            ?*current-input* = FALSE
            ?*current-index* = 0
-           ?*current-length* = 0)
+           ?*current-length* = 0
+           ?*memory-cell-count* = 4096
+           ?*memory* = (create$))
 (deffunction MAIN::raise-error
              (?message)
              (bind ?*error-happened*
@@ -99,6 +101,15 @@
 (defmessage-handler generic-operation invoke primary
                     ()
                     (funcall (dynamic-get operation)))
+(defclass MAIN::zero-arg-operation
+  (is-a operation)
+  (message-handler invoke primary))
+
+(defmessage-handler zero-arg-operation invoke primary
+                    ()
+                    (send [parameter]
+                          push
+                          (funcall (dynamic-get operation))))
 (deffunction MAIN::binary-operation
              (?symbol)
              (make-instance of wrapped-binary-operation
@@ -106,6 +117,10 @@
 (deffunction MAIN::unary-operation
              (?symbol)
              (make-instance of wrapped-unary-operation
+                            (operation ?symbol)))
+(deffunction MAIN::no-arg-operation
+             (?symbol)
+             (make-instance of zero-arg-operation
                             (operation ?symbol)))
 (deffunction MAIN::invoke-operation
              (?symbol)
@@ -268,9 +283,47 @@
                            add-component ?c))
              (send ?q 
                    install))
+(deffunction MAIN::add-clips-binary-word
+             (?symbol)
+             (add-word ?symbol
+                       FALSE
+                       FALSE
+                       (binary-operation ?symbol)))
+(deffunction MAIN::add-clips-unary-word
+             (?symbol)
+             (add-word ?symbol
+                       FALSE
+                       FALSE
+                       (unary-operation ?symbol)))
+(deffunction MAIN::add-clips-no-arg-word
+             (?symbol)
+             (add-word ?symbol
+                       FALSE
+                       FALSE
+                       (no-arg-operation ?symbol)))
 (deffunction MAIN::setup-dictionary
              ()
              (if (not ?*has-setup-initial-dictionary*) then
+               (add-word random:range
+                         FALSE
+                         FALSE
+                         (binary-operation random))
+               (progn$ (?zop (create$ random pi time
+                                      operating-system
+                                      ))
+                       (add-clips-no-arg-word ?zop))
+               (progn$ (?bop (create$ + - * / mod ** div str-cat str-index max min
+                                      eq neq = <> > < >= <= and or 
+                                      ))
+                       (add-clips-binary-word ?bop))
+               (progn$ (?uop (create$ abs integer float upcase lowcase str-length
+                                      grad-deg geg-grad deg-rad rad-deg sqrt exp log
+                                      log10 round seed length not
+                                      numberp floatp integerp lexemep stringp symbolp evenp
+                                      oddp multifieldp pointerp
+                                     cos sin tan sec csc cot atan asin asec acsc acot acos
+                                     cosh sinh tanh sech csch coth atanh asinh asech acsch acoth acosh))
+                       (add-clips-unary-word ?uop))
                (add-word drop
                          FALSE
                          FALSE
@@ -286,52 +339,11 @@
                (add-word 2dup
                          FALSE
                          FALSE
-                         dup
-                         dup)
+                         dup dup)
                (add-word 2drop
                          FALSE
                          FALSE
                          drop drop)
-               (add-word +
-                         FALSE
-                         FALSE
-                         (binary-operation +))
-               (add-word -
-                         FALSE
-                         FALSE
-                         (binary-operation -))
-               (add-word *
-                         FALSE
-                         FALSE
-                         (binary-operation *))
-               (add-word /
-                         FALSE
-                         FALSE
-                         (binary-operation /))
-               (add-word %
-                         FALSE
-                         FALSE
-                         (binary-operation mod))
-               (add-word pow
-                         FALSE
-                         FALSE
-                         (binary-operation **))
-               (add-word /u
-                         FALSE
-                         FALSE
-                         (binary-operation div))
-               (add-word cos
-                         FALSE
-                         FALSE
-                         (unary-operation cos))
-               (add-word sin
-                         FALSE
-                         FALSE
-                         (unary-operation sin))
-               (add-word tan
-                         FALSE
-                         FALSE
-                         (unary-operation tan))
                (add-word .
                          FALSE
                          FALSE
@@ -380,9 +392,35 @@
                          FALSE
                          TRUE
                          (invoke-operation else-condition))
+               (add-word store
+                         FALSE
+                         FALSE
+                         (binary-operation mem-store)
+                         drop)
+               (add-word load
+                         FALSE
+                         FALSE
+                         (unary-operation mem-load))
+
 
                (bind ?*has-setup-initial-dictionary*
                      TRUE)))
+(deffunction MAIN::mem-store
+             (?address ?value)
+             (bind ?*memory*
+                   (replace$ ?*memory* 
+                             (+ ?address 
+                                1)
+                             ?value
+                             ?value))
+             TRUE)
+(deffunction MAIN::mem-load
+             (?address)
+             (nth$ (+ ?address
+                      1)
+                   ?*memory*))
+
+
 (deffunction MAIN::handle-input-ignore-mode
              ()
              (bind ?*ignore-input*
@@ -580,6 +618,14 @@
                    TRUE)
              (assert (order (current control-loop)))
              (run))
+
+(defrule MAIN::setup-memory
+         (order (current setup))
+         =>
+         (loop-for-count (?i 1 ?*memory-cell-count*) do
+                         (bind ?*memory*
+                               ?*memory*
+                               0)))
 (defrule MAIN::setup-dictionary
          (order (current setup))
          =>

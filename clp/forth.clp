@@ -2,6 +2,7 @@
 ; some changes have to be made, the end function comment will use }
 (defgeneric MAIN::make-entry)
 (defgeneric MAIN::lookup-word)
+(defgeneric MAIN::read-symbol)
 (defglobal MAIN
            ?*dictionary-pointer* = FALSE
            ?*keep-executing* = TRUE
@@ -15,13 +16,15 @@
            ?*comment-symbol-begin* = (sym-cat "(")
            ?*comment-symbol-end* = (sym-cat ")")
            ?*string-begin-symbol* = (sym-cat "\"")
+           ?*square-bracket* = (sym-cat "[")
            ; bootstrapping default contents
            ?*memory-cell-count* = 4096
            ?*memory* = (create$)
            ?*no-arg-ops* = (create$ random 
                                     pi 
                                     time
-                                    operating-system)
+                                    operating-system
+                                    get-char)
            ?*binary-ops* = (create$ + - * / mod ** div str-cat str-index max min
                                     eq neq = <> > < >= <= and or)
            ?*unary-ops* = (create$ abs integer float upcase lowcase str-length
@@ -53,43 +56,6 @@
 (deffunction MAIN::is-white-space
              (?value)
              (not (neq ?value 32 10)))
-(deffunction MAIN::read-symbol
-             ()
-             (bind ?contents
-                   (create$))
-             ; strip away white space
-             (while (is-white-space (bind ?char
-                                          (get-char))) do
-                    (if (eq ?char -1) then
-                      (return FALSE)))
-             ; now that we are not at white space we have to use this data
-             (while TRUE do
-                    (if (eq ?char -1) then
-                      (return FALSE))
-                    (bind ?contents
-                          ?contents
-                          (format nil
-                                  "%c"
-                                  ?char))
-                    (if (is-white-space (bind ?char
-                                              (get-char))) then
-                      (break)))
-             (if (= (length$ ?contents) 0) then
-               (raise-error "REACHED END OF INPUT!!")
-               (return FALSE))
-             (bind ?first
-                   (nth$ 1
-                         ?contents))
-             (if (and (= (length$ ?contents) 1)
-                      (not (neq ?first
-                                "(" ")" ";"))) then
-               (sym-cat ?first)
-               else
-               (if (eq ?first
-                       [) then
-                       (sym-cat (expand$ ?contents))
-                       else
-                       (string-to-field (str-cat (expand$ ?contents))))))
 
 (defclass stack
   (is-a USER)
@@ -383,7 +349,6 @@
 (deffunction MAIN::swap-top-two () (send [parameter] swap-top-two))
 (deffunction MAIN::duplicate-top () (send [parameter] duplicate-top))
 (deffunction MAIN::print-top () (printout t (send [parameter] pop)))
-(deffunction MAIN::print-newline () (printout t crlf)) 
 (deffunction MAIN::rot () (send [parameter] rotate-top-three))
 
 (deffunction MAIN::add-word
@@ -773,7 +738,7 @@
              (bind ?l 
                    (str-length (str-cat ?str)))
              (sub-string ?l ?l
-                         ?str))
+                         (str-cat ?str)))
 (deffunction construct-string
              ()
              ; keep consuming words until we end with a string 
@@ -781,13 +746,15 @@
                    (create$))
              (while TRUE do
                     (bind ?curr
-                          (next-token))
+                          (next-word))
+                    (if (not ?curr) then
+                      (break))
                     (if (eq (string-back ?curr)
                             "\"") then 
                       (bind ?string
                             ?string
-                            (sub-string 1 (- (str-length ?curr) 1)
-                                        ?curr))
+                            (sym-cat (sub-string 1 (- (str-length ?curr) 1)
+                                        ?curr)))
                       (break)
                       else
                       (bind ?string
@@ -806,12 +773,11 @@
           (word drop FALSE FALSE invoke-operation drop-top)
           (word swap FALSE FALSE invoke-operation swap-top-two)
           (word dup FALSE FALSE invoke-operation duplicate-top)
-          (word .  FALSE FALSE invoke-operation print-top)
+          (word . FALSE FALSE invoke-operation print-top)
           (word quit FALSE FALSE invoke-operation terminate-execution)
           (word ?*symbol-end-function* FALSE TRUE invoke-operation compile-or-end-function)
           (word ?*symbol-begin-function* FALSE FALSE invoke-operation new-compile-target)
           (word ?*comment-symbol-begin* FALSE TRUE invoke-operation handle-input-ignore-mode)
-          (word CR FALSE FALSE invoke-operation print-newline)
           (word @ FALSE FALSE invoke-operation load-word-onto-stack)
           (word if FALSE TRUE invoke-operation if-condition)
           (word then FALSE TRUE invoke-operation then-condition)
@@ -825,5 +791,51 @@
           (word rot FALSE FALSE invoke-operation rot)
           (word begin FALSE TRUE invoke-operation begin-statement)
           (word end FALSE TRUE invoke-operation end-statement)
-          (word ?*string-begin-symbol* FALSE TRUE invoke-operation construct-string)
+          (word ?*string-begin-symbol* FALSE TRUE no-arg-operation construct-string)
+          (word emit FALSE FALSE unary-operation put-char drop)
           )
+; make this always last as the formatter goes nuts otherwise
+(defmethod MAIN::read-symbol
+  ()
+  (bind ?contents
+        (create$))
+  ; strip away white space
+  (while (is-white-space (bind ?char
+                               (get-char))) do
+         (if (eq ?char -1) then
+           (return FALSE)))
+  ; now that we are not at white space we have to use this data
+  (while TRUE do
+         (if (eq ?char -1) then
+           (return FALSE))
+         (bind ?contents
+               ?contents
+               (format nil
+                       "%c"
+                       ?char))
+         (if (is-white-space (bind ?char
+                                   (get-char))) then
+           (break)))
+  (if (= (length$ ?contents) 0) then
+    (raise-error "REACHED END OF INPUT!!")
+    (return FALSE))
+  (bind ?first
+        (nth$ 1
+              ?contents))
+  (if (and (= (length$ ?contents) 1)
+           (not (neq ?first
+                     "(" ")" ";" "\""))) then
+    (sym-cat ?first)
+    else
+    (if (or (eq ?first
+                ?*square-bracket*)
+            (eq (nth$ (length$ ?contents)
+                      ?contents)
+                "\"")) then
+      (bind ?output 
+            (sym-cat (str-cat (expand$ ?contents))))
+      (printout t
+                "contents = " ?output crlf)
+      ?output
+      else
+      (string-to-field (str-cat (expand$ ?contents)))))))

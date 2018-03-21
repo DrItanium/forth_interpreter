@@ -62,7 +62,16 @@
                                    cos sin tan sec csc cot atan asin asec acsc acot acos
                                    cosh sinh tanh sech csch coth atanh asinh asech acsch acoth acosh)
            )
-
+(deffunction MAIN::save-current-compilation-target
+             ()
+             (send [subroutine]
+                   push
+                   ?*current-compilation-target*))
+(deffunction MAIN::restore-current-compilation-target
+             ()
+             (bind ?*current-compilation-target*
+                   (send [subroutine]
+                         pop)))
 (deffunction MAIN::raise-error
              (?message)
              (bind ?*error-happened*
@@ -421,15 +430,14 @@
              (if (not ?*compiling*) then
                (raise-error "Not Compiling!")
                (return))
-             (send [subroutine] 
-                   push
-                   ?*current-compilation-target*)
+             (save-current-compilation-target)
              (bind ?*current-compilation-target*
                    (make-instance of dictionary-entry
                                   (fake TRUE)
                                   (title "")
                                   (compile-time-invoke FALSE)
                                   (contents))))
+
 (deffunction MAIN::end-statement
              ()
              (if (not ?*compiling*) then
@@ -452,14 +460,11 @@
                                                          (compiled TRUE)
                                                          (contents)))
                                   (on-false ?i))) ; recursively call self for now, can cause call chain problems later on though!
-             (bind ?*current-compilation-target*
-                   (send [subroutine]
-                         pop))
+             (restore-current-compilation-target)
              (send ?i install)
              (send ?*current-compilation-target*
                    add-component
                    ?i))
-
 
 (defrule MAIN::construct-call-operations
          (declare (salience 10))
@@ -587,9 +592,7 @@
              ; goto the next input set
              (bind ?name 
                    (next-word))
-             (send [subroutine] 
-                   push
-                   ?*current-compilation-target*)
+             (save-current-compilation-target)
              (bind ?*current-compilation-target*
                    (make-instance of dictionary-entry
                                   (title ?name)
@@ -615,9 +618,7 @@
              (if (not ?*compiling*) then
                (raise-error "If outside of compilation mode!")
                (return FALSE))
-             (send [subroutine]
-                   push
-                   ?*current-compilation-target*)
+             (save-current-compilation-target)
              (bind ?i 
                    (make-instance of if-statement
                                   (on-true (make-instance of dictionary-entry
@@ -668,9 +669,7 @@
                (send (send ?i 
                            get-on-false) 
                      install))
-             (bind ?*current-compilation-target*
-                   (send [subroutine]
-                         pop))
+             (restore-current-compilation-target)
              (send ?*current-compilation-target*
                    add-component
                    ?i))
@@ -685,8 +684,7 @@
                      ?*symbol-end-function*)
                (send ?*current-compilation-target*
                      install)
-               (bind ?*current-compilation-target*
-                     (send [subroutine] pop))
+               (restore-current-compilation-target)
                (bind ?*compiling*
                      (instancep ?*current-compilation-target*))))
 (deffunction MAIN::handle-compilation

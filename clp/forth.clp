@@ -735,7 +735,7 @@
              ()
              (bind ?*keep-executing* 
                    TRUE)
-             (assert (order (current control-loop)))
+             (assert (order (current determination)))
              (run))
 
 (defrule MAIN::setup-memory

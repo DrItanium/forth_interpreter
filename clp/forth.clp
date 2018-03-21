@@ -33,7 +33,8 @@
                                    numberp floatp integerp lexemep stringp symbolp evenp
                                    oddp multifieldp pointerp
                                    cos sin tan sec csc cot atan asin asec acsc acot acos
-                                   cosh sinh tanh sech csch coth atanh asinh asech acsch acoth acosh)
+                                   cosh sinh tanh sech csch coth atanh asinh asech acsch acoth acosh
+                                   eval)
            )
 
 (deffunction MAIN::save-current-compilation-target

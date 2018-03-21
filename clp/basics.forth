@@ -27,3 +27,7 @@
 : CR ( -- ) 10 emit ;
 : bye ( -- ) quit ;
 : -rot ( n1 n2 n3 -- n3 n1 n2 ) rot rot ;
+
+
+( make sure we close at the end of the day! )
+close

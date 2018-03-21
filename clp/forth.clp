@@ -24,7 +24,8 @@
                                     pi 
                                     time
                                     operating-system
-                                    get-char)
+                                    gensym
+                                    gensym*)
            ?*binary-ops* = (create$ + - * / mod ** div str-cat str-index max min
                                     eq neq = <> > < >= <= and or)
            ?*unary-ops* = (create$ abs integer float upcase lowcase str-length
@@ -33,8 +34,9 @@
                                    numberp floatp integerp lexemep stringp symbolp evenp
                                    oddp multifieldp pointerp
                                    cos sin tan sec csc cot atan asin asec acsc acot acos
-                                   cosh sinh tanh sech csch coth atanh asinh asech acsch acoth acosh
-                                   eval)
+                                   cosh sinh tanh sech csch coth atanh asinh asech acsch acoth acosh)
+           ?*current-output-router* = stdout
+           ?*current-input-router* = stdin
            )
 
 (deffunction MAIN::save-current-compilation-target
@@ -57,6 +59,19 @@
 (deffunction MAIN::is-white-space
              (?value)
              (not (neq ?value 32 10)))
+(defclass global-constant
+  (is-a USER)
+  (slot var
+        (type LEXEME)
+        (default ?NONE))
+  (message-handler invoke primary))
+
+(defmessage-handler global-constant invoke primary
+                    ()
+                    (send [parameter]
+                          push
+                          (eval ?self:var)))
+
 
 (defclass stack
   (is-a USER)
@@ -525,7 +540,7 @@
                    FALSE))
 (deffunction MAIN::next-word
              ()
-             (read-symbol))
+             (read-symbol ?*current-input-router*))
 (deffunction MAIN::new-compile-target
              ()
              ; goto the next input set
@@ -602,8 +617,6 @@
              (bind ?i
                    (send [subroutine]
                          pop))
-             (printout t "class of ?i: " (class ?i) crlf
-                       "value of ?i: " ?i crlf)
              (if (not (send (send ?i 
                                   get-on-false) 
                             get-compiled)) then
@@ -709,7 +722,8 @@
            else
            (if (and (not ?*ignore-input*)
                     (not ?*compiling*)) then
-             (printout t " ok" crlf))))
+             (printout ?*current-output-router* 
+                       " ok" crlf))))
 (defrule MAIN::invoke-control-loop
          (order (current control-loop))
          =>
@@ -770,6 +784,8 @@
                  ?*binary-ops*)
           (words clips-unary-word
                  ?*unary-ops*)
+          (word *current-output-router* FALSE FALSE [current-output-router])
+          (word *current-input-router* FALSE FALSE [current-input-router])
           (word random:range FALSE FALSE binary-operation random)
           (word drop FALSE FALSE invoke-operation drop-top)
           (word swap FALSE FALSE invoke-operation swap-top-two)
@@ -793,16 +809,46 @@
           (word begin FALSE TRUE invoke-operation begin-statement)
           (word end FALSE TRUE invoke-operation end-statement)
           (word ?*string-begin-symbol* FALSE TRUE no-arg-operation construct-string)
-          (word emit FALSE FALSE unary-operation put-char drop)
+          (word emit FALSE FALSE [current-output-router] binary-operation put-char drop)
+          (word read-char FALSE FALSE [current-input-router] unary-operation get-char)
+          (word load FALSE FALSE ; ( path -- )
+                unary-operation load-routine)
+          (word close FALSE FALSE
+                [current-input-router] unary-operation close-op)
           )
+            
+(deffunction MAIN::close-op
+             (?operation)
+             (if (eq ?operation 
+                     stdout) then
+                FALSE
+                else
+                (bind ?*current-input-router*
+                      (send [subroutine]
+                            pop))
+                (close ?operation)))
+(definstances MAIN::router-constants
+              (current-output-router of global-constant 
+                                     (var "?*current-output-router*"))
+              (current-input-router of global-constant 
+                                    (var "?*current-input-router*")))
+(deffunction MAIN::load-routine
+             (?path)
+             (send [subroutine] 
+                   push
+                   ?*current-input-router*)
+             (bind ?*current-input-router*
+                   (gensym*))
+             (open ?path
+                   ?*current-input-router*))
 ; make this always last as the formatter goes nuts otherwise
 (defmethod MAIN::read-symbol
-  ()
+  (?router)
   (bind ?contents
         (create$))
   ; strip away white space
   (while (is-white-space (bind ?char
-                               (get-char))) do
+                               (get-char ?router))) do
          (if (eq ?char -1) then
            (return FALSE)))
   ; now that we are not at white space we have to use this data
@@ -815,7 +861,7 @@
                        "%c"
                        ?char))
          (if (is-white-space (bind ?char
-                                   (get-char))) then
+                                   (get-char ?router))) then
            (break)))
   (if (= (length$ ?contents) 0) then
     (raise-error "REACHED END OF INPUT!!")
@@ -833,10 +879,6 @@
             (eq (nth$ (length$ ?contents)
                       ?contents)
                 "\"")) then
-      (bind ?output 
-            (sym-cat (str-cat (expand$ ?contents))))
-      (printout t
-                "contents = " ?output crlf)
-      ?output
+      (sym-cat (str-cat (expand$ ?contents)))
       else
-      (string-to-field (str-cat (expand$ ?contents)))))))
+      (string-to-field (str-cat (expand$ ?contents))))))

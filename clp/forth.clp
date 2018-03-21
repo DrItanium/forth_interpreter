@@ -21,15 +21,15 @@
                                        { true TRUE }
                                        { false FALSE }
                                        { 1+ 1 + } 
-                                       { 1- 1 swap - }
+                                       { 1- 1 - }
                                        { 2+ 2 + }
-                                       { 2- 2 swap - }
+                                       { 2- 2 - }
                                        { 2* 2 * }
-                                       { 2/ 2 swap / }
-                                       { 2div 2 swap div }
+                                       { 2/ 2 / }
+                                       { 2div 2 div }
                                        { eqz ' n -- flag ' 0 eq }
-                                       { ltz 0 swap < }
-                                       { gtz 0 swap > }
+                                       { ltz 0 < }
+                                       { gtz 0 > }
                                        { difference - abs }
                                        { on true swap store }
                                        { off false swap store }
@@ -184,11 +184,15 @@
 
 (defmessage-handler wrapped-binary-operation invoke primary
                     ()
+                    (bind ?top
+                          (send [parameter] pop))
+                    (bind ?lower
+                          (send [parameter] pop))
                     (send [parameter]
                           push
-                          (funcall (dynamic-get operation) 
-                                   (send [parameter] pop)
-                                   (send [parameter] pop))))
+                          (funcall (dynamic-get operation)
+                                   ?lower 
+                                   ?top)))
 (defclass MAIN::generic-operation
   (is-a operation)
   (message-handler invoke primary))
@@ -568,8 +572,7 @@
              ()
              (bind ?*ignore-input*
                    (not ?*ignore-input*)))
-(deffunction MAIN::terminate-execution
-             ()
+(deffunction MAIN::terminate-execution ()
              (bind ?*keep-executing*
                    FALSE))
 (deffunction MAIN::next-word

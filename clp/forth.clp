@@ -364,7 +364,7 @@
 (deffunction MAIN::drop-top () (send [parameter] pop)) 
 (deffunction MAIN::swap-top-two () (send [parameter] swap-top-two))
 (deffunction MAIN::duplicate-top () (send [parameter] duplicate-top))
-(deffunction MAIN::print-top () (printout t (send [parameter] pop)))
+(deffunction MAIN::print-top (?router ?value) (printout ?router ?value) FALSE)
 (deffunction MAIN::rot () (send [parameter] rotate-top-three))
 
 (deffunction MAIN::add-word
@@ -790,7 +790,7 @@
           (word drop FALSE FALSE invoke-operation drop-top)
           (word swap FALSE FALSE invoke-operation swap-top-two)
           (word dup FALSE FALSE invoke-operation duplicate-top)
-          (word . FALSE FALSE invoke-operation print-top)
+          (word . FALSE FALSE [current-output-router] swap binary-operation print-top drop)
           (word quit FALSE FALSE invoke-operation terminate-execution)
           (word ?*symbol-end-function* FALSE TRUE invoke-operation compile-or-end-function)
           (word ?*symbol-begin-function* FALSE FALSE invoke-operation new-compile-target)
@@ -815,6 +815,8 @@
                 unary-operation load-routine)
           (word close FALSE FALSE
                 [current-input-router] unary-operation close-op)
+          (word readline FALSE FALSE
+                [current-input-router] unary-operation readline)
           )
             
 (deffunction MAIN::close-op

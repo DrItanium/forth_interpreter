@@ -10,14 +10,12 @@
            ?*current-compilation-target* = FALSE
            ?*error-happened* = FALSE
            ?*error-message* = FALSE
-           ?*symbol-end-function* = }
-           ?*symbol-begin-function* = {
-           ?*comment-symbol-begin* = '
-           ?*comment-symbol-end* = '
+           ?*symbol-end-function* = (sym-cat ";")
+           ?*symbol-begin-function* = :
+           ?*comment-symbol-begin* = (sym-cat "(")
+           ?*comment-symbol-end* = (sym-cat ")")
+           ?*string-begin-symbol* = (sym-cat "\"")
            ; bootstrapping default contents
-           ?*current-input* = (create$) 
-           ?*current-length* = (length$ ?*current-input*)
-           ?*current-index* = 1
            ?*memory-cell-count* = 4096
            ?*memory* = (create$)
            ?*no-arg-ops* = (create$ random 
@@ -79,15 +77,15 @@
              (if (= (length$ ?contents) 0) then
                (raise-error "REACHED END OF INPUT!!")
                (return FALSE))
+             (bind ?first
+                   (nth$ 1
+                         ?contents))
              (if (and (= (length$ ?contents) 1)
-                      (not (neq (nth$ 1 
-                                      ?contents)
+                      (not (neq ?first
                                 "(" ")" ";"))) then
-               (sym-cat (nth$ 1
-                              ?contents))
+               (sym-cat ?first)
                else
-               (if (eq (nth$ 1 
-                             ?contents) 
+               (if (eq ?first
                        [) then
                        (sym-cat (expand$ ?contents))
                        else
@@ -413,37 +411,6 @@
              (?symbol)
              (add-word ?symbol FALSE FALSE (no-arg-operation ?symbol)))
 
-(deffacts MAIN::initial-dictionary
-          (words clips-no-arg-word 
-                 ?*no-arg-ops*)
-          (words clips-binary-word
-                 ?*binary-ops*)
-          (words clips-unary-word
-                 ?*unary-ops*)
-          (word random:range FALSE FALSE binary-operation random)
-          (word drop FALSE FALSE invoke-operation drop-top)
-          (word swap FALSE FALSE invoke-operation swap-top-two)
-          (word dup FALSE FALSE invoke-operation duplicate-top)
-          (word .  FALSE FALSE invoke-operation print-top)
-          (word quit FALSE FALSE invoke-operation terminate-execution)
-          (word ?*symbol-end-function* FALSE TRUE invoke-operation compile-or-end-function)
-          (word ?*symbol-begin-function* FALSE FALSE invoke-operation new-compile-target)
-          (word ?*comment-symbol-begin* FALSE TRUE invoke-operation handle-input-ignore-mode)
-          (word CR FALSE FALSE invoke-operation print-newline)
-          (word @ FALSE FALSE invoke-operation load-word-onto-stack)
-          (word if FALSE TRUE invoke-operation if-condition)
-          (word then FALSE TRUE invoke-operation then-condition)
-          (word else FALSE TRUE invoke-operation else-condition)
-          (word store FALSE FALSE binary-operation mem-store drop)
-          (word load FALSE FALSE unary-operation mem-load)
-          (word words FALSE FALSE invoke-operation print-words)
-          (word stack FALSE FALSE invoke-operation stack-contents)
-          (word literal FALSE TRUE invoke-operation add-literal-from-stack-into-definition)
-          (word depth FALSE FALSE no-arg-operation get-stack-depth)
-          (word rot FALSE FALSE invoke-operation rot)
-          (word begin FALSE TRUE invoke-operation begin-statement)
-          (word end FALSE TRUE invoke-operation end-statement)
-          )
 (deffunction MAIN::begin-statement
              ()
              (if (not ?*compiling*) then
@@ -592,22 +559,7 @@
                    FALSE))
 (deffunction MAIN::next-word
              ()
-             (if (>= ?*current-index*
-                     ?*current-length*) then
-               (bind ?*current-input*
-                     (read-symbol))
-               (bind ?*current-index* 1)
-               (bind ?*current-length* 
-                     (length$ ?*current-input*))
-               else
-               (bind ?*current-index*
-                     (+ ?*current-index*
-                        1)))
-             (if (multifieldp ?*current-input*) then
-               (nth$ ?*current-index*
-                     ?*current-input*)
-               else
-               ?*current-input*))
+             (read-symbol))
 (deffunction MAIN::new-compile-target
              ()
              ; goto the next input set
@@ -779,22 +731,6 @@
                        handle-output
                        determination)))
 
-(defrule MAIN::setup-input
-         (order (current get-input))
-         (test (or (= ?*current-length* 0)
-                   (> ?*current-index*
-                      ?*current-length*)))
-         =>
-         (bind ?*current-input*
-               (read-symbol))
-         (bind ?*current-index*
-               1)
-         (bind ?*current-length*
-               (if (multifieldp ?*current-input*) then
-                 (length$ ?*current-input*)
-                 else
-                 1)))
-
 (defrule MAIN::check-output
          (order (current handle-output))
          =>
@@ -811,29 +747,20 @@
 (defrule MAIN::invoke-control-loop
          (order (current control-loop))
          =>
-         (while (and (> ?*current-length* 0)
-                     (<= ?*current-index*
-                         ?*current-length*)) do
-                (bind ?word
-                      (if (multifieldp ?*current-input*) then
-                        (nth$ ?*current-index*
-                              ?*current-input*)
-                        else
-                        ?*current-input*))
-                (if ?*ignore-input* then
-                  (if (eq ?word 
-                          ?*comment-symbol-end*) then
-                    (bind ?*ignore-input* FALSE))
-                  else
-                  (bind ?entry (lookup-word ?word))
-                  (if ?*compiling* then
-                    (handle-compilation ?word
-                                        ?entry)
-                    else
-                    (invoke-or-push ?word
-                                    ?entry)))
-                (bind ?*current-index*
-                      (+ ?*current-index* 1))))
+         (bind ?word
+               (next-word))
+         (if ?*ignore-input* then
+           (if (eq ?word 
+                   ?*comment-symbol-end*) then
+             (bind ?*ignore-input* FALSE))
+           else
+           (bind ?entry (lookup-word ?word))
+           (if ?*compiling* then
+             (handle-compilation ?word
+                                 ?entry)
+             else
+             (invoke-or-push ?word
+                             ?entry))))
 
 (deffacts MAIN::control
           (order (current setup)
@@ -841,33 +768,62 @@
 (definstances MAIN::stacks
               (parameter of stack)
               (subroutine of stack))
+(deffunction string-back
+             (?str)
+             (bind ?l 
+                   (str-length (str-cat ?str)))
+             (sub-string ?l ?l
+                         ?str))
+(deffunction construct-string
+             ()
+             ; keep consuming words until we end with a string 
+             (bind ?string
+                   (create$))
+             (while TRUE do
+                    (bind ?curr
+                          (next-token))
+                    (if (eq (string-back ?curr)
+                            "\"") then 
+                      (bind ?string
+                            ?string
+                            (sub-string 1 (- (str-length ?curr) 1)
+                                        ?curr))
+                      (break)
+                      else
+                      (bind ?string
+                            ?string
+                            ?curr)))
+             (implode$ ?string))
 
-;{ 0 ' -- 0 ' 0 }
-;{ 1 ' -- 1 ' 1 }
-;{ 2 ' -- 2 ' 2 }
-;{ true TRUE }
-;{ false FALSE }
-;{ 1+ 1 + } 
-;{ 1- 1 - }
-;{ 2+ 2 + }
-;{ 2- 2 - }
-;{ 2* 2 * }
-;{ 2/ 2 / }
-;{ 2div 2 div }
-;{ eqz ' n -- flag ' 0 eq }
-;{ ltz 0 < }
-;{ gtz 0 > }
-;{ difference - abs }
-;{ on true swap store }
-;{ off false swap store }
-;{ over swap ' n1 n2 -- n1 n2 n1 ' dup 0 store swap 0 load }
-;{ dup? ' a -- a a "|" 0 ' dup if dup then }
-;{ nip ' a b -- b ' swap drop }
-;{ tuck ' a b -- b a b ' swap over }
-;{ 2dup ' a b -- a b a b ' over over }
-;{ 2drop ' a b -- ' drop drop }
-;{ view dup . }
-;{ space " " . }
-;{ bye quit }
-;{ -rot ' n1 n2 n3 -- n3 n1 n2 ' rot rot }
-;)
+(deffacts MAIN::initial-dictionary
+          (words clips-no-arg-word 
+                 ?*no-arg-ops*)
+          (words clips-binary-word
+                 ?*binary-ops*)
+          (words clips-unary-word
+                 ?*unary-ops*)
+          (word random:range FALSE FALSE binary-operation random)
+          (word drop FALSE FALSE invoke-operation drop-top)
+          (word swap FALSE FALSE invoke-operation swap-top-two)
+          (word dup FALSE FALSE invoke-operation duplicate-top)
+          (word .  FALSE FALSE invoke-operation print-top)
+          (word quit FALSE FALSE invoke-operation terminate-execution)
+          (word ?*symbol-end-function* FALSE TRUE invoke-operation compile-or-end-function)
+          (word ?*symbol-begin-function* FALSE FALSE invoke-operation new-compile-target)
+          (word ?*comment-symbol-begin* FALSE TRUE invoke-operation handle-input-ignore-mode)
+          (word CR FALSE FALSE invoke-operation print-newline)
+          (word @ FALSE FALSE invoke-operation load-word-onto-stack)
+          (word if FALSE TRUE invoke-operation if-condition)
+          (word then FALSE TRUE invoke-operation then-condition)
+          (word else FALSE TRUE invoke-operation else-condition)
+          (word store FALSE FALSE binary-operation mem-store drop)
+          (word load FALSE FALSE unary-operation mem-load)
+          (word words FALSE FALSE invoke-operation print-words)
+          (word stack FALSE FALSE invoke-operation stack-contents)
+          (word literal FALSE TRUE invoke-operation add-literal-from-stack-into-definition)
+          (word depth FALSE FALSE no-arg-operation get-stack-depth)
+          (word rot FALSE FALSE invoke-operation rot)
+          (word begin FALSE TRUE invoke-operation begin-statement)
+          (word end FALSE TRUE invoke-operation end-statement)
+          (word ?*string-begin-symbol* FALSE TRUE invoke-operation construct-string)
+          )

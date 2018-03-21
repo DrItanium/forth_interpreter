@@ -13,6 +13,8 @@
            ?*error-message* = FALSE
            ?*symbol-end-function* = }
            ?*symbol-begin-function* = {
+           ?*comment-symbol-begin* = '
+           ?*comment-symbol-end* = '
            ; bootstrapping default contents
            ?*current-input* = (create$ { 1+ 1 + } 
                                        { 1- 1 - }
@@ -26,9 +28,23 @@
                                        { false FALSE }
                                        { on true swap store }
                                        { off false swap store }
-                                       { over swap ' n1 n2 -- n1 n2 n1 '
+                                       { over swap ; n1 n2 -- n1 n2 n1
                                               dup 0 store
-                                              swap 0 load })
+                                              swap 0 load }
+                                       { dup? ; a -- a a | 0
+                                         dup if dup then }
+                                       { nip ; a b -- b
+                                         swap drop }
+                                       { tuck ; a b -- b a b 
+                                         swap over }
+                                       { 2dup ; a b -- a b a b
+                                         over over }
+                                       { 2drop ; ' a b -- '
+                                         drop drop }
+                                       ;{ decode-bits ' shift mask value -- a '
+                                       ;  and ' shift mask value -- shift masked-value '
+                                       ;  shift-right ' shift masked-value -- a ' }
+                                         )
            ?*current-length* = (length$ ?*current-input*)
            ?*current-index* = 1
            ?*memory-cell-count* = 4096
@@ -359,14 +375,6 @@
                          FALSE
                          FALSE
                          (invoke-operation duplicate-top))
-               (add-word 2dup
-                         FALSE
-                         FALSE
-                         dup dup)
-               (add-word 2drop
-                         FALSE
-                         FALSE
-                         drop drop)
                (add-word .
                          FALSE
                          FALSE
@@ -387,15 +395,15 @@
                          FALSE
                          FALSE
                          (invoke-operation new-compile-target))
-               (add-word '
+               (add-word ?*comment-symbol-begin*
                          FALSE
                          TRUE
                          (invoke-operation handle-input-ignore-mode))
-               (add-word .CR
+               (add-word CR
                          FALSE
                          FALSE
                          (invoke-operation print-newline))
-               (add-word .SP
+               (add-word SP
                          FALSE
                          FALSE
                          " " .)
@@ -456,7 +464,8 @@
              (if ?instance then
                ; start with the oldest first and then go to newest
                (print-title (send ?instance get-next))
-               (printout t "- " (send ?instance get-title) crlf)))
+               (if (not (send ?instance get-fake)) then
+                 (printout t "- " (send ?instance get-title) crlf))))
 
 (deffunction MAIN::print-words
              ()
@@ -744,7 +753,8 @@
                       (nth$ ?*current-index*
                             ?*current-input*))
                 (if ?*ignore-input* then
-                  (if (eq ?word ') then
+                  (if (eq ?word 
+                          ?*comment-symbol-end*) then
                     (bind ?*ignore-input* FALSE))
                   else
                   (bind ?entry (lookup-word ?word))

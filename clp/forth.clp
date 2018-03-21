@@ -20,7 +20,15 @@
                                        { 2- 2 - }
                                        { 2* 2 * }
                                        { 2/ 2 / }
-                                       { 2div 2 div })
+                                       { 2div 2 div }
+                                       { difference - abs }
+                                       { true TRUE }
+                                       { false FALSE }
+                                       { on true swap store }
+                                       { off false swap store }
+                                       { over swap ' n1 n2 -- n1 n2 n1 '
+                                              dup 0 store
+                                              swap 0 load })
            ?*current-length* = (length$ ?*current-input*)
            ?*current-index* = 1
            ?*memory-cell-count* = 4096
@@ -34,10 +42,18 @@
 (defclass stack
   (is-a USER)
   (multislot contents)
+  (message-handler depth primary)
   (message-handler empty primary)
   (message-handler push primary)
   (message-handler pop primary))
 
+(defmessage-handler stack depth primary
+                    ()
+                    (length$ ?self:contents))
+(deffunction get-stack-depth
+             ()
+             (send [parameter]
+                   depth))
 (defmessage-handler stack empty primary
                     ()
                     (= (length$ ?self:contents) 0))
@@ -260,9 +276,9 @@
              (bind ?b
                    (send [parameter] pop))
              (send [parameter]
-                   push ?b)
+                   push ?a)
              (send [parameter]
-                   push ?a))
+                   push ?b))
 (deffunction MAIN::duplicate-top
              ()
              (bind ?a
@@ -338,7 +354,7 @@
                (add-word swap
                          FALSE
                          FALSE
-                         (invoke-operation swap))
+                         (invoke-operation swap-top-two))
                (add-word dup
                          FALSE
                          FALSE
@@ -420,6 +436,10 @@
                          FALSE
                          TRUE
                          (invoke-operation add-literal-from-stack-into-definition))
+               (add-word depth
+                         FALSE
+                         FALSE
+                         (no-arg-operation get-stack-depth))
                (bind ?*has-setup-initial-dictionary*
                      TRUE)))
 (deffunction MAIN::add-literal-from-stack-into-definition
@@ -434,8 +454,9 @@
 (deffunction MAIN::print-title
              (?instance)
              (if ?instance then
-               (printout t "- " (send ?instance get-title) crlf)
-               (print-title (send ?instance get-next))))
+               ; start with the oldest first and then go to newest
+               (print-title (send ?instance get-next))
+               (printout t "- " (send ?instance get-title) crlf)))
 
 (deffunction MAIN::print-words
              ()

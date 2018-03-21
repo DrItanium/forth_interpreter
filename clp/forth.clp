@@ -1,9 +1,12 @@
 ; A quick implementation of a forth interpreter in CLIPS
 ; some changes have to be made, the end function comment will use }
+;
+; must use my maya spin for this to work correctly
 (defgeneric MAIN::make-entry)
 (defgeneric MAIN::lookup-word)
 (defgeneric MAIN::read-symbol)
 (defglobal MAIN
+           ?*print-ok* = FALSE
            ?*dictionary-pointer* = FALSE
            ?*keep-executing* = TRUE
            ?*ignore-input* = FALSE
@@ -25,16 +28,22 @@
                                     time
                                     operating-system
                                     gensym
-                                    gensym*)
+                                    gensym*
+                                    new-uuid)
            ?*binary-ops* = (create$ + - * / mod ** div str-cat str-index max min
-                                    eq neq = <> > < >= <= and or rename)
+                                    eq neq = <> > < >= <= and or rename
+                                    gcd lcm
+                                    has-prefix
+                                    has-suffix)
            ?*unary-ops* = (create$ abs integer float upcase lowcase str-length
                                    grad-deg geg-grad deg-rad rad-deg sqrt exp log
                                    log10 round seed length not remove
                                    numberp floatp integerp lexemep stringp symbolp evenp
                                    oddp multifieldp pointerp
                                    cos sin tan sec csc cot atan asin asec acsc acot acos
-                                   cosh sinh tanh sech csch coth atanh asinh asech acsch acoth acosh)
+                                   cosh sinh tanh sech csch coth atanh asinh asech acsch acoth acosh
+                                   string-trim string-trim-front string-trim-back
+                                   path-exists directoryp regular-filep)
            ?*current-output-router* = stdout
            ?*current-input-router* = stdin
            )
@@ -58,6 +67,9 @@
 
 (deffunction MAIN::is-white-space
              (?value)
+             (if (eq ?value 10) then
+               (bind ?*print-ok*
+                     TRUE))
              (not (neq ?value 32 10)))
 (defclass global-constant
   (is-a USER)
@@ -705,9 +717,8 @@
                    TRUE))
          =>
          (modify ?f
-                 (current get-input)
-                 (rest control-loop
-                       handle-output
+                 (current control-loop)
+                 (rest handle-output
                        determination)))
 
 (defrule MAIN::check-output
@@ -720,10 +731,12 @@
            (bind ?*error-happened* FALSE)
            (bind ?*error-message* FALSE)
            else
-           (if (and (not ?*ignore-input*)
-                    (not ?*compiling*)) then
-             (printout ?*current-output-router* 
-                       " ok" crlf))))
+           (if ?*print-ok* then
+             (if (and (not ?*ignore-input*)
+                      (not ?*compiling*)) then
+               (printout ?*current-output-router* 
+                         " ok" crlf))
+             (bind ?*print-ok* FALSE))))
 (defrule MAIN::invoke-control-loop
          (order (current control-loop))
          =>
@@ -748,12 +761,6 @@
 (definstances MAIN::stacks
               (parameter of stack)
               (subroutine of stack))
-(deffunction string-back
-             (?str)
-             (bind ?l 
-                   (str-length (str-cat ?str)))
-             (sub-string ?l ?l
-                         (str-cat ?str)))
 (deffunction construct-string
              ()
              ; keep consuming words until we end with a string 
@@ -764,8 +771,8 @@
                           (next-word))
                     (if (not ?curr) then
                       (break))
-                    (if (eq (string-back ?curr)
-                            "\"") then 
+                    (if (has-suffix (str-cat ?curr)
+                                    "\"") then
                       (bind ?string
                             ?string
                             (sym-cat (sub-string 1 (- (str-length ?curr) 1)
@@ -809,7 +816,7 @@
           (word begin FALSE TRUE invoke-operation begin-statement)
           (word end FALSE TRUE invoke-operation end-statement)
           (word ?*string-begin-symbol* FALSE TRUE no-arg-operation construct-string)
-          (word emit FALSE FALSE [current-output-router] binary-operation put-char drop)
+          (word emit FALSE FALSE [current-output-router] swap binary-operation emit-operation drop)
           (word read-char FALSE FALSE [current-input-router] unary-operation get-char)
           (word load FALSE FALSE ; ( path -- )
                 unary-operation load-routine)
@@ -819,6 +826,11 @@
                 [current-input-router] unary-operation readline)
           )
             
+(deffunction MAIN::emit-operation
+             (?router ?value)
+             (put-char ?router
+                       ?value)
+             FALSE)
 (deffunction MAIN::close-op
              (?operation)
              (if (eq ?operation 

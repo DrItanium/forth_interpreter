@@ -5,7 +5,6 @@
 #include <list>
 #include <optional>
 #include <variant>
-#include <stack>
 #include <memory>
 #include <iostream>
 #include <fstream>
@@ -29,7 +28,7 @@ using Integer = forth::Integer;
 using Address = forth::Address;
 using byte = forth::byte;
 template<typename T>
-using GenericStack = std::stack<T, std::list<T>>;
+using GenericStack = std::list<T>;
 using Problem = forth::Problem;
 using Word = std::shared_ptr<DictionaryEntry>;
 using OptionalWord = std::optional<Word>;
@@ -92,6 +91,8 @@ class Machine {
         void pushParameter(forth::Floating fp);
         void pushSubroutine(forth::Floating fp);
 #endif
+        void viewParameterStack();
+        void viewSubroutineStack();
     private:
         std::ostream* _out = &std::cout;
         std::istream* _in = &std::cin;
@@ -117,7 +118,7 @@ void Machine::openFileForOutput(const std::string& path) {
         auto str = ss.str();
         throw Problem("openFileForOutput", str);
     }
-    _outputs.push(_out);
+    _outputs.push_front(_out);
     _out = tmp;
 }
 
@@ -129,7 +130,7 @@ void Machine::openFileForInput(const std::string& path) {
         auto str = ss.str();
         throw Problem("openFileForInput", str);
     }
-    _inputs.push(_in);
+    _inputs.push_front(_in);
     _in = tmp;
 }
 void Machine::closeFileForOutput(const std::string& path) {
@@ -140,8 +141,8 @@ void Machine::closeFileForOutput(const std::string& path) {
             throw Problem("closeFileForOutput", "Stack underflow");
         } else {
             delete tmp;
-            _out = _outputs.top();
-            _outputs.pop();
+            _out = _outputs.front();
+            _outputs.pop_front();
         }
     }
 }
@@ -154,8 +155,8 @@ void Machine::closeFileForInput(const std::string& path) {
             throw Problem("closeFileForInput", "Stack underflow");
         } else {
             delete tmp;
-            _in = _inputs.top();
-            _inputs.pop();
+            _in = _inputs.front();
+            _inputs.pop_front();
         }
     }
 }
@@ -262,32 +263,32 @@ OptionalWord Machine::lookupWord(const std::string& str) {
     }
 }
 
-void Machine::pushParameter(Datum d) { _parameter.push(d); }
-void Machine::pushParameter(forth::Integer v) { _parameter.push(v); }
-void Machine::pushParameter(forth::Address v) { _parameter.push(v); }
-void Machine::pushParameter(bool v) { _parameter.push(v); }
-void Machine::pushParameter(DictionaryEntry* v) { _parameter.push(v); }
-void Machine::pushParameter(NativeFunction fn) { _parameter.push(fn); }
-void Machine::pushParameter(const std::string& str) { _parameter.push(str); }
+void Machine::pushParameter(Datum d) { _parameter.push_front(d); }
+void Machine::pushParameter(forth::Integer v) { _parameter.push_front(v); }
+void Machine::pushParameter(forth::Address v) { _parameter.push_front(v); }
+void Machine::pushParameter(bool v) { _parameter.push_front(v); }
+void Machine::pushParameter(DictionaryEntry* v) { _parameter.push_front(v); }
+void Machine::pushParameter(NativeFunction fn) { _parameter.push_front(fn); }
+void Machine::pushParameter(const std::string& str) { _parameter.push_front(str); }
 
-void Machine::pushSubroutine(Datum d) { _subroutine.push(d); }
-void Machine::pushSubroutine(forth::Integer v) { _subroutine.push(v); }
-void Machine::pushSubroutine(forth::Address v) { _subroutine.push(v); }
-void Machine::pushSubroutine(bool v) { _subroutine.push(v); }
-void Machine::pushSubroutine(DictionaryEntry* v) { _subroutine.push(v); }
-void Machine::pushSubroutine(const std::string& str) { _subroutine.push(str); }
+void Machine::pushSubroutine(Datum d) { _subroutine.push_front(d); }
+void Machine::pushSubroutine(forth::Integer v) { _subroutine.push_front(v); }
+void Machine::pushSubroutine(forth::Address v) { _subroutine.push_front(v); }
+void Machine::pushSubroutine(bool v) { _subroutine.push_front(v); }
+void Machine::pushSubroutine(DictionaryEntry* v) { _subroutine.push_front(v); }
+void Machine::pushSubroutine(const std::string& str) { _subroutine.push_front(str); }
 
 #ifdef ALLOW_FLOATING_POINT
-void Machine::pushParameter(forth::Floating v) { _parameter.push(v); }
-void Machine::pushSubroutine(forth::Floating v) { _subroutine.push(v); }
+void Machine::pushParameter(forth::Floating v) { _parameter.push_front(v); }
+void Machine::pushSubroutine(forth::Floating v) { _subroutine.push_front(v); }
 #endif
 
 Datum Machine::popParameter() {
     if (parameterStackEmpty()) {
         throw Problem("popParameter", "Stack Empty!");
     } else {
-        auto top = _parameter.top();
-        _parameter.pop();
+        auto top(_parameter.front());
+        _parameter.pop_front();
         return top;
     }
 }
@@ -296,8 +297,8 @@ Datum Machine::popSubroutine() {
     if (subroutineStackEmpty()) {
         throw Problem("popSubroutine", "Stack Empty!");
     } else {
-        auto top = _subroutine.top();
-        _subroutine.pop();
+        auto top(_subroutine.front());
+        _subroutine.pop_front();
         return top;
     }
 }
@@ -391,14 +392,8 @@ void enterIgnoreInputMode(Machine&) {
 
 
 void Machine::errorOccurred() noexcept {
-    if (!_parameter.empty()) {
-        Stack temp;
-        _parameter.swap(temp);
-    }
-    if (!_subroutine.empty()) {
-        Stack temp;
-        _subroutine.swap(temp);
-    }
+    _parameter.clear();
+    _subroutine.clear();
     if (_compile) {
         _compile.reset();
     }
@@ -571,8 +566,7 @@ void getLowestEightBits(Machine& m) {
                 }
             }, top);
 }
-void printTop(Machine& m) {
-    auto top = m.popParameter();
+void printDatum(Machine& m, Datum& top) {
     std::visit([&m](auto&& value) {
             auto f = m.getOutput().flags();
             using T = std::decay_t<decltype(value)>;
@@ -595,12 +589,22 @@ void printTop(Machine& m) {
             } else {
                 static_assert(forth::AlwaysFalse<T>::value, "Unimplemented type!");
             }
-
+            m.getOutput().flush();
             m.getOutput().setf(f);
             }, top);
 }
-int main() {
-    Machine mach;
+void printTop(Machine& m) {
+    auto top = m.popParameter();
+    printDatum(m, top);
+}
+void Machine::viewParameterStack() {
+    for (auto & x : _parameter) {
+        printDatum(*this, x);
+        getOutput() << std::endl;
+    }
+}
+void enterCompileMode(Machine& mach);
+void setupDictionary(Machine& mach) {
     mach.addWord("drop", drop);
     mach.addWord("swap", swap);
 #define X(name, op)
@@ -608,43 +612,46 @@ int main() {
 #include "BinaryOperators.def"
 #undef X
     mach.addWord("^b", [](Machine& mach) { logicalXor<bool>(mach); });
-    mach.addWord("(", enterIgnoreInputMode);
+    mach.addWord("(", enterIgnoreInputMode, false, true);
     mach.addWord(";", semicolon, false, true);
     mach.addWord("bye", bye);
     mach.addWord("@8", loadByte);
     mach.addWord("=8", storeByte);
     mach.addWord("lo8", getLowestEightBits);
     mach.addWord(".", printTop);
-    bool ignoreInput = false;
+    mach.addWord(":", enterCompileMode);
+    mach.addWord("stack", [](auto& x) { x.viewParameterStack(); });
+}
+int main() {
+    Machine mach;
+    setupDictionary(mach);
     while (keepExecuting) {
         try {
-            auto str = mach.readNext();
-            if (str.empty()) {
-                continue;
-            }
-            if (ignoreInput) {
-               if (str == ")") {
-                   ignoreInput = false;
-                   continue;
-               }
-            } else {
-                auto entry = mach.lookupWord(str);
-                if (entry) {
-                    auto value = entry.value();
-                    if (mach.currentlyCompiling()) {
-                        if (value->compileTimeInvokable()) {
-                            value->invoke(mach);
+            if (auto str = mach.readNext() ; !str.empty()) {
+                if (ignoreInput) {
+                    ignoreInput = (str != ")");
+                    continue;
+                } else {
+                    if (auto entry = mach.lookupWord(str); entry) {
+                        if (auto value = entry.value() ; mach.currentlyCompiling()) {
+                            if (value->compileTimeInvokable()) {
+                                value->invoke(mach);
+                            } else {
+                                mach.getCurrentlyCompilingWord().value()->addWord(entry);
+                            }
                         } else {
-                            mach.getCurrentlyCompilingWord().value()->addWord(entry);
+                            value->invoke(mach);
                         }
                     } else {
-                        entry.value()->invoke(mach);
+                        if (!numberRoutine(mach, str)) {
+                            throw Problem(str, "?");
+                        } 
                     }
-                } else if (!numberRoutine(mach, str)) {
-                    throw Problem(str, "?");
                 }
+            }
+            if (!mach.currentlyCompiling() && 
+                    !ignoreInput) {
                 mach.getOutput() << " ok" << std::endl;
-                // otherwise do nothing!
             }
         } catch (Problem& p) {
             // clear out the stacks as well
@@ -656,6 +663,15 @@ int main() {
         }
     }
     return 0;
+}
+
+void enterCompileMode(Machine& mach) {
+    if (mach.currentlyCompiling()) {
+        throw Problem("enterCompileMode", "Already compiling!");
+    } else {
+        auto name = mach.readNext();
+        mach.newCompilingWord(name);
+    }
 }
 #undef YTypeStringFloat
 #undef YTypeStringAddress

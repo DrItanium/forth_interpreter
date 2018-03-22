@@ -83,15 +83,21 @@
                           push
                           (eval ?self:var)))
 
-
 (defclass stack
   (is-a USER)
   (multislot contents)
+  (message-handler clear primary)
   (message-handler rotate-top-three primary)
   (message-handler push primary)
   (message-handler pop primary)
   (message-handler duplicate-top primary)
   (message-handler swap-top-two primary))
+
+(defmessage-handler stack clear primary
+                    ()
+                    (bind ?self:contents
+                          (create$)))
+
 (defmessage-handler stack rotate-top-three primary
                     ()
                     (if (>= (length$ ?self:contents) 3) then
@@ -152,6 +158,7 @@
                             (nth$ 1 ?self:contents))
                       (slot-direct-delete$ contents 1 1)
                       ?front))
+(deffunction get-stack-depth () (length$ (send [parameter] get-contents)))
 
 (defclass constant
   (is-a USER)
@@ -217,10 +224,6 @@
                           push
                           (funcall (dynamic-get operation))))
 
-(deffunction get-stack-depth
-             ()
-             (length$ (send [parameter] 
-                            get-contents)))
 (deffunction MAIN::make-operation
              (?symbol ?type)
              (make-instance of ?type
@@ -300,14 +303,15 @@
   (message-handler invoke primary))
 (defmessage-handler if-statement invoke primary
                     ()
-                    (bind ?top
-                          (send [parameter] pop))
-                    (send (if (or (not ?top)
+                    (send (if (or (not (bind ?top
+                                             (send [parameter]
+                                                   pop)))
                                   (eq ?top
                                       0)) then
                             ?self:on-false
                             else
-                            ?self:on-true) invoke))
+                            ?self:on-true) 
+                          invoke))
 
 (deftemplate MAIN::order
              (slot current
@@ -372,11 +376,30 @@
   ((?inst INSTANCE))
   ?inst)
 
-(deffunction MAIN::drop-top () (send [parameter] pop)) 
-(deffunction MAIN::swap-top-two () (send [parameter] swap-top-two))
-(deffunction MAIN::duplicate-top () (send [parameter] duplicate-top))
+(defclass MAIN::stack-message
+  (is-a USER)
+  (slot target
+        (type INSTANCE)
+        (default ?NONE))
+  (slot message
+        (type SYMBOL)
+        (default ?NONE))
+  (message-handler invoke primary))
+(defmessage-handler stack-message invoke primary
+                    ()
+                    (send ?self:target
+                          ?self:message))
+(deffunction MAIN::parameter-stack-message 
+             (?message) 
+             (make-instance of stack-message
+                            (target [parameter])
+                            (message ?message)))
+(deffunction MAIN::subroutine-stack-message 
+             (?message) 
+             (make-instance of stack-message
+                            (target [subroutine])
+                            (message ?message)))
 (deffunction MAIN::print-top (?router ?value) (printout ?router ?value) FALSE)
-(deffunction MAIN::rot () (send [parameter] rotate-top-three))
 
 (deffunction MAIN::add-word
              (?name ?fake ?compile-time-invoke $?contents)
@@ -452,6 +475,8 @@
                      ?compile-time-invoke
                      $?a 
                      ?fn&:(not (neq ?fn
+                                    parameter-stack-message
+                                    subroutine-stack-message
                                     binary-operation
                                     unary-operation
                                     invoke-operation
@@ -523,11 +548,13 @@
              (print-title ?*dictionary-pointer*))
 (deffunction MAIN::mem-store
              (?address ?value)
+             (bind ?pos
+                   (+ ?address 
+                      1))
              (bind ?*memory*
                    (replace$ ?*memory* 
-                             (+ ?address 
-                                1)
-                             ?value
+                             ?pos
+                             ?pos
                              ?value))
              TRUE)
 (deffunction MAIN::mem-load
@@ -546,7 +573,8 @@
              ()
              (bind ?*ignore-input*
                    (not ?*ignore-input*)))
-(deffunction MAIN::terminate-execution ()
+(deffunction MAIN::terminate-execution 
+             ()
              (bind ?*keep-executing*
                    FALSE))
 (deffunction MAIN::next-word
@@ -566,18 +594,7 @@
                                   (contents)))
              (bind ?*compiling*
                    TRUE))
-(deffunction MAIN::load-word-onto-stack
-             ()
-             (bind ?name
-                   (next-word))
-             (bind ?sym
-                   (lookup-word ?name))
-             (if ?sym then
-               (send [parameter]
-                     push
-                     ?sym)
-               else
-               (raise-error (sym-cat ?name "?"))))
+
 (deffunction MAIN::if-condition
              ()
              (if (not ?*compiling*) then
@@ -652,6 +669,7 @@
                (restore-current-compilation-target)
                (bind ?*compiling*
                      (instancep ?*current-compilation-target*))))
+
 (deffunction MAIN::handle-compilation
              (?word ?entry)
              (if ?entry then
@@ -667,6 +685,7 @@
                (send ?*current-compilation-target*
                      add-component
                      ?word)))
+
 (deffunction MAIN::push-to-stack
              (?value)
              (or (numberp ?value)
@@ -696,9 +715,11 @@
              (run))
 
 (defrule MAIN::setup-memory
+         (declare (salience 10000))
          (order (current setup))
          =>
-         (loop-for-count (?i 1 ?*memory-cell-count*) do
+         (loop-for-count (?i 1 ?*memory-cell-count*)
+                         do
                          (bind ?*memory*
                                ?*memory*
                                0)))
@@ -724,18 +745,26 @@
          (order (current handle-output))
          =>
          (if ?*error-happened* then
-           (send [parameter] put-contents (create$))
-           (send [subroutine] put-contents (create$))
-           (printout werror ?*error-message* crlf)
-           (bind ?*error-happened* FALSE)
-           (bind ?*error-message* FALSE)
+           (send [parameter] 
+                 clear)
+           (send [subroutine] 
+                 clear)
+           (printout werror 
+                     ?*error-message* 
+                     crlf)
+           (bind ?*error-happened* 
+                 FALSE)
+           (bind ?*error-message* 
+                 FALSE)
            else
            (if ?*print-ok* then
              (if (and (not ?*ignore-input*)
                       (not ?*compiling*)) then
                (printout ?*current-output-router* 
                          " ok" crlf))
-             (bind ?*print-ok* FALSE))))
+             (bind ?*print-ok* 
+                   FALSE))))
+
 (defrule MAIN::invoke-control-loop
          (order (current control-loop))
          =>
@@ -793,25 +822,24 @@
           (word *current-output-router* FALSE FALSE [current-output-router])
           (word *current-input-router* FALSE FALSE [current-input-router])
           (word random:range FALSE FALSE binary-operation random)
-          (word drop FALSE FALSE invoke-operation drop-top)
-          (word swap FALSE FALSE invoke-operation swap-top-two)
-          (word dup FALSE FALSE invoke-operation duplicate-top)
+          (word drop FALSE FALSE parameter-stack-message pop)
+          (word swap FALSE FALSE parameter-stack-message swap-top-two)
+          (word dup FALSE FALSE parameter-stack-message duplicate-top)
+          (word rot FALSE FALSE parameter-stack-message rotate-top-three)
           (word . FALSE FALSE [current-output-router] swap binary-operation print-top drop)
           (word quit FALSE FALSE invoke-operation terminate-execution)
           (word ?*symbol-end-function* FALSE TRUE invoke-operation compile-or-end-function)
           (word ?*symbol-begin-function* FALSE FALSE invoke-operation new-compile-target)
           (word ?*comment-symbol-begin* FALSE TRUE invoke-operation handle-input-ignore-mode)
-          (word @ FALSE FALSE invoke-operation load-word-onto-stack)
           (word if FALSE TRUE invoke-operation if-condition)
           (word then FALSE TRUE invoke-operation then-condition)
           (word else FALSE TRUE invoke-operation else-condition)
-          (word store FALSE FALSE binary-operation mem-store drop)
-          (word load FALSE FALSE unary-operation mem-load)
+          (word mload FALSE FALSE unary-operation mem-load)
+          (word mstore FALSE FALSE binary-operation mem-store drop)
           (word words FALSE FALSE invoke-operation print-words)
           (word stack FALSE FALSE invoke-operation stack-contents)
           (word literal FALSE TRUE invoke-operation add-literal-from-stack-into-definition)
           (word depth FALSE FALSE no-arg-operation get-stack-depth)
-          (word rot FALSE FALSE invoke-operation rot)
           (word begin FALSE TRUE invoke-operation begin-statement)
           (word end FALSE TRUE invoke-operation end-statement)
           (word ?*string-begin-symbol* FALSE TRUE no-arg-operation construct-string)

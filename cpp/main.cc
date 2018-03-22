@@ -66,7 +66,7 @@ class Machine {
         void restoreCurrentlyCompilingWord();
         void newCompilingWord(const std::string& str = "");
         void compileCurrentWord();
-        bool currentlyCompiling() const noexcept { return _compile != nullptr; }
+        bool currentlyCompiling() const noexcept { return (bool)_compile; }
         std::string readNext();
         void errorOccurred() noexcept;
         void addWord(const std::string& name, NativeFunction fn, bool fake = false, bool compileTimeInvoke = false);

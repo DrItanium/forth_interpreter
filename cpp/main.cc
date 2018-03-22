@@ -9,7 +9,9 @@
 
 class DictionaryEntry;
 
-using Datum = std::variant<forth::Integer, forth::Floating, forth::Address, bool, DictionaryEntry*>;
+class Machine;
+using NativeFunction = std::function<void(Machine&)>;
+using Datum = std::variant<forth::Integer, forth::Floating, forth::Address, bool, DictionaryEntry*, NativeFunction, std::string>;
 using Stack = std::stack<Datum, std::list<Datum>>;
 
 class Machine {
@@ -21,6 +23,8 @@ class Machine {
         void pushParameter(forth::Address addr);
         void pushParameter(bool truth);
         void pushParameter(DictionaryEntry* ent);
+        void pushParameter(NativeFunction fn);
+        void pushParameter(const std::string&);
         void pushParameter(Datum d);
         bool parameterStackEmpty() const noexcept { return _parameter.empty(); }
         void pushSubroutine(forth::Integer integer);
@@ -28,6 +32,8 @@ class Machine {
         void pushSubroutine(forth::Address addr);
         void pushSubroutine(bool truth);
         void pushSubroutine(DictionaryEntry* ent);
+        void pushSubroutine(NativeFunction fn);
+        void pushSubroutine(const std::string&);
         void pushSubroutine(Datum d);
         bool subroutineStackEmpty() const noexcept { return _subroutine.empty(); }
         Datum popSubroutine();
@@ -38,7 +44,6 @@ class Machine {
         Stack _parameter;
         Stack _subroutine;
 };
-using NativeFunction = std::function<void(Machine&)>;
 
 class DictionaryEntry {
     public:
@@ -63,6 +68,12 @@ class DictionaryEntry {
         DictionaryEntry* _next;
         std::list<NativeFunction> _contents;
 };
+
+void DictionaryEntry::invoke(Machine& mach) {
+    for (auto& x : _contents) {
+        x(mach);
+    }
+}
 
 DictionaryEntry::~DictionaryEntry() {
     if (_next) {
@@ -120,6 +131,7 @@ NativeFunction pushToSubroutineStack(DictionaryEntry* entry) {
     return [entry](Machine& mach) { mach.pushSubroutine(entry); };
 }
 
+
 Machine::Machine() : _front(nullptr) { }
 Machine::~Machine() {
     if (_front) {
@@ -134,6 +146,8 @@ void Machine::pushParameter(forth::Floating v) { _parameter.push(v); }
 void Machine::pushParameter(forth::Address v) { _parameter.push(v); }
 void Machine::pushParameter(bool v) { _parameter.push(v); }
 void Machine::pushParameter(DictionaryEntry* v) { _parameter.push(v); }
+void Machine::pushParameter(NativeFunction fn) { _parameter.push(fn); }
+void Machine::pushParameter(const std::string& str) { _parameter.push(str); }
 
 void Machine::pushSubroutine(Datum d) { _subroutine.push(d); }
 void Machine::pushSubroutine(forth::Integer v) { _subroutine.push(v); }
@@ -141,7 +155,7 @@ void Machine::pushSubroutine(forth::Floating v) { _subroutine.push(v); }
 void Machine::pushSubroutine(forth::Address v) { _subroutine.push(v); }
 void Machine::pushSubroutine(bool v) { _subroutine.push(v); }
 void Machine::pushSubroutine(DictionaryEntry* v) { _subroutine.push(v); }
-
+void Machine::pushSubroutine(const std::string& str) { _subroutine.push(str); }
 
 Datum Machine::popParameter() {
     if (parameterStackEmpty()) {

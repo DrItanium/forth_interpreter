@@ -431,6 +431,7 @@ int main() {
 #include "BinaryOperators.def"
 #undef X
     mach.addWord("^b", [](Machine& mach) { logicalXor<bool>(mach); });
+    mach.addWord("(", enterIgnoreInputMode);
     bool ignoreInput = false;
     while (keepExecuting) {
         try {
@@ -441,7 +442,7 @@ int main() {
                    continue;
                }
             } else {
-                
+
             }
         } catch (Problem& p) {
             // clear out the stacks as well

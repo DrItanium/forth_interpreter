@@ -643,6 +643,7 @@ int main() {
                 } else if (!numberRoutine(mach, str)) {
                     throw Problem(str, "?");
                 }
+                mach.getOutput() << " ok" << std::endl;
                 // otherwise do nothing!
             }
         } catch (Problem& p) {

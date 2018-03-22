@@ -10,6 +10,7 @@
 class DictionaryEntry;
 
 class Machine;
+using Problem = forth::Problem;
 using NativeFunction = std::function<void(Machine&)>;
 using Datum = std::variant<forth::Integer, forth::Floating, forth::Address, bool, DictionaryEntry*, NativeFunction, std::string>;
 using Stack = std::stack<Datum, std::list<Datum>>;
@@ -39,15 +40,23 @@ class Machine {
         Datum popSubroutine();
         Datum popParameter();
         std::optional<DictionaryEntry*> lookupWord(const std::string&);
+        DictionaryEntry* getCurrentlyCompilingWord() const noexcept { return _compile; }
+        void saveCurrentlyCompilingWord();
+        void restoreCurrentlyCompilingWord();
+        void newCompilingWord(const std::string& str = "");
+        void compileCurrentWord();
+        bool currentlyCompiling() const noexcept { return _compile != nullptr; }
     private:
         DictionaryEntry* _front;
+        DictionaryEntry* _compile;
         Stack _parameter;
         Stack _subroutine;
 };
 
+
 class DictionaryEntry {
     public:
-        explicit DictionaryEntry(const std::string& name) : _name(name) { }
+        explicit DictionaryEntry(const std::string& name) : _name(name), _fake(false), _compileTimeInvoke(false), _next(nullptr) { }
         ~DictionaryEntry();
         void setNext(DictionaryEntry* next) noexcept { _next = next; }
         DictionaryEntry* getNext() const noexcept { return _next; }
@@ -61,13 +70,104 @@ class DictionaryEntry {
         void addWord(forth::Address);
         void addWord(bool);
         void invoke(Machine& machine);
+        bool isFake() const noexcept { return _fake; }
+        void setFake(bool value) noexcept { _fake = value; }
+        bool compileTimeInvokable() const noexcept { return _compileTimeInvoke; }
+        void setCompileTimeInvokable(bool value) noexcept { _compileTimeInvoke = value; }
     private:
         DictionaryEntry* findWordInternal(const std::string& name);
     private:
         std::string _name;
+        bool _fake, _compileTimeInvoke;
         DictionaryEntry* _next;
         std::list<NativeFunction> _contents;
 };
+
+void Machine::newCompilingWord(const std::string& str) {
+    // this can leak!
+    _compile = new DictionaryEntry(str);
+}
+
+void Machine::compileCurrentWord() {
+    if (!currentlyCompiling()) {
+        throw Problem("compileCurrentWord", "Not in compilation mode!");
+    } else {
+        _compile->setNext(_front);
+        _front = _compile;
+        _compile = nullptr;
+    }
+}
+void Machine::saveCurrentlyCompilingWord() {
+    if (!currentlyCompiling()) {
+        throw Problem("saveCurrentlyCompilingWord", "Not in compilation mode!");
+    } else {
+        pushSubroutine(_compile);
+    }
+}
+void Machine::restoreCurrentlyCompilingWord() {
+    if (!currentlyCompiling()) {
+        throw Problem("restoreCurrentlyCompilingWord", "Not in compilation mode!");
+    } else {
+        _compile = std::get<DictionaryEntry*>(popSubroutine());
+    }
+}
+
+Machine::Machine() : _front(nullptr), _compile(nullptr) { }
+Machine::~Machine() {
+    if (_front) {
+        delete _front;
+        _front = nullptr;
+    }
+    if (_compile) {
+        delete _compile;
+        _compile = nullptr;
+    }
+}
+
+std::optional<DictionaryEntry*> Machine::lookupWord(const std::string& str) {
+    if (_front) {
+        return _front->findWord(str);
+    } else {
+        return std::optional<DictionaryEntry*>();
+    }
+}
+
+void Machine::pushParameter(Datum d) { _parameter.push(d); }
+void Machine::pushParameter(forth::Integer v) { _parameter.push(v); }
+void Machine::pushParameter(forth::Floating v) { _parameter.push(v); }
+void Machine::pushParameter(forth::Address v) { _parameter.push(v); }
+void Machine::pushParameter(bool v) { _parameter.push(v); }
+void Machine::pushParameter(DictionaryEntry* v) { _parameter.push(v); }
+void Machine::pushParameter(NativeFunction fn) { _parameter.push(fn); }
+void Machine::pushParameter(const std::string& str) { _parameter.push(str); }
+
+void Machine::pushSubroutine(Datum d) { _subroutine.push(d); }
+void Machine::pushSubroutine(forth::Integer v) { _subroutine.push(v); }
+void Machine::pushSubroutine(forth::Floating v) { _subroutine.push(v); }
+void Machine::pushSubroutine(forth::Address v) { _subroutine.push(v); }
+void Machine::pushSubroutine(bool v) { _subroutine.push(v); }
+void Machine::pushSubroutine(DictionaryEntry* v) { _subroutine.push(v); }
+void Machine::pushSubroutine(const std::string& str) { _subroutine.push(str); }
+
+Datum Machine::popParameter() {
+    if (parameterStackEmpty()) {
+        throw Problem("popParameter", "Stack Empty!");
+    } else {
+        auto top = _parameter.top();
+        _parameter.pop();
+        return top;
+    }
+}
+
+Datum Machine::popSubroutine() {
+    if (subroutineStackEmpty()) {
+        throw Problem("popSubroutine", "Stack Empty!");
+    } else {
+        auto top = _subroutine.top();
+        _subroutine.pop();
+        return top;
+    }
+}
 
 void DictionaryEntry::invoke(Machine& mach) {
     for (auto& x : _contents) {
@@ -132,50 +232,6 @@ NativeFunction pushToSubroutineStack(DictionaryEntry* entry) {
 }
 
 
-Machine::Machine() : _front(nullptr) { }
-Machine::~Machine() {
-    if (_front) {
-        delete _front;
-        _front = nullptr;
-    }
-}
-
-void Machine::pushParameter(Datum d) { _parameter.push(d); }
-void Machine::pushParameter(forth::Integer v) { _parameter.push(v); }
-void Machine::pushParameter(forth::Floating v) { _parameter.push(v); }
-void Machine::pushParameter(forth::Address v) { _parameter.push(v); }
-void Machine::pushParameter(bool v) { _parameter.push(v); }
-void Machine::pushParameter(DictionaryEntry* v) { _parameter.push(v); }
-void Machine::pushParameter(NativeFunction fn) { _parameter.push(fn); }
-void Machine::pushParameter(const std::string& str) { _parameter.push(str); }
-
-void Machine::pushSubroutine(Datum d) { _subroutine.push(d); }
-void Machine::pushSubroutine(forth::Integer v) { _subroutine.push(v); }
-void Machine::pushSubroutine(forth::Floating v) { _subroutine.push(v); }
-void Machine::pushSubroutine(forth::Address v) { _subroutine.push(v); }
-void Machine::pushSubroutine(bool v) { _subroutine.push(v); }
-void Machine::pushSubroutine(DictionaryEntry* v) { _subroutine.push(v); }
-void Machine::pushSubroutine(const std::string& str) { _subroutine.push(str); }
-
-Datum Machine::popParameter() {
-    if (parameterStackEmpty()) {
-        throw forth::Problem("popParameter", "Stack Empty!");
-    } else {
-        auto top = _parameter.top();
-        _parameter.pop();
-        return top;
-    }
-}
-
-Datum Machine::popSubroutine() {
-    if (subroutineStackEmpty()) {
-        throw forth::Problem("popSubroutine", "Stack Empty!");
-    } else {
-        auto top = _subroutine.top();
-        _subroutine.pop();
-        return top;
-    }
-}
 
 int main() {
 

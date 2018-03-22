@@ -90,8 +90,8 @@ class Machine {
         std::ostream& getOutput() const noexcept { return *_out; }
         void openFileForOutput(const std::string& path);
         void openFileForInput(const std::string& path);
-        void closeFileForOutput(const std::string& path);
-        void closeFileForInput(const std::string& path);
+        void closeFileForOutput();
+        void closeFileForInput();
         void store(Address addr, byte value);
         byte load(Address addr);
         Address getMaximumAddress() const noexcept { return _capacity - 1; }
@@ -142,7 +142,7 @@ void Machine::openFileForInput(const std::string& path) {
     _inputs.push_front(_in);
     _in = tmp;
 }
-void Machine::closeFileForOutput(const std::string& path) {
+void Machine::closeFileForOutput() {
     if (_out != &std::cout) {
         std::ofstream* tmp = (std::ofstream*)_out;
         tmp->close();
@@ -156,7 +156,7 @@ void Machine::closeFileForOutput(const std::string& path) {
     }
 }
 
-void Machine::closeFileForInput(const std::string& path) {
+void Machine::closeFileForInput() {
     if (_in != &std::cin) {
         std::ifstream* tmp = (std::ifstream*)_out;
         tmp->close();
@@ -617,6 +617,8 @@ void Machine::viewParameterStack() {
 }
 void enterCompileMode(Machine& mach);
 void processString(Machine& mach);
+void openInputFile(Machine& mach);
+void closeInputFile(Machine& mach);
 Datum typeCode(Machine& mach, Datum d);
 void addIntegerConstantWord(Machine& mach, const std::string& name, Integer value) {
     std::stringstream ss;
@@ -645,6 +647,8 @@ void setupDictionary(Machine& mach) {
     mach.addWord("stack", [](auto& x) { x.viewParameterStack(); });
     mach.addWord("\"", processString, false, true);
     mach.addWord("type-code", unaryOperation(typeCode));
+    mach.addWord("open-input-file", openInputFile);
+    mach.addWord("close-input-file", closeInputFile);
     addIntegerConstantWord(mach, "integer-variant-code", 0);
     addIntegerConstantWord(mach, "address-variant-code", 1);
     addIntegerConstantWord(mach, "bool-variant-code", 2);
@@ -743,6 +747,14 @@ void processString(Machine& mach) {
 }
 Datum typeCode(Machine& mach, Datum top) {
     return Address(top.index());
+}
+void closeInputFile(Machine& mach) {
+    mach.closeFileForInput();
+}
+void openInputFile(Machine& mach) {
+    auto top = mach.popParameter();
+    auto path = std::get<std::string>(top);
+    mach.openFileForInput(path);
 }
 #undef YTypeStringFloat
 #undef YTypeStringAddress

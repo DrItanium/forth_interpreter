@@ -27,4 +27,4 @@ clean:
 .PHONY: options clean all
 
 
-main.o: main.cc Types.h Types.h Problem.h
+main.o: main.cc ../Types.h ../Problem.h

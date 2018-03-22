@@ -165,7 +165,8 @@ class DictionaryEntry {
         OptionalWord getNext() const noexcept { return _next; }
         OptionalWord findWord(const std::string& name);
         void addWord(NativeFunction);
-        void addWord(DictionaryEntry*);
+        void addWord(Word);
+        void addWord(OptionalWord);
         void addWord(forth::Integer);
         void addWord(forth::Floating);
         void addWord(const std::string&);
@@ -298,8 +299,15 @@ OptionalWord DictionaryEntry::findWord(const std::string& name) {
 void DictionaryEntry::addWord(NativeFunction fn) {
     _contents.emplace_back(fn);
 }
-void DictionaryEntry::addWord(DictionaryEntry* dict) {
+void DictionaryEntry::addWord(Word dict) {
     addWord([dict](Machine& mach) { dict->invoke(mach); });
+}
+void DictionaryEntry::addWord(OptionalWord dict) {
+    if (!dict) {
+        throw Problem("DictionaryEntry::addWord", "Cannot add unpopulated item!");
+    } else {
+        addWord(*dict);
+    }
 }
 
 
@@ -326,9 +334,8 @@ NativeFunction pushToSubroutineStack(DictionaryEntry* entry) {
 }
 
 void semicolon(Machine& mach) {
-    if (!mach.currentlyCompiling()) {
-        throw Problem(";", "Not currently compiling!");
-    } else {
+    if (mach.currentlyCompiling()) {
+        mach.getCurrentlyCompilingWord().value()->addWord(semicolon);
         mach.compileCurrentWord();
     }
 }
@@ -422,6 +429,64 @@ Datum logicalXor<bool>(Machine& mach, Datum a, Datum b) {
     }
 }
 
+bool numberRoutine(Machine& mach, const std::string& word) {
+    auto fn = [&mach](auto value) {
+        if (mach.currentlyCompiling()) {
+            mach.getCurrentlyCompilingWord().value()->addWord(value);
+        } else {
+            mach.pushParameter(value);
+        }
+    };
+    // floating point
+    // integers
+    // first do some inspection first
+    if (word == "true") {
+        fn(true);
+        return true;
+    } else if (word == "false") {
+        fn(false);
+        return true;
+    } 
+    std::istringstream parseAttempt(word);
+    if (word.find('#') != std::string::npos) {
+        forth::Address tmpAddress;
+        parseAttempt >> std::hex >> tmpAddress;
+        if (!parseAttempt.fail()) {
+            fn(tmpAddress);
+            return true;
+        }
+        return false;
+    } 
+    if (word.find('u') != std::string::npos) {
+        forth::Address tmpAddress;
+        parseAttempt >> tmpAddress;
+        if (!parseAttempt.fail()) {
+            fn(tmpAddress);
+            return true;
+        }
+        return false;
+    }
+    parseAttempt.clear();
+    if (word.find('.') != std::string::npos) {
+        forth::Floating tmpFloat;
+        parseAttempt >> tmpFloat;
+        if (!parseAttempt.fail() && parseAttempt.eof()) {
+            fn(tmpFloat);
+            return true;
+        }
+        // get out of here early since we hit something that looks like
+        // a float
+        return false;
+    }
+    forth::Integer tmpInt;
+    parseAttempt.clear();
+    parseAttempt >> tmpInt;
+    if (!parseAttempt.fail() && parseAttempt.eof()) {
+        fn(tmpInt);
+        return true;
+    }
+    return false;
+}
 int main() {
     Machine mach;
     mach.addWord("drop", drop);
@@ -432,17 +497,37 @@ int main() {
 #undef X
     mach.addWord("^b", [](Machine& mach) { logicalXor<bool>(mach); });
     mach.addWord("(", enterIgnoreInputMode);
+    mach.addWord(";", semicolon, false, true);
+    mach.addWord("bye", bye);
     bool ignoreInput = false;
     while (keepExecuting) {
         try {
             auto str = mach.readNext();
+            if (str.empty()) {
+                continue;
+            }
             if (ignoreInput) {
                if (str == ")") {
                    ignoreInput = false;
                    continue;
                }
             } else {
-
+                auto entry = mach.lookupWord(str);
+                if (entry) {
+                    auto value = entry.value();
+                    if (mach.currentlyCompiling()) {
+                        if (value->compileTimeInvokable()) {
+                            value->invoke(mach);
+                        } else {
+                            mach.getCurrentlyCompilingWord().value()->addWord(entry);
+                        }
+                    } else {
+                        entry.value()->invoke(mach);
+                    }
+                } else if (!numberRoutine(mach, str)) {
+                    throw Problem(str, "?");
+                }
+                // otherwise do nothing!
             }
         } catch (Problem& p) {
             // clear out the stacks as well

@@ -4,24 +4,57 @@
 #include <string>
 #include <list>
 #include <optional>
+#include <variant>
+#include <stack>
 
-class Machine;
+class DictionaryEntry;
+
+using Datum = std::variant<forth::Integer, forth::Floating, forth::Address, bool, DictionaryEntry*>;
+using Stack = std::stack<Datum, std::list<Datum>>;
+
+class Machine {
+    public:
+        explicit Machine();
+        ~Machine();
+        void pushParameter(forth::Integer integer);
+        void pushParameter(forth::Floating fp);
+        void pushParameter(forth::Address addr);
+        void pushParameter(bool truth);
+        void pushParameter(DictionaryEntry* ent);
+        void pushParameter(Datum d);
+        bool parameterStackEmpty() const noexcept { return _parameter.empty(); }
+        void pushSubroutine(forth::Integer integer);
+        void pushSubroutine(forth::Floating fp);
+        void pushSubroutine(forth::Address addr);
+        void pushSubroutine(bool truth);
+        void pushSubroutine(DictionaryEntry* ent);
+        void pushSubroutine(Datum d);
+        bool subroutineStackEmpty() const noexcept { return _subroutine.empty(); }
+        Datum popSubroutine();
+        Datum popParameter();
+        std::optional<DictionaryEntry*> lookupWord(const std::string&);
+    private:
+        DictionaryEntry* _front;
+        Stack _parameter;
+        Stack _subroutine;
+};
+using NativeFunction = std::function<void(Machine&)>;
+
 class DictionaryEntry {
     public:
-        using NativeFunction = std::function<void(Machine&)>;
-    public:
-        DictionaryEntry(const std::string& name);
+        explicit DictionaryEntry(const std::string& name) : _name(name) { }
+        ~DictionaryEntry();
         void setNext(DictionaryEntry* next) noexcept { _next = next; }
         DictionaryEntry* getNext() const noexcept { return _next; }
         bool hasNext() const noexcept { return _next != nullptr; }
         std::optional<DictionaryEntry*> findWord(const std::string& name);
-        void addEntry(NativeFunction);
-        void addEntry(DictionaryEntry*);
-        void addEntry(forth::Integer);
-        void addEntry(forth::Floating);
-        void addEntry(const std::string&);
-        void addEntry(forth::Address);
-        void addEntry(bool);
+        void addWord(NativeFunction);
+        void addWord(DictionaryEntry*);
+        void addWord(forth::Integer);
+        void addWord(forth::Floating);
+        void addWord(const std::string&);
+        void addWord(forth::Address);
+        void addWord(bool);
         void invoke(Machine& machine);
     private:
         DictionaryEntry* findWordInternal(const std::string& name);
@@ -30,6 +63,13 @@ class DictionaryEntry {
         DictionaryEntry* _next;
         std::list<NativeFunction> _contents;
 };
+
+DictionaryEntry::~DictionaryEntry() {
+    if (_next) {
+        delete _next;
+        _next = nullptr;
+    }
+}
 
 DictionaryEntry* DictionaryEntry::findWordInternal(const std::string& name) {
     if (_name == name) {
@@ -50,13 +90,78 @@ std::optional<DictionaryEntry*> DictionaryEntry::findWord(const std::string& nam
     return out;
 }
 
+void DictionaryEntry::addWord(NativeFunction fn) {
+    _contents.emplace_back(fn);
+}
+void DictionaryEntry::addWord(DictionaryEntry* dict) {
+    addWord([dict](Machine& mach) { dict->invoke(mach); });
+}
 
 
-class Machine {
-    public:
-    private:
-        DictionaryEntry* _front;
-};
+
+void DictionaryEntry::addWord(forth::Integer v) {
+    addWord([v](Machine& mach) { mach.pushParameter(v); });
+}
+void DictionaryEntry::addWord(forth::Floating v) {
+    addWord([v](Machine& mach) { mach.pushParameter(v); });
+}
+void DictionaryEntry::addWord(forth::Address v) {
+    addWord([v](Machine& mach) { mach.pushParameter(v); });
+}
+
+void DictionaryEntry::addWord(bool v) {
+    addWord([v](Machine& mach) { mach.pushParameter(v); });
+}
+
+NativeFunction pushToParameterStack(DictionaryEntry* entry) {
+    return [entry](Machine& mach) { mach.pushParameter(entry); };
+}
+NativeFunction pushToSubroutineStack(DictionaryEntry* entry) {
+    return [entry](Machine& mach) { mach.pushSubroutine(entry); };
+}
+
+Machine::Machine() : _front(nullptr) { }
+Machine::~Machine() {
+    if (_front) {
+        delete _front;
+        _front = nullptr;
+    }
+}
+
+void Machine::pushParameter(Datum d) { _parameter.push(d); }
+void Machine::pushParameter(forth::Integer v) { _parameter.push(v); }
+void Machine::pushParameter(forth::Floating v) { _parameter.push(v); }
+void Machine::pushParameter(forth::Address v) { _parameter.push(v); }
+void Machine::pushParameter(bool v) { _parameter.push(v); }
+void Machine::pushParameter(DictionaryEntry* v) { _parameter.push(v); }
+
+void Machine::pushSubroutine(Datum d) { _subroutine.push(d); }
+void Machine::pushSubroutine(forth::Integer v) { _subroutine.push(v); }
+void Machine::pushSubroutine(forth::Floating v) { _subroutine.push(v); }
+void Machine::pushSubroutine(forth::Address v) { _subroutine.push(v); }
+void Machine::pushSubroutine(bool v) { _subroutine.push(v); }
+void Machine::pushSubroutine(DictionaryEntry* v) { _subroutine.push(v); }
+
+
+Datum Machine::popParameter() {
+    if (parameterStackEmpty()) {
+        throw forth::Problem("popParameter", "Stack Empty!");
+    } else {
+        auto top = _parameter.top();
+        _parameter.pop();
+        return top;
+    }
+}
+
+Datum Machine::popSubroutine() {
+    if (subroutineStackEmpty()) {
+        throw forth::Problem("popSubroutine", "Stack Empty!");
+    } else {
+        auto top = _subroutine.top();
+        _subroutine.pop();
+        return top;
+    }
+}
 
 int main() {
 

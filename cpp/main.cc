@@ -661,15 +661,6 @@ void setupDictionary(Machine& mach) {
 #else
     addBooleanConstantWord(mach, "supports-floating-point", false);
 #endif
-    /* ( some words ! )
-     * : of-type? ( type code -- flag ) swap type-code ==s ;
-     * : integer? ( a -- flag ) *integer-variant-code* of-type? ;
-     * : address? ( a -- flag ) *address-variant-code* of-type? ;
-     * : bool? ( a -- flag ) *bool-variant-code* of-type? ;
-     * : word? ( a -- flag ) *word-variant-code* of-type? ;
-     * : native-function? ( a -- flag ) *native-function-variant-code* of-type? ;
-     * : string? ( a -- flag ) *string-variant-code* of-type? ;
-     */
 #define X(name, op)
 #define Y(name, op, type) mach.addWord(#op INDIRECTION(YTypeString, type) , [](Machine& mach) { name < INDIRECTION(YType, type) >(mach); } );
 #include "BinaryOperators.def"

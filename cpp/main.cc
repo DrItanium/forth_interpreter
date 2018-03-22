@@ -11,7 +11,9 @@
 #include <fstream>
 #include <sstream>
 
+#ifdef ALLOW_FLOATING_POINT
 #define YTypeFloat forth::Floating
+#endif
 #define YTypeAddress forth::Address
 #define YTypebool bool
 #define YTypeInteger forth::Integer
@@ -23,25 +25,33 @@
 class DictionaryEntry;
 class Machine;
 
+using Integer = forth::Integer;
+using Address = forth::Address;
+using byte = forth::byte;
 template<typename T>
 using GenericStack = std::stack<T, std::list<T>>;
 using Problem = forth::Problem;
 using Word = std::shared_ptr<DictionaryEntry>;
 using OptionalWord = std::optional<Word>;
 using NativeFunction = std::function<void(Machine&)>;
-using Datum = std::variant<forth::Integer, forth::Floating, forth::Address, bool, Word, NativeFunction, std::string>;
+using Datum = std::variant<forth::Integer, 
+#ifdef ALLOW_FLOATING_POINT
+      forth::Floating, 
+#endif
+      forth::Address, bool, Word, NativeFunction, std::string>;
+
 using UnaryOperation = std::function<Datum(Machine&, Datum)>;
 using BinaryOperation = std::function<Datum(Machine&, Datum, Datum)>;
 using Stack = GenericStack<Datum>;
 using InputStack = GenericStack<std::istream*>;
 using OutputStack = GenericStack<std::ostream*>;
+constexpr Address defaultMemorySize = 4096;
 
 class Machine {
     public:
-        explicit Machine();
+        explicit Machine(Address memSize = defaultMemorySize);
         ~Machine();
         void pushParameter(forth::Integer integer);
-        void pushParameter(forth::Floating fp);
         void pushParameter(forth::Address addr);
         void pushParameter(bool truth);
         void pushParameter(DictionaryEntry* ent);
@@ -50,7 +60,6 @@ class Machine {
         void pushParameter(Datum d);
         bool parameterStackEmpty() const noexcept { return _parameter.empty(); }
         void pushSubroutine(forth::Integer integer);
-        void pushSubroutine(forth::Floating fp);
         void pushSubroutine(forth::Address addr);
         void pushSubroutine(bool truth);
         void pushSubroutine(DictionaryEntry* ent);
@@ -75,6 +84,14 @@ class Machine {
         void openFileForInput(const std::string& path);
         void closeFileForOutput(const std::string& path);
         void closeFileForInput(const std::string& path);
+        void store(Address addr, byte value);
+        byte load(Address addr);
+        Address getMaximumAddress() const noexcept { return _capacity - 1; }
+        Address getCapacity() const noexcept { return _capacity; }
+#ifdef ALLOW_FLOATING_POINT
+        void pushParameter(forth::Floating fp);
+        void pushSubroutine(forth::Floating fp);
+#endif
     private:
         std::ostream* _out = &std::cout;
         std::istream* _in = &std::cin;
@@ -84,6 +101,8 @@ class Machine {
         Stack _subroutine;
         InputStack _inputs;
         OutputStack _outputs;
+        std::unique_ptr<forth::byte[]> _memory;
+        Address _capacity;
 };
 std::string Machine::readNext() {
     std::string word;
@@ -168,7 +187,9 @@ class DictionaryEntry {
         void addWord(Word);
         void addWord(OptionalWord);
         void addWord(forth::Integer);
+#ifdef ALLOW_FLOATING_POINT
         void addWord(forth::Floating);
+#endif
         void addWord(const std::string&);
         void addWord(forth::Address);
         void addWord(bool);
@@ -220,7 +241,10 @@ void Machine::restoreCurrentlyCompilingWord() {
     }
 }
 
-Machine::Machine() { }
+Machine::Machine(Address capacity) {
+    _memory = std::make_unique<forth::byte[]>(capacity);
+    _capacity = capacity;
+}
 Machine::~Machine() { }
 
 OptionalWord Machine::lookupWord(const std::string& str) {
@@ -239,7 +263,6 @@ OptionalWord Machine::lookupWord(const std::string& str) {
 
 void Machine::pushParameter(Datum d) { _parameter.push(d); }
 void Machine::pushParameter(forth::Integer v) { _parameter.push(v); }
-void Machine::pushParameter(forth::Floating v) { _parameter.push(v); }
 void Machine::pushParameter(forth::Address v) { _parameter.push(v); }
 void Machine::pushParameter(bool v) { _parameter.push(v); }
 void Machine::pushParameter(DictionaryEntry* v) { _parameter.push(v); }
@@ -248,11 +271,15 @@ void Machine::pushParameter(const std::string& str) { _parameter.push(str); }
 
 void Machine::pushSubroutine(Datum d) { _subroutine.push(d); }
 void Machine::pushSubroutine(forth::Integer v) { _subroutine.push(v); }
-void Machine::pushSubroutine(forth::Floating v) { _subroutine.push(v); }
 void Machine::pushSubroutine(forth::Address v) { _subroutine.push(v); }
 void Machine::pushSubroutine(bool v) { _subroutine.push(v); }
 void Machine::pushSubroutine(DictionaryEntry* v) { _subroutine.push(v); }
 void Machine::pushSubroutine(const std::string& str) { _subroutine.push(str); }
+
+#ifdef ALLOW_FLOATING_POINT
+void Machine::pushParameter(forth::Floating v) { _parameter.push(v); }
+void Machine::pushSubroutine(forth::Floating v) { _subroutine.push(v); }
+#endif
 
 Datum Machine::popParameter() {
     if (parameterStackEmpty()) {
@@ -315,9 +342,11 @@ void DictionaryEntry::addWord(OptionalWord dict) {
 void DictionaryEntry::addWord(forth::Integer v) {
     addWord([v](Machine& mach) { mach.pushParameter(v); });
 }
+#ifdef ALLOW_FLOATING_POINT
 void DictionaryEntry::addWord(forth::Floating v) {
     addWord([v](Machine& mach) { mach.pushParameter(v); });
 }
+#endif 
 void DictionaryEntry::addWord(forth::Address v) {
     addWord([v](Machine& mach) { mach.pushParameter(v); });
 }
@@ -467,6 +496,7 @@ bool numberRoutine(Machine& mach, const std::string& word) {
         return false;
     }
     parseAttempt.clear();
+#ifdef ALLOW_FLOATING_POINT
     if (word.find('.') != std::string::npos) {
         forth::Floating tmpFloat;
         parseAttempt >> tmpFloat;
@@ -478,6 +508,7 @@ bool numberRoutine(Machine& mach, const std::string& word) {
         // a float
         return false;
     }
+#endif
     forth::Integer tmpInt;
     parseAttempt.clear();
     parseAttempt >> tmpInt;
@@ -486,6 +517,39 @@ bool numberRoutine(Machine& mach, const std::string& word) {
         return true;
     }
     return false;
+}
+void Machine::store(Address addr, byte value) {
+    if (addr > getMaximumAddress()) {
+        throw Problem("store", "Illegal address!");
+    }
+    _memory[addr] = value;
+}
+byte Machine::load(Address addr) {
+    if (addr > getMaximumAddress()) {
+        throw Problem("load", "Illegal address!");
+    }
+    return _memory[addr];
+}
+void storeByte(Machine& m) {
+    auto top = m.popParameter();
+    auto lower = m.popParameter();
+    auto addr = std::get<Address>(lower);
+    byte result = std::visit([&m](auto&& value) {
+                using T = std::decay_t<decltype(value)>;
+                if constexpr (std::is_same_v<T, Address> || std::is_same_v<T, Integer>) { 
+                    return forth::decodeBits<T, byte, T(0xFF), 0>(value);
+                } else {
+                    throw Problem("storeByte", "Illegal data to store into memory!");
+                    // gcc will lose its mind if this is not here!
+                    return byte(0);
+                }
+            }, top);
+    m.store(addr, result);
+}
+void loadByte(Machine& m) {
+    auto top = m.popParameter();
+    auto addr = std::get<Address>(top);
+    m.pushParameter(Address(m.load(addr)));
 }
 int main() {
     Machine mach;
@@ -535,7 +599,7 @@ int main() {
             std::cerr << p.getWord() << p.getMessage() << std::endl;
         } catch (std::bad_variant_access& a) {
             mach.errorOccurred();
-            std::cerr << "Uncaught bad variant: " << a.what() << std::endl;
+            std::cerr << "bad variant: " << a.what() << std::endl;
         }
     }
     return 0;

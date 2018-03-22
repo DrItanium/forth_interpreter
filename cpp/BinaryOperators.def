@@ -1,6 +1,10 @@
 #define S(name, op) Y(name, op, Integer)
 #define U(name, op) Y(name, op, Address)
+#ifdef ALLOW_FLOATING_POINT
 #define F(name, op) Y(name, op, Float)
+#else
+#define F(name, op)
+#endif
 #define B(name, op) Y(name, op, bool)
 #define SU(name, op) \
     S(name, op) \

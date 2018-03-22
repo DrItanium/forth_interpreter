@@ -618,7 +618,13 @@ void Machine::viewParameterStack() {
 void enterCompileMode(Machine& mach);
 void processString(Machine& mach);
 Datum typeCode(Machine& mach, Datum d);
-void addConstantIntegerWord(Machine& mach, const std::string& name, Integer value) {
+void addIntegerConstantWord(Machine& mach, const std::string& name, Integer value) {
+    std::stringstream ss;
+    ss << "*" << name << "*";
+    auto str = ss.str();
+    mach.addWord(str, [value](auto& x) { x.pushParameter(value); });
+}
+void addBooleanConstantWord(Machine& mach, const std::string& name, bool value) {
     std::stringstream ss;
     ss << "*" << name << "*";
     auto str = ss.str();
@@ -627,10 +633,6 @@ void addConstantIntegerWord(Machine& mach, const std::string& name, Integer valu
 void setupDictionary(Machine& mach) {
     mach.addWord("drop", drop);
     mach.addWord("swap", swap);
-#define X(name, op)
-#define Y(name, op, type) mach.addWord(#op INDIRECTION(YTypeString, type) , [](Machine& mach) { name < INDIRECTION(YType, type) >(mach); } );
-#include "BinaryOperators.def"
-#undef X
     mach.addWord("^b", [](Machine& mach) { logicalXor<bool>(mach); });
     mach.addWord("(", enterIgnoreInputMode, false, true);
     mach.addWord(";", semicolon, false, true);
@@ -643,12 +645,18 @@ void setupDictionary(Machine& mach) {
     mach.addWord("stack", [](auto& x) { x.viewParameterStack(); });
     mach.addWord("\"", processString, false, true);
     mach.addWord("type-code", unaryOperation(typeCode));
-    addConstantIntegerWord(mach, "integer-variant-code", 0);
-    addConstantIntegerWord(mach, "address-variant-code", 1);
-    addConstantIntegerWord(mach, "bool-variant-code", 2);
-    addConstantIntegerWord(mach, "word-variant-code", 3);
-    addConstantIntegerWord(mach, "native-function-variant-code", 4);
-    addConstantIntegerWord(mach, "string-variant-code", 5);
+    addIntegerConstantWord(mach, "integer-variant-code", 0);
+    addIntegerConstantWord(mach, "address-variant-code", 1);
+    addIntegerConstantWord(mach, "bool-variant-code", 2);
+    addIntegerConstantWord(mach, "word-variant-code", 3);
+    addIntegerConstantWord(mach, "native-function-variant-code", 4);
+    addIntegerConstantWord(mach, "string-variant-code", 5);
+#ifdef ALLOW_FLOATING_POINT
+    addIntegerConstantWord(mach, "floating-point-variant-code", 6); // always the last index
+    addBooleanConstantWord(mach, "supports-floating-point", true);
+#else
+    addBooleanConstantWord(mach, "supports-floating-point", false);
+#endif
     /* ( some words ! )
      * : of-type? ( type code -- flag ) swap type-code ==s ;
      * : integer? ( a -- flag ) *integer-variant-code* of-type? ;
@@ -658,6 +666,10 @@ void setupDictionary(Machine& mach) {
      * : native-function? ( a -- flag ) *native-function-variant-code* of-type? ;
      * : string? ( a -- flag ) *string-variant-code* of-type? ;
      */
+#define X(name, op)
+#define Y(name, op, type) mach.addWord(#op INDIRECTION(YTypeString, type) , [](Machine& mach) { name < INDIRECTION(YType, type) >(mach); } );
+#include "BinaryOperators.def"
+#undef X
 }
 int main() {
     Machine mach;

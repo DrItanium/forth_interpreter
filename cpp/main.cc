@@ -27,17 +27,26 @@ class Machine;
 using Integer = forth::Integer;
 using Address = forth::Address;
 using byte = forth::byte;
+#ifdef ALLOW_FLOATING_POINT
+using Floating = forth::Floating;
+#endif
 template<typename T>
 using GenericStack = std::list<T>;
 using Problem = forth::Problem;
 using Word = std::shared_ptr<DictionaryEntry>;
 using OptionalWord = std::optional<Word>;
 using NativeFunction = std::function<void(Machine&)>;
-using Datum = std::variant<forth::Integer, 
+using Datum = std::variant<Integer, 
+      Address, 
+      bool, 
+      Word, 
+      NativeFunction, 
+      std::string
 #ifdef ALLOW_FLOATING_POINT
-      forth::Floating, 
+      // always last!
+      ,Floating
 #endif
-      forth::Address, bool, Word, NativeFunction, std::string>;
+      >;
 
 using UnaryOperation = std::function<Datum(Machine&, Datum)>;
 using BinaryOperation = std::function<Datum(Machine&, Datum, Datum)>;
@@ -356,6 +365,9 @@ void DictionaryEntry::addWord(forth::Address v) {
 void DictionaryEntry::addWord(bool v) {
     addWord([v](Machine& mach) { mach.pushParameter(v); });
 }
+void DictionaryEntry::addWord(const std::string& str) {
+    addWord([str](Machine& mach) { mach.pushParameter(str); });
+}
 
 NativeFunction pushToParameterStack(DictionaryEntry* entry) {
     return [entry](Machine& mach) { mach.pushParameter(entry); };
@@ -604,6 +616,14 @@ void Machine::viewParameterStack() {
     }
 }
 void enterCompileMode(Machine& mach);
+void processString(Machine& mach);
+Datum typeCode(Machine& mach, Datum d);
+void addConstantIntegerWord(Machine& mach, const std::string& name, Integer value) {
+    std::stringstream ss;
+    ss << "*" << name << "*";
+    auto str = ss.str();
+    mach.addWord(str, [value](auto& x) { x.pushParameter(value); });
+}
 void setupDictionary(Machine& mach) {
     mach.addWord("drop", drop);
     mach.addWord("swap", swap);
@@ -621,6 +641,23 @@ void setupDictionary(Machine& mach) {
     mach.addWord(".", printTop);
     mach.addWord(":", enterCompileMode);
     mach.addWord("stack", [](auto& x) { x.viewParameterStack(); });
+    mach.addWord("\"", processString, false, true);
+    mach.addWord("type-code", unaryOperation(typeCode));
+    addConstantIntegerWord(mach, "integer-variant-code", 0);
+    addConstantIntegerWord(mach, "address-variant-code", 1);
+    addConstantIntegerWord(mach, "bool-variant-code", 2);
+    addConstantIntegerWord(mach, "word-variant-code", 3);
+    addConstantIntegerWord(mach, "native-function-variant-code", 4);
+    addConstantIntegerWord(mach, "string-variant-code", 5);
+    /* ( some words ! )
+     * : of-type? ( type code -- flag ) swap type-code ==s ;
+     * : integer? ( a -- flag ) *integer-variant-code* of-type? ;
+     * : address? ( a -- flag ) *address-variant-code* of-type? ;
+     * : bool? ( a -- flag ) *bool-variant-code* of-type? ;
+     * : word? ( a -- flag ) *word-variant-code* of-type? ;
+     * : native-function? ( a -- flag ) *native-function-variant-code* of-type? ;
+     * : string? ( a -- flag ) *string-variant-code* of-type? ;
+     */
 }
 int main() {
     Machine mach;
@@ -672,6 +709,28 @@ void enterCompileMode(Machine& mach) {
         auto name = mach.readNext();
         mach.newCompilingWord(name);
     }
+}
+
+void processString(Machine& mach) {
+    // keep reading from input until we get a word which ends with "
+    std::stringstream ss;
+    while (true) {
+        auto str = mach.readNext();
+        ss << str << " ";
+        if (!str.empty() && str.back() == '"') {
+            break;
+        }
+    }
+    auto s = ss.str();
+    auto str = s.substr(0, s.size() - 2);
+    if (mach.currentlyCompiling()) {
+        mach.getCurrentlyCompilingWord().value()->addWord(str);
+    } else {
+        mach.pushParameter(str);
+    }
+}
+Datum typeCode(Machine& mach, Datum top) {
+    return Address(top.index());
 }
 #undef YTypeStringFloat
 #undef YTypeStringAddress

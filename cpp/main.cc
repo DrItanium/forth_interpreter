@@ -538,6 +538,8 @@ void storeByte(Machine& m) {
                 using T = std::decay_t<decltype(value)>;
                 if constexpr (std::is_same_v<T, Address> || std::is_same_v<T, Integer>) { 
                     return forth::decodeBits<T, byte, T(0xFF), 0>(value);
+                } else if constexpr (std::is_same_v<T, bool>) {
+                    return byte(value ? 1 : 0);
                 } else {
                     throw Problem("storeByte", "Illegal data to store into memory!");
                     // gcc will lose its mind if this is not here!
@@ -551,6 +553,23 @@ void loadByte(Machine& m) {
     auto addr = std::get<Address>(top);
     m.pushParameter(Address(m.load(addr)));
 }
+void getLowestEightBits(Machine& m) {
+    // ( v -- l x )
+    // this design allows us to do little endian saves
+    auto top = m.popParameter();
+    std::visit([&m](auto&& value) {
+                using T = std::decay_t<decltype(value)>;
+                if constexpr (std::is_same_v<T, Address> || std::is_same_v<T, Integer>) { 
+                    m.pushParameter(Address(forth::decodeBits<T, byte, T(0xFF), 0>(value)));
+                    m.pushParameter(Address(forth::decodeBits<T, T, ~T(0xFF), 8>(value)));
+                } else if constexpr (std::is_same_v<T, bool>) {
+                    m.pushParameter(Address(value ? 1 : 0));
+                    m.pushParameter(Address(0));
+                } else {
+                    throw Problem("storeByte", "Illegal data to store into memory!");
+                }
+            }, top);
+}
 int main() {
     Machine mach;
     mach.addWord("drop", drop);
@@ -563,6 +582,9 @@ int main() {
     mach.addWord("(", enterIgnoreInputMode);
     mach.addWord(";", semicolon, false, true);
     mach.addWord("bye", bye);
+    mach.addWord("@8", loadByte);
+    mach.addWord("=8", storeByte);
+    mach.addWord("lo8", getLowestEightBits);
     bool ignoreInput = false;
     while (keepExecuting) {
         try {

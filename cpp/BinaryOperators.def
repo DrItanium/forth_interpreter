@@ -1,0 +1,52 @@
+#define S(name, op) Y(name, op, Integer)
+#define U(name, op) Y(name, op, Address)
+#define F(name, op) Y(name, op, Float)
+#define B(name, op) Y(name, op, bool)
+#define SU(name, op) \
+    S(name, op) \
+    U(name, op)
+#define SUF(name, op) \
+    SU(name, op) \
+    F(name, op) 
+#define SUBF(name, op) \
+    SUF(name, op) \
+    B(name, op)
+#define XSUF(name, op) \
+    X(name, op) \
+    SUF(name, op)
+#define XSU(name, op) \
+    X(name, op) \
+    SU(name, op)
+#define XSUBF(name, op) \
+    X(name, op) \
+    SUBF(name, op)
+#define SUB(name, op) \
+    SU(name, op) \
+    B(name, op)
+#define XSUB(name, op) \
+    X(name, op) \
+    SUB(name, op)
+XSUF(add, +)
+XSUF(sub, -)
+XSUF(mul, *)
+XSUF(div, /)
+XSU(mod, %)
+XSU(shiftLeft, <<)
+XSU(shiftRight, >>)
+XSUBF(equals, ==)
+XSUBF(notEquals, !=)
+XSUB(logicalAnd, &&)
+XSUB(logicalOr, ||)
+XSUB(logicalXor, ^)
+#undef XSUBF
+#undef XSUB
+#undef XSU
+#undef XSUF
+#undef SU
+#undef SUF
+#undef SUBF
+#undef SUB
+#undef S
+#undef U
+#undef F
+#undef B

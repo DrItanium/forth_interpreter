@@ -7,6 +7,14 @@
 #include <variant>
 #include <stack>
 #include <memory>
+#define YTypeFloat forth::Floating
+#define YTypeAddress forth::Address
+#define YTypebool bool
+#define YTypeInteger forth::Integer
+#define YTypeStringFloat "f"
+#define YTypeStringAddress "u" 
+#define YTypeStringbool "b"
+#define YTypeStringInteger "s"
 
 class DictionaryEntry;
 class Machine;
@@ -14,10 +22,12 @@ class Machine;
 template<typename T>
 using GenericStack = std::stack<T, std::list<T>>;
 using Problem = forth::Problem;
-using NativeFunction = std::function<void(Machine&)>;
 using Word = std::shared_ptr<DictionaryEntry>;
 using OptionalWord = std::optional<Word>;
 using Datum = std::variant<forth::Integer, forth::Floating, forth::Address, bool, Word, NativeFunction, std::string>;
+using NativeFunction = std::function<void(Machine&)>;
+using UnaryOperation = std::function<Datum(Machine&, Datum)>;
+using BinaryOperation = std::function<Datum(Machine&, Datum, Datum)>;
 using Stack = GenericStack<Datum>;
 using InputStack = GenericStack<std::istream>;
 using OutputStack = GenericStack<std::ostream>;
@@ -55,12 +65,28 @@ class Machine {
         bool currentlyCompiling() const noexcept { return _compile != nullptr; }
         std::string readNext();
         void errorOccurred() noexcept;
+        void addWord(const std::string& name, NativeFunction fn, bool fake = false, bool compileTimeInvoke = false);
     private:
         OptionalWord _front;
         OptionalWord _compile;
         Stack _parameter;
         Stack _subroutine;
 };
+
+NativeFunction binaryOperation(BinaryOperation op) {
+    return [op](auto& mach) {
+        auto top = mach.popParameter();
+        auto lower = mach.popParameter();
+        mach.pushParameter(op(mach, lower, mach));
+    };
+}
+
+NativeFunction unaryOperation(UnaryOperation op) {
+    return [op](auto& mach) {
+        auto top = mach.popParameter();
+        mach.pushParameter(op(mach, top));
+    };
+}
 
 
 class DictionaryEntry {
@@ -82,6 +108,7 @@ class DictionaryEntry {
         void setFake(bool value) noexcept { _fake = value; }
         bool compileTimeInvokable() const noexcept { return _compileTimeInvoke; }
         void setCompileTimeInvokable(bool value) noexcept { _compileTimeInvoke = value; }
+        bool matches(const std::string& name);
     private:
         std::string _name;
         bool _fake, _compileTimeInvoke;
@@ -89,7 +116,9 @@ class DictionaryEntry {
         std::optional<Word> _next;
         std::list<NativeFunction> _contents;
 };
-
+bool DictionaryEntry::matches(const std::string& name) {
+    return !_fake && (name == _name);
+}
 
 void Machine::newCompilingWord(const std::string& str) {
     // this can leak but it is the most straight forward
@@ -120,23 +149,20 @@ void Machine::restoreCurrentlyCompilingWord() {
     }
 }
 
-Machine::Machine() : _front(nullptr), _compile(nullptr) { }
-Machine::~Machine() {
-    if (_front) {
-        delete _front;
-        _front = nullptr;
-    }
-    if (_compile) {
-        delete _compile;
-        _compile = nullptr;
-    }
-}
+Machine::Machine() { }
+Machine::~Machine() { }
 
 OptionalWord Machine::lookupWord(const std::string& str) {
     if (_front) {
-        return _front->findWord(str);
+        // unpack it
+        auto& val = *_front;
+        if (val->matches()) {
+            return _front;
+        } else {
+            return _front->findWord(str);
+        }
     } else {
-        return std::optional<DictionaryEntry*>();
+        return _front;
     }
 }
 
@@ -183,30 +209,20 @@ void DictionaryEntry::invoke(Machine& mach) {
     }
 }
 
-DictionaryEntry::~DictionaryEntry() {
+DictionaryEntry::~DictionaryEntry() { }
+
+
+OptionalWord DictionaryEntry::findWord(const std::string& name) {
     if (_next) {
-        delete _next;
-        _next = nullptr;
-    }
-}
-
-DictionaryEntry* DictionaryEntry::findWordInternal(const std::string& name) {
-    if (~_fake && (_name == name)) {
-        return this;
-    } else if (hasNext()) {
-        return _next->findWordInternal(name);
+        auto& _n = *_next;
+        if (_n->matches()) {
+            return _next;
+        } else {
+            return _n->findWord(name);
+        }
     } else {
-        return nullptr;
+        return _next;
     }
-}
-
-std::optional<DictionaryEntry*> DictionaryEntry::findWord(const std::string& name) {
-    std::optional<DictionaryEntry*> out;
-    auto result = findWordInternal(name);
-    if (result) {
-        out = result;
-    }
-    return out;
 }
 
 void DictionaryEntry::addWord(NativeFunction fn) {
@@ -261,6 +277,11 @@ void bye(Machine&) {
     keepExecuting = false;
 }
 
+bool ignoreInput = false;
+void enterIgnoreInputMode(Machine&) {
+    ignoreInput = true;
+}
+
 
 void Machine::errorOccurred() noexcept {
     if (!_parameter.empty()) {
@@ -277,20 +298,81 @@ void Machine::errorOccurred() noexcept {
     }
 }
 
+void Machine::addWord(const std::string& str, NativeFunction fn, bool fake, bool compileInvoke) {
+    auto ptr = std::make_shared(str);
+    ptr->setFake(fake);
+    ptr->setCompileTimeInvokable(compileInvoke);
+    ptr->addWord(fn);
+    if (_front) {
+        ptr->setNext(_front);
+    }
+    _front = OptionalWord(ptr);
+}
+void drop(Machine& mach) { mach.popParameter(); }
+void swap(Machine& mach) { 
+    auto top = mach.popParameter();
+    auto lower = mach.popParameter();
+    mach.pushParameter(top);
+    mach.pushParameter(lower);
+}
+// binary operations
+#define X(name, op) \
+    template<typename T> \
+    Datum name ( Machine& mach, Datum a, Datum b) { \
+        try { \
+            Datum ret; \
+            auto f = std::get<T>(a); \
+            auto s = std::get<T>(b); \
+            ret = (f op s); \
+            return ret; \
+        } catch (std::bad_variant_access& a) { \
+            throw Problem(#name , a.what()); \
+        } \
+    } \
+    template<typename T> \
+    void name ( Machine& mach ) { \
+        auto top = mach.popParameter(); \
+        auto lower = mach.popParameter(); \
+        mach.pushParameter( name (mach, lower, top) ); \
+    }
+#define Y(name, op, type) 
+#include "BinaryOperators.def"
+#undef Y
+#undef X
+
 int main() {
     Machine mach;
+    mach.addWord("drop", drop);
+    mach.addWord("swap", swap);
+#define X(name, op)
+#define Y(name, op, type) mach.addWord(#op INDIRECTION(YTypeString, type) , name < INDIRECTION(YType, type) > );
+#include "BinaryOperators.def"
+#undef X
     bool ignoreInput = false;
     while (keepExecuting) {
         try {
             auto str = mach.readNext();
             if (ignoreInput) {
+               if (str == ")") {
+                   ignoreInput = false;
+                   continue;
+               }
+            } else {
                 
             }
         } catch (Probem& p) {
             // clear out the stacks as well
             mach.errorOccurred();
             std::cerr << p.getWord() << p.getMessage() << std::endl;
-        }
+        } catch (std::bad_variant_access
     }
     return 0;
 }
+#undef YTypeStringFloat
+#undef YTypeStringAddress
+#undef YTypeStringbool
+#undef YTypeStringInteger
+#undef YTypeFloat
+#undef YTypeAddress
+#undef YTypebool
+#undef YTypeInteger

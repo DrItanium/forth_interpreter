@@ -8,6 +8,8 @@
 #include <stack>
 #include <memory>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 #define YTypeFloat forth::Floating
 #define YTypeAddress forth::Address
@@ -31,8 +33,8 @@ using Datum = std::variant<forth::Integer, forth::Floating, forth::Address, bool
 using UnaryOperation = std::function<Datum(Machine&, Datum)>;
 using BinaryOperation = std::function<Datum(Machine&, Datum, Datum)>;
 using Stack = GenericStack<Datum>;
-using InputStack = GenericStack<std::istream>;
-using OutputStack = GenericStack<std::ostream>;
+using InputStack = GenericStack<std::istream*>;
+using OutputStack = GenericStack<std::ostream*>;
 
 class Machine {
     public:
@@ -68,13 +70,76 @@ class Machine {
         std::string readNext();
         void errorOccurred() noexcept;
         void addWord(const std::string& name, NativeFunction fn, bool fake = false, bool compileTimeInvoke = false);
+        std::ostream& getOutput() const noexcept { return *_out; }
+        void openFileForOutput(const std::string& path);
+        void openFileForInput(const std::string& path);
+        void closeFileForOutput(const std::string& path);
+        void closeFileForInput(const std::string& path);
     private:
+        std::ostream* _out = &std::cout;
+        std::istream* _in = &std::cin;
         OptionalWord _front;
         OptionalWord _compile;
         Stack _parameter;
         Stack _subroutine;
+        InputStack _inputs;
+        OutputStack _outputs;
 };
+std::string Machine::readNext() {
+    std::string word;
+    (*_in) >> word;
+    return word;
+}
+void Machine::openFileForOutput(const std::string& path) {
+    auto* tmp = new std::ofstream(path.c_str());
+    if (!tmp->is_open()) {
+        std::stringstream ss;
+        ss << "Could not open " << path << " for writing!";
+        auto str = ss.str();
+        throw Problem("openFileForOutput", str);
+    }
+    _outputs.push(_out);
+    _out = tmp;
+}
 
+void Machine::openFileForInput(const std::string& path) {
+    auto* tmp = new std::ifstream(path.c_str());
+    if (!tmp->is_open()) {
+        std::stringstream ss;
+        ss << "Could not open " << path << " for reading!";
+        auto str = ss.str();
+        throw Problem("openFileForInput", str);
+    }
+    _inputs.push(_in);
+    _in = tmp;
+}
+void Machine::closeFileForOutput(const std::string& path) {
+    if (_out != &std::cout) {
+        std::ofstream* tmp = (std::ofstream*)_out;
+        tmp->close();
+        if (_outputs.empty()) {
+            throw Problem("closeFileForOutput", "Stack underflow");
+        } else {
+            delete tmp;
+            _out = _outputs.top();
+            _outputs.pop();
+        }
+    }
+}
+
+void Machine::closeFileForInput(const std::string& path) {
+    if (_in != &std::cin) {
+        std::ifstream* tmp = (std::ifstream*)_out;
+        tmp->close();
+        if (_inputs.empty()) {
+            throw Problem("closeFileForInput", "Stack underflow");
+        } else {
+            delete tmp;
+            _in = _inputs.top();
+            _inputs.pop();
+        }
+    }
+}
 NativeFunction binaryOperation(BinaryOperation op) {
     return [op](auto& mach) {
         auto top = mach.popParameter();
@@ -327,7 +392,8 @@ void swap(Machine& mach) {
             Datum ret; \
             auto f = std::get<T>(a); \
             auto s = std::get<T>(b); \
-            ret = (f op s); \
+            auto result = (f op s); \
+            ret = result; \
             return ret; \
         } catch (std::bad_variant_access& a) { \
             throw Problem(#name , a.what()); \
@@ -343,6 +409,18 @@ void swap(Machine& mach) {
 #include "BinaryOperators.def"
 #undef Y
 #undef X
+template<>
+Datum logicalXor<bool>(Machine& mach, Datum a, Datum b) {
+    try {
+        Datum ret;
+        auto f = std::get<bool>(a);
+        auto s = std::get<bool>(b);
+        ret = f != s;
+        return ret;
+    } catch (std::bad_variant_access& a) {
+        throw Problem("logicalXor", a.what());
+    }
+}
 
 int main() {
     Machine mach;
@@ -352,6 +430,7 @@ int main() {
 #define Y(name, op, type) mach.addWord(#op INDIRECTION(YTypeString, type) , [](Machine& mach) { name < INDIRECTION(YType, type) >(mach); } );
 #include "BinaryOperators.def"
 #undef X
+    mach.addWord("^b", [](Machine& mach) { logicalXor<bool>(mach); });
     bool ignoreInput = false;
     while (keepExecuting) {
         try {
@@ -368,7 +447,10 @@ int main() {
             // clear out the stacks as well
             mach.errorOccurred();
             std::cerr << p.getWord() << p.getMessage() << std::endl;
-        } catch (std::bad_variant_access
+        } catch (std::bad_variant_access& a) {
+            mach.errorOccurred();
+            std::cerr << "Uncaught bad variant: " << a.what() << std::endl;
+        }
     }
     return 0;
 }

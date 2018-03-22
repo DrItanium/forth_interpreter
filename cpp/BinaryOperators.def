@@ -37,7 +37,7 @@ XSUBF(equals, ==)
 XSUBF(notEquals, !=)
 XSUB(logicalAnd, &&)
 XSUB(logicalOr, ||)
-XSUB(logicalXor, ^)
+XSU(logicalXor, ^)
 #undef XSUBF
 #undef XSUB
 #undef XSU

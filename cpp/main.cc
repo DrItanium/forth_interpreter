@@ -6,14 +6,21 @@
 #include <optional>
 #include <variant>
 #include <stack>
+#include <memory>
 
 class DictionaryEntry;
-
 class Machine;
+
+template<typename T>
+using GenericStack = std::stack<T, std::list<T>>;
 using Problem = forth::Problem;
 using NativeFunction = std::function<void(Machine&)>;
-using Datum = std::variant<forth::Integer, forth::Floating, forth::Address, bool, DictionaryEntry*, NativeFunction, std::string>;
-using Stack = std::stack<Datum, std::list<Datum>>;
+using Word = std::shared_ptr<DictionaryEntry>;
+using OptionalWord = std::optional<Word>;
+using Datum = std::variant<forth::Integer, forth::Floating, forth::Address, bool, Word, NativeFunction, std::string>;
+using Stack = GenericStack<Datum>;
+using InputStack = GenericStack<std::istream>;
+using OutputStack = GenericStack<std::ostream>;
 
 class Machine {
     public:
@@ -39,16 +46,18 @@ class Machine {
         bool subroutineStackEmpty() const noexcept { return _subroutine.empty(); }
         Datum popSubroutine();
         Datum popParameter();
-        std::optional<DictionaryEntry*> lookupWord(const std::string&);
-        DictionaryEntry* getCurrentlyCompilingWord() const noexcept { return _compile; }
+        OptionalWord lookupWord(const std::string&);
+        OptionalWord getCurrentlyCompilingWord() const noexcept { return _compile; }
         void saveCurrentlyCompilingWord();
         void restoreCurrentlyCompilingWord();
         void newCompilingWord(const std::string& str = "");
         void compileCurrentWord();
         bool currentlyCompiling() const noexcept { return _compile != nullptr; }
+        std::string readNext();
+        void errorOccurred() noexcept;
     private:
-        DictionaryEntry* _front;
-        DictionaryEntry* _compile;
+        OptionalWord _front;
+        OptionalWord _compile;
         Stack _parameter;
         Stack _subroutine;
 };
@@ -56,12 +65,11 @@ class Machine {
 
 class DictionaryEntry {
     public:
-        explicit DictionaryEntry(const std::string& name) : _name(name), _fake(false), _compileTimeInvoke(false), _next(nullptr) { }
+        explicit DictionaryEntry(const std::string& name) : _name(name), _fake(false), _compileTimeInvoke(false) { }
         ~DictionaryEntry();
-        void setNext(DictionaryEntry* next) noexcept { _next = next; }
-        DictionaryEntry* getNext() const noexcept { return _next; }
-        bool hasNext() const noexcept { return _next != nullptr; }
-        std::optional<DictionaryEntry*> findWord(const std::string& name);
+        void setNext(Word next) noexcept { _next = next; }
+        OptionalWord getNext() const noexcept { return _next; }
+        OptionalWord findWord(const std::string& name);
         void addWord(NativeFunction);
         void addWord(DictionaryEntry*);
         void addWord(forth::Integer);
@@ -75,16 +83,16 @@ class DictionaryEntry {
         bool compileTimeInvokable() const noexcept { return _compileTimeInvoke; }
         void setCompileTimeInvokable(bool value) noexcept { _compileTimeInvoke = value; }
     private:
-        DictionaryEntry* findWordInternal(const std::string& name);
-    private:
         std::string _name;
         bool _fake, _compileTimeInvoke;
-        DictionaryEntry* _next;
+        OptionalWord _next;
+        std::optional<Word> _next;
         std::list<NativeFunction> _contents;
 };
 
+
 void Machine::newCompilingWord(const std::string& str) {
-    // this can leak!
+    // this can leak but it is the most straight forward
     _compile = new DictionaryEntry(str);
 }
 
@@ -124,7 +132,7 @@ Machine::~Machine() {
     }
 }
 
-std::optional<DictionaryEntry*> Machine::lookupWord(const std::string& str) {
+OptionalWord Machine::lookupWord(const std::string& str) {
     if (_front) {
         return _front->findWord(str);
     } else {
@@ -183,7 +191,7 @@ DictionaryEntry::~DictionaryEntry() {
 }
 
 DictionaryEntry* DictionaryEntry::findWordInternal(const std::string& name) {
-    if (_name == name) {
+    if (~_fake && (_name == name)) {
         return this;
     } else if (hasNext()) {
         return _next->findWordInternal(name);
@@ -231,9 +239,58 @@ NativeFunction pushToSubroutineStack(DictionaryEntry* entry) {
     return [entry](Machine& mach) { mach.pushSubroutine(entry); };
 }
 
+void semicolon(Machine& mach) {
+    if (!mach.currentlyCompiling()) {
+        throw Problem(";", "Not currently compiling!");
+    } else {
+        mach.compileCurrentWord();
+    }
+}
 
+void colon(Machine& mach) {
+    if (mach.currentlyCompiling()) {
+        throw Problem(":", "Already compiling!");
+    } else {
+        auto str = mach.readNext();
+        mach.newCompilingWord(str);
+    }
+}
+
+bool keepExecuting = true;
+void bye(Machine&) {
+    keepExecuting = false;
+}
+
+
+void Machine::errorOccurred() noexcept {
+    if (!_parameter.empty()) {
+        Stack temp;
+        _parameter.swap(temp);
+    }
+    if (!_subroutine.empty()) {
+        Stack temp;
+        _subroutine.swap(temp);
+    }
+    if (_compile) {
+        delete _compile;
+        _compile = nullptr;
+    }
+}
 
 int main() {
-
+    Machine mach;
+    bool ignoreInput = false;
+    while (keepExecuting) {
+        try {
+            auto str = mach.readNext();
+            if (ignoreInput) {
+                
+            }
+        } catch (Probem& p) {
+            // clear out the stacks as well
+            mach.errorOccurred();
+            std::cerr << p.getWord() << p.getMessage() << std::endl;
+        }
+    }
     return 0;
 }

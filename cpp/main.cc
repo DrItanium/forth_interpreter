@@ -199,6 +199,7 @@ class DictionaryEntry {
         bool compileTimeInvokable() const noexcept { return _compileTimeInvoke; }
         void setCompileTimeInvokable(bool value) noexcept { _compileTimeInvoke = value; }
         bool matches(const std::string& name);
+        const std::string& getName() const noexcept { return _name; }
     private:
         std::string _name;
         bool _fake, _compileTimeInvoke;
@@ -570,6 +571,34 @@ void getLowestEightBits(Machine& m) {
                 }
             }, top);
 }
+void printTop(Machine& m) {
+    auto top = m.popParameter();
+    std::visit([&m](auto&& value) {
+            auto f = m.getOutput().flags();
+            using T = std::decay_t<decltype(value)>;
+            if constexpr (std::is_same_v<T, Address>) {
+                m.getOutput() << std::hex << value;
+            } else if constexpr (std::is_same_v<T, Integer>) {
+                m.getOutput() << std::dec << value;
+            } else if constexpr (std::is_same_v<T, bool>) {
+                m.getOutput() << std::boolalpha << value << std::noboolalpha;
+            } else if constexpr (std::is_same_v<T, Word>) {
+                if (value->isFake()) {
+                    m.getOutput() << "fake compiled entry 0x" << std::hex << value.get();
+                } else {
+                    m.getOutput() << "word: " << value->getName();
+                }
+            } else if constexpr (std::is_same_v<T, std::string>) {
+                m.getOutput() << value;
+            } else if constexpr (std::is_same_v<T, NativeFunction>) {
+                m.getOutput() << "Native Function";
+            } else {
+                static_assert(forth::AlwaysFalse<T>::value, "Unimplemented type!");
+            }
+
+            m.getOutput().setf(f);
+            }, top);
+}
 int main() {
     Machine mach;
     mach.addWord("drop", drop);
@@ -585,6 +614,7 @@ int main() {
     mach.addWord("@8", loadByte);
     mach.addWord("=8", storeByte);
     mach.addWord("lo8", getLowestEightBits);
+    mach.addWord(".", printTop);
     bool ignoreInput = false;
     while (keepExecuting) {
         try {

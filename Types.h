@@ -162,29 +162,6 @@ namespace forth {
 	constexpr T setLowerUpperHalves(HalfOf<T> lower, HalfOf<T> upper) noexcept {
 		return setUpperHalf<T>(setLowerHalf<T>(T(0), lower), upper);
 	}
-	class QuarterAddressWrapper
-	{
-		public:
-			constexpr QuarterAddressWrapper(unsigned long long int addr) : _value(addr & 0xFFFF) { }
-			constexpr QuarterAddressWrapper(QuarterAddress addr) : _value(addr) { }
-			constexpr QuarterAddress get() const noexcept {
-				return _value;
-			}
-		private:
-			QuarterAddress _value;
-	};
-
-	class HalfAddressWrapper
-	{
-		public:
-			constexpr HalfAddressWrapper(unsigned long long int addr) : _value(addr & 0xFFFF'FFFF) { }
-			constexpr HalfAddressWrapper(HalfAddress addr) : _value(addr) { }
-			constexpr HalfAddress get() const noexcept {
-				return _value;
-			}
-		private:
-			HalfAddress _value;
-	};
 
     template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
     template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
@@ -194,7 +171,7 @@ namespace forth {
     QuarterInteger safeExtract(QuarterAddress addr) noexcept;
     QuarterAddress safeExtract(QuarterInteger addr) noexcept;
 
-	static constexpr HalfAddress mask24 = 0x00FF'FFFF;
+	constexpr HalfAddress mask24 = 0x00FF'FFFF;
     HalfAddress make24bit(Address input);
 
 	constexpr bool outOfRange16(Integer value) noexcept {

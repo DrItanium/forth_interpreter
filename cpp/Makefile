@@ -1,7 +1,8 @@
 include config.mk
 
 OBJECTS = main.o \
-		  ../Problem.o
+		  ../Problem.o \
+		  ../Types.o
 
 OUTPUT_BINARY = forth
 
@@ -30,3 +31,4 @@ clean:
 
 main.o: main.cc ../Types.h ../Problem.h
 Problem.o: ../Problem.cc ../Problem.h
+Types.o: ../Types.cc ../Types.h ../Problem.h

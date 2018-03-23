@@ -10,13 +10,9 @@
 #include <fstream>
 #include <sstream>
 
-#ifdef ALLOW_FLOATING_POINT
 #define YTypeFloat forth::Floating
-#endif // end ALLOW_FLOATING_POINT
 #define YTypeAddress forth::Address
-#ifdef ALLOW_BOOLEAN
 #define YTypebool bool
-#endif // end ALLOW_BOOLEAN
 #define YTypeInteger forth::Integer
 #define YTypeStringFloat "f"
 #define YTypeStringAddress "u" 
@@ -40,8 +36,8 @@ using OptionalWord = std::optional<Word>;
 using NativeFunction = std::function<void(Machine&)>;
 union Number {
 	Number() : integer(0) { }
-	Number(int i) : integer(i) { }
-	Number(unsigned int i ) : address(i) { }
+	Number(int i) : integer(Integer(i)) { }
+	Number(unsigned int i) : address(Address(i)) { }
 	Number(Integer i) : integer(i) { }
 	Number(Address a) : address(a) { }
 #ifdef ALLOW_BOOLEAN
@@ -436,7 +432,6 @@ void swap(Machine& mach) {
     Number name (Number a, Number b) { \
         return Number (a.get<T>() op b.get<T>()) ; \
     }
-
 #define Y(name, op, type) 
 #include "BinaryOperators.def"
 #undef Y
@@ -665,7 +660,7 @@ void addConstantWord(Machine& mach, const std::string& name, Number value) {
 }
 #ifndef ALLOW_BOOLEAN
 void addConstantWord(Machine& mach, const std::string& name, bool value) {
-    addConstantWord(mach, name, value ? 0 : -1);
+    addConstantWord(mach, name, Number(value ? 0 : -1));
 }
 #endif // end !ALLOW_BOOLEAN
 void bodyInvoke(Machine& mach) {
@@ -734,6 +729,10 @@ NativeFunction callBinaryNumberOperation(std::function<Number(Number, Number)> f
     };
 }
 void setupDictionary(Machine& mach) {
+#ifndef ALLOW_BOOLEAN
+    mach.addWord("true", [](Machine& x) { x.pushParameter(Number(-1)); });
+    mach.addWord("false", [](Machine& x) { x.pushParameter(Number(0)); });
+#endif
 	mach.addWord("words", words);
 	mach.addWord("R", pushOntoReturnStack);
 	mach.addWord("dup", dup);

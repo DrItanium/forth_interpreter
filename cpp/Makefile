@@ -29,6 +29,6 @@ clean:
 .PHONY: options clean all
 
 
-main.o: main.cc ../Types.h ../Problem.h
+main.o: main.cc ../Types.h ../Problem.h BinaryOperators.def
 Problem.o: ../Problem.cc ../Problem.h
 Types.o: ../Types.cc ../Types.h ../Problem.h

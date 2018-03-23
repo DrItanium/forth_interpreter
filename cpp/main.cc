@@ -623,7 +623,13 @@ void predicatedInvoke(Machine& mach) {
     }
     // do nothing on false
 }
+void rot(Machine& mach);
+void over(Machine& mach);
+void pushOntoReturnStack(Machine& mach);
 void setupDictionary(Machine& mach) {
+	mach.addWord("R", pushOntoReturnStack);
+	mach.addWord("rot", rot);
+	mach.addWord("over", over);
     mach.addWord("drop", drop);
     mach.addWord("swap", swap);
     mach.addWord("^b", [](Machine& mach) { logicalXor<bool>(mach); });
@@ -650,7 +656,6 @@ void setupDictionary(Machine& mach) {
     addConstantWord(mach, "native-function-variant-code", 2);
     addConstantWord(mach, "string-variant-code", 3);
 	addConstantWord(mach, "supports-floating-point",
-
 #ifdef ALLOW_FLOATING_POINT
 			true
 #else
@@ -790,6 +795,28 @@ void thenStatement(Machine& mach) {
     mach.compileCurrentWord();
     mach.restoreCurrentlyCompilingWord();
     std::cout << mach.getCurrentlyCompilingWord().value()->getName() << std::endl;
+}
+void pushOntoReturnStack(Machine& mach) {
+	// ( n1 -- )
+	auto n1 = mach.popParameter();
+	mach.pushSubroutine(n1);
+}
+void over(Machine& mach) {
+	// ( a b -- a b a )
+	auto b = mach.popParameter();
+	auto a = mach.popParameter();
+	mach.pushParameter(a);
+	mach.pushParameter(b);
+	mach.pushParameter(a);
+}
+void rot(Machine& mach) {
+	// ( a b c -- b c a )
+	auto c = mach.popParameter();
+	auto b = mach.popParameter();
+	auto a = mach.popParameter();
+	mach.pushParameter(b);
+	mach.pushParameter(c);
+	mach.pushParameter(a);
 }
 #undef YTypeStringFloat
 #undef YTypeStringAddress

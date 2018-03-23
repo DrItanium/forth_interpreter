@@ -13,7 +13,7 @@
 : ?dup ( a -- a a | 0 ) dup if dup then ;
 : nip ( a b -- b ) swap drop ;
 : tuck ( a b -- b a b ) swap over ;
-( taken from stack computers: Appendix B)
+( taken from stack computers: Appendix B )
 : 1+ ( n1 -- n2 ) 1 +s ;
 : 1- ( n1 -- n2 ) 1 -s ;
 : 2+ ( n1 -- n2 ) 2 +s ;

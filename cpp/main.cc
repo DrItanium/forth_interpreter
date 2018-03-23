@@ -623,11 +623,13 @@ void predicatedInvoke(Machine& mach) {
     }
     // do nothing on false
 }
+void dup(Machine& mach);
 void rot(Machine& mach);
 void over(Machine& mach);
 void pushOntoReturnStack(Machine& mach);
 void setupDictionary(Machine& mach) {
 	mach.addWord("R", pushOntoReturnStack);
+	mach.addWord("dup", dup);
 	mach.addWord("rot", rot);
 	mach.addWord("over", over);
     mach.addWord("drop", drop);
@@ -794,7 +796,6 @@ void thenStatement(Machine& mach) {
     }
     mach.compileCurrentWord();
     mach.restoreCurrentlyCompilingWord();
-    std::cout << mach.getCurrentlyCompilingWord().value()->getName() << std::endl;
 }
 void pushOntoReturnStack(Machine& mach) {
 	// ( n1 -- )
@@ -816,6 +817,11 @@ void rot(Machine& mach) {
 	auto a = mach.popParameter();
 	mach.pushParameter(b);
 	mach.pushParameter(c);
+	mach.pushParameter(a);
+}
+void dup(Machine& mach) {
+	auto a = mach.popParameter();
+	mach.pushParameter(a);
 	mach.pushParameter(a);
 }
 #undef YTypeStringFloat

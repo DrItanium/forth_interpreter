@@ -122,6 +122,7 @@ class Machine {
         Address getCapacity() const noexcept { return _capacity; }
         void viewParameterStack();
         void viewSubroutineStack();
+		OptionalWord getFront() const noexcept { return _front; }
     private:
         std::ostream* _out = &std::cout;
         std::istream* _in = &std::cin;
@@ -627,7 +628,9 @@ void dup(Machine& mach);
 void rot(Machine& mach);
 void over(Machine& mach);
 void pushOntoReturnStack(Machine& mach);
+void words(Machine& mach);
 void setupDictionary(Machine& mach) {
+	mach.addWord("words", words);
 	mach.addWord("R", pushOntoReturnStack);
 	mach.addWord("dup", dup);
 	mach.addWord("rot", rot);
@@ -643,7 +646,7 @@ void setupDictionary(Machine& mach) {
     mach.addWord("lo8", getLowestEightBits);
     mach.addWord(".", printTop);
     mach.addWord(":", enterCompileMode);
-    mach.addWord("stack", [](auto& x) { x.viewParameterStack(); });
+    mach.addWord(".s", [](auto& x) { x.viewParameterStack(); });
     mach.addWord("\"", processString, false, true);
     mach.addWord("type-code", unaryOperation(typeCode));
     mach.addWord("open-input-file", openInputFile);
@@ -823,6 +826,18 @@ void dup(Machine& mach) {
 	auto a = mach.popParameter();
 	mach.pushParameter(a);
 	mach.pushParameter(a);
+}
+void printTitle(Machine& mach, OptionalWord curr) {
+	if (curr) {
+		auto p = curr.value();
+		printTitle(mach, p->getNext());
+		if (!p->isFake()) {
+			mach.getOutput() << p->getName() << std::endl;
+		}
+	}
+}
+void words(Machine& mach) {
+	printTitle(mach, mach.getFront());
 }
 #undef YTypeStringFloat
 #undef YTypeStringAddress

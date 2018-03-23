@@ -648,7 +648,7 @@ void elseStatement(Machine& mach) {
     auto front = mach.getCurrentlyCompilingWord().value();
     mach.compileCurrentWord(); // so compile it and eliminate it, the front of the dictionary will have what we need!
     mach.restoreCurrentlyCompilingWord(); // go back one level
-    mach.getCurrentlyCompilingWord().value()->addWord(NativeFunction([front](auto& x) { front->invoke(x); }));
+    mach.getCurrentlyCompilingWord().value()->addWord(NativeFunction([front](auto& x) { x.pushParameter(front); }));
     mach.saveCurrentlyCompilingWord(); // then put it back onto the stack
     mach.newCompilingWord(); // now make the else conditional
 }
@@ -660,13 +660,10 @@ void thenStatement(Machine& mach) {
     mach.compileCurrentWord(); // regardless if we have hit else or not we need to compile this word
     mach.restoreCurrentlyCompilingWord(); // go up one level
     // make sure that we load this argument onto the stack
-    mach.getCurrentlyCompilingWord().value()->addWord(NativeFunction([front](auto& x) { front->invoke(x); }));
-    if (mach.getCurrentlyCompilingWord().value()->size() == 1) {
-        // we have to make a fake else statement
-        mach.getCurrentlyCompilingWord().value()->addWord(mach.lookupWord("predicated"));
-    } else {
-        mach.getCurrentlyCompilingWord().value()->addWord(mach.lookupWord("choose"));
-    }
+    auto ifStatement = mach.getCurrentlyCompilingWord().value();
+    ifStatement->addWord(NativeFunction([front](auto& x) { x.pushParameter(front); }));
+    // we have to make a fake else statement if there is only one body in the if statement
+    ifStatement->addWord(mach.lookupWord(ifStatement->size() == 1 ? "predicated" : "choose"));
     mach.compileCurrentWord();
     mach.restoreCurrentlyCompilingWord();
 }
@@ -685,15 +682,15 @@ void bodyInvoke(Machine& mach) {
     auto onFalse = mach.popParameter();
     auto onTrue = mach.popParameter();
     if (auto condition = mach.popParameter() ; std::get<Number>(condition).getTruth()) {
-        std::get<NativeFunction>(onTrue)(mach);
+        std::get<Word>(onTrue)->invoke(mach);
     } else {
-        std::get<NativeFunction>(onFalse)(mach);
+        std::get<Word>(onFalse)->invoke(mach);
     }
 }
 void predicatedInvoke(Machine& mach) {
     auto onTrue = mach.popParameter();
     if (auto condition = mach.popParameter() ; std::get<Number>(condition).getTruth()) {
-        std::get<NativeFunction>(onTrue);
+        std::get<Word>(onTrue)->invoke(mach);
     }
     // do nothing on false
 }

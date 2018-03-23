@@ -415,31 +415,17 @@ void swap(Machine& mach) {
 // binary operations
 #define X(name, op) \
     template<typename T> \
-    Datum name ( Machine& mach, Datum a, Datum b) { \
-        try { \
-            Datum ret; \
-            auto f = std::get<Number>(a).get<T>(); \
-            auto s = std::get<Number>(b).get<T>(); \
-            auto result = (f op s); \
-            ret = result; \
-            return ret; \
-        } catch (std::bad_variant_access& a) { \
-            throw Problem(#name , a.what()); \
-        } \
+    Number name (Number a, Number b) { \
+        return Number (a.get<T>() op b.get<T>()) ; \
     }
+
 #define Y(name, op, type) 
 #include "BinaryOperators.def"
 #undef Y
 #undef X
 template<>
-Datum logicalXor<bool>(Machine& mach, Datum a, Datum b) {
-    try {
-        Datum ret;
-        ret = (std::get<Number>(a).truth != std::get<Number>(b).truth);
-        return ret;
-    } catch (std::bad_variant_access& a) {
-        throw Problem("logicalXor", a.what());
-    }
+Number logicalXor<bool>(Number a, Number b) {
+    return Number (a.truth != b.truth);
 }
 
 bool numberRoutine(Machine& mach, const std::string& word) {
@@ -731,6 +717,13 @@ void printTitle(Machine& mach, OptionalWord curr) {
 void words(Machine& mach) {
 	printTitle(mach, mach.getFront());
 }
+NativeFunction callBinaryNumberOperation(std::function<Number(Number, Number)> fn) {
+    return [fn](auto& mach) {
+        auto top = std::get<Number>(mach.popParameter());
+        auto lower = std::get<Number>(mach.popParameter());
+        mach.pushParameter(fn(lower, top));
+    };
+}
 void setupDictionary(Machine& mach) {
 	mach.addWord("words", words);
 	mach.addWord("R", pushOntoReturnStack);
@@ -739,11 +732,7 @@ void setupDictionary(Machine& mach) {
 	mach.addWord("over", over);
     mach.addWord("drop", drop);
     mach.addWord("swap", swap);
-    mach.addWord("^b", [](Machine& mach) { 
-            auto top = mach.popParameter(); 
-            auto lower = mach.popParameter(); 
-            Datum d = logicalXor<bool>(mach, lower, top);
-		    mach.pushParameter( d ); });
+    mach.addWord("^b", callBinaryNumberOperation(logicalXor<bool>));
     mach.addWord("(", enterIgnoreInputMode, false, true);
     mach.addWord(";", semicolon, false, true);
     mach.addWord("bye", bye);
@@ -752,7 +741,7 @@ void setupDictionary(Machine& mach) {
     mach.addWord("lo8", getLowestEightBits);
     mach.addWord(".", printTop);
     mach.addWord(":", enterCompileMode);
-    mach.addWord(".s", [](auto& x) { x.viewParameterStack(); });
+    mach.addWord(".s", std::mem_fn(&Machine::viewParameterStack));
     mach.addWord("\"", processString, false, true);
     mach.addWord("type-code", unaryOperation(typeCode));
     mach.addWord("open-input-file", openInputFile);
@@ -774,12 +763,7 @@ void setupDictionary(Machine& mach) {
 #endif 
 			);
 #define X(name, op)
-#define Y(name, op, type) mach.addWord(#op INDIRECTION(YTypeString, type) , [](Machine& mach) { \
-            auto top = mach.popParameter(); \
-            auto lower = mach.popParameter(); \
-		    Datum d = name < INDIRECTION(YType, type) > ( mach , lower, top ) ; \
-		    mach.pushParameter( d ); \
-        });
+#define Y(name, op, type) mach.addWord(#op INDIRECTION(YTypeString, type) , callBinaryNumberOperation( name < INDIRECTION(YType, type) >));
 #include "BinaryOperators.def"
 #undef X
 }

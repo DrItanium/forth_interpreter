@@ -158,7 +158,7 @@ void Machine::closeFileForOutput() {
 
 void Machine::closeFileForInput() {
     if (_in != &std::cin) {
-        std::ifstream* tmp = (std::ifstream*)_out;
+        std::ifstream* tmp = (std::ifstream*)_in;
         tmp->close();
         if (_inputs.empty()) {
             throw Problem("closeFileForInput", "Stack underflow");
@@ -187,7 +187,7 @@ NativeFunction unaryOperation(UnaryOperation op) {
 
 class DictionaryEntry {
     public:
-        explicit DictionaryEntry(const std::string& name) : _name(name), _fake(false), _compileTimeInvoke(false) { }
+        explicit DictionaryEntry(const std::string& name) : _name(name), _fake(false), _compileTimeInvoke(false), _skipNextWord(false) { }
         ~DictionaryEntry();
         void setNext(Word next) noexcept { _next = next; }
         void setNext(OptionalWord next) noexcept { _next = next; }
@@ -210,12 +210,14 @@ class DictionaryEntry {
         void setCompileTimeInvokable(bool value) noexcept { _compileTimeInvoke = value; }
         bool matches(const std::string& name);
         const std::string& getName() const noexcept { return _name; }
+        auto size() const noexcept -> std::list<NativeFunction>::size_type { return _contents.size(); }
     private:
         std::string _name;
-        bool _fake, _compileTimeInvoke;
+        bool _fake, _compileTimeInvoke, _skipNextWord;
         OptionalWord _next;
         std::list<NativeFunction> _contents;
 };
+
 bool DictionaryEntry::matches(const std::string& name) {
     return !_fake && (name == _name);
 }
@@ -223,6 +225,9 @@ bool DictionaryEntry::matches(const std::string& name) {
 void Machine::newCompilingWord(const std::string& str) {
     // this can leak but it is the most straight forward
     auto entry = std::make_shared<DictionaryEntry>(str);
+    if (str.empty()) {
+        entry->setFake(true);
+    }
     _compile = entry;
 }
 
@@ -238,18 +243,10 @@ void Machine::compileCurrentWord() {
     }
 }
 void Machine::saveCurrentlyCompilingWord() {
-    if (!currentlyCompiling()) {
-        throw Problem("saveCurrentlyCompilingWord", "Not in compilation mode!");
-    } else {
-        pushSubroutine(*_compile);
-    }
+    pushSubroutine(*_compile);
 }
 void Machine::restoreCurrentlyCompilingWord() {
-    if (!currentlyCompiling()) {
-        throw Problem("restoreCurrentlyCompilingWord", "Not in compilation mode!");
-    } else {
-        _compile = std::get<Word>(popSubroutine());
-    }
+    _compile = std::get<Word>(popSubroutine());
 }
 
 Machine::Machine(Address capacity) {
@@ -378,7 +375,7 @@ NativeFunction pushToSubroutineStack(DictionaryEntry* entry) {
 
 void semicolon(Machine& mach) {
     if (mach.currentlyCompiling()) {
-        mach.getCurrentlyCompilingWord().value()->addWord(semicolon);
+        mach.getCurrentlyCompilingWord().value()->addWord(NativeFunction(semicolon));
         mach.compileCurrentWord();
     }
 }
@@ -619,8 +616,17 @@ void enterCompileMode(Machine& mach);
 void processString(Machine& mach);
 void openInputFile(Machine& mach);
 void closeInputFile(Machine& mach);
+void ifStatement(Machine& mach);
+void elseStatement(Machine& mach);
+void thenStatement(Machine& mach);
 Datum typeCode(Machine& mach, Datum d);
 void addIntegerConstantWord(Machine& mach, const std::string& name, Integer value) {
+    std::stringstream ss;
+    ss << "*" << name << "*";
+    auto str = ss.str();
+    mach.addWord(str, [value](auto& x) { x.pushParameter(value); });
+}
+void addUnsignedConstantWord(Machine& mach, const std::string& name, Address value) {
     std::stringstream ss;
     ss << "*" << name << "*";
     auto str = ss.str();
@@ -631,6 +637,22 @@ void addBooleanConstantWord(Machine& mach, const std::string& name, bool value) 
     ss << "*" << name << "*";
     auto str = ss.str();
     mach.addWord(str, [value](auto& x) { x.pushParameter(value); });
+}
+void bodyInvoke(Machine& mach) {
+    auto onFalse = mach.popParameter();
+    auto onTrue = mach.popParameter();
+    if (auto condition = mach.popParameter() ; std::get<bool>(condition)) {
+        std::get<NativeFunction>(onTrue)(mach);
+    } else {
+        std::get<NativeFunction>(onFalse)(mach);
+    }
+}
+void predicatedInvoke(Machine& mach) {
+    auto onTrue = mach.popParameter();
+    if (auto condition = mach.popParameter() ; std::get<bool>(condition)) {
+        std::get<NativeFunction>(onTrue);
+    }
+    // do nothing on false
 }
 void setupDictionary(Machine& mach) {
     mach.addWord("drop", drop);
@@ -649,14 +671,19 @@ void setupDictionary(Machine& mach) {
     mach.addWord("type-code", unaryOperation(typeCode));
     mach.addWord("open-input-file", openInputFile);
     mach.addWord("close-input-file", closeInputFile);
-    addIntegerConstantWord(mach, "integer-variant-code", 0);
-    addIntegerConstantWord(mach, "address-variant-code", 1);
-    addIntegerConstantWord(mach, "bool-variant-code", 2);
-    addIntegerConstantWord(mach, "word-variant-code", 3);
-    addIntegerConstantWord(mach, "native-function-variant-code", 4);
-    addIntegerConstantWord(mach, "string-variant-code", 5);
+    mach.addWord("choose", bodyInvoke);
+    mach.addWord("predicated", predicatedInvoke);
+    mach.addWord("if", ifStatement, false, true);
+    mach.addWord("else", elseStatement, false, true);
+    mach.addWord("then", thenStatement, false, true);
+    addUnsignedConstantWord(mach, "integer-variant-code", 0);
+    addUnsignedConstantWord(mach, "address-variant-code", 1);
+    addUnsignedConstantWord(mach, "bool-variant-code", 2);
+    addUnsignedConstantWord(mach, "word-variant-code", 3);
+    addUnsignedConstantWord(mach, "native-function-variant-code", 4);
+    addUnsignedConstantWord(mach, "string-variant-code", 5);
 #ifdef ALLOW_FLOATING_POINT
-    addIntegerConstantWord(mach, "floating-point-variant-code", 6); // always the last index
+    addUnsignedConstantWord(mach, "floating-point-variant-code", 6); // always the last index
     addBooleanConstantWord(mach, "supports-floating-point", true);
 #else
     addBooleanConstantWord(mach, "supports-floating-point", false);
@@ -746,6 +773,54 @@ void openInputFile(Machine& mach) {
     auto top = mach.popParameter();
     auto path = std::get<std::string>(top);
     mach.openFileForInput(path);
+}
+void ifStatement(Machine& mach) {
+    if (!mach.currentlyCompiling()) {
+        throw Problem("ifStatement", "Must be compiling for this word to work!");
+    } 
+    auto c = mach.getCurrentlyCompilingWord().value(); // do an evaluation of the contents
+    c->addWord(true);
+    c->addWord(mach.lookupWord("==b"));
+    // we need to add a native function to perform the check which assumes a boolean
+    mach.saveCurrentlyCompilingWord(); // save our outer operation to the stack
+    // now we need to generate two compile entries
+    mach.newCompilingWord(); // this no name means fake :D
+    auto z = mach.getCurrentlyCompilingWord().value();
+    c->addWord(z);
+    mach.saveCurrentlyCompilingWord(); // save this to the stack 
+    mach.newCompilingWord(); // another fake entry for the onTrue portion
+}
+void elseStatement(Machine& mach) {
+    if (!mach.currentlyCompiling()) {
+        throw Problem("elseStatement", "Must be compiling for this word to work!");
+    }
+
+    // now we need to finalize the ontrue portion
+    auto front = mach.getCurrentlyCompilingWord().value();
+    mach.compileCurrentWord(); // so compile it and eliminate it, the front of the dictionary will have what we need!
+    mach.restoreCurrentlyCompilingWord(); // go back one level
+    mach.getCurrentlyCompilingWord().value()->addWord(NativeFunction([front](auto& x) { front->invoke(x); }));
+    mach.saveCurrentlyCompilingWord(); // then put it back onto the stack
+    mach.newCompilingWord(); // now make the else conditional
+}
+void thenStatement(Machine& mach) {
+    if (!mach.currentlyCompiling()) {
+        throw Problem("thenStatement", "Must be compiling for this word to work!");
+    }
+    auto front = mach.getCurrentlyCompilingWord().value();
+    mach.compileCurrentWord(); // regardless if we have hit else or not we need to compile this word
+    mach.restoreCurrentlyCompilingWord(); // go up one level
+    // make sure that we load this argument onto the stack
+    mach.getCurrentlyCompilingWord().value()->addWord(NativeFunction([front](auto& x) { front->invoke(x); }));
+    if (mach.getCurrentlyCompilingWord().value()->size() == 1) {
+        // we have to make a fake else statement
+        mach.getCurrentlyCompilingWord().value()->addWord(mach.lookupWord("predicated"));
+    } else {
+        mach.getCurrentlyCompilingWord().value()->addWord(mach.lookupWord("choose"));
+    }
+    mach.compileCurrentWord();
+    mach.restoreCurrentlyCompilingWord();
+    std::cout << mach.getCurrentlyCompilingWord().value()->getName() << std::endl;
 }
 #undef YTypeStringFloat
 #undef YTypeStringAddress

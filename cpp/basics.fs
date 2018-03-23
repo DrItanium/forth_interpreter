@@ -1,5 +1,5 @@
 ( some words ! )
-: of-type? ( type code -- flag ) swap type-code ==s ;
+: of-type? ( type code -- flag ) swap type-code ==u ;
 : integer? ( a -- flag ) *integer-variant-code* of-type? ;
 : address? ( a -- flag ) *address-variant-code* of-type? ;
 : bool? ( a -- flag ) *bool-variant-code* of-type? ;

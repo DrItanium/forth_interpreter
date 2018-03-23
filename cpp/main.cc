@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 #define YTypeFloat forth::Floating
 #define YTypeAddress forth::Address
@@ -28,12 +29,23 @@ using byte = forth::byte;
 #ifdef ALLOW_FLOATING_POINT
 using Floating = forth::Floating;
 #endif // end ALLOW_FLOATING_POINT
+
 template<typename T>
 using GenericStack = std::list<T>;
 using Problem = forth::Problem;
 using Word = std::shared_ptr<DictionaryEntry>;
 using OptionalWord = std::optional<Word>;
 using NativeFunction = std::function<void(Machine&)>;
+void toUpper(std::string& str) {
+    std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+}
+bool equalsIgnoreCase(const std::string& a, const std::string& b) {
+    auto ca = a;
+    auto cb = b;
+    toUpper(ca);
+    toUpper(cb);
+    return ca == cb;
+}
 union Number {
 	Number() : integer(0) { }
 	Number(int i) : integer(Integer(i)) { }
@@ -247,7 +259,7 @@ class DictionaryEntry {
 };
 
 bool DictionaryEntry::matches(const std::string& name) {
-    return !_fake && (name == _name);
+    return !_fake && equalsIgnoreCase(name, _name);
 }
 
 void Machine::newCompilingWord(const std::string& str) {
@@ -610,8 +622,14 @@ void ifStatement(Machine& mach) {
         throw Problem("ifStatement", "Must be compiling for this word to work!");
     } 
     auto c = mach.getCurrentlyCompilingWord().value(); // do an evaluation of the contents
+#ifdef ALLOW_BOOLEAN
     c->addWord(true);
     c->addWord(mach.lookupWord("==b"));
+#else // ! ALLOW_BOOLEAN
+    c->addWord(Number(0));
+    c->addWord(mach.lookupWord("!=u")); // not equal zero
+#endif
+
     // we need to add a native function to perform the check which assumes a boolean
     mach.saveCurrentlyCompilingWord(); // save our outer operation to the stack
     // now we need to generate two compile entries

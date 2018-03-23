@@ -24,8 +24,8 @@
 : <> ( n1 n2 -- flag ) !=u ;
 : = ( n1 n2 -- flag ) ==u ;
 : nop ( -- ) ;
-: between.s ( n min max -- f ) rot dup -rot swap <=s -rot swap >=s &&b ;
-: between.u ( n min max -- f ) rot dup -rot swap <=u -rot swap >=u &&b ;
+: between.s ( n min max -- f ) rot dup -rot swap <=s -rot swap >=s &&s ;
+: between.u ( n min max -- f ) rot dup -rot swap <=u -rot swap >=u &&u ;
 
 
 : quit ( -- ) bye ;

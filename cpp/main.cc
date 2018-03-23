@@ -12,9 +12,11 @@
 
 #ifdef ALLOW_FLOATING_POINT
 #define YTypeFloat forth::Floating
-#endif
+#endif // end ALLOW_FLOATING_POINT
 #define YTypeAddress forth::Address
+#ifdef ALLOW_BOOLEAN
 #define YTypebool bool
+#endif // end ALLOW_BOOLEAN
 #define YTypeInteger forth::Integer
 #define YTypeStringFloat "f"
 #define YTypeStringAddress "u" 
@@ -29,7 +31,7 @@ using Address = forth::Address;
 using byte = forth::byte;
 #ifdef ALLOW_FLOATING_POINT
 using Floating = forth::Floating;
-#endif
+#endif // end ALLOW_FLOATING_POINT
 template<typename T>
 using GenericStack = std::list<T>;
 using Problem = forth::Problem;
@@ -42,7 +44,12 @@ union Number {
 	Number(unsigned int i ) : address(i) { }
 	Number(Integer i) : integer(i) { }
 	Number(Address a) : address(a) { }
+#ifdef ALLOW_BOOLEAN
 	Number(bool t) : truth(t) { }
+#endif // end ALLOW_BOOLEAN
+#ifdef ALLOW_FLOATING_POINT
+    Number(Floating f) : fp(f) { }
+#endif // end ALLOW_FLOATING_POINT
 
 	template<typename T>
 	T get() noexcept {
@@ -52,24 +59,33 @@ union Number {
 		} else if constexpr (std::is_same_v<K, Address>) {
 			return address;
 		} else if constexpr (std::is_same_v<K, bool>) {
-			return truth;
+			return getTruth();
 		}
 #ifdef ALLOW_FLOATING_POINT
 		else if constexpr (std::is_same_v<K, Floating>) {
 			return fp;
 		}
-#endif
+#endif // end ALLOW_FLOATING_POINT
 		else {
 			static_assert(forth::AlwaysFalse<T>::value, "Unsupported type specified!");
 		}
 	}
+    bool getTruth() const noexcept { 
+#ifdef ALLOW_BOOLEAN
+        return truth;
+#else // !ALLOW_BOOLEAN
+        return address != 0;
+#endif // end ALLOW_BOOLEAN
+    }
 	Integer integer;
 	Address address;
+#ifdef ALLOW_BOOLEAN
 	bool truth;
-	byte bytes[sizeof(Address)];
+#endif
 #ifdef ALLOW_FLOATING_POINT
 	Floating fp;
 #endif 
+	byte bytes[sizeof(Address)];
 };
 using Datum = std::variant<Number,
       Word, 
@@ -405,7 +421,9 @@ void Machine::addWord(const std::string& str, NativeFunction fn, bool fake, bool
     }
     _front = OptionalWord(ptr);
 }
-void drop(Machine& mach) { mach.popParameter(); }
+void drop(Machine& mach) { 
+    mach.popParameter();
+}
 void swap(Machine& mach) { 
     auto top = mach.popParameter();
     auto lower = mach.popParameter();
@@ -423,10 +441,12 @@ void swap(Machine& mach) {
 #include "BinaryOperators.def"
 #undef Y
 #undef X
+#ifdef ALLOW_BOOLEAN
 template<>
 Number logicalXor<bool>(Number a, Number b) {
-    return Number (a.truth != b.truth);
+    return Number (a.getTruth() != b.getTruth());
 }
+#endif // end ALLOW_BOOLEAN
 
 bool numberRoutine(Machine& mach, const std::string& word) {
     auto fn = [&mach](Number value) {
@@ -439,6 +459,7 @@ bool numberRoutine(Machine& mach, const std::string& word) {
     // floating point
     // integers
     // first do some inspection first
+#ifdef ALLOW_BOOLEAN
     if (word == "true") {
         fn(true);
         return true;
@@ -446,6 +467,7 @@ bool numberRoutine(Machine& mach, const std::string& word) {
         fn(false);
         return true;
     } 
+#endif // end ALLOW_BOOLEAN
     std::istringstream parseAttempt(word);
     if (word.find('#') != std::string::npos) {
         forth::Address tmpAddress;
@@ -478,7 +500,7 @@ bool numberRoutine(Machine& mach, const std::string& word) {
         // a float
         return false;
     }
-#endif
+#endif // end ALLOW_FLOATING_POINT
     forth::Integer tmpInt;
     parseAttempt.clear();
     parseAttempt >> tmpInt;
@@ -501,42 +523,21 @@ byte Machine::load(Address addr) {
     return _memory[addr];
 }
 void storeByte(Machine& m) {
-    auto top = m.popParameter();
-    auto lower = m.popParameter();
-    auto addr = std::get<Number>(lower).address;
-    byte result = std::visit([&m](auto&& value) {
-                using T = std::decay_t<decltype(value)>;
-				if constexpr (std::is_same_v<T, Number>) {
-					return forth::decodeBits<Address, byte, 0xFF, 0>(value.address);
-                } else if constexpr (std::is_same_v<T, bool>) {
-                    return byte(value ? 1 : 0);
-                } else {
-                    throw Problem("storeByte", "Illegal data to store into memory!");
-                    // gcc will lose its mind if this is not here!
-                    return byte(0);
-                }
-            }, top);
-    m.store(addr, result);
+    auto value = std::get<Number>(m.popParameter());
+    auto addr = std::get<Number>(m.popParameter()).address;
+    m.store(addr, forth::decodeBits<Address, byte, 0xFF, 0>(value.address));
 }
 void loadByte(Machine& m) {
-    auto top = m.popParameter();
-    auto addr = std::get<Number>(top).address;
+    auto addr = std::get<Number>(m.popParameter()).address;
 	Number n(Address(m.load(addr)));
     m.pushParameter(n);
 }
 void getLowestEightBits(Machine& m) {
-    // ( v -- l x )
+    // ( v -- lo8 shiftv )
     // this design allows us to do little endian saves
-    auto top = m.popParameter();
-    std::visit([&m](auto&& value) {
-                using T = std::decay_t<decltype(value)>;
-				if constexpr (std::is_same_v<T, Number>) {
-                    m.pushParameter(Number(Address(forth::decodeBits<Address, byte, Address(0xFF), 0>(value.address))));
-                    m.pushParameter(Number(Address(forth::decodeBits<Address, Address, ~Address(0xFF), 8>(value.address))));
-                } else {
-                    throw Problem("storeByte", "Illegal data to store into memory!");
-                }
-            }, top);
+    auto num = std::get<Number>(m.popParameter()).address;
+    m.pushParameter(Number(Address(forth::decodeBits<Address, byte, Address(0xFF), 0>(num))));
+    m.pushParameter(Number(Address(forth::decodeBits<Address, Address, ~Address(0xFF), 8>(num))));
 }
 void printDatum(Machine& m, Datum& top) {
     std::visit([&m](auto&& value) {
@@ -662,10 +663,15 @@ void addConstantWord(Machine& mach, const std::string& name, Number value) {
     auto str = ss.str();
     mach.addWord(str, [value](auto& x) { x.pushParameter(value); });
 }
+#ifndef ALLOW_BOOLEAN
+void addConstantWord(Machine& mach, const std::string& name, bool value) {
+    addConstantWord(mach, name, value ? 0 : -1);
+}
+#endif // end !ALLOW_BOOLEAN
 void bodyInvoke(Machine& mach) {
     auto onFalse = mach.popParameter();
     auto onTrue = mach.popParameter();
-    if (auto condition = mach.popParameter() ; std::get<Number>(condition).truth) {
+    if (auto condition = mach.popParameter() ; std::get<Number>(condition).getTruth()) {
         std::get<NativeFunction>(onTrue)(mach);
     } else {
         std::get<NativeFunction>(onFalse)(mach);
@@ -673,7 +679,7 @@ void bodyInvoke(Machine& mach) {
 }
 void predicatedInvoke(Machine& mach) {
     auto onTrue = mach.popParameter();
-    if (auto condition = mach.popParameter() ; std::get<Number>(condition).truth) {
+    if (auto condition = mach.popParameter() ; std::get<Number>(condition).getTruth()) {
         std::get<NativeFunction>(onTrue);
     }
     // do nothing on false
@@ -702,8 +708,11 @@ void over(Machine& mach) {
 }
 void pushOntoReturnStack(Machine& mach) {
 	// ( n1 -- )
-	auto n1 = mach.popParameter();
-	mach.pushSubroutine(n1);
+	mach.pushSubroutine(mach.popParameter());
+}
+void subroutineToParameterStack(Machine& mach) {
+    // ( -- n1 )
+    mach.pushParameter(mach.popSubroutine());
 }
 void printTitle(Machine& mach, OptionalWord curr) {
 	if (curr) {
@@ -732,7 +741,9 @@ void setupDictionary(Machine& mach) {
 	mach.addWord("over", over);
     mach.addWord("drop", drop);
     mach.addWord("swap", swap);
+#ifdef ALLOW_BOOLEAN
     mach.addWord("^b", callBinaryNumberOperation(logicalXor<bool>));
+#endif // end ALLOW_BOOLEAN
     mach.addWord("(", enterIgnoreInputMode, false, true);
     mach.addWord(";", semicolon, false, true);
     mach.addWord("bye", bye);
@@ -755,12 +766,19 @@ void setupDictionary(Machine& mach) {
     addConstantWord(mach, "word-variant-code", 1);
     addConstantWord(mach, "native-function-variant-code", 2);
     addConstantWord(mach, "string-variant-code", 3);
+    addConstantWord(mach, "supports-boolean", 
+#ifdef ALLOW_BOOLEAN
+            true
+#else
+            false
+#endif // end ALLOW_BOOLEAN
+            );
 	addConstantWord(mach, "supports-floating-point",
 #ifdef ALLOW_FLOATING_POINT
 			true
 #else
 			false
-#endif 
+#endif  // end ALLOW_FLOATING_POINT
 			);
 #define X(name, op)
 #define Y(name, op, type) mach.addWord(#op INDIRECTION(YTypeString, type) , callBinaryNumberOperation( name < INDIRECTION(YType, type) >));

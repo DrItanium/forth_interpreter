@@ -2,10 +2,14 @@
 #define U(name, op) Y(name, op, Address)
 #ifdef ALLOW_FLOATING_POINT
 #define F(name, op) Y(name, op, Float)
-#else
+#else // !ALLOW_FLOATING_POINT
 #define F(name, op)
-#endif
+#endif // end ALLOW_FLOATING_POINT
+#ifdef ALLOW_BOOLEAN
 #define B(name, op) Y(name, op, bool)
+#else // !ALLOW_BOOLEAN
+#define B(name, op) 
+#endif // end ALLOW_BOOLEAN
 #define SU(name, op) \
     S(name, op) \
     U(name, op)

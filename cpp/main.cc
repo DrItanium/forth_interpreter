@@ -426,13 +426,6 @@ void swap(Machine& mach) {
         } catch (std::bad_variant_access& a) { \
             throw Problem(#name , a.what()); \
         } \
-    } \
-    template<typename T> \
-    void name ( Machine& mach ) { \
-        auto top = mach.popParameter(); \
-        auto lower = mach.popParameter(); \
-		Datum d = name <T> ( mach , lower, top ) ; \
-		mach.pushParameter( d ); \
     }
 #define Y(name, op, type) 
 #include "BinaryOperators.def"
@@ -442,9 +435,7 @@ template<>
 Datum logicalXor<bool>(Machine& mach, Datum a, Datum b) {
     try {
         Datum ret;
-        auto f = std::get<Number>(a).truth;
-        auto s = std::get<Number>(b).truth;
-        ret = f != s;
+        ret = (std::get<Number>(a).truth != std::get<Number>(b).truth);
         return ret;
     } catch (std::bad_variant_access& a) {
         throw Problem("logicalXor", a.what());
@@ -594,127 +585,6 @@ void Machine::viewParameterStack() {
         getOutput() << std::endl;
     }
 }
-void enterCompileMode(Machine& mach);
-void processString(Machine& mach);
-void openInputFile(Machine& mach);
-void closeInputFile(Machine& mach);
-void ifStatement(Machine& mach);
-void elseStatement(Machine& mach);
-void thenStatement(Machine& mach);
-Datum typeCode(Machine& mach, Datum d);
-void addConstantWord(Machine& mach, const std::string& name, Number value) {
-    std::stringstream ss;
-    ss << "*" << name << "*";
-    auto str = ss.str();
-    mach.addWord(str, [value](auto& x) { x.pushParameter(value); });
-}
-void bodyInvoke(Machine& mach) {
-    auto onFalse = mach.popParameter();
-    auto onTrue = mach.popParameter();
-    if (auto condition = mach.popParameter() ; std::get<Number>(condition).truth) {
-        std::get<NativeFunction>(onTrue)(mach);
-    } else {
-        std::get<NativeFunction>(onFalse)(mach);
-    }
-}
-void predicatedInvoke(Machine& mach) {
-    auto onTrue = mach.popParameter();
-    if (auto condition = mach.popParameter() ; std::get<Number>(condition).truth) {
-        std::get<NativeFunction>(onTrue);
-    }
-    // do nothing on false
-}
-void dup(Machine& mach);
-void rot(Machine& mach);
-void over(Machine& mach);
-void pushOntoReturnStack(Machine& mach);
-void words(Machine& mach);
-void setupDictionary(Machine& mach) {
-	mach.addWord("words", words);
-	mach.addWord("R", pushOntoReturnStack);
-	mach.addWord("dup", dup);
-	mach.addWord("rot", rot);
-	mach.addWord("over", over);
-    mach.addWord("drop", drop);
-    mach.addWord("swap", swap);
-    mach.addWord("^b", [](Machine& mach) { logicalXor<bool>(mach); });
-    mach.addWord("(", enterIgnoreInputMode, false, true);
-    mach.addWord(";", semicolon, false, true);
-    mach.addWord("bye", bye);
-    mach.addWord("@8", loadByte);
-    mach.addWord("=8", storeByte);
-    mach.addWord("lo8", getLowestEightBits);
-    mach.addWord(".", printTop);
-    mach.addWord(":", enterCompileMode);
-    mach.addWord(".s", [](auto& x) { x.viewParameterStack(); });
-    mach.addWord("\"", processString, false, true);
-    mach.addWord("type-code", unaryOperation(typeCode));
-    mach.addWord("open-input-file", openInputFile);
-    mach.addWord("close-input-file", closeInputFile);
-    mach.addWord("choose", bodyInvoke);
-    mach.addWord("predicated", predicatedInvoke);
-    mach.addWord("if", ifStatement, false, true);
-    mach.addWord("else", elseStatement, false, true);
-    mach.addWord("then", thenStatement, false, true);
-    addConstantWord(mach, "number-variant-code", 0);
-    addConstantWord(mach, "word-variant-code", 1);
-    addConstantWord(mach, "native-function-variant-code", 2);
-    addConstantWord(mach, "string-variant-code", 3);
-	addConstantWord(mach, "supports-floating-point",
-#ifdef ALLOW_FLOATING_POINT
-			true
-#else
-			false
-#endif 
-			);
-#define X(name, op)
-#define Y(name, op, type) mach.addWord(#op INDIRECTION(YTypeString, type) , [](Machine& mach) { name < INDIRECTION(YType, type) >(mach); } );
-#include "BinaryOperators.def"
-#undef X
-}
-int main() {
-    Machine mach;
-    setupDictionary(mach);
-    while (keepExecuting) {
-        try {
-            if (auto str = mach.readNext() ; !str.empty()) {
-                if (ignoreInput) {
-                    ignoreInput = (str != ")");
-                    continue;
-                } else {
-                    if (auto entry = mach.lookupWord(str); entry) {
-                        if (auto value = entry.value() ; mach.currentlyCompiling()) {
-                            if (value->compileTimeInvokable()) {
-                                value->invoke(mach);
-                            } else {
-                                mach.getCurrentlyCompilingWord().value()->addWord(entry);
-                            }
-                        } else {
-                            value->invoke(mach);
-                        }
-                    } else {
-                        if (!numberRoutine(mach, str)) {
-                            throw Problem(str, "?");
-                        } 
-                    }
-                }
-            }
-            if (!mach.currentlyCompiling() && 
-                    !ignoreInput) {
-                mach.getOutput() << " ok" << std::endl;
-            }
-        } catch (Problem& p) {
-            // clear out the stacks as well
-            mach.errorOccurred();
-            std::cerr << p.getWord() << p.getMessage() << std::endl;
-        } catch (std::bad_variant_access& a) {
-            mach.errorOccurred();
-            std::cerr << "bad variant: " << a.what() << std::endl;
-        }
-    }
-    return 0;
-}
-
 void enterCompileMode(Machine& mach) {
     if (mach.currentlyCompiling()) {
         throw Problem("enterCompileMode", "Already compiling!");
@@ -800,17 +670,31 @@ void thenStatement(Machine& mach) {
     mach.compileCurrentWord();
     mach.restoreCurrentlyCompilingWord();
 }
-void pushOntoReturnStack(Machine& mach) {
-	// ( n1 -- )
-	auto n1 = mach.popParameter();
-	mach.pushSubroutine(n1);
+void addConstantWord(Machine& mach, const std::string& name, Number value) {
+    std::stringstream ss;
+    ss << "*" << name << "*";
+    auto str = ss.str();
+    mach.addWord(str, [value](auto& x) { x.pushParameter(value); });
 }
-void over(Machine& mach) {
-	// ( a b -- a b a )
-	auto b = mach.popParameter();
+void bodyInvoke(Machine& mach) {
+    auto onFalse = mach.popParameter();
+    auto onTrue = mach.popParameter();
+    if (auto condition = mach.popParameter() ; std::get<Number>(condition).truth) {
+        std::get<NativeFunction>(onTrue)(mach);
+    } else {
+        std::get<NativeFunction>(onFalse)(mach);
+    }
+}
+void predicatedInvoke(Machine& mach) {
+    auto onTrue = mach.popParameter();
+    if (auto condition = mach.popParameter() ; std::get<Number>(condition).truth) {
+        std::get<NativeFunction>(onTrue);
+    }
+    // do nothing on false
+}
+void dup(Machine& mach) {
 	auto a = mach.popParameter();
 	mach.pushParameter(a);
-	mach.pushParameter(b);
 	mach.pushParameter(a);
 }
 void rot(Machine& mach) {
@@ -822,10 +706,18 @@ void rot(Machine& mach) {
 	mach.pushParameter(c);
 	mach.pushParameter(a);
 }
-void dup(Machine& mach) {
+void over(Machine& mach) {
+	// ( a b -- a b a )
+	auto b = mach.popParameter();
 	auto a = mach.popParameter();
 	mach.pushParameter(a);
+	mach.pushParameter(b);
 	mach.pushParameter(a);
+}
+void pushOntoReturnStack(Machine& mach) {
+	// ( n1 -- )
+	auto n1 = mach.popParameter();
+	mach.pushSubroutine(n1);
 }
 void printTitle(Machine& mach, OptionalWord curr) {
 	if (curr) {
@@ -839,6 +731,101 @@ void printTitle(Machine& mach, OptionalWord curr) {
 void words(Machine& mach) {
 	printTitle(mach, mach.getFront());
 }
+void setupDictionary(Machine& mach) {
+	mach.addWord("words", words);
+	mach.addWord("R", pushOntoReturnStack);
+	mach.addWord("dup", dup);
+	mach.addWord("rot", rot);
+	mach.addWord("over", over);
+    mach.addWord("drop", drop);
+    mach.addWord("swap", swap);
+    mach.addWord("^b", [](Machine& mach) { 
+            auto top = mach.popParameter(); 
+            auto lower = mach.popParameter(); 
+            Datum d = logicalXor<bool>(mach, lower, top);
+		    mach.pushParameter( d ); });
+    mach.addWord("(", enterIgnoreInputMode, false, true);
+    mach.addWord(";", semicolon, false, true);
+    mach.addWord("bye", bye);
+    mach.addWord("@8", loadByte);
+    mach.addWord("=8", storeByte);
+    mach.addWord("lo8", getLowestEightBits);
+    mach.addWord(".", printTop);
+    mach.addWord(":", enterCompileMode);
+    mach.addWord(".s", [](auto& x) { x.viewParameterStack(); });
+    mach.addWord("\"", processString, false, true);
+    mach.addWord("type-code", unaryOperation(typeCode));
+    mach.addWord("open-input-file", openInputFile);
+    mach.addWord("close-input-file", closeInputFile);
+    mach.addWord("choose", bodyInvoke);
+    mach.addWord("predicated", predicatedInvoke);
+    mach.addWord("if", ifStatement, false, true);
+    mach.addWord("else", elseStatement, false, true);
+    mach.addWord("then", thenStatement, false, true);
+    addConstantWord(mach, "number-variant-code", 0);
+    addConstantWord(mach, "word-variant-code", 1);
+    addConstantWord(mach, "native-function-variant-code", 2);
+    addConstantWord(mach, "string-variant-code", 3);
+	addConstantWord(mach, "supports-floating-point",
+#ifdef ALLOW_FLOATING_POINT
+			true
+#else
+			false
+#endif 
+			);
+#define X(name, op)
+#define Y(name, op, type) mach.addWord(#op INDIRECTION(YTypeString, type) , [](Machine& mach) { \
+            auto top = mach.popParameter(); \
+            auto lower = mach.popParameter(); \
+		    Datum d = name < INDIRECTION(YType, type) > ( mach , lower, top ) ; \
+		    mach.pushParameter( d ); \
+        });
+#include "BinaryOperators.def"
+#undef X
+}
+int main() {
+    Machine mach;
+    setupDictionary(mach);
+    while (keepExecuting) {
+        try {
+            if (auto str = mach.readNext() ; !str.empty()) {
+                if (ignoreInput) {
+                    ignoreInput = (str != ")");
+                    continue;
+                } else {
+                    if (auto entry = mach.lookupWord(str); entry) {
+                        if (auto value = entry.value() ; mach.currentlyCompiling()) {
+                            if (value->compileTimeInvokable()) {
+                                value->invoke(mach);
+                            } else {
+                                mach.getCurrentlyCompilingWord().value()->addWord(entry);
+                            }
+                        } else {
+                            value->invoke(mach);
+                        }
+                    } else {
+                        if (!numberRoutine(mach, str)) {
+                            throw Problem(str, "?");
+                        } 
+                    }
+                }
+            }
+            if (!mach.currentlyCompiling() && 
+                    !ignoreInput) {
+                mach.getOutput() << " ok" << std::endl;
+            }
+        } catch (Problem& p) {
+            // clear out the stacks as well
+            mach.errorOccurred();
+            std::cerr << p.getWord() << p.getMessage() << std::endl;
+        } catch (std::bad_variant_access& a) {
+            mach.errorOccurred();
+            std::cerr << "bad variant: " << a.what() << std::endl;
+        }
+    }
+    return 0;
+}
+
 #undef YTypeStringFloat
 #undef YTypeStringAddress
 #undef YTypeStringbool

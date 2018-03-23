@@ -42,6 +42,10 @@ XSUBF(notEquals, !=)
 XSUB(logicalAnd, &&)
 XSUB(logicalOr, ||)
 XSU(logicalXor, ^)
+XSUF(greaterThan, >)
+XSUF(lessThan, <)
+XSUF(greaterThanOrEqualTo, >=)
+XSUF(lessThanOrEqualTo, <=)
 #undef XSUBF
 #undef XSUB
 #undef XSU

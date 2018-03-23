@@ -36,17 +36,45 @@ using Problem = forth::Problem;
 using Word = std::shared_ptr<DictionaryEntry>;
 using OptionalWord = std::optional<Word>;
 using NativeFunction = std::function<void(Machine&)>;
-using Datum = std::variant<Integer, 
-      Address, 
-      bool, 
+union Number {
+	Number() : integer(0) { }
+	Number(int i) : integer(i) { }
+	Number(unsigned int i ) : address(i) { }
+	Number(Integer i) : integer(i) { }
+	Number(Address a) : address(a) { }
+	Number(bool t) : truth(t) { }
+
+	template<typename T>
+	T get() noexcept {
+		using K = std::decay_t<T>;
+		if constexpr (std::is_same_v<K, Integer>) {
+			return integer;
+		} else if constexpr (std::is_same_v<K, Address>) {
+			return address;
+		} else if constexpr (std::is_same_v<K, bool>) {
+			return truth;
+		}
+#ifdef ALLOW_FLOATING_POINT
+		else if constexpr (std::is_same_v<K, Floating>) {
+			return fp;
+		}
+#endif
+		else {
+			static_assert(forth::AlwaysFalse<T>::value, "Unsupported type specified!");
+		}
+	}
+	Integer integer;
+	Address address;
+	bool truth;
+	byte bytes[sizeof(Address)];
+#ifdef ALLOW_FLOATING_POINT
+	Floating fp;
+#endif 
+};
+using Datum = std::variant<Number,
       Word, 
       NativeFunction, 
-      std::string
-#ifdef ALLOW_FLOATING_POINT
-      // always last!
-      ,Floating
-#endif
-      >;
+      std::string >;
 
 using UnaryOperation = std::function<Datum(Machine&, Datum)>;
 using BinaryOperation = std::function<Datum(Machine&, Datum, Datum)>;
@@ -59,18 +87,14 @@ class Machine {
     public:
         explicit Machine(Address memSize = defaultMemorySize);
         ~Machine();
-        void pushParameter(forth::Integer integer);
-        void pushParameter(forth::Address addr);
-        void pushParameter(bool truth);
-        void pushParameter(DictionaryEntry* ent);
+		void pushParameter(Number n);
+        void pushParameter(Word ent);
         void pushParameter(NativeFunction fn);
         void pushParameter(const std::string&);
         void pushParameter(Datum d);
         bool parameterStackEmpty() const noexcept { return _parameter.empty(); }
-        void pushSubroutine(forth::Integer integer);
-        void pushSubroutine(forth::Address addr);
-        void pushSubroutine(bool truth);
-        void pushSubroutine(DictionaryEntry* ent);
+		void pushSubroutine(Number n);
+        void pushSubroutine(Word ent);
         void pushSubroutine(NativeFunction fn);
         void pushSubroutine(const std::string&);
         void pushSubroutine(Datum d);
@@ -96,10 +120,6 @@ class Machine {
         byte load(Address addr);
         Address getMaximumAddress() const noexcept { return _capacity - 1; }
         Address getCapacity() const noexcept { return _capacity; }
-#ifdef ALLOW_FLOATING_POINT
-        void pushParameter(forth::Floating fp);
-        void pushSubroutine(forth::Floating fp);
-#endif
         void viewParameterStack();
         void viewSubroutineStack();
     private:
@@ -187,7 +207,7 @@ NativeFunction unaryOperation(UnaryOperation op) {
 
 class DictionaryEntry {
     public:
-        explicit DictionaryEntry(const std::string& name) : _name(name), _fake(false), _compileTimeInvoke(false), _skipNextWord(false) { }
+        explicit DictionaryEntry(const std::string& name) : _name(name), _fake(false), _compileTimeInvoke(false) { }
         ~DictionaryEntry();
         void setNext(Word next) noexcept { _next = next; }
         void setNext(OptionalWord next) noexcept { _next = next; }
@@ -196,13 +216,8 @@ class DictionaryEntry {
         void addWord(NativeFunction);
         void addWord(Word);
         void addWord(OptionalWord);
-        void addWord(forth::Integer);
-#ifdef ALLOW_FLOATING_POINT
-        void addWord(forth::Floating);
-#endif
+		void addWord(Number n);
         void addWord(const std::string&);
-        void addWord(forth::Address);
-        void addWord(bool);
         void invoke(Machine& machine);
         bool isFake() const noexcept { return _fake; }
         void setFake(bool value) noexcept { _fake = value; }
@@ -213,7 +228,7 @@ class DictionaryEntry {
         auto size() const noexcept -> std::list<NativeFunction>::size_type { return _contents.size(); }
     private:
         std::string _name;
-        bool _fake, _compileTimeInvoke, _skipNextWord;
+        bool _fake, _compileTimeInvoke;
         OptionalWord _next;
         std::list<NativeFunction> _contents;
 };
@@ -270,24 +285,15 @@ OptionalWord Machine::lookupWord(const std::string& str) {
 }
 
 void Machine::pushParameter(Datum d) { _parameter.push_front(d); }
-void Machine::pushParameter(forth::Integer v) { _parameter.push_front(v); }
-void Machine::pushParameter(forth::Address v) { _parameter.push_front(v); }
-void Machine::pushParameter(bool v) { _parameter.push_front(v); }
-void Machine::pushParameter(DictionaryEntry* v) { _parameter.push_front(v); }
+void Machine::pushParameter(Number n) { _parameter.push_front(n); }
+void Machine::pushParameter(Word v) { _parameter.push_front(v); }
 void Machine::pushParameter(NativeFunction fn) { _parameter.push_front(fn); }
 void Machine::pushParameter(const std::string& str) { _parameter.push_front(str); }
 
 void Machine::pushSubroutine(Datum d) { _subroutine.push_front(d); }
-void Machine::pushSubroutine(forth::Integer v) { _subroutine.push_front(v); }
-void Machine::pushSubroutine(forth::Address v) { _subroutine.push_front(v); }
-void Machine::pushSubroutine(bool v) { _subroutine.push_front(v); }
-void Machine::pushSubroutine(DictionaryEntry* v) { _subroutine.push_front(v); }
+void Machine::pushSubroutine(Number n) { _parameter.push_front(n); }
+void Machine::pushSubroutine(Word v) { _subroutine.push_front(v); }
 void Machine::pushSubroutine(const std::string& str) { _subroutine.push_front(str); }
-
-#ifdef ALLOW_FLOATING_POINT
-void Machine::pushParameter(forth::Floating v) { _parameter.push_front(v); }
-void Machine::pushSubroutine(forth::Floating v) { _subroutine.push_front(v); }
-#endif
 
 Datum Machine::popParameter() {
     if (parameterStackEmpty()) {
@@ -346,31 +352,11 @@ void DictionaryEntry::addWord(OptionalWord dict) {
 }
 
 
-
-void DictionaryEntry::addWord(forth::Integer v) {
-    addWord([v](Machine& mach) { mach.pushParameter(v); });
-}
-#ifdef ALLOW_FLOATING_POINT
-void DictionaryEntry::addWord(forth::Floating v) {
-    addWord([v](Machine& mach) { mach.pushParameter(v); });
-}
-#endif 
-void DictionaryEntry::addWord(forth::Address v) {
-    addWord([v](Machine& mach) { mach.pushParameter(v); });
-}
-
-void DictionaryEntry::addWord(bool v) {
-    addWord([v](Machine& mach) { mach.pushParameter(v); });
+void DictionaryEntry::addWord(Number n) {
+	addWord([n](Machine& mach) { mach.pushParameter(n); });
 }
 void DictionaryEntry::addWord(const std::string& str) {
     addWord([str](Machine& mach) { mach.pushParameter(str); });
-}
-
-NativeFunction pushToParameterStack(DictionaryEntry* entry) {
-    return [entry](Machine& mach) { mach.pushParameter(entry); };
-}
-NativeFunction pushToSubroutineStack(DictionaryEntry* entry) {
-    return [entry](Machine& mach) { mach.pushSubroutine(entry); };
 }
 
 void semicolon(Machine& mach) {
@@ -431,8 +417,8 @@ void swap(Machine& mach) {
     Datum name ( Machine& mach, Datum a, Datum b) { \
         try { \
             Datum ret; \
-            auto f = std::get<T>(a); \
-            auto s = std::get<T>(b); \
+            auto f = std::get<Number>(a).get<T>(); \
+            auto s = std::get<Number>(b).get<T>(); \
             auto result = (f op s); \
             ret = result; \
             return ret; \
@@ -444,7 +430,8 @@ void swap(Machine& mach) {
     void name ( Machine& mach ) { \
         auto top = mach.popParameter(); \
         auto lower = mach.popParameter(); \
-        mach.pushParameter( name <T> (mach, lower, top) ); \
+		Datum d = name <T> ( mach , lower, top ) ; \
+		mach.pushParameter( d ); \
     }
 #define Y(name, op, type) 
 #include "BinaryOperators.def"
@@ -454,8 +441,8 @@ template<>
 Datum logicalXor<bool>(Machine& mach, Datum a, Datum b) {
     try {
         Datum ret;
-        auto f = std::get<bool>(a);
-        auto s = std::get<bool>(b);
+        auto f = std::get<Number>(a).truth;
+        auto s = std::get<Number>(b).truth;
         ret = f != s;
         return ret;
     } catch (std::bad_variant_access& a) {
@@ -464,7 +451,7 @@ Datum logicalXor<bool>(Machine& mach, Datum a, Datum b) {
 }
 
 bool numberRoutine(Machine& mach, const std::string& word) {
-    auto fn = [&mach](auto value) {
+    auto fn = [&mach](Number value) {
         if (mach.currentlyCompiling()) {
             mach.getCurrentlyCompilingWord().value()->addWord(value);
         } else {
@@ -538,11 +525,11 @@ byte Machine::load(Address addr) {
 void storeByte(Machine& m) {
     auto top = m.popParameter();
     auto lower = m.popParameter();
-    auto addr = std::get<Address>(lower);
+    auto addr = std::get<Number>(lower).address;
     byte result = std::visit([&m](auto&& value) {
                 using T = std::decay_t<decltype(value)>;
-                if constexpr (std::is_same_v<T, Address> || std::is_same_v<T, Integer>) { 
-                    return forth::decodeBits<T, byte, T(0xFF), 0>(value);
+				if constexpr (std::is_same_v<T, Number>) {
+					return forth::decodeBits<Address, byte, 0xFF, 0>(value.address);
                 } else if constexpr (std::is_same_v<T, bool>) {
                     return byte(value ? 1 : 0);
                 } else {
@@ -555,8 +542,9 @@ void storeByte(Machine& m) {
 }
 void loadByte(Machine& m) {
     auto top = m.popParameter();
-    auto addr = std::get<Address>(top);
-    m.pushParameter(Address(m.load(addr)));
+    auto addr = std::get<Number>(top).address;
+	Number n(Address(m.load(addr)));
+    m.pushParameter(n);
 }
 void getLowestEightBits(Machine& m) {
     // ( v -- l x )
@@ -564,12 +552,9 @@ void getLowestEightBits(Machine& m) {
     auto top = m.popParameter();
     std::visit([&m](auto&& value) {
                 using T = std::decay_t<decltype(value)>;
-                if constexpr (std::is_same_v<T, Address> || std::is_same_v<T, Integer>) { 
-                    m.pushParameter(Address(forth::decodeBits<T, byte, T(0xFF), 0>(value)));
-                    m.pushParameter(Address(forth::decodeBits<T, T, ~T(0xFF), 8>(value)));
-                } else if constexpr (std::is_same_v<T, bool>) {
-                    m.pushParameter(Address(value ? 1 : 0));
-                    m.pushParameter(Address(0));
+				if constexpr (std::is_same_v<T, Number>) {
+                    m.pushParameter(Number(Address(forth::decodeBits<Address, byte, Address(0xFF), 0>(value.address))));
+                    m.pushParameter(Number(Address(forth::decodeBits<Address, Address, ~Address(0xFF), 8>(value.address))));
                 } else {
                     throw Problem("storeByte", "Illegal data to store into memory!");
                 }
@@ -579,12 +564,8 @@ void printDatum(Machine& m, Datum& top) {
     std::visit([&m](auto&& value) {
             auto f = m.getOutput().flags();
             using T = std::decay_t<decltype(value)>;
-            if constexpr (std::is_same_v<T, Address>) {
-                m.getOutput() << std::hex << value;
-            } else if constexpr (std::is_same_v<T, Integer>) {
-                m.getOutput() << std::dec << value;
-            } else if constexpr (std::is_same_v<T, bool>) {
-                m.getOutput() << std::boolalpha << value << std::noboolalpha;
+			if constexpr (std::is_same_v<T, Number>) {
+				m.getOutput() << std::dec << value.integer;
             } else if constexpr (std::is_same_v<T, Word>) {
                 if (value->isFake()) {
                     m.getOutput() << "fake compiled entry 0x" << std::hex << value.get();
@@ -620,19 +601,7 @@ void ifStatement(Machine& mach);
 void elseStatement(Machine& mach);
 void thenStatement(Machine& mach);
 Datum typeCode(Machine& mach, Datum d);
-void addIntegerConstantWord(Machine& mach, const std::string& name, Integer value) {
-    std::stringstream ss;
-    ss << "*" << name << "*";
-    auto str = ss.str();
-    mach.addWord(str, [value](auto& x) { x.pushParameter(value); });
-}
-void addUnsignedConstantWord(Machine& mach, const std::string& name, Address value) {
-    std::stringstream ss;
-    ss << "*" << name << "*";
-    auto str = ss.str();
-    mach.addWord(str, [value](auto& x) { x.pushParameter(value); });
-}
-void addBooleanConstantWord(Machine& mach, const std::string& name, bool value) {
+void addConstantWord(Machine& mach, const std::string& name, Number value) {
     std::stringstream ss;
     ss << "*" << name << "*";
     auto str = ss.str();
@@ -641,7 +610,7 @@ void addBooleanConstantWord(Machine& mach, const std::string& name, bool value) 
 void bodyInvoke(Machine& mach) {
     auto onFalse = mach.popParameter();
     auto onTrue = mach.popParameter();
-    if (auto condition = mach.popParameter() ; std::get<bool>(condition)) {
+    if (auto condition = mach.popParameter() ; std::get<Number>(condition).truth) {
         std::get<NativeFunction>(onTrue)(mach);
     } else {
         std::get<NativeFunction>(onFalse)(mach);
@@ -649,7 +618,7 @@ void bodyInvoke(Machine& mach) {
 }
 void predicatedInvoke(Machine& mach) {
     auto onTrue = mach.popParameter();
-    if (auto condition = mach.popParameter() ; std::get<bool>(condition)) {
+    if (auto condition = mach.popParameter() ; std::get<Number>(condition).truth) {
         std::get<NativeFunction>(onTrue);
     }
     // do nothing on false
@@ -676,18 +645,18 @@ void setupDictionary(Machine& mach) {
     mach.addWord("if", ifStatement, false, true);
     mach.addWord("else", elseStatement, false, true);
     mach.addWord("then", thenStatement, false, true);
-    addUnsignedConstantWord(mach, "integer-variant-code", 0);
-    addUnsignedConstantWord(mach, "address-variant-code", 1);
-    addUnsignedConstantWord(mach, "bool-variant-code", 2);
-    addUnsignedConstantWord(mach, "word-variant-code", 3);
-    addUnsignedConstantWord(mach, "native-function-variant-code", 4);
-    addUnsignedConstantWord(mach, "string-variant-code", 5);
+    addConstantWord(mach, "number-variant-code", 0);
+    addConstantWord(mach, "word-variant-code", 1);
+    addConstantWord(mach, "native-function-variant-code", 2);
+    addConstantWord(mach, "string-variant-code", 3);
+	addConstantWord(mach, "supports-floating-point",
+
 #ifdef ALLOW_FLOATING_POINT
-    addUnsignedConstantWord(mach, "floating-point-variant-code", 6); // always the last index
-    addBooleanConstantWord(mach, "supports-floating-point", true);
+			true
 #else
-    addBooleanConstantWord(mach, "supports-floating-point", false);
-#endif
+			false
+#endif 
+			);
 #define X(name, op)
 #define Y(name, op, type) mach.addWord(#op INDIRECTION(YTypeString, type) , [](Machine& mach) { name < INDIRECTION(YType, type) >(mach); } );
 #include "BinaryOperators.def"

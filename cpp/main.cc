@@ -731,7 +731,7 @@ void shiftLeftByConstantThenAnd(Machine& m, Address shift) {
     // ( a -- b ) 
     m.pushParameter(Number(shift));
     invokeBinaryNumberOperation(m, shiftLeft<Address>); 
-    invokeBinaryNumberOperation(m, bitwiseAnd<Address>);
+    invokeBinaryNumberOperation(m, bitwiseOr<Address>);
 }
 void addressPlusOffset(Machine& m, Address size) {
     // ( a -- b a )

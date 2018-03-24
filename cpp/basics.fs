@@ -66,8 +66,6 @@
 : native-function? ( a -- flag ) *native-function-variant-code* of-type? ;
 : string? ( a -- flag ) *string-variant-code* of-type? ;
 
-: 
-
 
 ( must always be the last word in the file )
 close-input-file

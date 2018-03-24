@@ -515,15 +515,8 @@ void storeByte(Machine& m) {
 }
 void loadByte(Machine& m) {
     auto addr = std::get<Number>(m.popParameter()).address;
-	Number n(Address(m.load(addr)));
+	Number n(Address(m.load(addr)) & 0xFF);
     m.pushParameter(n);
-}
-void getLowestEightBits(Machine& m) {
-    // ( v -- lo8 shiftv )
-    // this design allows us to do little endian saves
-    auto num = std::get<Number>(m.popParameter()).address;
-    m.pushParameter(Number(Address(forth::decodeBits<Address, byte, Address(0xFF), 0>(num))));
-    m.pushParameter(Number(Address(forth::decodeBits<Address, Address, ~Address(0xFF), 8>(num))));
 }
 void printDatum(Machine& m, Datum& top) {
     std::visit([&m](auto&& value) {
@@ -712,6 +705,9 @@ NativeFunction callBinaryNumberOperation(std::function<Number(Number, Number)> f
         mach.pushParameter(fn(lower, top));
     };
 }
+void invokeBinaryNumberOperation(Machine& mach, std::function<Number(Number, Number)> fn) {
+    callBinaryNumberOperation(fn)(mach);
+}
 
 NativeFunction callUnaryNumberOperation(std::function<Number(Number)> fn) {
     return [fn](auto& mach) {
@@ -731,6 +727,87 @@ template<typename T>
 Number minusOperation(Number a) {
     return Number(- a.get<T>());
 }
+void shiftLeftByConstantThenAnd(Machine& m, Address shift) {
+    // ( a -- b ) 
+    m.pushParameter(Number(shift));
+    invokeBinaryNumberOperation(m, shiftLeft<Address>); 
+    invokeBinaryNumberOperation(m, bitwiseAnd<Address>);
+}
+void addressPlusOffset(Machine& m, Address size) {
+    // ( a -- b a )
+    dup(m);
+    m.pushParameter(Number(size));
+    invokeBinaryNumberOperation(m, add<Address>);
+    swap(m);
+}
+void loadQuarter(Machine& m) {
+    addressPlusOffset(m, 1);
+    loadByte(m);
+    swap(m);
+    loadByte(m);
+    shiftLeftByConstantThenAnd(m, 8);
+}
+
+void loadHalf(Machine& m) {
+    addressPlusOffset(m, 2);
+    loadQuarter(m);
+    swap(m);
+    loadQuarter(m);
+    shiftLeftByConstantThenAnd(m, 16);
+}
+void loadFull(Machine& m) {
+    addressPlusOffset(m, 4);
+    loadHalf(m);
+    swap(m);
+    loadHalf(m);
+    shiftLeftByConstantThenAnd(m, 32);
+}
+
+void storeQuarter(Machine& m) {
+    // ( addr value -- )
+    over(m); // ( addr value -- addr value addr )
+    over(m); // ( addr value addr -- addr value addr value )
+    storeByte(m); // ( addr value addr value -- addr value )
+                  // get the upper 8 bits to store
+    m.pushParameter(Number(8));
+    invokeBinaryNumberOperation(m, shiftRight<Address>);
+    swap(m); // ( addr value -- value addr )
+    m.pushParameter(Number(1)); // ( addr value -- value addr 1 )
+    invokeBinaryNumberOperation(m, add<Address>); // ( value addr 1 -- value addr* )
+    swap(m);
+    storeByte(m); // ( addr* value -- )
+}
+
+void storeHalf(Machine& m) {
+    // ( addr value -- )
+    over(m); // ( addr value -- addr value addr )
+    over(m); // ( addr value addr -- addr value addr value )
+    storeQuarter(m); // ( addr value addr value -- addr value )
+                  // get the upper 16 bits to store
+    m.pushParameter(Number(16));
+    invokeBinaryNumberOperation(m, shiftRight<Address>);
+    swap(m); // ( addr value -- value addr )
+    m.pushParameter(Number(2)); // ( addr value -- value addr 1 )
+    invokeBinaryNumberOperation(m, add<Address>); // ( value addr 1 -- value addr* )
+    swap(m);
+    storeQuarter(m); // ( addr* value -- )
+}
+
+void storeFull(Machine& m) {
+    // ( addr value -- )
+    over(m); // ( addr value -- addr value addr )
+    over(m); // ( addr value addr -- addr value addr value )
+    storeHalf(m); // ( addr value addr value -- addr value )
+                  // get the upper 16 bits to store
+    m.pushParameter(Number(32));
+    invokeBinaryNumberOperation(m, shiftRight<Address>);
+    swap(m); // ( addr value -- value addr )
+    m.pushParameter(Number(4)); // ( addr value -- value addr 1 )
+    invokeBinaryNumberOperation(m, add<Address>); // ( value addr 1 -- value addr* )
+    swap(m);
+    storeHalf(m); // ( addr* value -- )
+}
+
 void setupDictionary(Machine& mach) {
 	mach.addWord("words", words);
 	mach.addWord("R", pushOntoReturnStack);
@@ -743,9 +820,14 @@ void setupDictionary(Machine& mach) {
     mach.addWord("(", enterIgnoreInputMode, false, true);
     mach.addWord(";", semicolon, false, true);
     mach.addWord("bye", bye);
-    mach.addWord("@8", loadByte);
-    mach.addWord("=8", storeByte);
-    mach.addWord("lo8", getLowestEightBits);
+    mach.addWord("mload.byte", loadByte);
+    mach.addWord("mload.quarter", loadQuarter);
+    mach.addWord("mload.half", loadHalf);
+    mach.addWord("mload.full", loadFull);
+    mach.addWord("mstore.byte", storeByte);
+    mach.addWord("mstore.quarter", storeQuarter);
+    mach.addWord("mstore.half", storeHalf);
+    mach.addWord("mstore.full", storeFull);
     mach.addWord(".", printTop);
     mach.addWord(":", enterCompileMode);
     mach.addWord(".s", std::mem_fn(&Machine::viewParameterStack));

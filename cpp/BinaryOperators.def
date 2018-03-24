@@ -46,6 +46,8 @@ XSUF(greaterThan, >)
 XSUF(lessThan, <)
 XSUF(greaterThanOrEqualTo, >=)
 XSUF(lessThanOrEqualTo, <=)
+XSU(bitwiseAnd, &)
+XSU(bitwiseOr, |)
 #undef XSUBF
 #undef XSUB
 #undef XSU

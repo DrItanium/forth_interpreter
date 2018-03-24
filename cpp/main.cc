@@ -15,10 +15,10 @@
 #define YTypeAddress forth::Address
 #define YTypebool bool
 #define YTypeInteger forth::Integer
-#define YTypeStringFloat "f"
-#define YTypeStringAddress "u" 
-#define YTypeStringbool "b"
-#define YTypeStringInteger "s"
+#define YTypeStringFloat ".f"
+#define YTypeStringAddress ".u" 
+#define YTypeStringbool ".b"
+#define YTypeStringInteger ".s"
 
 class DictionaryEntry;
 class Machine;
@@ -52,9 +52,6 @@ union Number {
 	Number(unsigned int i) : address(Address(i)) { }
 	Number(Integer i) : integer(i) { }
 	Number(Address a) : address(a) { }
-#ifdef ALLOW_BOOLEAN
-	Number(bool t) : truth(t) { }
-#endif // end ALLOW_BOOLEAN
 #ifdef ALLOW_FLOATING_POINT
     Number(Floating f) : fp(f) { }
 #endif // end ALLOW_FLOATING_POINT
@@ -79,17 +76,10 @@ union Number {
 		}
 	}
     bool getTruth() const noexcept { 
-#ifdef ALLOW_BOOLEAN
-        return truth;
-#else // !ALLOW_BOOLEAN
         return address != 0;
-#endif // end ALLOW_BOOLEAN
     }
 	Integer integer;
 	Address address;
-#ifdef ALLOW_BOOLEAN
-	bool truth;
-#endif
 #ifdef ALLOW_FLOATING_POINT
 	Floating fp;
 #endif 
@@ -448,12 +438,10 @@ void swap(Machine& mach) {
 #include "BinaryOperators.def"
 #undef Y
 #undef X
-#ifdef ALLOW_BOOLEAN
 template<>
 Number logicalXor<bool>(Number a, Number b) {
     return Number (a.getTruth() != b.getTruth());
 }
-#endif // end ALLOW_BOOLEAN
 
 bool numberRoutine(Machine& mach, const std::string& word) {
     auto fn = [&mach](Number value) {
@@ -466,15 +454,6 @@ bool numberRoutine(Machine& mach, const std::string& word) {
     // floating point
     // integers
     // first do some inspection first
-#ifdef ALLOW_BOOLEAN
-    if (word == "true") {
-        fn(true);
-        return true;
-    } else if (word == "false") {
-        fn(false);
-        return true;
-    } 
-#endif // end ALLOW_BOOLEAN
     std::istringstream parseAttempt(word);
     if (word.find('#') != std::string::npos) {
         forth::Address tmpAddress;
@@ -622,14 +601,6 @@ void ifStatement(Machine& mach) {
         throw Problem("ifStatement", "Must be compiling for this word to work!");
     } 
     auto c = mach.getCurrentlyCompilingWord().value(); // do an evaluation of the contents
-#ifdef ALLOW_BOOLEAN
-    c->addWord(true);
-    c->addWord(mach.lookupWord("==b"));
-#else // ! ALLOW_BOOLEAN
-    c->addWord(Number(0));
-    c->addWord(mach.lookupWord("!=u")); // not equal zero
-#endif
-
     // we need to add a native function to perform the check which assumes a boolean
     mach.saveCurrentlyCompilingWord(); // save our outer operation to the stack
     // now we need to generate two compile entries
@@ -673,11 +644,9 @@ void addConstantWord(Machine& mach, const std::string& name, Number value) {
     auto str = ss.str();
     mach.addWord(str, [value](auto& x) { x.pushParameter(value); });
 }
-#ifndef ALLOW_BOOLEAN
 void addConstantWord(Machine& mach, const std::string& name, bool value) {
     addConstantWord(mach, name, Number(value ? 0 : -1));
 }
-#endif // end !ALLOW_BOOLEAN
 void bodyInvoke(Machine& mach) {
     auto onFalse = mach.popParameter();
     auto onTrue = mach.popParameter();
@@ -743,11 +712,26 @@ NativeFunction callBinaryNumberOperation(std::function<Number(Number, Number)> f
         mach.pushParameter(fn(lower, top));
     };
 }
+
+NativeFunction callUnaryNumberOperation(std::function<Number(Number)> fn) {
+    return [fn](auto& mach) {
+        auto top = std::get<Number>(mach.popParameter());
+        mach.pushParameter(fn(top));
+    };
+}
+template<typename T>
+Number notOperation(Number a) {
+    if constexpr (std::is_same_v<T, bool>) {
+        return Number(!a.getTruth());
+    } else {
+        return Number(~a.get<T>());
+    }
+}
+template<typename T>
+Number minusOperation(Number a) {
+    return Number(- a.get<T>());
+}
 void setupDictionary(Machine& mach) {
-#ifndef ALLOW_BOOLEAN
-    mach.addWord("true", [](Machine& x) { x.pushParameter(Number(-1)); });
-    mach.addWord("false", [](Machine& x) { x.pushParameter(Number(0)); });
-#endif
 	mach.addWord("words", words);
 	mach.addWord("R", pushOntoReturnStack);
 	mach.addWord("dup", dup);
@@ -755,9 +739,7 @@ void setupDictionary(Machine& mach) {
 	mach.addWord("over", over);
     mach.addWord("drop", drop);
     mach.addWord("swap", swap);
-#ifdef ALLOW_BOOLEAN
     mach.addWord("^b", callBinaryNumberOperation(logicalXor<bool>));
-#endif // end ALLOW_BOOLEAN
     mach.addWord("(", enterIgnoreInputMode, false, true);
     mach.addWord(";", semicolon, false, true);
     mach.addWord("bye", bye);
@@ -776,17 +758,19 @@ void setupDictionary(Machine& mach) {
     mach.addWord("if", ifStatement, false, true);
     mach.addWord("else", elseStatement, false, true);
     mach.addWord("then", thenStatement, false, true);
+    mach.addWord("complement.u", callUnaryNumberOperation(notOperation<Address>));
+    mach.addWord("complement.s", callUnaryNumberOperation(notOperation<Integer>));
+    mach.addWord("complement.b", callUnaryNumberOperation(notOperation<bool>));
+    mach.addWord("minus.s", callUnaryNumberOperation(minusOperation<Integer>));
+    mach.addWord("minus.u", callUnaryNumberOperation(minusOperation<Address>));
+#ifdef ALLOW_FLOATING_POINT
+    mach.addWord("minus.f", callUnaryNumberOperation(minusOperation<Floating>));
+#endif
+
     addConstantWord(mach, "number-variant-code", 0);
     addConstantWord(mach, "word-variant-code", 1);
     addConstantWord(mach, "native-function-variant-code", 2);
     addConstantWord(mach, "string-variant-code", 3);
-    addConstantWord(mach, "supports-boolean", 
-#ifdef ALLOW_BOOLEAN
-            true
-#else
-            false
-#endif // end ALLOW_BOOLEAN
-            );
 	addConstantWord(mach, "supports-floating-point",
 #ifdef ALLOW_FLOATING_POINT
 			true

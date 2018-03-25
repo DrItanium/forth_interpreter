@@ -1,5 +1,5 @@
-#include "../Types.h"
-#include "../Problem.h"
+#include "Types.h"
+#include "Problem.h"
 #include <functional>
 #include <string>
 #include <list>

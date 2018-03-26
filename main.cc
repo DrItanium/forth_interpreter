@@ -787,6 +787,10 @@ Number powOperationFloat(Number a, Number b) {
 }
 #endif
 
+void emitCharacter(Machine& mach) {
+    auto top = mach.popParameter();
+    mach.getOutput() << char(std::get<Number>(top).bytes[0]);
+}
 void setupDictionary(Machine& mach) {
 	mach.addWord("words", words);
 	mach.addWord("R", pushOntoReturnStack);
@@ -805,6 +809,7 @@ void setupDictionary(Machine& mach) {
     mach.addWord(":", enterCompileMode);
     mach.addWord(".s", std::mem_fn(&Machine::viewParameterStack));
     mach.addWord("\"", processString, false, true);
+    mach.addWord("emit", emitCharacter);
     mach.addWord("type-code", unaryOperation(typeCode));
     mach.addWord("open-input-file", openInputFile);
     mach.addWord("close-input-file", closeInputFile);

@@ -3,6 +3,8 @@
 : -1 ( -- -1 ) -1 ;
 : true ( -- -1 ) -1 ;
 : false ( -- 0 ) 0 ;
+: space ( -- ) 20# emit ;
+: CR ( -- ) A# emit ;
 : 1 ( -- 1 ) 1 ; : 1u ( -- 1u ) 1u ;
 : 2 ( -- 2 ) 2 ; : 2u ( -- 2u ) 2u ;
 : 4 ( -- 4 ) 4 ; : 4u ( -- 4u ) 4u ;
@@ -130,6 +132,33 @@
 : bitwise-oru ( a b -- c ) |.u ;
 : bitwise-and  ( a b -- c ) &.s ;
 : bitwise-andu ( a b -- c ) &.u ;
+: bitwise-not  ( a -- c ) ~.s ;
+: bitwise-notu  ( a -- c ) ~.u ;
+
+: ** ( a b -- c ) **.s ;
+: **u ( a b -- c ) **.u ;
+: pow ( a b -- c ) ** ;
+: powu ( a b -- c ) **u ;
+( do Q40.24 )
+: *fixed-frac-mask* ( -- mask ) FFFFFF# ;
+: *fixed-integer-mask* ( -- mask ) *fixed-frac-mask* bitsize-notu ;
+: *fixed-integer-shift* ( -- shift ) 24 ;
+: fixed-frac-portion ( a -- b ) *fixed-frac-mask* bitwise-andu ;
+: fixed-integer-portion ( a -- b ) *fixed-integer-mask* bitwise-notu *fixed-integer-shift* >>u ;
+: fixed ( i fr -- n ) swap *fixed-integer-shift* <<u ( i fr -- fr shifted-i ) + ( fr shifted-i -- n ) ;
+: .fixed ( a -- ) dup fixed-frac-portion swap fixed-integer-portion .  " ." .  .  CR ;
+
+( the implementation is defined in Programming a Problem Oriented Language )
+: +f ( a b -- c ) + ;
+: -f ( a b -- c ) - ;
+: *f ( a b -- c ) * 1000 / ;
+: /f ( a b -- c ) / 1000 * ;
+
+
+
+
+
+
 
 ( must always be the last word in the file )
 close-input-file

@@ -762,7 +762,7 @@ void setupDictionary(Machine& mach) {
 	mach.addWord("over", over);
     mach.addWord("drop", drop);
     mach.addWord("swap", swap);
-    mach.addWord("^b", callBinaryNumberOperation(logicalXor<bool>));
+    mach.addWord("^.b", callBinaryNumberOperation(logicalXor<bool>));
     mach.addWord("(", enterIgnoreInputMode, false, true);
     mach.addWord(";", semicolon, false, true);
     mach.addWord("bye", bye);

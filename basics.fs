@@ -126,6 +126,10 @@
 : native-function? ( a -- flag ) *native-function-variant-code* of-type? ;
 : string? ( a -- flag ) *string-variant-code* of-type? ;
 
+: bitwise-or ( a b -- c ) |.s ;
+: bitwise-oru ( a b -- c ) |.u ;
+: bitwise-and  ( a b -- c ) &.s ;
+: bitwise-andu ( a b -- c ) &.u ;
 
 ( must always be the last word in the file )
 close-input-file

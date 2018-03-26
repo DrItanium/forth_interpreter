@@ -137,6 +137,7 @@ class Machine {
         void viewParameterStack();
         void viewSubroutineStack();
 		OptionalWord getFront() const noexcept { return _front; }
+        void resizeMemory(Address newCapacity);
     private:
         std::ostream* _out = &std::cout;
         std::istream* _in = &std::cin;
@@ -149,6 +150,10 @@ class Machine {
         std::unique_ptr<forth::byte[]> _memory;
         Address _capacity;
 };
+void Machine::resizeMemory(Address newCapacity) {
+    _memory = std::make_unique<forth::byte[]>(newCapacity);
+    _capacity = newCapacity;
+}
 std::string Machine::readNext() {
     std::string word;
     (*_in) >> word;
@@ -728,6 +733,21 @@ Number minusOperation(Number a) {
     return Number(- a.get<T>());
 }
 
+void getMemorySize(Machine& mach) {
+    mach.pushParameter(Number(mach.getCapacity()));
+}
+
+void resizeMemory(Machine& mach) {
+    std::visit([&mach](auto&& value) {
+                using T = std::decay_t<decltype(value)>;
+                if constexpr (std::is_same_v<T, Number>) {
+                    mach.resizeMemory(value.address);
+                } else {
+                    throw Problem("resizeMemory", " top is not a number!");
+                }
+            }, mach.popParameter());
+}
+
 void setupDictionary(Machine& mach) {
 	mach.addWord("words", words);
 	mach.addWord("R", pushOntoReturnStack);
@@ -782,6 +802,8 @@ void setupDictionary(Machine& mach) {
     addConstantWord(mach, "sizeof-half-address", sizeof(forth::HalfAddress));
     addConstantWord(mach, "sizeof-quarter-address", sizeof(forth::QuarterAddress));
     addConstantWord(mach, "bitwidth", CHAR_BIT);
+    mach.addWord("*memory-size*", getMemorySize);
+    mach.addWord("resize-memory", resizeMemory);
 }
 int main() {
     Machine mach;

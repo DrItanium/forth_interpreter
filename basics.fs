@@ -164,7 +164,7 @@ enum-start ( section ids )
 *variable-variant-code* ! 
 enum-done
 
-: of-type? ( type code -- flag ) swap type-code = ;
+: of-type? ( type cv -- flag ) @ swap type-code = ;
 : number? ( a -- flag ) *number-variant-code* of-type? ;
 : word? ( a -- flag ) *word-variant-code* of-type? ;
 : native-function? ( a -- flag ) *native-function-variant-code* of-type? ;

@@ -747,7 +747,13 @@ void resizeMemory(Machine& mach) {
                 }
             }, mach.popParameter());
 }
-
+void addLiteralToCompilation(Machine& mach) {
+    if (!mach.currentlyCompiling()) {
+        throw Problem("literal", " not currently compiling!");
+    }
+    auto top = mach.popParameter();
+    std::visit([&mach](auto&& value) { mach.getCurrentlyCompilingWord().value()->addWord(value);}, top);
+}
 void setupDictionary(Machine& mach) {
 	mach.addWord("words", words);
 	mach.addWord("R", pushOntoReturnStack);
@@ -804,6 +810,7 @@ void setupDictionary(Machine& mach) {
     addConstantWord(mach, "bitwidth", CHAR_BIT);
     mach.addWord("*memory-size*", getMemorySize);
     mach.addWord("resize-memory", resizeMemory);
+    mach.addWord("literal", addLiteralToCompilation, false, true);
 }
 int main() {
     Machine mach;

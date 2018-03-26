@@ -620,13 +620,15 @@ void Machine::viewParameterStack() {
         getOutput() << std::endl;
     }
 }
-void enterCompileMode(Machine& mach) {
+void enterCompileModeWithName(Machine& mach, const std::string& name) {
     if (mach.currentlyCompiling()) {
         throw Problem("enterCompileMode", "Already compiling!");
-    } else {
-        auto name = mach.readNext();
-        mach.newCompilingWord(name);
-    }
+    } 
+    mach.newCompilingWord(name);
+}
+void enterCompileMode(Machine& mach) {
+    auto name = mach.readNext();
+    enterCompileModeWithName(mach, name);
 }
 
 void processString(Machine& mach) {
@@ -699,15 +701,6 @@ void thenStatement(Machine& mach) {
     ifStatement->addWord(mach.lookupWord(ifStatement->size() == 1 ? "predicated" : "choose"));
     mach.compileCurrentWord();
     mach.restoreCurrentlyCompilingWord();
-}
-void addConstantWord(Machine& mach, const std::string& name, Number value) {
-    std::stringstream ss;
-    ss << "*" << name << "*";
-    auto str = ss.str();
-    mach.addWord(str, [value](auto& x) { x.pushParameter(value); });
-}
-void addConstantWord(Machine& mach, const std::string& name, bool value) {
-    addConstantWord(mach, name, Number(value ? 0 : -1));
 }
 void bodyInvoke(Machine& mach) {
     auto onFalse = mach.popParameter();
@@ -834,15 +827,19 @@ void emitCharacter(Machine& mach) {
     auto top = mach.popParameter();
     mach.getOutput() << char(std::get<Number>(top).bytes[0]);
 }
-void defineVariable(Machine& mach) {
+void defineVariableWithName(Machine& mach, const std::string& name) {
     if (mach.currentlyCompiling()) {
         throw Problem("defineVariable", " cannot define variables while compiling!");
     }
     // we need to define a new variable via a dictionary entry
     auto ptr = std::make_shared<Variable>();
-    enterCompileMode(mach);
+    enterCompileModeWithName(mach, name);
     mach.getCurrentlyCompilingWord().value()->addWord(ptr);
     semicolon(mach);
+}
+void defineVariable(Machine& mach) {
+    auto name = mach.readNext();
+    defineVariableWithName(mach, name);
 }
 void setupDictionary(Machine& mach) {
 	mach.addWord("words", words);
@@ -881,26 +878,20 @@ void setupDictionary(Machine& mach) {
 #ifdef ALLOW_FLOATING_POINT
     mach.addWord("minus.f", callUnaryNumberOperation(minusOperation<Floating>));
 #endif
-
-    addConstantWord(mach, "number-variant-code", 0);
-    addConstantWord(mach, "word-variant-code", 1);
-    addConstantWord(mach, "native-function-variant-code", 2);
-    addConstantWord(mach, "string-variant-code", 3);
-	addConstantWord(mach, "supports-floating-point",
-#ifdef ALLOW_FLOATING_POINT
-			true
-#else
-			false
-#endif  // end ALLOW_FLOATING_POINT
-			);
+    defineVariableWithName(mach, "*number-variant-code*"); //, 0);
+    defineVariableWithName(mach, "*word-variant-code*"); // , 1);
+    defineVariableWithName(mach, "*native-function-variant-code*"); // , 2);
+    defineVariableWithName(mach, "*string-variant-code*"); //, 3);
+    defineVariableWithName(mach, "*variable-variant-code*"); //, 4);
 #define X(name, op)
 #define Y(name, op, type) mach.addWord(#op INDIRECTION(YTypeString, type) , callBinaryNumberOperation( name < INDIRECTION(YType, type) >));
 #include "BinaryOperators.def"
 #undef X
-    addConstantWord(mach, "sizeof-address", sizeof(Address));
-    addConstantWord(mach, "sizeof-half-address", sizeof(forth::HalfAddress));
-    addConstantWord(mach, "sizeof-quarter-address", sizeof(forth::QuarterAddress));
-    addConstantWord(mach, "bitwidth", CHAR_BIT);
+    mach.addWord("*sizeof-address*", [](auto& x) { x.pushParameter(Number(sizeof(Address))); });
+    mach.addWord("*sizeof-integer*", [](auto& x) { x.pushParameter(Number(sizeof(Integer))); });
+    mach.addWord("*sizeof-half-address*", [](auto& x) { x.pushParameter(Number(sizeof(forth::HalfAddress))); });
+    mach.addWord("*sizeof-quarter-address*", [](auto& x) { x.pushParameter(Number(sizeof(forth::QuarterAddress))); });
+    mach.addWord("*bitwidth*", [](auto& x) { x.pushParameter(Number(CHAR_BIT)); });
     mach.addWord("*memory-size*", getMemorySize);
     mach.addWord("resize-memory", resizeMemory);
     mach.addWord("literal", addLiteralToCompilation, false, true);

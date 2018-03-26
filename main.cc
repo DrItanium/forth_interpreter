@@ -10,6 +10,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <cmath>
 
 #define YTypeFloat forth::Floating
 #define YTypeAddress forth::Address
@@ -774,6 +775,18 @@ void addLiteralToCompilation(Machine& mach) {
     auto top = mach.popParameter();
     std::visit([&mach](auto&& value) { mach.getCurrentlyCompilingWord().value()->addWord(value);}, top);
 }
+Number powOperation(Number a, Number b) {
+    return Number(Integer(pow(double(a.integer), double(b.integer))));
+}
+Number powOperationUnsigned(Number a, Number b) {
+    return Number(Address(pow(double(a.address), double(b.address))));
+}
+#ifdef ALLOW_FLOATING_POINT
+Number powOperationFloat(Number a, Number b) {
+    return Number(pow(a.fp, b.fp));
+}
+#endif
+
 void setupDictionary(Machine& mach) {
 	mach.addWord("words", words);
 	mach.addWord("R", pushOntoReturnStack);
@@ -831,6 +844,11 @@ void setupDictionary(Machine& mach) {
     mach.addWord("*memory-size*", getMemorySize);
     mach.addWord("resize-memory", resizeMemory);
     mach.addWord("literal", addLiteralToCompilation, false, true);
+    mach.addWord("**.s", callBinaryNumberOperation(powOperation));
+    mach.addWord("**.u", callBinaryNumberOperation(powOperationUnsigned));
+#ifdef ALLOW_FLOATING_POINT
+    mach.addWord("**.f", callBinaryNumberOperation(powOperationFloat));
+#endif
 }
 int main() {
     Machine mach;

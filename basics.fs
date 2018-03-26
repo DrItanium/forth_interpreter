@@ -9,6 +9,7 @@
 : 2 ( -- 2 ) 2 ; : 2u ( -- 2u ) 2u ;
 : 4 ( -- 4 ) 4 ; : 4u ( -- 4u ) 4u ;
 : 2drop ( b a -- ) drop drop ;
+: 3drop ( c b a -- ) 2drop drop ;
 : -rot ( a b c -- c b a ) rot rot ;
 : ?dup ( a -- a a | 0 ) dup if dup then ;
 : nip ( a b -- b ) swap drop ;

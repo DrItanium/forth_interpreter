@@ -834,6 +834,10 @@ void defineVariable(Machine& mach) {
     auto name = mach.readNext();
     defineVariableWithName(mach, name);
 }
+void defineVariableThenLoad(Machine& mach) {
+    defineVariable(mach);
+    mach.getFront().value()->invoke(mach); // put the variable onto the stack right now!
+}
 void setupDictionary(Machine& mach) {
 	mach.addWord("words", words);
 	mach.addWord("R", pushOntoReturnStack);
@@ -894,7 +898,7 @@ void setupDictionary(Machine& mach) {
     mach.addWord("**.f", callBinaryNumberOperation(powOperationFloat));
 #endif
     mach.addWord("variable", defineVariable);
-    //mach.addWord("variable$", defineVariableThenLoad);
+    mach.addWord("variable$", defineVariableThenLoad);
 }
 int main(int argc, char** argv) {
     Machine mach;

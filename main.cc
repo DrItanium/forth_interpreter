@@ -86,14 +86,14 @@ union Number {
 #endif 
 	byte bytes[sizeof(Address)];
 };
-using Variable = std::variant<Number, std::string>;
+struct Variable;
 using SharedVariable = std::shared_ptr<Variable>;
+struct Variable {
+    using Contents = std::variant<Number, std::string, SharedVariable>;
+    Contents _value;
+};
 
-using Datum = std::variant<Number,
-      Word, 
-      NativeFunction, 
-      std::string,
-      SharedVariable>;
+using Datum = std::variant<Number, Word, NativeFunction, std::string, SharedVariable>;
 
 using UnaryOperation = std::function<Datum(Machine&, Datum)>;
 using BinaryOperation = std::function<Datum(Machine&, Datum, Datum)>;
@@ -564,9 +564,11 @@ void storeVariable(Machine& m) {
     std::visit([variable](auto&& value) {
                 using T = std::decay_t<decltype(value)>;
                 if constexpr (std::is_same_v<T, Number>) {
-                    variable->operator=( value );
+                    variable->_value = value;
                 } else if constexpr (std::is_same_v<T, std::string>) {
-                    variable->operator=( value );
+                    variable->_value = value;
+                } else if constexpr (std::is_same_v<T, SharedVariable>) {
+                    variable->_value = value;
                 } else {
                     throw Problem("storeVariable", " illegal value type!");
                 }
@@ -574,16 +576,7 @@ void storeVariable(Machine& m) {
 }
 void loadVariable(Machine& m) {
     auto variable = std::get<SharedVariable>(m.popParameter());
-    std::visit([&m](auto&& value) {
-                using T = std::decay_t<decltype(value)>;
-                if constexpr (std::is_same_v<T, Number>) {
-                    m.pushParameter(value);
-                } else if constexpr (std::is_same_v<T, std::string>) {
-                    m.pushParameter(value);
-                } else {
-                    static_assert(forth::AlwaysFalse<T>::value, "Unimplemented variable type!");
-                }
-            }, *variable);
+    std::visit([&m](auto&& value) { m.pushParameter(value); }, variable->_value);
 }
 void printDatum(Machine& m, Datum& top) {
     std::visit([&m](auto&& value) {
@@ -901,6 +894,7 @@ void setupDictionary(Machine& mach) {
     mach.addWord("**.f", callBinaryNumberOperation(powOperationFloat));
 #endif
     mach.addWord("variable", defineVariable);
+    //mach.addWord("variable$", defineVariableThenLoad);
 }
 int main(int argc, char** argv) {
     Machine mach;

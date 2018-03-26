@@ -86,13 +86,14 @@ union Number {
 #endif 
 	byte bytes[sizeof(Address)];
 };
-using Variable = std::shared_ptr<std::variant<Number, std::string>>;
+using Variable = std::variant<Number, std::string>;
+using SharedVariable = std::shared_ptr<Variable>;
 
 using Datum = std::variant<Number,
       Word, 
       NativeFunction, 
       std::string,
-      Variable>;
+      SharedVariable>;
 
 using UnaryOperation = std::function<Datum(Machine&, Datum)>;
 using BinaryOperation = std::function<Datum(Machine&, Datum, Datum)>;
@@ -110,13 +111,13 @@ class Machine {
         void pushParameter(NativeFunction fn);
         void pushParameter(const std::string&);
         void pushParameter(Datum d);
-        void pushParameter(Variable v);
+        void pushParameter(SharedVariable v);
 		void pushSubroutine(Number n);
         void pushSubroutine(Word ent);
         void pushSubroutine(NativeFunction fn);
         void pushSubroutine(const std::string&);
         void pushSubroutine(Datum d);
-        void pushSubroutine(Variable v);
+        void pushSubroutine(SharedVariable v);
         Datum popSubroutine();
         Datum popParameter();
         OptionalWord lookupWord(const std::string&);
@@ -257,7 +258,7 @@ class DictionaryEntry {
         void addWord(OptionalWord);
 		void addWord(Number n);
         void addWord(const std::string&);
-        void addWord(Variable v);
+        void addWord(SharedVariable v);
         void invoke(Machine& machine);
         bool isFake() const noexcept { return _fake; }
         void setFake(bool value) noexcept { _fake = value; }
@@ -331,14 +332,14 @@ OptionalWord Machine::lookupWord(const std::string& str) {
     }
 }
 
-void Machine::pushParameter(Variable d) { _parameter.push_front(d); }
+void Machine::pushParameter(SharedVariable d) { _parameter.push_front(d); }
 void Machine::pushParameter(Datum d) { _parameter.push_front(d); }
 void Machine::pushParameter(Number n) { _parameter.push_front(n); }
 void Machine::pushParameter(Word v) { _parameter.push_front(v); }
 void Machine::pushParameter(NativeFunction fn) { _parameter.push_front(fn); }
 void Machine::pushParameter(const std::string& str) { _parameter.push_front(str); }
 
-void Machine::pushSubroutine(Variable d) { _subroutine.push_front(d); }
+void Machine::pushSubroutine(SharedVariable d) { _subroutine.push_front(d); }
 void Machine::pushSubroutine(Datum d) { _subroutine.push_front(d); }
 void Machine::pushSubroutine(Number n) { _parameter.push_front(n); }
 void Machine::pushSubroutine(Word v) { _subroutine.push_front(v); }
@@ -387,7 +388,7 @@ OptionalWord DictionaryEntry::findWord(const std::string& name) {
     }
 }
 
-void DictionaryEntry::addWord(Variable v) {
+void DictionaryEntry::addWord(SharedVariable v) {
     _contents.emplace_back([v](Machine& mach) { mach.pushParameter(v); });
 }
 void DictionaryEntry::addWord(NativeFunction fn) {
@@ -558,7 +559,7 @@ void loadByte(Machine& m) {
 }
 void storeVariable(Machine& m) {
     // backwards compared to most other words
-    auto variable = std::get<Variable>(m.popParameter());
+    auto variable = std::get<SharedVariable>(m.popParameter());
     auto value = m.popParameter();
     std::visit([variable](auto&& value) {
                 using T = std::decay_t<decltype(value)>;
@@ -572,7 +573,7 @@ void storeVariable(Machine& m) {
             }, value);
 }
 void loadVariable(Machine& m) {
-    auto variable = std::get<Variable>(m.popParameter());
+    auto variable = std::get<SharedVariable>(m.popParameter());
     std::visit([&m](auto&& value) {
                 using T = std::decay_t<decltype(value)>;
                 if constexpr (std::is_same_v<T, Number>) {
@@ -600,7 +601,7 @@ void printDatum(Machine& m, Datum& top) {
                 m.getOutput() << value;
             } else if constexpr (std::is_same_v<T, NativeFunction>) {
                 m.getOutput() << "Native Function";
-            } else if constexpr (std::is_same_v<T, Variable>) {
+            } else if constexpr (std::is_same_v<T, SharedVariable>) {
                 m.getOutput() << "Variable!";
             } else {
                 static_assert(forth::AlwaysFalse<T>::value, "Unimplemented type!");
@@ -833,6 +834,16 @@ void emitCharacter(Machine& mach) {
     auto top = mach.popParameter();
     mach.getOutput() << char(std::get<Number>(top).bytes[0]);
 }
+void defineVariable(Machine& mach) {
+    if (mach.currentlyCompiling()) {
+        throw Problem("defineVariable", " cannot define variables while compiling!");
+    }
+    // we need to define a new variable via a dictionary entry
+    auto ptr = std::make_shared<Variable>();
+    enterCompileMode(mach);
+    mach.getCurrentlyCompilingWord().value()->addWord(ptr);
+    semicolon(mach);
+}
 void setupDictionary(Machine& mach) {
 	mach.addWord("words", words);
 	mach.addWord("R", pushOntoReturnStack);
@@ -898,6 +909,7 @@ void setupDictionary(Machine& mach) {
 #ifdef ALLOW_FLOATING_POINT
     mach.addWord("**.f", callBinaryNumberOperation(powOperationFloat));
 #endif
+    mach.addWord("variable", defineVariable);
 }
 int main(int argc, char** argv) {
     Machine mach;

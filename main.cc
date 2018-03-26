@@ -855,9 +855,15 @@ void setupDictionary(Machine& mach) {
     mach.addWord("**.f", callBinaryNumberOperation(powOperationFloat));
 #endif
 }
-int main() {
+int main(int argc, char** argv) {
     Machine mach;
     setupDictionary(mach);
+    std::list<std::string> temp;
+    // only the first argument is actually read, the rest are ignored
+    if (argc > 1) {
+        mach.pushParameter(std::string(argv[1]));
+        openInputFile(mach);
+    }
     while (keepExecuting) {
         try {
             if (auto str = mach.readNext() ; !str.empty()) {

@@ -122,11 +122,6 @@
   4+
   mstore.half ;
 
-: of-type? ( type code -- flag ) swap type-code = ;
-: number? ( a -- flag ) *number-variant-code* of-type? ;
-: word? ( a -- flag ) *word-variant-code* of-type? ;
-: native-function? ( a -- flag ) *native-function-variant-code* of-type? ;
-: string? ( a -- flag ) *string-variant-code* of-type? ;
 
 : bitwise-or ( a b -- c ) |.s ;
 : bitwise-oru ( a b -- c ) |.u ;
@@ -154,11 +149,27 @@
 : *f ( a b -- c ) * 1000 / ;
 : /f ( a b -- c ) / 1000 * ;
 
+: ! ( a var -- ) store.variable ;
+: @ ( a -- b ) load.variable ;
+: ? ( a -- ) @ . ;
 
+: enum-start ( -- 0 0 ) 0 dup ;
+: enum-next  ( n1 -- n2 n2 ) 1+ dup ;
+: enum-done  ( n1 -- ) drop ;
+enum-start ( section ids )
+*number-variant-code* ! enum-next
+*word-variant-code* ! enum-next
+*native-function-variant-code* ! enum-next
+*string-variant-code* ! enum-next
+*variable-variant-code* ! 
+enum-done
 
-
-
-
+: of-type? ( type code -- flag ) swap type-code = ;
+: number? ( a -- flag ) *number-variant-code* of-type? ;
+: word? ( a -- flag ) *word-variant-code* of-type? ;
+: native-function? ( a -- flag ) *native-function-variant-code* of-type? ;
+: string? ( a -- flag ) *string-variant-code* of-type? ;
+: variable? ( a -- flag ) *variable-variant-code* of-type? ;
 
 ( must always be the last word in the file )
 close-input-file

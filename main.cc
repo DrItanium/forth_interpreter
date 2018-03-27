@@ -101,6 +101,31 @@ using Stack = GenericStack<Datum>;
 using InputStack = GenericStack<std::unique_ptr<std::ifstream>>;
 using OutputStack = GenericStack<std::unique_ptr<std::ofstream>>;
 constexpr Address defaultMemorySize = 4096;
+template<typename T>
+T expect(const std::string& function, const Datum& d) {
+    try {
+        return std::get<T>(d);
+    } catch (std::bad_variant_access&) {
+        using K = std::decay_t<T>;
+        std::stringstream ss;
+        ss << " expected the top of the stack to be a ";
+        if constexpr (std::is_same_v<std::string, T>) {
+            ss << "string";
+        } else if constexpr (std::is_same_v<Number, T>) {
+            ss << "number";
+        } else if constexpr (std::is_same_v<Word, T>) {
+            ss << "word";
+        } else if constexpr (std::is_same_v<SharedVariable, T>) {
+            ss << "variable";
+        } else if constexpr (std::is_same_v<NativeFunction, T>) {
+            ss << "native function";
+        } else {
+            static_assert(forth::AlwaysFalse<T>::value, "Unimplemented type!");
+        }
+        auto str = ss.str();
+        throw Problem(function, str);
+    }
+}
 
 class Machine {
     public:
@@ -144,9 +169,15 @@ class Machine {
         void viewSubroutineStack();
 		OptionalWord getFront() const noexcept { return _front; }
         void resizeMemory(Address newCapacity);
+        void dumpMemoryToFile(const std::string& path);
+        void openBinaryFile(const std::string& path);
+        void closeBinaryFile();
+        void writeBinaryFile(byte v);
+        Integer readBinaryFile();
     private:
         std::unique_ptr<std::ifstream> _in;
         std::unique_ptr<std::ofstream> _out;
+        std::unique_ptr<std::fstream> _binaryFile;
         OptionalWord _front;
         OptionalWord _compile;
         Stack _parameter;
@@ -156,6 +187,49 @@ class Machine {
         std::unique_ptr<forth::byte[]> _memory;
         Address _capacity;
 };
+void Machine::openBinaryFile(const std::string& path) {
+    if (_binaryFile) {
+        throw Problem("openBinaryFile", " Already have an open binary file!");
+    }
+    _binaryFile = std::make_unique<std::fstream>(path.c_str(), std::fstream::binary | std::fstream::in | std::fstream::out);
+    if (!_binaryFile->is_open()) {
+        throw Problem("openBinaryFile", " Unable to open file for reading and writing!");
+    }
+}
+void Machine::writeBinaryFile(byte b) {
+    if (!_binaryFile) {
+        throw Problem("closeBinaryFile", " Cannot write to a non existent binary file!");
+    }
+    union {
+        byte b;
+        char c;
+    } value;
+    value.b = b;
+    _binaryFile->put(value.c);
+}
+Integer Machine::readBinaryFile() {
+    if (!_binaryFile) {
+        throw Problem("closeBinaryFile", " Cannot read from a non existent binary file!");
+    }
+    return _binaryFile->get();
+}
+void Machine::closeBinaryFile() {
+    if (!_binaryFile) {
+        throw Problem("closeBinaryFile", " Cannot close a binary file that is not open!");
+    }
+    _binaryFile->close();
+    _binaryFile.reset();
+}
+void Machine::dumpMemoryToFile(const std::string& path) {
+    std::ofstream stream(path.c_str(), std::fstream::binary);
+    if (!stream.is_open()) {
+        throw Problem("dumpToFile", " couldn't open file for writing!");
+    }
+    for (auto a = 0; a < _capacity; ++a) {
+        stream << char(_memory[a]);
+    }
+    stream.close();
+}
 std::ostream& Machine::getOutput() const noexcept {
     if (_out) {
         return *(_out.get());
@@ -838,8 +912,34 @@ void defineVariableThenLoad(Machine& mach) {
     defineVariable(mach);
     mach.getFront().value()->invoke(mach); // put the variable onto the stack right now!
 }
+void dumpMemoryToFile(Machine& mach) {
+    try {
+        mach.dumpMemoryToFile(std::get<std::string>(mach.popParameter()));
+    } catch (std::bad_variant_access&) {
+        throw Problem("dumpMemoryToFile", " top of the stack was not a string!");
+    }
+}
+void openBinaryFile(Machine& mach) {
+    auto top = expect<std::string>("openBinaryFile", mach.popParameter());
+    mach.openBinaryFile(top);
+}
+void writeBinaryFile(Machine& mach) {
+    auto top = static_cast<byte>(expect<Number>("writeBinaryFile", mach.popParameter()).address);
+    mach.writeBinaryFile(top);
+}
+void readBinaryFile(Machine& mach) {
+    mach.pushParameter(Number(mach.readBinaryFile()));
+}
+void closeBinaryFile(Machine& mach) {
+    mach.closeBinaryFile();
+}
 void setupDictionary(Machine& mach) {
+    mach.addWord("open-binary-file", openBinaryFile);
+    mach.addWord("close-binary-file", closeBinaryFile);
+    mach.addWord("read-binary-file", readBinaryFile);
+    mach.addWord("write-binary-file", writeBinaryFile);
 	mach.addWord("words", words);
+    mach.addWord("dump-memory-to-file", dumpMemoryToFile);
 	mach.addWord("R", pushOntoReturnStack);
 	mach.addWord("dup", dup);
 	mach.addWord("rot", rot);

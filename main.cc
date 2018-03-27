@@ -1010,7 +1010,7 @@ void setupDictionary(Machine& mach) {
 #endif
     mach.addWord("variable", defineVariable);
     mach.addWord("variable$", defineVariableThenLoad);
-    mach.addWord("[", switchOutOfCompileMode);
+    mach.addWord("[", switchOutOfCompileMode, false, true);
     mach.addWord("]", switchBackToCompileMode);
 }
 int main(int argc, char** argv) {

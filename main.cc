@@ -944,7 +944,7 @@ void setupDictionary(Machine& mach) {
 	mach.addWord("rot", rot);
 	mach.addWord("over", over);
     mach.addWord("drop", drop);
-    mach.addWord("depth", depth);
+    mach.addWord("depth", stackDepth);
     mach.addWord("swap", swap);
     mach.addWord("^.b", callBinaryNumberOperation(logicalXor<bool>));
     mach.addWord("(", enterIgnoreInputMode, false, true);

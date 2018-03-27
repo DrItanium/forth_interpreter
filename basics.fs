@@ -153,17 +153,22 @@
 : ! ( a var -- ) store.variable ;
 : @ ( a -- b ) load.variable ;
 : ? ( a -- ) @ . ;
+: 0! ( var -- ) 0 swap ! ;
+: 1+var ( var -- ) dup @ 1+ swap ! ;
 
-: enum-start ( -- 0 0 ) 0 dup ;
-: enum-next  ( n1 -- n2 n2 ) 1+ dup ;
-: enum-done  ( n1 -- ) drop ;
-enum-start ( section ids )
-*number-variant-code* ! enum-next
-*word-variant-code* ! enum-next
-*native-function-variant-code* ! enum-next
-*string-variant-code* ! enum-next
-*variable-variant-code* ! 
-enum-done
+variable enum-index
+: enum-index@ ( -- v ) enum-index @ ;
+: {enum ( -- 0 0 ) enum-index 0! enum-index@ ;
+: enum,  ( n1 -- n2 ) enum-index 1+var enum-index@ ;
+: enum} ( -- ) ;
+{enum 
+( section ids )
+*number-variant-code* ! enum,
+*word-variant-code* ! enum, 
+*native-function-variant-code* ! enum,
+*string-variant-code* ! enum, 
+*variable-variant-code* !
+enum}
 
 : of-type? ( type cv -- flag ) @ swap type-code = ;
 : number? ( a -- flag ) *number-variant-code* of-type? ;

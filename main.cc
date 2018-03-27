@@ -191,7 +191,13 @@ void Machine::openBinaryFile(const std::string& path) {
     if (_binaryFile) {
         throw Problem("openBinaryFile", " Already have an open binary file!");
     }
-    _binaryFile = std::make_unique<std::fstream>(path.c_str(), std::fstream::binary | std::fstream::in | std::fstream::out);
+    _binaryFile = std::make_unique<std::fstream>();
+    _binaryFile->open(path.c_str(), std::fstream::binary | std::fstream::out);
+    if (!_binaryFile->is_open()) {
+        throw Problem("openBinaryFile", " Unable to open file for writing!");
+    } 
+    _binaryFile->close();
+    _binaryFile->open(path.c_str(), std::fstream::binary | std::fstream::in | std::fstream::out );
     if (!_binaryFile->is_open()) {
         throw Problem("openBinaryFile", " Unable to open file for reading and writing!");
     }

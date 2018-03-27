@@ -648,7 +648,10 @@ void storeVariable(Machine& m) {
                 } else if constexpr (std::is_same_v<T, SharedVariable>) {
                     variable->_value = value;
                 } else {
-                    throw Problem("storeVariable", " illegal value type!");
+                    // if you can't figure it out then just take the address 
+                    // of it
+                    auto* k = &value;
+                    variable->_value = Number(Address(k));
                 }
             }, value);
 }
@@ -833,8 +836,24 @@ void words(Machine& mach) {
 }
 NativeFunction callBinaryNumberOperation(std::function<Number(Number, Number)> fn) {
     return [fn](auto& mach) {
-        auto top = std::get<Number>(mach.popParameter());
-        auto lower = std::get<Number>(mach.popParameter());
+        auto b = mach.popParameter();
+        auto a = mach.popParameter();
+#ifdef ENABLE_TYPE_CHECKING
+        auto top = std::get<Number>(b);
+        auto lower = std::get<Number>(a);
+#else 
+        // we get a number out in anyway possible
+        auto converter = [](auto&& value) {
+            using T = std::decay_t<decltype(value)>;
+            if constexpr (std::is_same_v<T, Number>) {
+                return value;
+            } else {
+                return Number(Address(&value));
+            }
+        };
+        auto top = std::visit(converter, b);
+        auto lower = std::visit(converter, a);
+#endif
         mach.pushParameter(fn(lower, top));
     };
 }
@@ -871,7 +890,7 @@ void resizeMemory(Machine& mach) {
                 if constexpr (std::is_same_v<T, Number>) {
                     mach.resizeMemory(value.address);
                 } else {
-                    throw Problem("resizeMemory", " top is not a number!");
+                    mach.resizeMemory(Address(&value));
                 }
             }, mach.popParameter());
 }

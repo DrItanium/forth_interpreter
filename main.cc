@@ -10,6 +10,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <cmath>
 
 #define YTypeFloat forth::Floating
 #define YTypeAddress forth::Address
@@ -85,16 +86,20 @@ union Number {
 #endif 
 	byte bytes[sizeof(Address)];
 };
-using Datum = std::variant<Number,
-      Word, 
-      NativeFunction, 
-      std::string >;
+struct Variable;
+using SharedVariable = std::shared_ptr<Variable>;
+struct Variable {
+    using Contents = std::variant<Number, std::string, SharedVariable>;
+    Contents _value;
+};
+
+using Datum = std::variant<Number, Word, NativeFunction, std::string, SharedVariable>;
 
 using UnaryOperation = std::function<Datum(Machine&, Datum)>;
 using BinaryOperation = std::function<Datum(Machine&, Datum, Datum)>;
 using Stack = GenericStack<Datum>;
-using InputStack = GenericStack<std::istream*>;
-using OutputStack = GenericStack<std::ostream*>;
+using InputStack = GenericStack<std::unique_ptr<std::ifstream>>;
+using OutputStack = GenericStack<std::unique_ptr<std::ofstream>>;
 constexpr Address defaultMemorySize = 4096;
 
 class Machine {
@@ -106,13 +111,13 @@ class Machine {
         void pushParameter(NativeFunction fn);
         void pushParameter(const std::string&);
         void pushParameter(Datum d);
-        bool parameterStackEmpty() const noexcept { return _parameter.empty(); }
+        void pushParameter(SharedVariable v);
 		void pushSubroutine(Number n);
         void pushSubroutine(Word ent);
         void pushSubroutine(NativeFunction fn);
         void pushSubroutine(const std::string&);
         void pushSubroutine(Datum d);
-        bool subroutineStackEmpty() const noexcept { return _subroutine.empty(); }
+        void pushSubroutine(SharedVariable v);
         Datum popSubroutine();
         Datum popParameter();
         OptionalWord lookupWord(const std::string&);
@@ -125,7 +130,8 @@ class Machine {
         std::string readNext();
         void errorOccurred() noexcept;
         void addWord(const std::string& name, NativeFunction fn, bool fake = false, bool compileTimeInvoke = false);
-        std::ostream& getOutput() const noexcept { return *_out; }
+        std::ostream& getOutput() const noexcept;
+        std::istream& getInput() const noexcept;
         void openFileForOutput(const std::string& path);
         void openFileForInput(const std::string& path);
         void closeFileForOutput();
@@ -137,9 +143,10 @@ class Machine {
         void viewParameterStack();
         void viewSubroutineStack();
 		OptionalWord getFront() const noexcept { return _front; }
+        void resizeMemory(Address newCapacity);
     private:
-        std::ostream* _out = &std::cout;
-        std::istream* _in = &std::cin;
+        std::unique_ptr<std::ifstream> _in;
+        std::unique_ptr<std::ofstream> _out;
         OptionalWord _front;
         OptionalWord _compile;
         Stack _parameter;
@@ -149,58 +156,76 @@ class Machine {
         std::unique_ptr<forth::byte[]> _memory;
         Address _capacity;
 };
+std::ostream& Machine::getOutput() const noexcept {
+    if (_out) {
+        return *(_out.get());
+    } else {
+        return std::cout;
+    }
+}
+std::istream& Machine::getInput() const noexcept {
+    if (_in) {
+        return *(_in.get());
+    } else {
+        return std::cin;
+    }
+}
+void Machine::resizeMemory(Address newCapacity) {
+    _memory = std::make_unique<forth::byte[]>(newCapacity);
+    _capacity = newCapacity;
+}
 std::string Machine::readNext() {
     std::string word;
-    (*_in) >> word;
+    getInput() >> word;
     return word;
 }
 void Machine::openFileForOutput(const std::string& path) {
-    auto* tmp = new std::ofstream(path.c_str());
-    if (!tmp->is_open()) {
+    auto value = std::make_unique<std::ofstream>(path.c_str());
+    if (!value->is_open()) {
         std::stringstream ss;
         ss << "Could not open " << path << " for writing!";
         auto str = ss.str();
         throw Problem("openFileForOutput", str);
     }
-    _outputs.push_front(_out);
-    _out = tmp;
+    if (_out) {
+        _outputs.emplace_front(std::move(_out));
+    }
+    _out.swap(value);
 }
 
 void Machine::openFileForInput(const std::string& path) {
-    auto* tmp = new std::ifstream(path.c_str());
-    if (!tmp->is_open()) {
+    auto value = std::make_unique<std::ifstream>(path.c_str());
+    if (!value->is_open()) {
         std::stringstream ss;
         ss << "Could not open " << path << " for reading!";
         auto str = ss.str();
         throw Problem("openFileForInput", str);
     }
-    _inputs.push_front(_in);
-    _in = tmp;
+    if (_in) {
+        _inputs.emplace_front(std::move(_in));
+    }
+    _in.swap(value);
 }
 void Machine::closeFileForOutput() {
-    if (_out != &std::cout) {
-        std::ofstream* tmp = (std::ofstream*)_out;
-        tmp->close();
-        if (_outputs.empty()) {
-            throw Problem("closeFileForOutput", "Stack underflow");
-        } else {
-            delete tmp;
-            _out = _outputs.front();
+    if (_out) {
+        _out->close();
+        if (!_outputs.empty()) {
+            _out.swap(_outputs.front());
             _outputs.pop_front();
+        } else {
+            _out.reset();
         }
     }
 }
 
 void Machine::closeFileForInput() {
-    if (_in != &std::cin) {
-        std::ifstream* tmp = (std::ifstream*)_in;
-        tmp->close();
-        if (_inputs.empty()) {
-            throw Problem("closeFileForInput", "Stack underflow");
-        } else {
-            delete tmp;
-            _in = _inputs.front();
+    if (_in) {
+        _in->close();
+        if (!_inputs.empty()) {
+            _in.swap(_inputs.front());
             _inputs.pop_front();
+        } else {
+            _in.reset();
         }
     }
 }
@@ -233,6 +258,7 @@ class DictionaryEntry {
         void addWord(OptionalWord);
 		void addWord(Number n);
         void addWord(const std::string&);
+        void addWord(SharedVariable v);
         void invoke(Machine& machine);
         bool isFake() const noexcept { return _fake; }
         void setFake(bool value) noexcept { _fake = value; }
@@ -283,7 +309,14 @@ Machine::Machine(Address capacity) {
     _memory = std::make_unique<forth::byte[]>(capacity);
     _capacity = capacity;
 }
-Machine::~Machine() { }
+Machine::~Machine() { 
+    while (_in) {
+        closeFileForInput();
+    }
+    while (_out) {
+        closeFileForOutput();
+    }
+}
 
 OptionalWord Machine::lookupWord(const std::string& str) {
     if (_front) {
@@ -299,32 +332,35 @@ OptionalWord Machine::lookupWord(const std::string& str) {
     }
 }
 
+void Machine::pushParameter(SharedVariable d) { _parameter.push_front(d); }
 void Machine::pushParameter(Datum d) { _parameter.push_front(d); }
 void Machine::pushParameter(Number n) { _parameter.push_front(n); }
 void Machine::pushParameter(Word v) { _parameter.push_front(v); }
 void Machine::pushParameter(NativeFunction fn) { _parameter.push_front(fn); }
 void Machine::pushParameter(const std::string& str) { _parameter.push_front(str); }
 
+void Machine::pushSubroutine(SharedVariable d) { _subroutine.push_front(d); }
 void Machine::pushSubroutine(Datum d) { _subroutine.push_front(d); }
 void Machine::pushSubroutine(Number n) { _parameter.push_front(n); }
 void Machine::pushSubroutine(Word v) { _subroutine.push_front(v); }
+void Machine::pushSubroutine(NativeFunction fn) { _subroutine.push_front(fn); }
 void Machine::pushSubroutine(const std::string& str) { _subroutine.push_front(str); }
 
 Datum Machine::popParameter() {
-    if (parameterStackEmpty()) {
+    if (_parameter.empty()) {
         throw Problem("popParameter", "Stack Empty!");
     } else {
-        auto top(_parameter.front());
+        Datum top = _parameter.front();
         _parameter.pop_front();
         return top;
     }
 }
 
 Datum Machine::popSubroutine() {
-    if (subroutineStackEmpty()) {
+    if (_subroutine.empty()) {
         throw Problem("popSubroutine", "Stack Empty!");
     } else {
-        auto top(_subroutine.front());
+        auto top = _subroutine.front();
         _subroutine.pop_front();
         return top;
     }
@@ -352,6 +388,9 @@ OptionalWord DictionaryEntry::findWord(const std::string& name) {
     }
 }
 
+void DictionaryEntry::addWord(SharedVariable v) {
+    _contents.emplace_back([v](Machine& mach) { mach.pushParameter(v); });
+}
 void DictionaryEntry::addWord(NativeFunction fn) {
     _contents.emplace_back(fn);
 }
@@ -518,6 +557,27 @@ void loadByte(Machine& m) {
 	Number n(Address(m.load(addr)) & 0xFF);
     m.pushParameter(n);
 }
+void storeVariable(Machine& m) {
+    // backwards compared to most other words
+    auto variable = std::get<SharedVariable>(m.popParameter());
+    auto value = m.popParameter();
+    std::visit([variable](auto&& value) {
+                using T = std::decay_t<decltype(value)>;
+                if constexpr (std::is_same_v<T, Number>) {
+                    variable->_value = value;
+                } else if constexpr (std::is_same_v<T, std::string>) {
+                    variable->_value = value;
+                } else if constexpr (std::is_same_v<T, SharedVariable>) {
+                    variable->_value = value;
+                } else {
+                    throw Problem("storeVariable", " illegal value type!");
+                }
+            }, value);
+}
+void loadVariable(Machine& m) {
+    auto variable = std::get<SharedVariable>(m.popParameter());
+    std::visit([&m](auto&& value) { m.pushParameter(value); }, variable->_value);
+}
 void printDatum(Machine& m, Datum& top) {
     std::visit([&m](auto&& value) {
             auto f = m.getOutput().flags();
@@ -534,6 +594,8 @@ void printDatum(Machine& m, Datum& top) {
                 m.getOutput() << value;
             } else if constexpr (std::is_same_v<T, NativeFunction>) {
                 m.getOutput() << "Native Function";
+            } else if constexpr (std::is_same_v<T, SharedVariable>) {
+                m.getOutput() << "Variable!";
             } else {
                 static_assert(forth::AlwaysFalse<T>::value, "Unimplemented type!");
             }
@@ -551,13 +613,15 @@ void Machine::viewParameterStack() {
         getOutput() << std::endl;
     }
 }
-void enterCompileMode(Machine& mach) {
+void enterCompileModeWithName(Machine& mach, const std::string& name) {
     if (mach.currentlyCompiling()) {
         throw Problem("enterCompileMode", "Already compiling!");
-    } else {
-        auto name = mach.readNext();
-        mach.newCompilingWord(name);
-    }
+    } 
+    mach.newCompilingWord(name);
+}
+void enterCompileMode(Machine& mach) {
+    auto name = mach.readNext();
+    enterCompileModeWithName(mach, name);
 }
 
 void processString(Machine& mach) {
@@ -630,15 +694,6 @@ void thenStatement(Machine& mach) {
     ifStatement->addWord(mach.lookupWord(ifStatement->size() == 1 ? "predicated" : "choose"));
     mach.compileCurrentWord();
     mach.restoreCurrentlyCompilingWord();
-}
-void addConstantWord(Machine& mach, const std::string& name, Number value) {
-    std::stringstream ss;
-    ss << "*" << name << "*";
-    auto str = ss.str();
-    mach.addWord(str, [value](auto& x) { x.pushParameter(value); });
-}
-void addConstantWord(Machine& mach, const std::string& name, bool value) {
-    addConstantWord(mach, name, Number(value ? 0 : -1));
 }
 void bodyInvoke(Machine& mach) {
     auto onFalse = mach.popParameter();
@@ -728,6 +783,61 @@ Number minusOperation(Number a) {
     return Number(- a.get<T>());
 }
 
+void getMemorySize(Machine& mach) {
+    mach.pushParameter(Number(mach.getCapacity()));
+}
+
+void resizeMemory(Machine& mach) {
+    std::visit([&mach](auto&& value) {
+                using T = std::decay_t<decltype(value)>;
+                if constexpr (std::is_same_v<T, Number>) {
+                    mach.resizeMemory(value.address);
+                } else {
+                    throw Problem("resizeMemory", " top is not a number!");
+                }
+            }, mach.popParameter());
+}
+void addLiteralToCompilation(Machine& mach) {
+    if (!mach.currentlyCompiling()) {
+        throw Problem("literal", " not currently compiling!");
+    }
+    auto top = mach.popParameter();
+    std::visit([&mach](auto&& value) { mach.getCurrentlyCompilingWord().value()->addWord(value);}, top);
+}
+Number powOperation(Number a, Number b) {
+    return Number(Integer(pow(double(a.integer), double(b.integer))));
+}
+Number powOperationUnsigned(Number a, Number b) {
+    return Number(Address(pow(double(a.address), double(b.address))));
+}
+#ifdef ALLOW_FLOATING_POINT
+Number powOperationFloat(Number a, Number b) {
+    return Number(pow(a.fp, b.fp));
+}
+#endif
+
+void emitCharacter(Machine& mach) {
+    auto top = mach.popParameter();
+    mach.getOutput() << char(std::get<Number>(top).bytes[0]);
+}
+void defineVariableWithName(Machine& mach, const std::string& name) {
+    if (mach.currentlyCompiling()) {
+        throw Problem("defineVariable", " cannot define variables while compiling!");
+    }
+    // we need to define a new variable via a dictionary entry
+    auto ptr = std::make_shared<Variable>();
+    enterCompileModeWithName(mach, name);
+    mach.getCurrentlyCompilingWord().value()->addWord(ptr);
+    semicolon(mach);
+}
+void defineVariable(Machine& mach) {
+    auto name = mach.readNext();
+    defineVariableWithName(mach, name);
+}
+void defineVariableThenLoad(Machine& mach) {
+    defineVariable(mach);
+    mach.getFront().value()->invoke(mach); // put the variable onto the stack right now!
+}
 void setupDictionary(Machine& mach) {
 	mach.addWord("words", words);
 	mach.addWord("R", pushOntoReturnStack);
@@ -736,16 +846,19 @@ void setupDictionary(Machine& mach) {
 	mach.addWord("over", over);
     mach.addWord("drop", drop);
     mach.addWord("swap", swap);
-    mach.addWord("^b", callBinaryNumberOperation(logicalXor<bool>));
+    mach.addWord("^.b", callBinaryNumberOperation(logicalXor<bool>));
     mach.addWord("(", enterIgnoreInputMode, false, true);
     mach.addWord(";", semicolon, false, true);
     mach.addWord("bye", bye);
     mach.addWord("mload.byte", loadByte);
     mach.addWord("mstore.byte", storeByte);
+    mach.addWord("load.variable", loadVariable);
+    mach.addWord("store.variable", storeVariable);
     mach.addWord(".", printTop);
     mach.addWord(":", enterCompileMode);
     mach.addWord(".s", std::mem_fn(&Machine::viewParameterStack));
     mach.addWord("\"", processString, false, true);
+    mach.addWord("emit", emitCharacter);
     mach.addWord("type-code", unaryOperation(typeCode));
     mach.addWord("open-input-file", openInputFile);
     mach.addWord("close-input-file", closeInputFile);
@@ -762,30 +875,40 @@ void setupDictionary(Machine& mach) {
 #ifdef ALLOW_FLOATING_POINT
     mach.addWord("minus.f", callUnaryNumberOperation(minusOperation<Floating>));
 #endif
-
-    addConstantWord(mach, "number-variant-code", 0);
-    addConstantWord(mach, "word-variant-code", 1);
-    addConstantWord(mach, "native-function-variant-code", 2);
-    addConstantWord(mach, "string-variant-code", 3);
-	addConstantWord(mach, "supports-floating-point",
-#ifdef ALLOW_FLOATING_POINT
-			true
-#else
-			false
-#endif  // end ALLOW_FLOATING_POINT
-			);
+    defineVariableWithName(mach, "*number-variant-code*"); //, 0);
+    defineVariableWithName(mach, "*word-variant-code*"); // , 1);
+    defineVariableWithName(mach, "*native-function-variant-code*"); // , 2);
+    defineVariableWithName(mach, "*string-variant-code*"); //, 3);
+    defineVariableWithName(mach, "*variable-variant-code*"); //, 4);
 #define X(name, op)
 #define Y(name, op, type) mach.addWord(#op INDIRECTION(YTypeString, type) , callBinaryNumberOperation( name < INDIRECTION(YType, type) >));
 #include "BinaryOperators.def"
 #undef X
-    addConstantWord(mach, "sizeof-address", sizeof(Address));
-    addConstantWord(mach, "sizeof-half-address", sizeof(forth::HalfAddress));
-    addConstantWord(mach, "sizeof-quarter-address", sizeof(forth::QuarterAddress));
-    addConstantWord(mach, "bitwidth", CHAR_BIT);
+    mach.addWord("*sizeof-address*", [](auto& x) { x.pushParameter(Number(sizeof(Address))); });
+    mach.addWord("*sizeof-integer*", [](auto& x) { x.pushParameter(Number(sizeof(Integer))); });
+    mach.addWord("*sizeof-half-address*", [](auto& x) { x.pushParameter(Number(sizeof(forth::HalfAddress))); });
+    mach.addWord("*sizeof-quarter-address*", [](auto& x) { x.pushParameter(Number(sizeof(forth::QuarterAddress))); });
+    mach.addWord("*bitwidth*", [](auto& x) { x.pushParameter(Number(CHAR_BIT)); });
+    mach.addWord("*memory-size*", getMemorySize);
+    mach.addWord("resize-memory", resizeMemory);
+    mach.addWord("literal", addLiteralToCompilation, false, true);
+    mach.addWord("**.s", callBinaryNumberOperation(powOperation));
+    mach.addWord("**.u", callBinaryNumberOperation(powOperationUnsigned));
+#ifdef ALLOW_FLOATING_POINT
+    mach.addWord("**.f", callBinaryNumberOperation(powOperationFloat));
+#endif
+    mach.addWord("variable", defineVariable);
+    mach.addWord("variable$", defineVariableThenLoad);
 }
-int main() {
+int main(int argc, char** argv) {
     Machine mach;
     setupDictionary(mach);
+    std::list<std::string> temp;
+    // only the first argument is actually read, the rest are ignored
+    if (argc > 1) {
+        mach.pushParameter(std::string(argv[1]));
+        openInputFile(mach);
+    }
     while (keepExecuting) {
         try {
             if (auto str = mach.readNext() ; !str.empty()) {

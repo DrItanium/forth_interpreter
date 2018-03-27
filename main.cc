@@ -175,6 +175,7 @@ class Machine {
         void writeBinaryFile(byte v);
         bool parameterStackEmpty() const noexcept { return _parameter.empty(); }
         void pushParameterDepth() noexcept;
+        void clearCurrentWord();
     private:
         std::unique_ptr<std::ifstream> _in;
         std::unique_ptr<std::ofstream> _out;
@@ -369,8 +370,11 @@ void Machine::compileCurrentWord() {
             _compile->get()->setNext(*_front);
         }
         _front.swap(_compile);
-        _compile.reset();
+        clearCurrentWord();
     }
+}
+void Machine::clearCurrentWord() {
+    _compile.reset();
 }
 void Machine::saveCurrentlyCompilingWord() {
     pushSubroutine(*_compile);
@@ -933,6 +937,13 @@ void closeBinaryFile(Machine& mach) {
 void stackDepth(Machine& mach) {
     mach.pushParameterDepth();
 }
+void switchOutOfCompileMode(Machine& mach) {
+    mach.saveCurrentlyCompilingWord();
+    mach.clearCurrentWord();
+}
+void switchBackToCompileMode(Machine& mach) {
+    mach.restoreCurrentlyCompilingWord();
+}
 void setupDictionary(Machine& mach) {
     mach.addWord("open-binary-file", openBinaryFile);
     mach.addWord("close-binary-file", closeBinaryFile);
@@ -999,6 +1010,8 @@ void setupDictionary(Machine& mach) {
 #endif
     mach.addWord("variable", defineVariable);
     mach.addWord("variable$", defineVariableThenLoad);
+    mach.addWord("[", switchOutOfCompileMode);
+    mach.addWord("]", switchBackToCompileMode);
 }
 int main(int argc, char** argv) {
     Machine mach;

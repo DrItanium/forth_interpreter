@@ -160,7 +160,7 @@ variable enum-index
 : enum-index@ ( -- v ) enum-index @ ;
 : {enum ( -- 0 0 ) enum-index 0! enum-index@ ;
 : enum,  ( n1 -- n2 ) enum-index 1+var enum-index@ ;
-: enum} ( -- ) ;
+: enum} ( n1? -- ) ;
 {enum 
 ( section ids )
 *number-variant-code* ! enum,
@@ -190,8 +190,6 @@ enum}
 : bin<<q ( a -- ) dup lowerq bin<< upperq bin<< ;
 : bin<<h ( a -- ) dup lowerh bin<<q upperh bin<<q ;
 : bin<<w ( a -- ) dup lowerw bin<<q upperw bin<<q ;
-
-
 
 ( must always be the last word in the file )
 close-input-file

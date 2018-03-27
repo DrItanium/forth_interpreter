@@ -173,6 +173,8 @@ class Machine {
         void openBinaryFile(const std::string& path);
         void closeBinaryFile();
         void writeBinaryFile(byte v);
+        bool parameterStackEmpty() const noexcept { return _parameter.empty(); }
+        void pushParameterDepth() noexcept;
     private:
         std::unique_ptr<std::ifstream> _in;
         std::unique_ptr<std::ofstream> _out;
@@ -186,6 +188,10 @@ class Machine {
         std::unique_ptr<forth::byte[]> _memory;
         Address _capacity;
 };
+void Machine::pushParameterDepth() noexcept {
+    auto len = _parameter.size();
+    pushParameter(Number(len));
+}
 void Machine::openBinaryFile(const std::string& path) {
     if (_binaryFile) {
         throw Problem("openBinaryFile", " Already have an open binary file!");
@@ -924,6 +930,9 @@ void writeBinaryFile(Machine& mach) {
 void closeBinaryFile(Machine& mach) {
     mach.closeBinaryFile();
 }
+void stackDepth(Machine& mach) {
+    mach.pushParameterDepth();
+}
 void setupDictionary(Machine& mach) {
     mach.addWord("open-binary-file", openBinaryFile);
     mach.addWord("close-binary-file", closeBinaryFile);
@@ -935,6 +944,7 @@ void setupDictionary(Machine& mach) {
 	mach.addWord("rot", rot);
 	mach.addWord("over", over);
     mach.addWord("drop", drop);
+    mach.addWord("depth", depth);
     mach.addWord("swap", swap);
     mach.addWord("^.b", callBinaryNumberOperation(logicalXor<bool>));
     mach.addWord("(", enterIgnoreInputMode, false, true);

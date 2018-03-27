@@ -173,11 +173,10 @@ class Machine {
         void openBinaryFile(const std::string& path);
         void closeBinaryFile();
         void writeBinaryFile(byte v);
-        Integer readBinaryFile();
     private:
         std::unique_ptr<std::ifstream> _in;
         std::unique_ptr<std::ofstream> _out;
-        std::unique_ptr<std::fstream> _binaryFile;
+        std::unique_ptr<std::ofstream> _binaryFile;
         OptionalWord _front;
         OptionalWord _compile;
         Stack _parameter;
@@ -191,16 +190,11 @@ void Machine::openBinaryFile(const std::string& path) {
     if (_binaryFile) {
         throw Problem("openBinaryFile", " Already have an open binary file!");
     }
-    _binaryFile = std::make_unique<std::fstream>();
-    _binaryFile->open(path.c_str(), std::fstream::binary | std::fstream::out);
+    _binaryFile = std::make_unique<std::ofstream>();
+    _binaryFile->open(path.c_str(), std::ofstream::binary | std::ofstream::out );
     if (!_binaryFile->is_open()) {
         throw Problem("openBinaryFile", " Unable to open file for writing!");
     } 
-    _binaryFile->close();
-    _binaryFile->open(path.c_str(), std::fstream::binary | std::fstream::in | std::fstream::out );
-    if (!_binaryFile->is_open()) {
-        throw Problem("openBinaryFile", " Unable to open file for reading and writing!");
-    }
 }
 void Machine::writeBinaryFile(byte b) {
     if (!_binaryFile) {
@@ -212,12 +206,6 @@ void Machine::writeBinaryFile(byte b) {
     } value;
     value.b = b;
     _binaryFile->put(value.c);
-}
-Integer Machine::readBinaryFile() {
-    if (!_binaryFile) {
-        throw Problem("closeBinaryFile", " Cannot read from a non existent binary file!");
-    }
-    return _binaryFile->get();
 }
 void Machine::closeBinaryFile() {
     if (!_binaryFile) {
@@ -933,16 +921,12 @@ void writeBinaryFile(Machine& mach) {
     auto top = static_cast<byte>(expect<Number>("writeBinaryFile", mach.popParameter()).address);
     mach.writeBinaryFile(top);
 }
-void readBinaryFile(Machine& mach) {
-    mach.pushParameter(Number(mach.readBinaryFile()));
-}
 void closeBinaryFile(Machine& mach) {
     mach.closeBinaryFile();
 }
 void setupDictionary(Machine& mach) {
     mach.addWord("open-binary-file", openBinaryFile);
     mach.addWord("close-binary-file", closeBinaryFile);
-    mach.addWord("read-binary-file", readBinaryFile);
     mach.addWord("write-binary-file", writeBinaryFile);
 	mach.addWord("words", words);
     mach.addWord("dump-memory-to-file", dumpMemoryToFile);

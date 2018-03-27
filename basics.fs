@@ -172,5 +172,21 @@ enum-done
 : string? ( a -- flag ) *string-variant-code* of-type? ;
 : variable? ( a -- flag ) *variable-variant-code* of-type? ;
 
+: lowerq ( a -- b ) FF# bitwise-andu ;
+: upperq ( a -- b ) 8 >>u lowerq ;
+: lowerh ( a -- b ) FFFF# bitwise-andu ;
+: upperh ( a -- b ) 16 >>u lowerh ;
+: lowerw ( a -- b ) FFFFFFFF# bitwise-andu ;
+: upperw ( a -- b ) 32 >>u lowerw ;
+
+: {bin ( path -- ) open-binary-file ;
+: bin} ( -- ) close-binary-file ;
+: bin<< ( a -- ) write-binary-file ;
+: bin<<q ( a -- ) dup lowerq bin<< upperq bin<< ;
+: bin<<h ( a -- ) dup lowerh bin<<q upperh bin<<q ;
+: bin<<w ( a -- ) dup lowerw bin<<q upperw bin<<q ;
+
+
+
 ( must always be the last word in the file )
 close-input-file

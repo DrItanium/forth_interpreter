@@ -944,6 +944,18 @@ void switchOutOfCompileMode(Machine& mach) {
 void switchBackToCompileMode(Machine& mach) {
     mach.restoreCurrentlyCompilingWord();
 }
+void switchBackToCompileModeWithLiteral(Machine& mach) {
+    mach.restoreCurrentlyCompilingWord();
+    addLiteralToCompilation(mach);
+}
+void ignoreInputUntilNewline(Machine& mach) {
+    auto& input = mach.getInput();
+    while (true) {
+        if (auto result = input.get() ; result == '\n' || input.eof() || input.bad()) {
+            break;
+        }
+    }
+}
 void setupDictionary(Machine& mach) {
     mach.addWord("open-binary-file", openBinaryFile);
     mach.addWord("close-binary-file", closeBinaryFile);
@@ -1012,6 +1024,8 @@ void setupDictionary(Machine& mach) {
     mach.addWord("variable$", defineVariableThenLoad);
     mach.addWord("[", switchOutOfCompileMode, false, true);
     mach.addWord("]", switchBackToCompileMode);
+    mach.addWord("]L", switchBackToCompileModeWithLiteral);
+    mach.addWord("\\", ignoreInputUntilNewline);
 }
 int main(int argc, char** argv) {
     Machine mach;

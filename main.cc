@@ -454,13 +454,13 @@ void DictionaryEntry::invoke(Machine& mach) {
             mach.getOutput() << "-";
         }
         mach.getOutput() << "> " << getName() << std::endl;
-        ++executionDepth;
     }
+    ++executionDepth;
     for (auto& x : _contents) {
         x(mach);
     }
+    --executionDepth;
     if (mach.debugActive()) {
-        --executionDepth;
         mach.getOutput() << "<";
         for (auto a = 0; a < executionDepth; ++a) {
             mach.getOutput() << "-";
@@ -923,7 +923,12 @@ void defineVariableWithName(Machine& mach, const std::string& name) {
     enterCompileModeWithName(mach, name);
     mach.getCurrentlyCompilingWord().value()->addWord(ptr);
     semicolon(mach);
-    std::cout << "defined variable: " << name << std::endl;
+    if (mach.debugActive()) {
+        for (auto a = 0; a < executionDepth; ++a) {
+            mach.getOutput() << "-";
+        }
+        mach.getOutput() << "- defined variable: " << name << std::endl;
+    }
 }
 void defineVariable(Machine& mach) {
     auto name = mach.readNext();

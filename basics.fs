@@ -191,5 +191,5 @@ enum}
 : bin<<h ( a -- ) dup lowerh bin<<q upperh bin<<q ;
 : bin<<w ( a -- ) dup lowerw bin<<q upperw bin<<q ;
 
-( must always be the last word in the file )
+\ must always be last in the file 
 close-input-file

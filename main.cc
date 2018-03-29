@@ -512,10 +512,6 @@ void bye(Machine&) {
     keepExecuting = false;
 }
 
-bool ignoreInput = false;
-void enterIgnoreInputMode(Machine&) {
-    ignoreInput = true;
-}
 
 
 void Machine::errorOccurred() noexcept {
@@ -951,6 +947,9 @@ void switchBackToCompileModeWithLiteral(Machine& mach) {
 void ignoreInputUntilNewline(Machine& mach) {
     mach.getInput().ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
+void enterIgnoreInputMode(Machine& mach) {
+    mach.getInput().ignore(std::numeric_limits<std::streamsize>::max(), ')');
+}
 void setupDictionary(Machine& mach) {
     mach.addWord("open-binary-file", openBinaryFile);
     mach.addWord("close-binary-file", closeBinaryFile);
@@ -1020,7 +1019,7 @@ void setupDictionary(Machine& mach) {
     mach.addWord("[", switchOutOfCompileMode, false, true);
     mach.addWord("]", switchBackToCompileMode);
     mach.addWord("]L", switchBackToCompileModeWithLiteral);
-    mach.addWord("\\", ignoreInputUntilNewline);
+    mach.addWord("\\", ignoreInputUntilNewline, false, true);
 }
 int main(int argc, char** argv) {
     Machine mach;
@@ -1034,31 +1033,26 @@ int main(int argc, char** argv) {
     while (keepExecuting) {
         try {
             if (auto str = mach.readNext() ; !str.empty()) {
-                if (ignoreInput) {
-                    ignoreInput = (str != ")");
-                    continue;
-                } else {
-                    if (auto entry = mach.lookupWord(str); entry) {
-                        if (auto value = entry.value() ; mach.currentlyCompiling()) {
-                            if (value->compileTimeInvokable()) {
-                                value->invoke(mach);
-                            } else {
-                                mach.getCurrentlyCompilingWord().value()->addWord(entry);
-                            }
-                        } else {
+                if (auto entry = mach.lookupWord(str); entry) {
+                    if (auto value = entry.value() ; mach.currentlyCompiling()) {
+                        if (value->compileTimeInvokable()) {
                             value->invoke(mach);
+                        } else {
+                            mach.getCurrentlyCompilingWord().value()->addWord(entry);
                         }
                     } else {
-                        if (!numberRoutine(mach, str)) {
-                            throw Problem(str, "?");
-                        } 
+                        value->invoke(mach);
                     }
+                } else {
+                    if (!numberRoutine(mach, str)) {
+                        throw Problem(str, "?");
+                    } 
                 }
             }
-            if (!mach.currentlyCompiling() && 
-                    !ignoreInput) {
+            if (!mach.currentlyCompiling()) {
                 mach.getOutput() << " ok" << std::endl;
-            }
+            } 
+
         } catch (Problem& p) {
             // clear out the stacks as well
             mach.errorOccurred();

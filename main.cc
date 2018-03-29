@@ -127,6 +127,7 @@ T expect(const std::string& function, const Datum& d) {
     }
 }
 
+Address executionDepth = 0;
 class Machine {
     public:
         explicit Machine(Address memSize = defaultMemorySize);
@@ -176,6 +177,8 @@ class Machine {
         bool parameterStackEmpty() const noexcept { return _parameter.empty(); }
         void pushParameterDepth() noexcept;
         void clearCurrentWord();
+        void setDebugging(bool value) noexcept { _enableDebugging = value; }
+        bool debugActive() const noexcept { return _enableDebugging; }
     private:
         std::unique_ptr<std::ifstream> _in;
         std::unique_ptr<std::ofstream> _out;
@@ -188,6 +191,7 @@ class Machine {
         OutputStack _outputs;
         std::unique_ptr<forth::byte[]> _memory;
         Address _capacity;
+        bool _enableDebugging = false;
 };
 void Machine::pushParameterDepth() noexcept {
     auto len = _parameter.size();
@@ -445,8 +449,23 @@ Datum Machine::popSubroutine() {
 }
 
 void DictionaryEntry::invoke(Machine& mach) {
+    if (mach.debugActive()) {
+        for (auto a = 0; a < executionDepth; ++a) {
+            mach.getOutput() << "-";
+        }
+        mach.getOutput() << "> " << getName() << std::endl;
+        ++executionDepth;
+    }
     for (auto& x : _contents) {
         x(mach);
+    }
+    if (mach.debugActive()) {
+        --executionDepth;
+        mach.getOutput() << "<";
+        for (auto a = 0; a < executionDepth; ++a) {
+            mach.getOutput() << "-";
+        }
+        mach.getOutput() << " " << getName() << std::endl;
     }
 }
 
@@ -517,6 +536,7 @@ void bye(Machine&) {
 void Machine::errorOccurred() noexcept {
     _parameter.clear();
     _subroutine.clear();
+    executionDepth = 0;
     if (_compile) {
         _compile.reset();
     }
@@ -903,6 +923,7 @@ void defineVariableWithName(Machine& mach, const std::string& name) {
     enterCompileModeWithName(mach, name);
     mach.getCurrentlyCompilingWord().value()->addWord(ptr);
     semicolon(mach);
+    std::cout << "defined variable: " << name << std::endl;
 }
 void defineVariable(Machine& mach) {
     auto name = mach.readNext();
@@ -1020,6 +1041,9 @@ void setupDictionary(Machine& mach) {
     mach.addWord("]", switchBackToCompileMode);
     mach.addWord("]L", switchBackToCompileModeWithLiteral);
     mach.addWord("\\", ignoreInputUntilNewline, false, true);
+    mach.addWord("enable-debug", [](Machine& mach) { mach.setDebugging(true); });
+    mach.addWord("disable-debug", [](Machine& mach) { mach.setDebugging(false); });
+    mach.addWord("debug?", [](Machine& mach) { mach.pushParameter(Number(mach.debugActive() ? Address(-1) : Address(0)) ); });
 }
 int main(int argc, char** argv) {
     Machine mach;

@@ -949,12 +949,7 @@ void switchBackToCompileModeWithLiteral(Machine& mach) {
     addLiteralToCompilation(mach);
 }
 void ignoreInputUntilNewline(Machine& mach) {
-    auto& input = mach.getInput();
-    while (true) {
-        if (auto result = input.get() ; result == '\n' || input.eof() || input.bad()) {
-            break;
-        }
-    }
+    mach.getInput().ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 void setupDictionary(Machine& mach) {
     mach.addWord("open-binary-file", openBinaryFile);

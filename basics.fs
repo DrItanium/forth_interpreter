@@ -1,13 +1,18 @@
 ( some words ! )
-: 0 ( -- 0 ) 0 ; : 0u ( -- 0u ) 0u ;
+: 0 ( -- 0 ) 0 ; 
 : -1 ( -- -1 ) -1 ;
 : true ( -- -1 ) -1 ;
 : false ( -- 0 ) 0 ;
 : space ( -- ) 0x20 emit ;
 : CR ( -- ) 0xA emit ;
-: 1 ( -- 1 ) 1 ; : 1u ( -- 1u ) 1u ;
-: 2 ( -- 2 ) 2 ; : 2u ( -- 2u ) 2u ;
-: 4 ( -- 4 ) 4 ; : 4u ( -- 4u ) 4u ;
+: 1 ( -- 1 ) 1 ; 
+: 2 ( -- 2 ) 2 ; 
+: 4 ( -- 4 ) 4 ; 
+: 0x1 ( -- 0x1 ) 0x1 ;
+: 0x2 ( -- 0x2 ) 0x2 ;
+: 0x4 ( -- 0x4 ) 0x4 ;
+: 0xFF ( -- 0xFF ) 0xFF ;
+: 0xFFFF ( -- 0xFFFF ) 0xFFFF ;
 : 2drop ( b a -- ) drop drop ;
 : 3drop ( c b a -- ) 2drop drop ;
 : -rot ( a b c -- c b a ) rot rot ;

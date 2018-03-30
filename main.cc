@@ -12,11 +12,9 @@
 #include <algorithm>
 #include <cmath>
 
-#define YTypeFloat forth::Floating
 #define YTypeAddress forth::Address
 #define YTypebool bool
 #define YTypeInteger forth::Integer
-#define YTypeStringFloat ".f"
 #define YTypeStringAddress ".u" 
 #define YTypeStringbool ".b"
 #define YTypeStringInteger ".s"
@@ -27,9 +25,6 @@ class Machine;
 using Integer = forth::Integer;
 using Address = forth::Address;
 using byte = forth::byte;
-#ifdef ALLOW_FLOATING_POINT
-using Floating = forth::Floating;
-#endif // end ALLOW_FLOATING_POINT
 
 template<typename T>
 using GenericStack = std::list<T>;
@@ -53,9 +48,6 @@ union Number {
 	Number(unsigned int i) : address(Address(i)) { }
 	Number(Integer i) : integer(i) { }
 	Number(Address a) : address(a) { }
-#ifdef ALLOW_FLOATING_POINT
-    Number(Floating f) : fp(f) { }
-#endif // end ALLOW_FLOATING_POINT
 
 	template<typename T>
 	T get() noexcept {
@@ -66,13 +58,7 @@ union Number {
 			return address;
 		} else if constexpr (std::is_same_v<K, bool>) {
 			return getTruth();
-		}
-#ifdef ALLOW_FLOATING_POINT
-		else if constexpr (std::is_same_v<K, Floating>) {
-			return fp;
-		}
-#endif // end ALLOW_FLOATING_POINT
-		else {
+		} else {
 			static_assert(forth::AlwaysFalse<T>::value, "Unsupported type specified!");
 		}
 	}
@@ -81,9 +67,6 @@ union Number {
     }
 	Integer integer;
 	Address address;
-#ifdef ALLOW_FLOATING_POINT
-	Floating fp;
-#endif 
 	byte bytes[sizeof(Address)];
 };
 struct Variable;
@@ -127,6 +110,7 @@ T expect(const std::string& function, const Datum& d) {
     }
 }
 
+bool printOk = false;
 Address executionDepth = 0;
 class Machine {
     public:
@@ -575,7 +559,6 @@ template<>
 Number logicalXor<bool>(Number a, Number b) {
     return Number (a.getTruth() != b.getTruth());
 }
-
 bool numberRoutine(Machine& mach, const std::string& word) {
     auto fn = [&mach](Number value) {
         if (mach.currentlyCompiling()) {
@@ -587,41 +570,20 @@ bool numberRoutine(Machine& mach, const std::string& word) {
     // floating point
     // integers
     // first do some inspection first
-    std::istringstream parseAttempt(word);
-    if (word.find('#') != std::string::npos) {
+    if (word[0] == '0' && (word[1] == 'x' || word[1] == 'X')) {
+        auto copy = word;
+        copy[1] = '0';
+        std::istringstream hexAddress (copy);
         forth::Address tmpAddress;
-        parseAttempt >> std::hex >> tmpAddress;
-        if (!parseAttempt.fail()) {
-            fn(tmpAddress);
-            return true;
-        }
-        return false;
-    } 
-    if (word.find('u') != std::string::npos) {
-        forth::Address tmpAddress;
-        parseAttempt >> tmpAddress;
-        if (!parseAttempt.fail()) {
+        hexAddress >> std::hex >> tmpAddress;
+        if (!hexAddress.fail()) {
             fn(tmpAddress);
             return true;
         }
         return false;
     }
-    parseAttempt.clear();
-#ifdef ALLOW_FLOATING_POINT
-    if (word.find('.') != std::string::npos) {
-        forth::Floating tmpFloat;
-        parseAttempt >> tmpFloat;
-        if (!parseAttempt.fail() && parseAttempt.eof()) {
-            fn(tmpFloat);
-            return true;
-        }
-        // get out of here early since we hit something that looks like
-        // a float
-        return false;
-    }
-#endif // end ALLOW_FLOATING_POINT
     forth::Integer tmpInt;
-    parseAttempt.clear();
+    std::istringstream parseAttempt(word);
     parseAttempt >> tmpInt;
     if (!parseAttempt.fail() && parseAttempt.eof()) {
         fn(tmpInt);
@@ -904,11 +866,6 @@ Number powOperation(Number a, Number b) {
 Number powOperationUnsigned(Number a, Number b) {
     return Number(Address(pow(double(a.address), double(b.address))));
 }
-#ifdef ALLOW_FLOATING_POINT
-Number powOperationFloat(Number a, Number b) {
-    return Number(pow(a.fp, b.fp));
-}
-#endif
 
 void emitCharacter(Machine& mach) {
     auto top = mach.popParameter();
@@ -1015,9 +972,6 @@ void setupDictionary(Machine& mach) {
     mach.addWord("complement.b", callUnaryNumberOperation(notOperation<bool>));
     mach.addWord("minus.s", callUnaryNumberOperation(minusOperation<Integer>));
     mach.addWord("minus.u", callUnaryNumberOperation(minusOperation<Address>));
-#ifdef ALLOW_FLOATING_POINT
-    mach.addWord("minus.f", callUnaryNumberOperation(minusOperation<Floating>));
-#endif
     defineVariableWithName(mach, "*number-variant-code*"); //, 0);
     defineVariableWithName(mach, "*word-variant-code*"); // , 1);
     defineVariableWithName(mach, "*native-function-variant-code*"); // , 2);
@@ -1037,9 +991,6 @@ void setupDictionary(Machine& mach) {
     mach.addWord("literal", addLiteralToCompilation, false, true);
     mach.addWord("**.s", callBinaryNumberOperation(powOperation));
     mach.addWord("**.u", callBinaryNumberOperation(powOperationUnsigned));
-#ifdef ALLOW_FLOATING_POINT
-    mach.addWord("**.f", callBinaryNumberOperation(powOperationFloat));
-#endif
     mach.addWord("variable", defineVariable);
     mach.addWord("variable$", defineVariableThenLoad);
     mach.addWord("[", switchOutOfCompileMode, false, true);
@@ -1049,6 +1000,8 @@ void setupDictionary(Machine& mach) {
     mach.addWord("enable-debug", [](Machine& mach) { mach.setDebugging(true); });
     mach.addWord("disable-debug", [](Machine& mach) { mach.setDebugging(false); });
     mach.addWord("debug?", [](Machine& mach) { mach.pushParameter(Number(mach.debugActive() ? Address(-1) : Address(0)) ); });
+    mach.addWord("set-print-ok", [](Machine& mach) { printOk = std::get<Number>(mach.popParameter()).getTruth(); });
+    mach.addWord("print-ok?", [](Machine& mach) { mach.pushParameter(Number(printOk)); });
 }
 int main(int argc, char** argv) {
     Machine mach;
@@ -1075,12 +1028,12 @@ int main(int argc, char** argv) {
                 } else {
                     if (!numberRoutine(mach, str)) {
                         throw Problem(str, "?");
-                    } 
+                    }
                 }
+                if (!mach.currentlyCompiling() && printOk) {
+                    mach.getOutput() << " ok" << std::endl;
+                } 
             }
-            if (!mach.currentlyCompiling()) {
-                mach.getOutput() << " ok" << std::endl;
-            } 
 
         } catch (Problem& p) {
             // clear out the stacks as well
@@ -1094,11 +1047,9 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-#undef YTypeStringFloat
 #undef YTypeStringAddress
 #undef YTypeStringbool
 #undef YTypeStringInteger
-#undef YTypeFloat
 #undef YTypeAddress
 #undef YTypebool
 #undef YTypeInteger

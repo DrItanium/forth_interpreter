@@ -3,8 +3,8 @@
 : -1 ( -- -1 ) -1 ;
 : true ( -- -1 ) -1 ;
 : false ( -- 0 ) 0 ;
-: space ( -- ) 20# emit ;
-: CR ( -- ) A# emit ;
+: space ( -- ) 0x20 emit ;
+: CR ( -- ) 0xA emit ;
 : 1 ( -- 1 ) 1 ; : 1u ( -- 1u ) 1u ;
 : 2 ( -- 2 ) 2 ; : 2u ( -- 2u ) 2u ;
 : 4 ( -- 4 ) 4 ; : 4u ( -- 4u ) 4u ;
@@ -136,7 +136,7 @@
 : pow ( a b -- c ) ** ;
 : powu ( a b -- c ) **u ;
 ( do Q40.24 )
-: *fixed-frac-mask* ( -- mask ) FFFFFF# ;
+: *fixed-frac-mask* ( -- mask ) 0xFFFFFF ;
 : *fixed-integer-mask* ( -- mask ) *fixed-frac-mask* bitwise-notu ;
 : *fixed-integer-shift* ( -- shift ) 24 ;
 : fixed-frac-portion ( a -- b ) *fixed-frac-mask* bitwise-andu ;
@@ -177,11 +177,11 @@ enum}
 : string? ( a -- flag ) *string-variant-code* of-type? ;
 : variable? ( a -- flag ) *variable-variant-code* of-type? ;
 
-: lowerq ( a -- b ) FF# bitwise-andu ;
+: lowerq ( a -- b ) 0xFF bitwise-andu ;
 : upperq ( a -- b ) 8 >>u lowerq ;
-: lowerh ( a -- b ) FFFF# bitwise-andu ;
+: lowerh ( a -- b ) 0xFFFF bitwise-andu ;
 : upperh ( a -- b ) 16 >>u lowerh ;
-: lowerw ( a -- b ) FFFFFFFF# bitwise-andu ;
+: lowerw ( a -- b ) 0xFFFFFFFF bitwise-andu ;
 : upperw ( a -- b ) 32 >>u lowerw ;
 
 : {bin ( path -- ) open-binary-file ;

@@ -434,10 +434,11 @@ Datum Machine::popSubroutine() {
 
 void DictionaryEntry::invoke(Machine& mach) {
     if (mach.debugActive()) {
+        mach.getOutput() << ">";
         for (auto a = 0; a < executionDepth; ++a) {
             mach.getOutput() << "-";
         }
-        mach.getOutput() << "> " << getName() << std::endl;
+        mach.getOutput() << " " << getName() << std::endl;
     }
     ++executionDepth;
     for (auto& x : _contents) {

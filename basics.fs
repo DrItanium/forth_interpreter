@@ -118,22 +118,27 @@
 
 : pow ( a b -- c ) ** ;
 
-
 variable enum-index
 : {enum ( -- 0 0 ) 0 enum-index v! enum-index v@ ;
 : enum,  ( n1 -- n2 ) enum-index v@ 1+ enum-index v! enum-index v@ ;
 : enum} ( n1? -- ) ;
+
+variable *number-variant-code* 
+variable *word-variant-code* 
+variable *native-function-variant-code* 
+variable *string-variant-code* 
+variable *variable-variant-code* 
 {enum 
 ( section ids )
-*number-variant-code* ! enum,
-*word-variant-code* ! enum, 
-*native-function-variant-code* ! enum,
-*string-variant-code* ! enum, 
-*variable-variant-code* !
+*number-variant-code* v! enum,
+*word-variant-code* v! enum, 
+*native-function-variant-code* v! enum,
+*string-variant-code* v! enum, 
+*variable-variant-code* v!
 enum}
 
 
-: of-type? ( type cv -- flag ) @ swap type-code = ;
+: of-type? ( type cv -- flag ) v@ swap type-code = ;
 : number? ( a -- flag ) *number-variant-code* of-type? ;
 : word? ( a -- flag ) *word-variant-code* of-type? ;
 : native-function? ( a -- flag ) *native-function-variant-code* of-type? ;

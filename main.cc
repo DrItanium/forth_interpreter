@@ -1052,11 +1052,6 @@ void setupDictionary(Machine& mach) {
     mach.addWord("enable-debug", [](Machine& mach) { mach.setDebugging(true); });
     mach.addWord("disable-debug", [](Machine& mach) { mach.setDebugging(false); });
     mach.addWord("debug?", [](Machine& mach) { mach.pushParameter(Number(mach.debugActive() ? Address(-1) : Address(0)) ); });
-    defineVariableWithName(mach, "*number-variant-code*"); //, 0);
-    defineVariableWithName(mach, "*word-variant-code*"); // , 1);
-    defineVariableWithName(mach, "*native-function-variant-code*"); // , 2);
-    defineVariableWithName(mach, "*string-variant-code*"); //, 3);
-    defineVariableWithName(mach, "*variable-variant-code*"); //, 4);
 }
 int main(int argc, char** argv) {
     Machine mach;

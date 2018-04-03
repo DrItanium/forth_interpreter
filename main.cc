@@ -550,19 +550,6 @@ void swap(Machine& mach) {
     mach.pushParameter(lower);
 }
 // binary operations
-#define X(name, op) \
-    template<typename T> \
-    Number name (Number a, Number b) { \
-        return Number (a.get<T>() op b.get<T>()) ; \
-    }
-#define Y(name, op, type) 
-#include "BinaryOperators.def"
-#undef Y
-#undef X
-template<>
-Number logicalXor<bool>(Number a, Number b) {
-    return Number (a.getTruth() != b.getTruth());
-}
 bool numberRoutine(Machine& mach, const std::string& word) {
     auto fn = [&mach](Number value) {
         if (mach.currentlyCompiling()) {
@@ -1005,7 +992,6 @@ void setupDictionary(Machine& mach) {
     mach.addWord("drop", drop);
     mach.addWord("depth", stackDepth);
     mach.addWord("swap", swap);
-    mach.addWord("^.b", callBinaryNumberOperation(logicalXor<bool>));
     mach.addWord("(", enterIgnoreInputMode, false, true);
     mach.addWord(";", semicolon, false, true);
     mach.addWord("bye", bye);
@@ -1026,20 +1012,39 @@ void setupDictionary(Machine& mach) {
     mach.addWord("if", ifStatement, false, true);
     mach.addWord("else", elseStatement, false, true);
     mach.addWord("then", thenStatement, false, true);
-    mach.addWord("complement.u", callUnaryNumberOperation(notOperation<Address>));
-    mach.addWord("complement.s", callUnaryNumberOperation(notOperation<Integer>));
-    mach.addWord("complement.b", callUnaryNumberOperation(notOperation<bool>));
-    mach.addWord("minus.s", callUnaryNumberOperation(minusOperation<Integer>));
-    mach.addWord("minus.u", callUnaryNumberOperation(minusOperation<Address>));
-    defineVariableWithName(mach, "*number-variant-code*"); //, 0);
-    defineVariableWithName(mach, "*word-variant-code*"); // , 1);
-    defineVariableWithName(mach, "*native-function-variant-code*"); // , 2);
-    defineVariableWithName(mach, "*string-variant-code*"); //, 3);
-    defineVariableWithName(mach, "*variable-variant-code*"); //, 4);
-#define X(name, op)
-#define Y(name, op, type) mach.addWord(#op INDIRECTION(YTypeString, type) , callBinaryNumberOperation( name < INDIRECTION(YType, type) >));
-#include "BinaryOperators.def"
-#undef X
+    mach.addWord("minus", callUnaryNumberOperation(minusOperation<Integer>));
+    mach.addWord("invert", callUnaryNumberOperation(notOperation<Address>));
+    mach.addWord("*", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() * b.getInteger(); }));
+    mach.addWord("u*", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() * b.getAddress(); }));
+    mach.addWord("+", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() + b.getInteger(); }));
+    mach.addWord("u+", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() + b.getAddress(); }));
+    mach.addWord("-", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() - b.getInteger(); }));
+    mach.addWord("u-", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() - b.getAddress(); }));
+    mach.addWord("/", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() / b.getInteger(); }));
+    mach.addWord("u/", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() / b.getAddress(); }));
+    mach.addWord("mod", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() % b.getInteger(); }));
+    mach.addWord("umod", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() % b.getAddress(); }));
+    mach.addWord("min", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() > b.getInteger() ? b.getInteger() : a.getInteger(); }));
+    mach.addWord("umin", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() > b.getAddress() ? b.getAddress() : a.getAddress(); }));
+    mach.addWord("max", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() > b.getInteger() ? a.getInteger() : b.getInteger(); }));
+    mach.addWord("umax", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() > b.getAddress() ? a.getAddress() : b.getAddress(); }));
+    mach.addWord("=", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() == b.getInteger() ? -1 : 0 ; }));
+    mach.addWord("<>", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() != b.getInteger() ? -1 : 0 ; }));
+    mach.addWord("<", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() < b.getInteger() ? -1 : 0 ; }));
+    mach.addWord("u<", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() < b.getAddress() ? -1 : 0 ; }));
+    mach.addWord(">", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() > b.getInteger() ? -1 : 0 ; }));
+    mach.addWord("u>", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() > b.getAddress() ? -1 : 0 ; }));
+    mach.addWord("<=", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() <= b.getInteger() ? -1 : 0 ; }));
+    mach.addWord("u<=", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() <= b.getAddress() ? -1 : 0 ; }));
+    mach.addWord(">=", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() >= b.getInteger() ? -1 : 0 ; }));
+    mach.addWord("u>=", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() >= b.getAddress() ? -1 : 0 ; }));
+    mach.addWord("<<", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() << b.getAddress(); }));
+    mach.addWord("u<<", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() << b.getAddress(); }));
+    mach.addWord(">>", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() >> b.getAddress(); }));
+    mach.addWord("u>>", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() >> b.getAddress(); }));
+    mach.addWord("and", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() & b.getAddress(); }));
+    mach.addWord("or", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() | b.getAddress(); }));
+    mach.addWord("xor", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() ^ b.getAddress(); }));
     mach.addWord("*sizeof-address*", [](auto& x) { x.pushParameter(Number(sizeof(Address))); });
     mach.addWord("*sizeof-integer*", [](auto& x) { x.pushParameter(Number(sizeof(Integer))); });
     mach.addWord("*sizeof-half-address*", [](auto& x) { x.pushParameter(Number(sizeof(forth::HalfAddress))); });
@@ -1061,6 +1066,11 @@ void setupDictionary(Machine& mach) {
     mach.addWord("debug?", [](Machine& mach) { mach.pushParameter(Number(mach.debugActive() ? Address(-1) : Address(0)) ); });
     mach.addWord("set-print-ok", [](Machine& mach) { printOk = std::get<Number>(mach.popParameter()).getTruth(); });
     mach.addWord("print-ok?", [](Machine& mach) { mach.pushParameter(Number(printOk)); });
+    defineVariableWithName(mach, "*number-variant-code*"); //, 0);
+    defineVariableWithName(mach, "*word-variant-code*"); // , 1);
+    defineVariableWithName(mach, "*native-function-variant-code*"); // , 2);
+    defineVariableWithName(mach, "*string-variant-code*"); //, 3);
+    defineVariableWithName(mach, "*variable-variant-code*"); //, 4);
 }
 int main(int argc, char** argv) {
     Machine mach;

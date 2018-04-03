@@ -12,13 +12,6 @@
 #include <algorithm>
 #include <cmath>
 
-#define YTypeAddress forth::Address
-#define YTypebool bool
-#define YTypeInteger forth::Integer
-#define YTypeStringAddress ".u" 
-#define YTypeStringbool ".b"
-#define YTypeStringInteger ".s"
-
 class DictionaryEntry;
 class Machine;
 
@@ -1045,10 +1038,6 @@ void setupDictionary(Machine& mach) {
     mach.addWord("and", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() & b.getAddress(); }));
     mach.addWord("or", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() | b.getAddress(); }));
     mach.addWord("xor", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() ^ b.getAddress(); }));
-    mach.addWord("*sizeof-address*", [](auto& x) { x.pushParameter(Number(sizeof(Address))); });
-    mach.addWord("*sizeof-integer*", [](auto& x) { x.pushParameter(Number(sizeof(Integer))); });
-    mach.addWord("*sizeof-half-address*", [](auto& x) { x.pushParameter(Number(sizeof(forth::HalfAddress))); });
-    mach.addWord("*sizeof-quarter-address*", [](auto& x) { x.pushParameter(Number(sizeof(forth::QuarterAddress))); });
     mach.addWord("*bitwidth*", [](auto& x) { x.pushParameter(Number(CHAR_BIT)); });
     mach.addWord("*memory-size*", getMemorySize);
     mach.addWord("resize-memory", resizeMemory);
@@ -1063,8 +1052,6 @@ void setupDictionary(Machine& mach) {
     mach.addWord("enable-debug", [](Machine& mach) { mach.setDebugging(true); });
     mach.addWord("disable-debug", [](Machine& mach) { mach.setDebugging(false); });
     mach.addWord("debug?", [](Machine& mach) { mach.pushParameter(Number(mach.debugActive() ? Address(-1) : Address(0)) ); });
-    mach.addWord("set-print-ok", [](Machine& mach) { printOk = std::get<Number>(mach.popParameter()).getTruth(); });
-    mach.addWord("print-ok?", [](Machine& mach) { mach.pushParameter(Number(printOk)); });
     defineVariableWithName(mach, "*number-variant-code*"); //, 0);
     defineVariableWithName(mach, "*word-variant-code*"); // , 1);
     defineVariableWithName(mach, "*native-function-variant-code*"); // , 2);
@@ -1115,9 +1102,3 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-#undef YTypeStringAddress
-#undef YTypeStringbool
-#undef YTypeStringInteger
-#undef YTypeAddress
-#undef YTypebool
-#undef YTypeInteger

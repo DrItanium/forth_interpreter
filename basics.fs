@@ -31,7 +31,15 @@
 : 4/ ( n1 -- n2 ) 4 / ;
 : noop ( -- ) ;
 : not ( n1 -- n2 ) invert ;
-: between ( n min max -- f ) rot dup -rot swap <= -rot swap >= and ;
+: between ( n min max -- f ) 
+  rot ( min max n )
+  swap ( min n max ) 
+  over ( min n max n )
+  >= ( min n f )
+  -rot ( f min n )
+  <= ( f f )
+  and ( f ) ;
+  
 ( compatibility with most other forth dialects )
 : 0< ( n -- f ) 0 < ;
 : 0<= ( n -- f ) 0 <= ;
@@ -39,6 +47,7 @@
 : 0>= ( n -- f ) 0 >= ;
 : 0<> ( n -- f ) 0 <> ;
 : 0=  ( n -- f ) 0 = ;
+: abs ( n -- u ) dup 0< if minus then ;
 ( TODO: add support for within ! )
 : under+ ( n1 n2 n3 -- n n2 ) rot + swap ;
 : min ( n1 n2 -- n ) 2dup > if swap then drop ;

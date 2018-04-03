@@ -67,52 +67,49 @@
   u<< ( a b c -- a d )
   or ( a d -- n ) ;
 ( TODO take advantage of constants to get rid of magic constants )
-: mload.quarter ( addr -- value )
+: q@ ( addr -- value )
   1 *address-plus-offset*
-  mload.byte
+  c@
   swap
-  mload.byte
+  c@
   8 *shift-left-then-bitwise-or* ;
 
-: mload.half ( addr -- value )
+: h@ ( addr -- value )
   2 *address-plus-offset*
-  mload.quarter
+  q@
   swap
-  mload.quarter
+  q@
   16 *shift-left-then-bitwise-or* ;
 
-: mload.full ( addr -- value )
+: w@ ( addr -- value )
   4 *address-plus-offset*
-  mload.half 
+  h@
   swap
-  mload.half
+  h@
   32 *shift-left-then-bitwise-or* ;
 
-: mstore.quarter ( addr value -- )
-    2dup 
-    mstore.byte 
-    8 u>>
-    swap
-    1+
-    swap
-    mstore.byte ;
+: q! ( value addr -- )
+    2dup  ( v a v a )
+    c!  ( v a )
+    swap 8 u>> ( a v>>8 )
+    swap ( v>>8 a )
+    1+ ( v>>8 a+1 )
+    c! ;
+: h! ( v a -- )
+  2dup ( v a v a )
+  q!  ( v a )
+  swap 16 u>> ( a v>>16 )
+  swap ( v>>16 a )
+  2+ ( v>>16 a+2 )
+  q! ; 
 
-: mstore.half ( addr value -- )
-  2dup
-  mstore.quarter
-  16 u>>
-  swap
-  2+
-  swap
-  mstore.quarter ;
-
-: mstore.full ( addr value -- )
-  2dup
-  mstore.half
-  32 u>>
-  swap
-  4+
-  mstore.half ;
+: w! ( v a -- )
+  2dup ( v a v a )
+  h! ( v a )
+  swap 32 u>> ( a v>>32 )
+  swap ( v>>32 a )
+  4+ ( v>>32 a+4 )
+  h! ;
 
 
 : bitwise-oru ( a b -- c ) or ;
@@ -121,16 +118,10 @@
 
 : pow ( a b -- c ) ** ;
 
-: ! ( a var -- ) store.variable ;
-: @ ( a -- b ) load.variable ;
-: ? ( a -- ) @ . ;
-: 0! ( var -- ) 0 swap ! ;
-: 1+var ( var -- ) dup @ 1+ swap ! ;
 
 variable enum-index
-: enum-index@ ( -- v ) enum-index @ ;
-: {enum ( -- 0 0 ) enum-index 0! enum-index@ ;
-: enum,  ( n1 -- n2 ) enum-index 1+var enum-index@ ;
+: {enum ( -- 0 0 ) 0 enum-index v! enum-index v@ ;
+: enum,  ( n1 -- n2 ) enum-index v@ 1+ enum-index v! enum-index v@ ;
 : enum} ( n1? -- ) ;
 {enum 
 ( section ids )
@@ -141,12 +132,17 @@ variable enum-index
 *variable-variant-code* !
 enum}
 
+
 : of-type? ( type cv -- flag ) @ swap type-code = ;
 : number? ( a -- flag ) *number-variant-code* of-type? ;
 : word? ( a -- flag ) *word-variant-code* of-type? ;
 : native-function? ( a -- flag ) *native-function-variant-code* of-type? ;
 : string? ( a -- flag ) *string-variant-code* of-type? ;
 : variable? ( a -- flag ) *variable-variant-code* of-type? ;
+
+: ! ( a var -- ) dup variable? if v! else w! then ;
+: @ ( a -- b ) dup variable? if v@ else w@ then ;
+: ? ( a -- ) @ . ;
 
 : lowerq ( a -- b ) 0xFF bitwise-andu ;
 : upperq ( a -- b ) 8 u>> lowerq ;
@@ -161,6 +157,13 @@ enum}
 : bin<<q ( a -- ) dup lowerq bin<< upperq bin<< ;
 : bin<<h ( a -- ) dup lowerh bin<<q upperh bin<<q ;
 : bin<<w ( a -- ) dup lowerw bin<<q upperw bin<<q ;
+
+: +! ( n adr -- )
+  dup -rot ( adr n adr -- )
+  @ ( adr n val -- )
+  + ( adr comb -- )
+  swap ( comb adr -- )
+  ! ;
 
 \ must always be last in the file 
 close-input-file

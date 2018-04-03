@@ -588,8 +588,8 @@ byte Machine::load(Address addr) {
     return _memory[addr];
 }
 void storeByte(Machine& m) {
-    auto value = std::get<Number>(m.popParameter());
     auto addr = std::get<Number>(m.popParameter()).address;
+    auto value = std::get<Number>(m.popParameter());
     m.store(addr, forth::decodeBits<Address, byte, 0xFF, 0>(value.address));
 }
 void loadByte(Machine& m) {
@@ -988,10 +988,10 @@ void setupDictionary(Machine& mach) {
     mach.addWord("(", enterIgnoreInputMode, false, true);
     mach.addWord(";", semicolon, false, true);
     mach.addWord("bye", bye);
-    mach.addWord("mload.byte", loadByte);
-    mach.addWord("mstore.byte", storeByte);
-    mach.addWord("load.variable", loadVariable);
-    mach.addWord("store.variable", storeVariable);
+    mach.addWord("c@", loadByte);
+    mach.addWord("c!", storeByte);
+    mach.addWord("v@", loadVariable);
+    mach.addWord("v!", storeVariable);
     mach.addWord(".", printTop);
     mach.addWord(":", enterCompileMode);
     mach.addWord(".s", std::mem_fn(&Machine::viewParameterStack));

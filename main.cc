@@ -934,7 +934,35 @@ void ignoreInputUntilNewline(Machine& mach) {
 void enterIgnoreInputMode(Machine& mach) {
     mach.getInput().ignore(std::numeric_limits<std::streamsize>::max(), ')');
 }
+void beginStatement(Machine& mach) {
+    if (!mach.currentlyCompiling()) {
+        throw Problem ("begin", " Must be currently compiling!");
+    }
+    // need to capture the loop body as a word, it must be free floating right
+    // now
+    mach.saveCurrentlyCompilingWord(); 
+    mach.newCompilingWord(); 
+}
+void endStatement(Machine& mach) {
+    if (!mach.currentlyCompiling()) {
+        throw Problem ("end", " Must be currently compiling!");
+    }
+    auto c = mach.getCurrentlyCompilingWord().value(); // get the body out and save it
+    mach.compileCurrentWord();
+    mach.restoreCurrentlyCompilingWord();
+    auto fn = [c](Machine& mach) {
+        bool terminate = false;
+        do {
+            c->invoke(mach);
+            // now get the top of the stack to see if we should continue
+            terminate = std::get<Number>(mach.popParameter()).getTruth();
+        } while (!terminate);
+    };
+    mach.getCurrentlyCompilingWord().value()->addWord(fn);
+}
 void setupDictionary(Machine& mach) {
+    mach.addWord("begin", beginStatement, false, true);
+    mach.addWord("end", endStatement, false, true);
     mach.addWord("open-binary-file", openBinaryFile);
     mach.addWord("close-binary-file", closeBinaryFile);
     mach.addWord("write-binary-file", writeBinaryFile);

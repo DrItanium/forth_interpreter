@@ -65,6 +65,8 @@ union Number {
     bool getTruth() const noexcept { 
         return address != 0;
     }
+    Integer getInteger() const noexcept { return integer; }
+    Address getAddress() const noexcept { return address; }
 	Integer integer;
 	Address address;
 	byte bytes[sizeof(Address)];
@@ -960,9 +962,41 @@ void endStatement(Machine& mach) {
     };
     mach.getCurrentlyCompilingWord().value()->addWord(fn);
 }
+void continueStatement(Machine& mach) {
+    if (!mach.currentlyCompiling()) {
+        throw Problem ("continue", " Must be currently compiling!");
+    }
+    auto c = mach.getCurrentlyCompilingWord().value();
+    mach.compileCurrentWord();
+    mach.restoreCurrentlyCompilingWord();
+    auto fn = [c](Machine& mach) {
+        Address top = 0;
+        Address lower = 0;
+        do {
+            c->invoke(mach);
+            top = std::get<Number>(mach.popParameter()).getAddress();
+            lower = std::get<Number>(mach.popParameter()).getAddress();
+            if (top == lower ) {
+                break;
+            } else {
+                mach.pushParameter(Number(lower));
+                mach.pushParameter(Number(top));
+            }
+        } while ( true );
+    };
+    mach.getCurrentlyCompilingWord().value()->addWord(fn);
+}
+void doStatement(Machine& mach) {
+    if (!mach.currentlyCompiling()) {
+        throw Problem ("do", " Must be currently compiling!");
+    }
+    beginStatement(mach);
+}
 void setupDictionary(Machine& mach) {
     mach.addWord("begin", beginStatement, false, true);
     mach.addWord("end", endStatement, false, true);
+    mach.addWord("do", doStatement, false, true);
+    mach.addWord("continue", continueStatement, false, true);
     mach.addWord("open-binary-file", openBinaryFile);
     mach.addWord("close-binary-file", closeBinaryFile);
     mach.addWord("write-binary-file", writeBinaryFile);

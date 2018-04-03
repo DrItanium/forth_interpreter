@@ -179,6 +179,7 @@ class Machine {
         Address _capacity;
         bool _enableDebugging = false;
 };
+void mustBeCompiling(Machine& mach, const std::string& func);
 void Machine::pushParameterDepth() noexcept {
     auto len = _parameter.size();
     pushParameter(Number(len));
@@ -713,9 +714,7 @@ void openInputFile(Machine& mach) {
     mach.openFileForInput(path);
 }
 void ifStatement(Machine& mach) {
-    if (!mach.currentlyCompiling()) {
-        throw Problem("ifStatement", "Must be compiling for this word to work!");
-    } 
+    mustBeCompiling(mach, "if");
     auto c = mach.getCurrentlyCompilingWord().value(); // do an evaluation of the contents
     // we need to add a native function to perform the check which assumes a boolean
     mach.saveCurrentlyCompilingWord(); // save our outer operation to the stack
@@ -727,9 +726,7 @@ void ifStatement(Machine& mach) {
     mach.newCompilingWord(); // another fake entry for the onTrue portion
 }
 void elseStatement(Machine& mach) {
-    if (!mach.currentlyCompiling()) {
-        throw Problem("elseStatement", "Must be compiling for this word to work!");
-    }
+    mustBeCompiling(mach, "else");
 
     // now we need to finalize the ontrue portion
     auto front = mach.getCurrentlyCompilingWord().value();
@@ -740,9 +737,7 @@ void elseStatement(Machine& mach) {
     mach.newCompilingWord(); // now make the else conditional
 }
 void thenStatement(Machine& mach) {
-    if (!mach.currentlyCompiling()) {
-        throw Problem("thenStatement", "Must be compiling for this word to work!");
-    }
+    mustBeCompiling(mach, "then");
     auto front = mach.getCurrentlyCompilingWord().value();
     mach.compileCurrentWord(); // regardless if we have hit else or not we need to compile this word
     mach.restoreCurrentlyCompilingWord(); // go up one level
@@ -857,9 +852,7 @@ void resizeMemory(Machine& mach) {
             }, mach.popParameter());
 }
 void addLiteralToCompilation(Machine& mach) {
-    if (!mach.currentlyCompiling()) {
-        throw Problem("literal", " not currently compiling!");
-    }
+    mustBeCompiling(mach, "literal");
     auto top = mach.popParameter();
     std::visit([&mach](auto&& value) { mach.getCurrentlyCompilingWord().value()->addWord(value);}, top);
 }
@@ -936,19 +929,23 @@ void ignoreInputUntilNewline(Machine& mach) {
 void enterIgnoreInputMode(Machine& mach) {
     mach.getInput().ignore(std::numeric_limits<std::streamsize>::max(), ')');
 }
-void beginStatement(Machine& mach) {
+void mustBeCompiling(Machine& mach, const std::string& func) {
     if (!mach.currentlyCompiling()) {
-        throw Problem ("begin", " Must be currently compiling!");
+        throw Problem(func, " Must be currently compiling!");
     }
+}
+void nestedFakeBodyForCompiling(Machine& mach, const std::string& func) {
+    mustBeCompiling(mach, func);
+    mach.saveCurrentlyCompilingWord();
+    mach.newCompilingWord();
+}
+void beginStatement(Machine& mach) {
     // need to capture the loop body as a word, it must be free floating right
     // now
-    mach.saveCurrentlyCompilingWord(); 
-    mach.newCompilingWord(); 
+    nestedFakeBodyForCompiling(mach, "begin");
 }
 void endStatement(Machine& mach) {
-    if (!mach.currentlyCompiling()) {
-        throw Problem ("end", " Must be currently compiling!");
-    }
+    mustBeCompiling(mach, func);
     auto c = mach.getCurrentlyCompilingWord().value(); // get the body out and save it
     mach.compileCurrentWord();
     mach.restoreCurrentlyCompilingWord();
@@ -963,34 +960,33 @@ void endStatement(Machine& mach) {
     mach.getCurrentlyCompilingWord().value()->addWord(fn);
 }
 void continueStatement(Machine& mach) {
-    if (!mach.currentlyCompiling()) {
-        throw Problem ("continue", " Must be currently compiling!");
-    }
+    mustBeCompiling(mach, func);
     auto c = mach.getCurrentlyCompilingWord().value();
     mach.compileCurrentWord();
     mach.restoreCurrentlyCompilingWord();
     auto fn = [c](Machine& mach) {
-        Address top = 0;
-        Address lower = 0;
-        do {
-            c->invoke(mach);
-            top = std::get<Number>(mach.popParameter()).getAddress();
-            lower = std::get<Number>(mach.popParameter()).getAddress();
-            if (top == lower ) {
-                break;
-            } else {
-                mach.pushParameter(Number(lower));
-                mach.pushParameter(Number(top));
-            }
-        } while ( true );
+        Address top = std::get<Number>(mach.popParameter()).getAddress();
+        Address lower = std::get<Number>(mach.popParameter()).getAddress();
+        if (top != lower) {
+            mach.pushParameter(Number(lower));
+            mach.pushParameter(Number(top));
+            do {
+                c->invoke(mach);
+                top = std::get<Number>(mach.popParameter()).getAddress();
+                lower = std::get<Number>(mach.popParameter()).getAddress();
+                if (top == lower ) {
+                    break;
+                } else {
+                    mach.pushParameter(Number(lower));
+                    mach.pushParameter(Number(top));
+                }
+            } while ( true );
+        }
     };
     mach.getCurrentlyCompilingWord().value()->addWord(fn);
 }
 void doStatement(Machine& mach) {
-    if (!mach.currentlyCompiling()) {
-        throw Problem ("do", " Must be currently compiling!");
-    }
-    beginStatement(mach);
+    nestedFakeBodyForCompiling(mach, "do");
 }
 void setupDictionary(Machine& mach) {
     mach.addWord("begin", beginStatement, false, true);

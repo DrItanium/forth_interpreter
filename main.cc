@@ -945,7 +945,7 @@ void beginStatement(Machine& mach) {
     nestedFakeBodyForCompiling(mach, "begin");
 }
 void endStatement(Machine& mach) {
-    mustBeCompiling(mach, func);
+    mustBeCompiling(mach, "end");
     auto c = mach.getCurrentlyCompilingWord().value(); // get the body out and save it
     mach.compileCurrentWord();
     mach.restoreCurrentlyCompilingWord();
@@ -960,7 +960,7 @@ void endStatement(Machine& mach) {
     mach.getCurrentlyCompilingWord().value()->addWord(fn);
 }
 void continueStatement(Machine& mach) {
-    mustBeCompiling(mach, func);
+    mustBeCompiling(mach, "continue");
     auto c = mach.getCurrentlyCompilingWord().value();
     mach.compileCurrentWord();
     mach.restoreCurrentlyCompilingWord();

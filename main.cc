@@ -1053,8 +1053,7 @@ void setupDictionary(Machine& mach) {
     mach.addWord("*memory-size*", getMemorySize);
     mach.addWord("resize-memory", resizeMemory);
     mach.addWord("literal", addLiteralToCompilation, false, true);
-    mach.addWord("**.s", callBinaryNumberOperation(powOperation));
-    mach.addWord("**.u", callBinaryNumberOperation(powOperationUnsigned));
+    mach.addWord("**", callBinaryNumberOperation(powOperation));
     mach.addWord("variable", defineVariable);
     mach.addWord("variable$", defineVariableThenLoad);
     mach.addWord("[", switchOutOfCompileMode, false, true);

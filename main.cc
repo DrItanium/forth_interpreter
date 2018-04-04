@@ -41,6 +41,8 @@ union Number {
 	Number(unsigned int i) : address(Address(i)) { }
 	Number(Integer i) : integer(i) { }
 	Number(Address a) : address(a) { }
+    Number(bool value) : integer(value ? -1 : 0) { }
+    Number(char c) : integer(c) { }
 
 	template<typename T>
 	T get() noexcept {
@@ -1054,7 +1056,7 @@ void setupDictionary(Machine& mach) {
     mach.addWord("disable-debug", [](Machine& mach) { mach.setDebugging(false); });
     mach.addWord("debug?", [](Machine& mach) { mach.pushParameter(Number(mach.debugActive() ? Address(-1) : Address(0)) ); });
     mach.addWord("raise", raiseError);
-    mach.addWord("constant", makeConstant, true);
+    mach.addWord("constant", makeConstant);
 }
 void raiseError(Machine& mach) {
     // raise an error to be caught by the runtime and reported

@@ -134,7 +134,7 @@ class Machine {
         bool currentlyCompiling() const noexcept { return (bool)_compile; }
         std::string readNext();
         void errorOccurred() noexcept;
-        void addWord(const std::string& name, NativeFunction fn, bool fake = false, bool compileTimeInvoke = false);
+        void addWord(const std::string& name, NativeFunction fn, bool compileTimeInvoke = false, bool fake = false);
         std::ostream& getOutput() const noexcept;
         std::istream& getInput() const noexcept;
         void openFileForOutput(const std::string& path);
@@ -523,7 +523,7 @@ void Machine::errorOccurred() noexcept {
     }
 }
 
-void Machine::addWord(const std::string& str, NativeFunction fn, bool fake, bool compileInvoke) {
+void Machine::addWord(const std::string& str, NativeFunction fn, bool compileInvoke, bool fake) {
     Word ptr = std::make_shared<DictionaryEntry>(str);
     ptr->setFake(fake);
     ptr->setCompileTimeInvokable(compileInvoke);
@@ -968,11 +968,13 @@ void continueStatement(Machine& mach) {
 void doStatement(Machine& mach) {
     nestedFakeBodyForCompiling(mach, "do");
 }
+void makeConstant(Machine& mach);
+void raiseError(Machine& mach);
 void setupDictionary(Machine& mach) {
-    mach.addWord("begin", beginStatement, false, true);
-    mach.addWord("end", endStatement, false, true);
-    mach.addWord("do", doStatement, false, true);
-    mach.addWord("continue", continueStatement, false, true);
+    mach.addWord("begin", beginStatement, true);
+    mach.addWord("end", endStatement, true);
+    mach.addWord("do", doStatement, true);
+    mach.addWord("continue", continueStatement, true);
     mach.addWord("open-binary-file", openBinaryFile);
     mach.addWord("close-binary-file", closeBinaryFile);
     mach.addWord("write-binary-file", writeBinaryFile);
@@ -985,8 +987,8 @@ void setupDictionary(Machine& mach) {
     mach.addWord("drop", drop);
     mach.addWord("depth", stackDepth);
     mach.addWord("swap", swap);
-    mach.addWord("(", enterIgnoreInputMode, false, true);
-    mach.addWord(";", semicolon, false, true);
+    mach.addWord("(", enterIgnoreInputMode, true);
+    mach.addWord(";", semicolon, true);
     mach.addWord("bye", bye);
     mach.addWord("c@", loadByte);
     mach.addWord("c!", storeByte);
@@ -995,16 +997,16 @@ void setupDictionary(Machine& mach) {
     mach.addWord(".", printTop);
     mach.addWord(":", enterCompileMode);
     mach.addWord(".s", std::mem_fn(&Machine::viewParameterStack));
-    mach.addWord("\"", processString, false, true);
+    mach.addWord("\"", processString, true);
     mach.addWord("emit", emitCharacter);
     mach.addWord("type-code", unaryOperation(typeCode));
     mach.addWord("open-input-file", openInputFile);
     mach.addWord("close-input-file", closeInputFile);
     mach.addWord("choose", bodyInvoke);
     mach.addWord("predicated", predicatedInvoke);
-    mach.addWord("if", ifStatement, false, true);
-    mach.addWord("else", elseStatement, false, true);
-    mach.addWord("then", thenStatement, false, true);
+    mach.addWord("if", ifStatement, true);
+    mach.addWord("else", elseStatement, true);
+    mach.addWord("then", thenStatement, true);
     mach.addWord("minus", callUnaryNumberOperation(minusOperation<Integer>));
     mach.addWord("invert", callUnaryNumberOperation(notOperation<Address>));
     mach.addWord("*", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() * b.getInteger(); }));
@@ -1041,17 +1043,33 @@ void setupDictionary(Machine& mach) {
     mach.addWord("*bitwidth*", [](auto& x) { x.pushParameter(Number(CHAR_BIT)); });
     mach.addWord("*memory-size*", getMemorySize);
     mach.addWord("resize-memory", resizeMemory);
-    mach.addWord("literal", addLiteralToCompilation, false, true);
+    mach.addWord("literal", addLiteralToCompilation, true);
     mach.addWord("**", callBinaryNumberOperation(powOperation));
     mach.addWord("variable", defineVariable);
     mach.addWord("variable$", defineVariableThenLoad);
-    mach.addWord("[", switchOutOfCompileMode, false, true);
+    mach.addWord("[", switchOutOfCompileMode, true);
     mach.addWord("]", switchBackToCompileMode);
     mach.addWord("]L", switchBackToCompileModeWithLiteral);
-    mach.addWord("\\", ignoreInputUntilNewline, false, true);
+    mach.addWord("\\", ignoreInputUntilNewline, true);
     mach.addWord("enable-debug", [](Machine& mach) { mach.setDebugging(true); });
     mach.addWord("disable-debug", [](Machine& mach) { mach.setDebugging(false); });
     mach.addWord("debug?", [](Machine& mach) { mach.pushParameter(Number(mach.debugActive() ? Address(-1) : Address(0)) ); });
+    mach.addWord("raise", raiseError);
+    mach.addWord("constant", makeConstant, true);
+}
+void raiseError(Machine& mach) {
+    // raise an error to be caught by the runtime and reported
+    // this will cause the stacks to be cleared too!
+    // also giving the incorrect set of args will do the same thing :)
+    auto msg = std::get<std::string>(mach.popParameter());
+    auto owner = std::get<std::string>(mach.popParameter());
+    throw Problem(owner, msg);
+}
+void makeConstant(Machine& mach) {
+    // ( a "name" -- )
+    auto value = mach.popParameter();
+    auto name = mach.readNext();
+    mach.addWord(name, [value](Machine& mach) { mach.pushParameter(value); });
 }
 int main(int argc, char** argv) {
     Machine mach;

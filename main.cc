@@ -51,18 +51,19 @@ union Number {
 			return address;
 		} else if constexpr (std::is_same_v<K, bool>) {
 			return getTruth();
+        } else if constexpr (std::is_same_v<K, char>) {
+            return char(address);
+        } else if constexpr (std::is_same_v<K, byte>) {
+            return byte(address);
 		} else {
 			static_assert(forth::AlwaysFalse<T>::value, "Unsupported type specified!");
 		}
 	}
-    bool getTruth() const noexcept { 
-        return address != 0;
-    }
+    bool getTruth() const noexcept { return address != 0; }
     Integer getInteger() const noexcept { return integer; }
     Address getAddress() const noexcept { return address; }
 	Integer integer;
 	Address address;
-	byte bytes[sizeof(Address)];
 };
 struct Variable;
 using SharedVariable = std::shared_ptr<Variable>;
@@ -836,17 +837,15 @@ void addLiteralToCompilation(Machine& mach) {
     auto top = mach.popParameter();
     std::visit([&mach](auto&& value) { mach.getCurrentlyCompilingWord().value()->addWord(value);}, top);
 }
+
 Number powOperation(Number a, Number b) {
     return Number(Integer(pow(double(a.integer), double(b.integer))));
 }
-Number powOperationUnsigned(Number a, Number b) {
-    return Number(Address(pow(double(a.address), double(b.address))));
-}
 
 void emitCharacter(Machine& mach) {
-    auto top = mach.popParameter();
-    mach.getOutput() << char(std::get<Number>(top).bytes[0]);
+    mach.getOutput() << expect<Number>("emitCharacter", mach.popParameter()).get<char>();
 }
+
 void defineVariableWithName(Machine& mach, const std::string& name) {
     if (mach.currentlyCompiling()) {
         throw Problem("defineVariable", " cannot define variables while compiling!");

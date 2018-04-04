@@ -971,6 +971,7 @@ void doStatement(Machine& mach) {
 }
 void makeConstant(Machine& mach);
 void raiseError(Machine& mach);
+void markImmediate(Machine& mach);
 void setupDictionary(Machine& mach) {
     mach.addWord("begin", beginStatement, true);
     mach.addWord("end", endStatement, true);
@@ -1057,6 +1058,7 @@ void setupDictionary(Machine& mach) {
     mach.addWord("debug?", [](Machine& mach) { mach.pushParameter(Number(mach.debugActive() ? Address(-1) : Address(0)) ); });
     mach.addWord("raise", raiseError);
     mach.addWord("constant", makeConstant);
+    mach.addWord("immediate", markImmediate);
 }
 void raiseError(Machine& mach) {
     // raise an error to be caught by the runtime and reported
@@ -1104,6 +1106,13 @@ void interpret(Machine& mach) {
             mach.errorOccurred();
             std::cerr << "bad variant: " << a.what() << std::endl;
         }
+    }
+}
+void markImmediate(Machine& mach) {
+    if (auto front = mach.getFront(); front) {
+        front.value()->setCompileTimeInvokable(true);
+    } else {
+        throw Problem("immediate", " no words defined!");
     }
 }
 int main(int argc, char** argv) {

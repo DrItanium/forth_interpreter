@@ -1042,8 +1042,7 @@ void setupDictionary(Machine& mach) {
     mach.addWord("and", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() & b.getAddress(); }));
     mach.addWord("or", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() | b.getAddress(); }));
     mach.addWord("xor", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() ^ b.getAddress(); }));
-    mach.addWord("*bitwidth*", [](auto& x) { x.pushParameter(Number(CHAR_BIT)); });
-    mach.addWord("*memory-size*", getMemorySize);
+    mach.addWord("memory-size", getMemorySize);
     mach.addWord("resize-memory", resizeMemory);
     mach.addWord("literal", addLiteralToCompilation, true);
     mach.addWord("**", callBinaryNumberOperation(powOperation));

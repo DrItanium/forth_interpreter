@@ -1071,15 +1071,7 @@ void makeConstant(Machine& mach) {
     auto name = mach.readNext();
     mach.addWord(name, [value](Machine& mach) { mach.pushParameter(value); });
 }
-int main(int argc, char** argv) {
-    Machine mach;
-    setupDictionary(mach);
-    std::list<std::string> temp;
-    // only the first argument is actually read, the rest are ignored
-    if (argc > 1) {
-        mach.pushParameter(std::string(argv[1]));
-        openInputFile(mach);
-    }
+void interpret(Machine& mach) {
     while (keepExecuting) {
         try {
             if (auto str = mach.readNext() ; !str.empty()) {
@@ -1112,6 +1104,16 @@ int main(int argc, char** argv) {
             std::cerr << "bad variant: " << a.what() << std::endl;
         }
     }
+}
+int main(int argc, char** argv) {
+    Machine mach;
+    setupDictionary(mach);
+    // only the first argument is actually read, the rest are ignored
+    if (argc > 1) {
+        mach.pushParameter(std::string(argv[1]));
+        openInputFile(mach);
+    }
+    interpret(mach);
     return 0;
 }
 

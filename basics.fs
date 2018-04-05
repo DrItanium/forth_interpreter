@@ -123,18 +123,13 @@ variable enum-index
 : enum,  ( n1 -- n2 ) enum-index v@ 1+ enum-index v! enum-index v@ ;
 : enum} ( n1? -- ) ;
 
-variable *number-variant-code* 
-variable *word-variant-code* 
-variable *native-function-variant-code* 
-variable *string-variant-code* 
-variable *variable-variant-code* 
 {enum 
 ( section ids )
-*number-variant-code* v! enum,
-*word-variant-code* v! enum, 
-*native-function-variant-code* v! enum,
-*string-variant-code* v! enum, 
-*variable-variant-code* v!
+constant *number-variant-code* enum,
+constant *word-variant-code* enum, 
+constant *native-function-variant-code* enum,
+constant *string-variant-code* enum, 
+constant *variable-variant-code*
 enum}
 
 

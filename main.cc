@@ -71,6 +71,7 @@ struct Variable;
 using SharedVariable = std::shared_ptr<Variable>;
 struct Variable {
     using Contents = std::variant<Number, std::string, SharedVariable>;
+    std::string _name;
     Contents _value;
 };
 
@@ -638,7 +639,7 @@ void printDatum(Machine& m, Datum& top) {
             } else if constexpr (std::is_same_v<T, NativeFunction>) {
                 m.getOutput() << "Native Function";
             } else if constexpr (std::is_same_v<T, SharedVariable>) {
-                m.getOutput() << "Variable!";
+                m.getOutput() << "Variable: " << value->_name;
             } else {
                 static_assert(forth::AlwaysFalse<T>::value, "Unimplemented type!");
             }
@@ -854,6 +855,7 @@ void defineVariableWithName(Machine& mach, const std::string& name) {
     }
     // we need to define a new variable via a dictionary entry
     auto ptr = std::make_shared<Variable>();
+    ptr->_name = name;
     enterCompileModeWithName(mach, name);
     mach.getCurrentlyCompilingWord().value()->addWord(ptr);
     semicolon(mach);
@@ -972,7 +974,23 @@ void doStatement(Machine& mach) {
 void makeConstant(Machine& mach);
 void raiseError(Machine& mach);
 void markImmediate(Machine& mach);
+void invokeTopOfStack(Machine& mach) {
+    expect<NativeFunction>("invoke-tos", mach.popParameter())(mach);
+}
+void putWordOnTopOfStack(Machine& mach) {
+    auto next = mach.readNext();
+    if (auto ofn = mach.lookupWord(next); ofn) {
+        NativeFunction fn = [ptr = ofn.value()](Machine& mach) { ptr->invoke(mach); };
+        if (mach.currentlyCompiling()) {
+            mach.getCurrentlyCompilingWord().value()->addWord([fn](Machine& mach) { mach.pushParameter(fn); });
+        } else {
+            mach.pushParameter(fn);
+        }
+    }
+}
 void setupDictionary(Machine& mach) {
+    mach.addWord("put-word-on-stack", putWordOnTopOfStack, true);
+    mach.addWord("invoke-tos", invokeTopOfStack);
     mach.addWord("begin", beginStatement, true);
     mach.addWord("end", endStatement, true);
     mach.addWord("do", doStatement, true);

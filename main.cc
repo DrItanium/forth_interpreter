@@ -314,7 +314,7 @@ NativeFunction unaryOperation(UnaryOperation op) {
     };
 }
 
-
+bool leaveEarly = false;
 class DictionaryEntry {
     public:
         explicit DictionaryEntry(const std::string& name) : _name(name), _fake(false), _compileTimeInvoke(false) { }
@@ -451,6 +451,10 @@ void DictionaryEntry::invoke(Machine& mach) {
     ++executionDepth;
     for (auto& x : _contents) {
         x(mach);
+        if (leaveEarly) {
+            leaveEarly = false;
+            break;
+        }
     }
     --executionDepth;
     if (mach.debugActive()) {
@@ -998,6 +1002,9 @@ void putWordOnTopOfStack(Machine& mach) {
         }
     }
 }
+void exitWordEarly(Machine&) {
+    leaveEarly = true;
+}
 void setupDictionary(Machine& mach) {
     mach.addWord("put-word-on-stack", putWordOnTopOfStack, true);
     mach.addWord("invoke-tos", invokeTopOfStack);
@@ -1086,6 +1093,7 @@ void setupDictionary(Machine& mach) {
     mach.addWord("raise", raiseError);
     mach.addWord("constant", makeConstant);
     mach.addWord("immediate", markImmediate);
+    mach.addWord("exit", exitWordEarly);
 }
 void raiseError(Machine& mach) {
     // raise an error to be caught by the runtime and reported

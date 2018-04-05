@@ -379,9 +379,9 @@ void Machine::restoreCurrentlyCompilingWord() {
 }
 
 Machine::Machine(Address capacity) {
-    _memory = std::make_unique<forth::byte[]>(capacity);
+    _memory = std::make_unique<FileBlock[]>(capacity);
     _capacity = capacity;
-    _mask = (newCapacity * blockSize) - 1;
+    _mask = (capacity * blockSize) - 1;
 }
 Machine::~Machine() { 
     while (_in) {
@@ -591,14 +591,14 @@ void Machine::store(Address addr, byte value) {
     if (addr > getMaximumAddress()) {
         throw Problem("store", "Illegal address!");
     }
-    auto blockId = (mask & addr) >> 10;
+    auto blockId = (_mask & addr) >> 10;
     _memory[blockId][0x3FF & addr] = value;
 }
 byte Machine::load(Address addr) {
     if (addr > getMaximumAddress()) {
         throw Problem("load", "Illegal address!");
     }
-    auto blockId = (mask & addr) >> 10;
+    auto blockId = (_mask & addr) >> 10;
     return _memory[blockId][0x3FF & addr];
 }
 void storeByte(Machine& m) {
@@ -617,6 +617,8 @@ void storeVariable(Machine& m) {
     auto value = m.popParameter();
     std::visit([variable](auto&& value) {
                 using T = std::decay_t<decltype(value)>;
+                if constexpr (std::is_same_v<T, Number>) {
+                    variable->_value = value;
                 } else if constexpr (std::is_same_v<T, std::string>) {
                     variable->_value = value;
                 } else if constexpr (std::is_same_v<T, SharedVariable>) {

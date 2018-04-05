@@ -82,7 +82,10 @@ using BinaryOperation = std::function<Datum(Machine&, Datum, Datum)>;
 using Stack = GenericStack<Datum>;
 using InputStack = GenericStack<std::unique_ptr<std::ifstream>>;
 using OutputStack = GenericStack<std::unique_ptr<std::ofstream>>;
-constexpr Address defaultMemorySize = 1048576;
+constexpr Address blockSize = 1024;
+using FileBlock = std::array<forth::byte, blockSize>;
+using FileBlockPtr = std::unique_ptr<FileBlock>;
+constexpr Address defaultBlockCount = 1024;
 template<typename T>
 T expect(const std::string& function, const Datum& d) {
     try {
@@ -113,7 +116,7 @@ bool printOk = false;
 Address executionDepth = 0;
 class Machine {
     public:
-        explicit Machine(Address memSize = defaultMemorySize);
+        explicit Machine(Address blockCount = defaultBlockCount);
         ~Machine();
 		void pushParameter(Number n);
         void pushParameter(Word ent);
@@ -172,8 +175,9 @@ class Machine {
         Stack _subroutine;
         InputStack _inputs;
         OutputStack _outputs;
-        std::unique_ptr<forth::byte[]> _memory;
+        std::unique_ptr<FileBlock[]> _memory;
         Address _capacity;
+        Address _mask;
         bool _enableDebugging = false;
 };
 void mustBeCompiling(Machine& mach, const std::string& func);
@@ -215,7 +219,9 @@ void Machine::dumpMemoryToFile(const std::string& path) {
         throw Problem("dumpToFile", " couldn't open file for writing!");
     }
     for (auto a = 0; a < _capacity; ++a) {
-        stream << char(_memory[a]);
+        for ( auto b : _memory[a]) {
+            stream << char(b);
+        }
     }
     stream.close();
 }
@@ -234,8 +240,9 @@ std::istream& Machine::getInput() const noexcept {
     }
 }
 void Machine::resizeMemory(Address newCapacity) {
-    _memory = std::make_unique<forth::byte[]>(newCapacity);
+    _memory = std::make_unique<FileBlock[]>(newCapacity);
     _capacity = newCapacity;
+    _mask = (newCapacity * blockSize) - 1;
 }
 std::string Machine::readNext() {
     std::string word;
@@ -374,6 +381,7 @@ void Machine::restoreCurrentlyCompilingWord() {
 Machine::Machine(Address capacity) {
     _memory = std::make_unique<forth::byte[]>(capacity);
     _capacity = capacity;
+    _mask = (newCapacity * blockSize) - 1;
 }
 Machine::~Machine() { 
     while (_in) {
@@ -583,13 +591,15 @@ void Machine::store(Address addr, byte value) {
     if (addr > getMaximumAddress()) {
         throw Problem("store", "Illegal address!");
     }
-    _memory[addr] = value;
+    auto blockId = (mask & addr) >> 10;
+    _memory[blockId][0x3FF & addr] = value;
 }
 byte Machine::load(Address addr) {
     if (addr > getMaximumAddress()) {
         throw Problem("load", "Illegal address!");
     }
-    return _memory[addr];
+    auto blockId = (mask & addr) >> 10;
+    return _memory[blockId][0x3FF & addr];
 }
 void storeByte(Machine& m) {
     auto addr = std::get<Number>(m.popParameter()).address;
@@ -607,8 +617,6 @@ void storeVariable(Machine& m) {
     auto value = m.popParameter();
     std::visit([variable](auto&& value) {
                 using T = std::decay_t<decltype(value)>;
-                if constexpr (std::is_same_v<T, Number>) {
-                    variable->_value = value;
                 } else if constexpr (std::is_same_v<T, std::string>) {
                     variable->_value = value;
                 } else if constexpr (std::is_same_v<T, SharedVariable>) {

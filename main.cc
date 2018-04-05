@@ -82,7 +82,7 @@ using BinaryOperation = std::function<Datum(Machine&, Datum, Datum)>;
 using Stack = GenericStack<Datum>;
 using InputStack = GenericStack<std::unique_ptr<std::ifstream>>;
 using OutputStack = GenericStack<std::unique_ptr<std::ofstream>>;
-constexpr Address defaultMemorySize = 4096;
+constexpr Address defaultMemorySize = 1048576;
 template<typename T>
 T expect(const std::string& function, const Datum& d) {
     try {

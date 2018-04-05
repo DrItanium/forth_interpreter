@@ -69,7 +69,7 @@
 ( TODO take advantage of constants to get rid of magic constants )
 : q@ ( addr -- value )
   1 *address-plus-offset*
-  c@
+  c@ 
   swap
   c@
   8 *shift-left-then-bitwise-or* ;

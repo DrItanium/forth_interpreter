@@ -28,25 +28,56 @@ using Address = uint64_t;
 constexpr bool getTruth(Number number) noexcept {
 	return number != 0;
 }
-constexpr auto defaultCapacity = 0x10000;
-Address capacity = defaultCapacity;
+constexpr auto capacity = 0x10000;
 byte* memory = nullptr;
-byte* parameter = nullptr;
-byte* subroutine = nullptr;
-byte* dictionary = nullptr;
-byte* variables = nullptr;
-byte* dictionaryFront = nullptr;
-byte* systemVariables = nullptr;
+constexpr auto inputStringStart = 0x0700; // 31 characters
+constexpr auto inputStringEnd = 0x071F;
+constexpr auto outputStringStart = 0x0720; // 127 characters
+constexpr auto outputStringEnd = 0x07A0;
+constexpr auto systemVariablesStart = 0x0800;
+constexpr auto systemVariableEnd = 0x0A00;
+constexpr auto parameterStackTop = 0x0A00;
+constexpr auto parameterStackBottom = 0x0B00;
+constexpr auto subroutineStackTop = 0x0B00;
+constexpr auto subroutineStackBottom = 0x0C00;
 
 std::string _input;
-std::string _output;
 
+void setupMemory() {
+	memory = new byte[capacity];
+}
+void installOutputString(const std::string& msg) {
+	if (msg.size() >= 127) {
+		memory[outputStringStart] = 127;
+		for (int i = 0, j = outputStringStart + 1; i < 127; ++i, ++j) {
+			memory[j] = msg[i];
+		}
+	} else {
+		memory[outputStringStart] = msg.size();
+		for (int i = 0, j = outputStringStart + 1; i < msg.size(); ++i, ++j) {
+			memory[j] = msg[i];
+		}
+	}
+}
+void installInputString(const std::string& msg) {
+	if (msg.size() >= 31) {
+		memory[inputStringStart] = 31;
+		for (int i = 0, j = inputStringStart + 1; i < 31; ++i, ++j) {
+			memory[j] = msg[i];
+		}
+	} else {
+		memory[inputStringStart] = msg.size();
+		for (int i = 0, j = inputStringStart + 1; i < msg.size(); ++i, ++j) {
+			memory[j] = msg[i];
+		}
+	}
+}
 void raiseError(const std::string& msg) {
-	_output = msg;
-	systemVariables[0] = 0xFF;
+	memory[systemVariablesStart] = 0xFF;
+	installOutputString(msg);
 }
 bool inRange(Address addr) noexcept {
-	return addr < defaultCapacity;
+	return addr < capacity;
 }
 void writeMemory(Address addr, byte value) noexcept {
 	if (!inRange(addr)) {

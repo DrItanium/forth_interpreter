@@ -15,4 +15,37 @@
  * SOFTWARE.
  */
 
+#include <iostream>
+#include <cstdint>
+#include <functional>
+#include <string>
+
+using byte = uint8_t;
+using Integer = int64_t;
+
+using Number = Integer;
+
+constexpr bool getTruth(Number number) noexcept {
+	return number != 0;
+}
+
+byte* memory = nullptr;
+byte* parameterStart = nullptr;
+byte* subroutineStart = nullptr;
+byte* dictionaryStart = nullptr;
+byte* variables = nullptr;
+byte* dictionaryFront = nullptr;
+byte* systemVariables = nullptr;
+
+std::string _input;
+std::string _output;
+
+void raiseError(const std::string& msg) {
+	_output = msg;
+	systemVariables[0] = 0xFF;
+}
+bool errorHappened() noexcept {
+	return systemVariables[0] != 0;
+}
+
 

@@ -21,6 +21,7 @@
 #include "Entry.h"
 #include "Problem.h"
 #include "Number.h"
+#include <iostream>
 
 namespace forth {
 	class Stack {
@@ -41,18 +42,33 @@ namespace forth {
 			void push(Number value);
 			Number pop();
 			void dup(); // ( a -- a a )
+			void dupIfNotZero(); // ( a -- a a | 0 )
+			void dup2(); // ( a b -- a b a b )
 			void swap(); // ( a b -- b a )
 			void rot(); // ( a b c -- b c a )
 			void rotMinus(); // ( a b c -- c a b )
 			void over(); // ( a b -- a b a )
 			void drop(); // ( a -- )
 			void drop2(); // ( a b -- )
-			void pushDepth() { push(depth()); }// ( -- a )
+			void pushDepth() { 
+				// ( -- n )
+				push(depth()); 
+			}
+			void nip() {
+				// ( a b -- b )
+				swap();
+				drop();
+			}
+			void tuck() {
+				// ( a b -- b a b )
+				swap();
+				over();
+			}
 			/**
 			 * Throw if the expected stack depth is not there!
 			 */
 			void expectStackDepthAtLeast(Address value);
-
+			void showStack(std::ostream& out = std::cout);
 		private:
 			Number* _base;
 			Number* _full;

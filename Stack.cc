@@ -82,4 +82,28 @@ namespace forth {
 		_curr->absorb(third);
 		(_curr - 2)->absorb(top);
 	}
+	void Stack::dup2() {
+		expectStackDepthAtLeast(2);
+		auto top = *_curr;
+		auto lower = *(_curr - 1);
+		push(lower);
+		push(top);
+	}
+	void Stack::dupIfNotZero() {
+		if (empty()) {
+			throw Problem("STACK EMPTY!");
+		}
+		auto top = *_curr;
+		if (top.getInteger() != 0) {
+			push(top);
+		}
+	}
+	void Stack::showStack(std::ostream& out) {
+		if (_curr == nullptr) {
+			return;
+		}
+		for (auto i = _curr; _curr != _base; --i) {
+			out << "- " << i->getInteger() << std::endl;
+		}
+	}
 } // end namespace forth

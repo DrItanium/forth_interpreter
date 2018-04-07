@@ -86,6 +86,7 @@ namespace forth {
 					static_assert(AlwaysFalse<T>::value, "Unsupported assignment target!");
 				}
 			}
+			void absorb(const Number& other) noexcept { _ptr = other.getPointer(); }
 		private:
 			Function _func;
 			Address _addr;

@@ -26,4 +26,60 @@ namespace forth {
 		++_curr;
 		_curr->absorb(value);
 	}
+	Number Stack::pop() {
+		if (empty()) {
+			throw Problem("STACK EMPTY!");
+		}
+		Number curr = *_curr;
+		--_curr;
+		return curr;
+	}
+	void Stack::dup() {
+		if (empty()) {
+			throw Problem("STACK EMPTY!");
+		}
+		push(*_curr);
+	}
+	void Stack::swap() {
+		expectStackDepthAtLeast(2);
+		auto top = *_curr;
+		auto lower = *(_curr - 1);
+		(_curr - 1)->absorb(top);
+		_curr->absorb(lower);
+	}
+	void Stack::rot() {
+		expectStackDepthAtLeast(3);
+		auto top = *_curr;
+		auto lower = *(_curr - 1);
+		auto third = *(_curr - 2);
+		_curr->absorb(third);
+		(_curr - 1)->absorb(top);
+		(_curr - 2)->absorb(lower);
+	}
+	void Stack::over() {
+		expectStackDepthAtLeast(2);
+		push(*(_curr - 1));
+	}
+	void Stack::drop() {
+		if (empty()) {
+			throw Problem("STACK EMPTY!");
+		}
+		--_curr;
+	}
+	void Stack::expectStackDepthAtLeast(Address v) {
+		if (depth() < v) {
+			throw Problem("STACK UNDERFLOW!");
+		}
+	}
+	void Stack::drop2() {
+		expectStackDepthAtLeast(2);
+		_curr -= 2;
+	}
+	void Stack::rotMinus() {
+		expectStackDepthAtLeast(3);
+		auto top = *_curr;
+		auto third = *(_curr - 2);
+		_curr->absorb(third);
+		(_curr - 2)->absorb(top);
+	}
 } // end namespace forth

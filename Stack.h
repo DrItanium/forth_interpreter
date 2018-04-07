@@ -29,9 +29,9 @@ namespace forth {
 			void setup(Number* base, Number* full) noexcept {
 				_base = base;
 				_full = full;
-				reset();
+				clear();
 			}
-			void reset() noexcept {
+			void clear() noexcept {
 				_curr = _base;
 			}
 			bool empty() const noexcept { return _base == _curr; }
@@ -40,8 +40,19 @@ namespace forth {
 			Address capacity() const noexcept { return _full - _base; }
 			void push(Number value);
 			Number pop();
-			Number& peek();
-			
+			void dup(); // ( a -- a a )
+			void swap(); // ( a b -- b a )
+			void rot(); // ( a b c -- b c a )
+			void rotMinus(); // ( a b c -- c a b )
+			void over(); // ( a b -- a b a )
+			void drop(); // ( a -- )
+			void drop2(); // ( a b -- )
+			void pushDepth() { push(depth()); }// ( -- a )
+			/**
+			 * Throw if the expected stack depth is not there!
+			 */
+			void expectStackDepthAtLeast(Address value);
+
 		private:
 			Number* _base;
 			Number* _full;

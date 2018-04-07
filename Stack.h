@@ -26,6 +26,8 @@
 namespace forth {
 	class Stack {
 		public:
+			static void transferTop(Stack& from, Stack& to);
+		public:
 			Stack(Number* base = nullptr, Number* full = nullptr) : _base(base), _full(full) { }
 			void setup(Number* base, Number* full) noexcept {
 				_base = base;

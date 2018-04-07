@@ -106,4 +106,7 @@ namespace forth {
 			out << "- " << i->getInteger() << std::endl;
 		}
 	}
+	void Stack::transferTop(Stack& from, Stack& to) {
+		to.push(from.pop());
+	}
 } // end namespace forth

@@ -87,7 +87,7 @@ using FileBlock = std::array<forth::byte, blockSize>;
 using FileBlockPtr = std::unique_ptr<FileBlock>;
 constexpr Address defaultBlockCount = 1024;
 template<typename T>
-T expect(const std::string& function, const Datum& d) {
+T expect(const Datum& d) {
     try {
         return std::get<T>(d);
     } catch (std::bad_variant_access&) {
@@ -108,7 +108,7 @@ T expect(const std::string& function, const Datum& d) {
             static_assert(forth::AlwaysFalse<T>::value, "Unimplemented type!");
         }
         auto str = ss.str();
-        throw Problem(function, str);
+        throw Problem(str);
     }
 }
 
@@ -180,24 +180,24 @@ class Machine {
         Address _mask;
         bool _enableDebugging = false;
 };
-void mustBeCompiling(Machine& mach, const std::string& func);
+void mustBeCompiling(Machine& mach);
 void Machine::pushParameterDepth() noexcept {
     auto len = _parameter.size();
     pushParameter(Number(len));
 }
 void Machine::openBinaryFile(const std::string& path) {
     if (_binaryFile) {
-        throw Problem("openBinaryFile", " Already have an open binary file!");
+        throw Problem(" Already have an open binary file!");
     }
     _binaryFile = std::make_unique<std::ofstream>();
     _binaryFile->open(path.c_str(), std::ofstream::binary | std::ofstream::out );
     if (!_binaryFile->is_open()) {
-        throw Problem("openBinaryFile", " Unable to open file for writing!");
+        throw Problem(" Unable to open file for writing!");
     } 
 }
 void Machine::writeBinaryFile(byte b) {
     if (!_binaryFile) {
-        throw Problem("closeBinaryFile", " Cannot write to a non existent binary file!");
+        throw Problem(" Cannot write to a non existent binary file!");
     }
     union {
         byte b;
@@ -208,7 +208,7 @@ void Machine::writeBinaryFile(byte b) {
 }
 void Machine::closeBinaryFile() {
     if (!_binaryFile) {
-        throw Problem("closeBinaryFile", " Cannot close a binary file that is not open!");
+        throw Problem(" Cannot close a binary file that is not open!");
     }
     _binaryFile->close();
     _binaryFile.reset();
@@ -216,7 +216,7 @@ void Machine::closeBinaryFile() {
 void Machine::dumpMemoryToFile(const std::string& path) {
     std::ofstream stream(path.c_str(), std::fstream::binary);
     if (!stream.is_open()) {
-        throw Problem("dumpToFile", " couldn't open file for writing!");
+        throw Problem(" couldn't open file for writing!");
     }
     for (auto a = 0; a < _capacity; ++a) {
         for ( auto b : _memory[a]) {
@@ -255,7 +255,7 @@ void Machine::openFileForOutput(const std::string& path) {
         std::stringstream ss;
         ss << "Could not open " << path << " for writing!";
         auto str = ss.str();
-        throw Problem("openFileForOutput", str);
+        throw Problem( str);
     }
     if (_out) {
         _outputs.emplace_front(std::move(_out));
@@ -269,7 +269,7 @@ void Machine::openFileForInput(const std::string& path) {
         std::stringstream ss;
         ss << "Could not open " << path << " for reading!";
         auto str = ss.str();
-        throw Problem("openFileForInput", str);
+        throw Problem(str);
     }
     if (_in) {
         _inputs.emplace_front(std::move(_in));
@@ -359,7 +359,7 @@ void Machine::newCompilingWord(const std::string& str) {
 
 void Machine::compileCurrentWord() {
     if (!currentlyCompiling()) {
-        throw Problem("compileCurrentWord", "Not in compilation mode!");
+        throw Problem("Not in compilation mode!");
     } else {
         if (_front) {
             _compile->get()->setNext(*_front);
@@ -422,7 +422,7 @@ void Machine::pushSubroutine(const std::string& str) { _subroutine.push_front(st
 
 Datum Machine::popParameter() {
     if (_parameter.empty()) {
-        throw Problem("popParameter", "Stack Empty!");
+        throw Problem( "Stack Empty!");
     } else {
         Datum top = _parameter.front();
         _parameter.pop_front();
@@ -432,7 +432,7 @@ Datum Machine::popParameter() {
 
 Datum Machine::popSubroutine() {
     if (_subroutine.empty()) {
-        throw Problem("popSubroutine", "Stack Empty!");
+        throw Problem("Stack Empty!");
     } else {
         auto top = _subroutine.front();
         _subroutine.pop_front();
@@ -493,7 +493,7 @@ void DictionaryEntry::addWord(Word dict) {
 }
 void DictionaryEntry::addWord(OptionalWord dict) {
     if (!dict) {
-        throw Problem("DictionaryEntry::addWord", "Cannot add unpopulated item!");
+        throw Problem("Cannot add unpopulated item!");
     } else {
         addWord(*dict);
     }
@@ -516,7 +516,7 @@ void semicolon(Machine& mach) {
 
 void colon(Machine& mach) {
     if (mach.currentlyCompiling()) {
-        throw Problem(":", "Already compiling!");
+        throw Problem("Already compiling!");
     } else {
         auto str = mach.readNext();
         mach.newCompilingWord(str);
@@ -593,14 +593,14 @@ bool numberRoutine(Machine& mach, const std::string& word) {
 }
 void Machine::store(Address addr, byte value) {
     if (addr > getMaximumAddress()) {
-        throw Problem("store", "Illegal address!");
+        throw Problem("Illegal address!");
     }
     auto blockId = (_mask & addr) >> 10;
     _memory[blockId][0x3FF & addr] = value;
 }
 byte Machine::load(Address addr) {
     if (addr > getMaximumAddress()) {
-        throw Problem("load", "Illegal address!");
+        throw Problem("Illegal address!");
     }
     auto blockId = (_mask & addr) >> 10;
     return _memory[blockId][0x3FF & addr];
@@ -628,7 +628,7 @@ void storeVariable(Machine& m) {
                 } else if constexpr (std::is_same_v<T, SharedVariable>) {
                     variable->_value = value;
                 } else {
-                    throw Problem("storeVariable", " illegal value type!");
+                    throw Problem(" illegal value type!");
                 }
             }, value);
 }
@@ -673,7 +673,7 @@ void Machine::viewParameterStack() {
 }
 void enterCompileModeWithName(Machine& mach, const std::string& name) {
     if (mach.currentlyCompiling()) {
-        throw Problem("enterCompileMode", "Already compiling!");
+        throw Problem("Already compiling!");
     } 
     mach.newCompilingWord(name);
 }
@@ -712,7 +712,7 @@ void openInputFile(Machine& mach) {
     mach.openFileForInput(path);
 }
 void ifStatement(Machine& mach) {
-    mustBeCompiling(mach, "if");
+    mustBeCompiling(mach);
     auto c = mach.getCurrentlyCompilingWord().value(); // do an evaluation of the contents
     // we need to add a native function to perform the check which assumes a boolean
     mach.saveCurrentlyCompilingWord(); // save our outer operation to the stack
@@ -724,7 +724,7 @@ void ifStatement(Machine& mach) {
     mach.newCompilingWord(); // another fake entry for the onTrue portion
 }
 void elseStatement(Machine& mach) {
-    mustBeCompiling(mach, "else");
+    mustBeCompiling(mach);
 
     // now we need to finalize the ontrue portion
     auto front = mach.getCurrentlyCompilingWord().value();
@@ -735,7 +735,7 @@ void elseStatement(Machine& mach) {
     mach.newCompilingWord(); // now make the else conditional
 }
 void thenStatement(Machine& mach) {
-    mustBeCompiling(mach, "then");
+    mustBeCompiling(mach);
     auto front = mach.getCurrentlyCompilingWord().value();
     mach.compileCurrentWord(); // regardless if we have hit else or not we need to compile this word
     mach.restoreCurrentlyCompilingWord(); // go up one level
@@ -845,12 +845,12 @@ void resizeMemory(Machine& mach) {
                 if constexpr (std::is_same_v<T, Number>) {
                     mach.resizeMemory(value.address);
                 } else {
-                    throw Problem("resizeMemory", " top is not a number!");
+                    throw Problem(" top is not a number!");
                 }
             }, mach.popParameter());
 }
 void addLiteralToCompilation(Machine& mach) {
-    mustBeCompiling(mach, "literal");
+    mustBeCompiling(mach);
     auto top = mach.popParameter();
     std::visit([&mach](auto&& value) { mach.getCurrentlyCompilingWord().value()->addWord(value);}, top);
 }
@@ -860,12 +860,12 @@ Number powOperation(Number a, Number b) {
 }
 
 void emitCharacter(Machine& mach) {
-    mach.getOutput() << expect<Number>("emitCharacter", mach.popParameter()).get<char>();
+    mach.getOutput() << expect<Number>(mach.popParameter()).get<char>();
 }
 
 void defineVariableWithName(Machine& mach, const std::string& name) {
     if (mach.currentlyCompiling()) {
-        throw Problem("defineVariable", " cannot define variables while compiling!");
+        throw Problem(" cannot define variables while compiling!");
     }
     // we need to define a new variable via a dictionary entry
     auto ptr = std::make_shared<Variable>();
@@ -892,15 +892,15 @@ void dumpMemoryToFile(Machine& mach) {
     try {
         mach.dumpMemoryToFile(std::get<std::string>(mach.popParameter()));
     } catch (std::bad_variant_access&) {
-        throw Problem("dumpMemoryToFile", " top of the stack was not a string!");
+        throw Problem(" top of the stack was not a string!");
     }
 }
 void openBinaryFile(Machine& mach) {
-    auto top = expect<std::string>("openBinaryFile", mach.popParameter());
+    auto top = expect<std::string>(mach.popParameter());
     mach.openBinaryFile(top);
 }
 void writeBinaryFile(Machine& mach) {
-    auto top = static_cast<byte>(expect<Number>("writeBinaryFile", mach.popParameter()).address);
+    auto top = static_cast<byte>(expect<Number>(mach.popParameter()).address);
     mach.writeBinaryFile(top);
 }
 void closeBinaryFile(Machine& mach) {
@@ -926,23 +926,23 @@ void ignoreInputUntilNewline(Machine& mach) {
 void enterIgnoreInputMode(Machine& mach) {
     mach.getInput().ignore(std::numeric_limits<std::streamsize>::max(), ')');
 }
-void mustBeCompiling(Machine& mach, const std::string& func) {
+void mustBeCompiling(Machine& mach) {
     if (!mach.currentlyCompiling()) {
-        throw Problem(func, " Must be currently compiling!");
+        throw Problem(" Must be currently compiling!");
     }
 }
-void nestedFakeBodyForCompiling(Machine& mach, const std::string& func) {
-    mustBeCompiling(mach, func);
+void nestedFakeBodyForCompiling(Machine& mach) {
+    mustBeCompiling(mach);
     mach.saveCurrentlyCompilingWord();
     mach.newCompilingWord();
 }
 void beginStatement(Machine& mach) {
     // need to capture the loop body as a word, it must be free floating right
     // now
-    nestedFakeBodyForCompiling(mach, "begin");
+    nestedFakeBodyForCompiling(mach);
 }
 void endStatement(Machine& mach) {
-    mustBeCompiling(mach, "end");
+    mustBeCompiling(mach);
     auto c = mach.getCurrentlyCompilingWord().value(); // get the body out and save it
     mach.compileCurrentWord();
     mach.restoreCurrentlyCompilingWord();
@@ -957,7 +957,7 @@ void endStatement(Machine& mach) {
     mach.getCurrentlyCompilingWord().value()->addWord(fn);
 }
 void continueStatement(Machine& mach) {
-    mustBeCompiling(mach, "continue");
+    mustBeCompiling(mach);
     auto c = mach.getCurrentlyCompilingWord().value();
     mach.compileCurrentWord();
     mach.restoreCurrentlyCompilingWord();
@@ -983,13 +983,13 @@ void continueStatement(Machine& mach) {
     mach.getCurrentlyCompilingWord().value()->addWord(fn);
 }
 void doStatement(Machine& mach) {
-    nestedFakeBodyForCompiling(mach, "do");
+    nestedFakeBodyForCompiling(mach);
 }
 void makeConstant(Machine& mach);
 void raiseError(Machine& mach);
 void markImmediate(Machine& mach);
 void invokeTopOfStack(Machine& mach) {
-    expect<NativeFunction>("invoke-tos", mach.popParameter())(mach);
+    expect<NativeFunction>(mach.popParameter())(mach);
 }
 void putWordOnTopOfStack(Machine& mach) {
     auto next = mach.readNext();
@@ -1100,8 +1100,7 @@ void raiseError(Machine& mach) {
     // this will cause the stacks to be cleared too!
     // also giving the incorrect set of args will do the same thing :)
     auto msg = std::get<std::string>(mach.popParameter());
-    auto owner = std::get<std::string>(mach.popParameter());
-    throw Problem(owner, msg);
+    throw Problem(msg);
 }
 void makeConstant(Machine& mach) {
     // ( a "name" -- )
@@ -1110,9 +1109,11 @@ void makeConstant(Machine& mach) {
     mach.addWord(name, [value](Machine& mach) { mach.pushParameter(value); });
 }
 void interpret(Machine& mach) {
+	std::string str;
     while (keepExecuting) {
         try {
-            if (auto str = mach.readNext() ; !str.empty()) {
+			str = mach.readNext();
+            if (!str.empty()) {
                 if (auto entry = mach.lookupWord(str); entry) {
                     if (auto value = entry.value() ; mach.currentlyCompiling()) {
                         if (value->compileTimeInvokable()) {
@@ -1125,7 +1126,7 @@ void interpret(Machine& mach) {
                     }
                 } else {
                     if (!numberRoutine(mach, str)) {
-                        throw Problem(str, "?");
+                        throw Problem("?");
                     }
                 }
                 if (!mach.currentlyCompiling() && printOk) {
@@ -1136,10 +1137,10 @@ void interpret(Machine& mach) {
         } catch (Problem& p) {
             // clear out the stacks as well
             mach.errorOccurred();
-            std::cerr << p.getWord() << p.getMessage() << std::endl;
+			std::cerr << str << p.getMessage() << std::endl;
         } catch (std::bad_variant_access& a) {
             mach.errorOccurred();
-            std::cerr << "bad variant: " << a.what() << std::endl;
+            std::cerr << str <<  " bad variant: " << a.what() << std::endl;
         }
     }
 }
@@ -1147,7 +1148,7 @@ void markImmediate(Machine& mach) {
     if (auto front = mach.getFront(); front) {
         front.value()->setCompileTimeInvokable(true);
     } else {
-        throw Problem("immediate", " no words defined!");
+        throw Problem("no words defined!");
     }
 }
 int main(int argc, char** argv) {

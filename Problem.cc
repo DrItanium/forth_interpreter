@@ -4,6 +4,6 @@
 #include "Problem.h"
 
 namespace forth {
-	Problem::Problem(const std::string& word, const std::string& message) : _word(word), _message(message) { }
+	Problem::Problem(const std::string& message) : _message(message) { }
 } // end namespace forth
 

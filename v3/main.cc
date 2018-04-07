@@ -30,6 +30,7 @@ constexpr bool getTruth(Number number) noexcept {
 }
 constexpr auto capacity = 0x10000;
 byte* memory = nullptr;
+byte* inputString = nullptr;
 constexpr auto inputStringStart = 0x0700; // 31 characters
 constexpr auto inputStringEnd = 0x071F;
 constexpr auto outputStringStart = 0x0720; // 127 characters
@@ -41,10 +42,12 @@ constexpr auto parameterStackBottom = 0x0B00;
 constexpr auto subroutineStackTop = 0x0B00;
 constexpr auto subroutineStackBottom = 0x0C00;
 
-std::string _input;
-
 void setupMemory() {
 	memory = new byte[capacity];
+	for (int i = 0; i < capacity; ++i) {
+		memory[i] = 0;
+	}
+	inputString = &(inputString[inputStringStart]);
 }
 void installOutputString(const std::string& msg) {
 	if (msg.size() >= 127) {
@@ -116,7 +119,7 @@ Address readAddress(Address addr) noexcept {
 	return lower | (upper << 32);
 }
 Address systemVariable(Address offset) noexcept {
-	return (systemVariables - memory) + offset;
+	return systemVariablesStart + offset;
 }
 
 bool errorHappened() noexcept {
@@ -161,20 +164,35 @@ void loadDictionaryName(Address addr) {
 	auto length = getDictionaryNameLength(addr);
 	if (!errorHappened()) {
 		auto str = getDictionaryStringStart(addr);
-		_output.assign(str, length);
+		std::string tmp;
+		tmp.assign(str, length);
+		installOutputString(tmp);
 	}
 }
 void pushParameter(Number n) {
 
 }
 void readNext() noexcept {
-	std::cin >> _input;
+	std::string tmp;
+	std::cin >> tmp;
+	installInputString(tmp);
+}
+std::string loadInputString() noexcept {
+	std::string output;
+	output.assign((char*)(inputString + 1), *inputString);
+	return output;
+}
+std::string loadOutputString() noexcept {
+	std::string output;
+	output.assign((char*)(&memory[outputStringStart + 1]), memory[outputStringStart]);
+	return output;
 }
 void number() noexcept {
+	auto _input = loadInputString();
 	if (_input[0] == '0' && _input[1] == 'x') {
 		auto copy = _input;
 		copy[1] = 0;
-		std::istringstream input(copy);
+		std::istringstream input(_input);
 		Number n;
 		input >> std::hex >> n;
 		if (!input.fail() && input.eof()) {
@@ -201,8 +219,8 @@ void controlLoop() {
 	while (keepExecuting()) {
 
 		if (errorHappened()) {
-			std::cout << _output << std::endl;
-
+			std::cout << loadOutputString() << std::endl;
+			
 		}
 	}
 }

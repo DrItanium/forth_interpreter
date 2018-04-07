@@ -1,4 +1,5 @@
 ( some words ! )
+: close-input-file ( -- ) ;s ;
 : 0 ( -- 0 ) 0 ; 
 : -1 ( -- -1 ) -1 ;
 : true ( -- -1 ) -1 ;
@@ -29,6 +30,10 @@
 : 2/ ( n1 -- n2 ) 2 / ;
 : 4+ ( n1 -- n2 ) 4 + ;
 : 4/ ( n1 -- n2 ) 4 / ;
+: /c* ( n1 -- n2 ) /c * ;
+: /l* ( n1 -- n2 ) /l * ;
+: /w* ( n1 -- n2 ) /w * ;
+: /n* ( n1 -- n2 ) /n * ;
 : noop ( -- ) ;
 : not ( n1 -- n2 ) invert ;
 : between ( n min max -- f ) 
@@ -144,6 +149,19 @@ enum}
 : @ ( a -- b ) dup variable? if v@ else w@ then ;
 : ? ( a -- ) @ . ;
 
+: 2! ( n1 n2 adr -- )
+	rot ( n2 adr n1 )
+	over ( n2 adr n1 adr )
+	! ( n2 adr )
+	! ;
+: 2@ ( adr -- n1 n2 )
+  dup ( adr adr )
+  @ ( adr n1 )
+  swap ( n1 adr )
+  @ ( n1 n2 );
+: 
+
+
 : lowerq ( a -- b ) 0xFF bitwise-andu ;
 : upperq ( a -- b ) 8 u>> lowerq ;
 : lowerh ( a -- b ) 0xFFFF bitwise-andu ;
@@ -166,4 +184,4 @@ enum}
   ! ;
 
 \ must always be last in the file 
-close-input-file
+;s

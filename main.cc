@@ -124,6 +124,10 @@ class Machine {
         void pushParameter(const std::string&);
         void pushParameter(Datum d);
         void pushParameter(SharedVariable v);
+		void pushParameter(Address addr) { pushParameter(Number(addr)); }
+		void pushParameter(bool b) { pushParameter(Number(b)); }
+		void pushParameter(Integer addr) { pushParameter(Number(addr)); }
+		void pushParameter(OptionalWord word);
 		void pushSubroutine(Number n);
         void pushSubroutine(Word ent);
         void pushSubroutine(NativeFunction fn);
@@ -412,6 +416,13 @@ void Machine::pushParameter(Number n) { _parameter.push_front(n); }
 void Machine::pushParameter(Word v) { _parameter.push_front(v); }
 void Machine::pushParameter(NativeFunction fn) { _parameter.push_front(fn); }
 void Machine::pushParameter(const std::string& str) { _parameter.push_front(str); }
+void Machine::pushParameter(OptionalWord word) { 
+	if (word) {
+		pushParameter(word.value());
+	} else {
+		throw Problem("OPTIONAL WORD IS EMPTY!");
+	}
+}
 
 void Machine::pushSubroutine(SharedVariable d) { _subroutine.push_front(d); }
 void Machine::pushSubroutine(Datum d) { _subroutine.push_front(d); }
@@ -638,32 +649,58 @@ void loadVariable(Machine& m) {
 }
 void printDatum(Machine& m, Datum& top) {
     std::visit([&m](auto&& value) {
-            auto f = m.getOutput().flags();
             using T = std::decay_t<decltype(value)>;
 			if constexpr (std::is_same_v<T, Number>) {
-				m.getOutput() << std::dec << value.integer;
+				m.getOutput() << value.integer;
             } else if constexpr (std::is_same_v<T, Word>) {
                 if (value->isFake()) {
-                    m.getOutput() << "fake compiled entry 0x" << std::hex << value.get();
+                    m.getOutput() << "fake compiled entry: " << Integer(value.get());
                 } else {
                     m.getOutput() << "word: " << value->getName();
                 }
             } else if constexpr (std::is_same_v<T, std::string>) {
                 m.getOutput() << value;
             } else if constexpr (std::is_same_v<T, NativeFunction>) {
-                m.getOutput() << "Native Function";
+				auto tmp = value.template target<void(*)(Machine&)>();
+                m.getOutput() << "Native Function: " << (Integer)tmp;
             } else if constexpr (std::is_same_v<T, SharedVariable>) {
                 m.getOutput() << "Variable: " << value->_name;
             } else {
                 static_assert(forth::AlwaysFalse<T>::value, "Unimplemented type!");
             }
-            m.getOutput().flush();
-            m.getOutput().setf(f);
+            }, top);
+}
+
+void printDatumUnsigned(Machine& m, Datum& top) {
+    std::visit([&m](auto&& value) {
+            using T = std::decay_t<decltype(value)>;
+			if constexpr (std::is_same_v<T, Number>) {
+				m.getOutput() << value.address;
+            } else if constexpr (std::is_same_v<T, Word>) {
+                if (value->isFake()) {
+                    m.getOutput() << "fake compiled entry: " << Address(value.get());
+                } else {
+                    m.getOutput() << "word: " << value->getName();
+                }
+            } else if constexpr (std::is_same_v<T, std::string>) {
+                m.getOutput() << value;
+            } else if constexpr (std::is_same_v<T, NativeFunction>) {
+				auto tmp = value.template target<void(*)(Machine&)>();
+                m.getOutput() << "Native Function: " << (Address)tmp;
+            } else if constexpr (std::is_same_v<T, SharedVariable>) {
+                m.getOutput() << "Variable: " << value->_name;
+            } else {
+                static_assert(forth::AlwaysFalse<T>::value, "Unimplemented type!");
+            }
             }, top);
 }
 void printTop(Machine& m) {
     auto top = m.popParameter();
     printDatum(m, top);
+}
+void printTopAsUnsignedNumber(Machine& m) {
+	auto top = m.popParameter();
+	printDatumUnsigned(m, top);
 }
 void Machine::viewParameterStack() {
     for (auto & x : _parameter) {
@@ -1000,13 +1037,42 @@ void putWordOnTopOfStack(Machine& mach) {
         } else {
             mach.pushParameter(fn);
         }
-    }
+    } else {
+		throw Problem("?");
+	}
 }
 void exitWordEarly(Machine&) {
     leaveEarly = true;
 }
+template<typename T>
+void pushSize(Machine& mach) {
+	mach.pushParameter(Number(sizeof(T)));
+}
+void hereOperation(Machine& mach) {
+	if (mach.currentlyCompiling()) {
+		mach.getCurrentlyCompilingWord().value()->addWord(mach.getFront());
+	} else {
+		mach.pushParameter(mach.getFront());
+	}
+}
+void markFrontAsImmediate(Machine& mach) {
+	if (auto opt = mach.getFront(); opt) {
+		opt.value()->setCompileTimeInvokable(true);
+	} else {
+		throw Problem("DICTIONARY EMPTY!");
+	}
+}
+void frontIsImmediate(Machine& mach) {
+	if (auto opt = mach.getFront(); opt) {
+		mach.pushParameter(opt.value()->compileTimeInvokable());
+	} else {
+		mach.pushParameter(Number(false));
+	}
+}
 void setupDictionary(Machine& mach) {
-    mach.addWord("put-word-on-stack", putWordOnTopOfStack, true);
+	mach.addWord("here", hereOperation, true);
+	mach.addWord("immediate", markFrontAsImmediate);
+    mach.addWord("'", putWordOnTopOfStack, true);
     mach.addWord("invoke-tos", invokeTopOfStack);
     mach.addWord("begin", beginStatement, true);
     mach.addWord("end", endStatement, true);
@@ -1032,13 +1098,14 @@ void setupDictionary(Machine& mach) {
     mach.addWord("v@", loadVariable);
     mach.addWord("v!", storeVariable);
     mach.addWord(".", printTop);
+	mach.addWord("u.", printTopAsUnsignedNumber);
     mach.addWord(":", enterCompileMode);
     mach.addWord(".s", std::mem_fn(&Machine::viewParameterStack));
     mach.addWord("\"", processString, true);
     mach.addWord("emit", emitCharacter);
     mach.addWord("type-code", unaryOperation(typeCode));
     mach.addWord("open-input-file", openInputFile);
-    mach.addWord("close-input-file", closeInputFile);
+    mach.addWord(";s", closeInputFile);
     mach.addWord("choose", bodyInvoke);
     mach.addWord("predicated", predicatedInvoke);
     mach.addWord("if", ifStatement, true);
@@ -1087,6 +1154,7 @@ void setupDictionary(Machine& mach) {
     mach.addWord("]", switchBackToCompileMode);
     mach.addWord("]L", switchBackToCompileModeWithLiteral);
     mach.addWord("\\", ignoreInputUntilNewline, true);
+	mach.addWord("\\c", ignoreInputUntilNewline, true);
     mach.addWord("enable-debug", [](Machine& mach) { mach.setDebugging(true); });
     mach.addWord("disable-debug", [](Machine& mach) { mach.setDebugging(false); });
     mach.addWord("debug?", [](Machine& mach) { mach.pushParameter(Number(mach.debugActive() ? Address(-1) : Address(0)) ); });
@@ -1094,6 +1162,27 @@ void setupDictionary(Machine& mach) {
     mach.addWord("constant", makeConstant);
     mach.addWord("immediate", markImmediate);
     mach.addWord("exit", exitWordEarly);
+	mach.addWord("/c", pushSize<byte>);
+	mach.addWord("/l", pushSize<Number>);
+	mach.addWord("/w", pushSize<Number>);
+	mach.addWord("/n", pushSize<Number>);
+	mach.addWord("/link", pushSize<Number>);
+	mach.addWord("/token", pushSize<Number>);
+	mach.addWord("/token", pushSize<Number>);
+	mach.addWord("/mod", [](Machine& mach) {
+				// ( n1 n2 -- n3 n4 )
+				auto top = expect<Number>(mach.popParameter());
+				auto lower = expect<Number>(mach.popParameter());
+				auto numerator = lower.getInteger();
+				auto denominator = top.getInteger();
+				if (denominator == 0) {
+					throw Problem("Divide by zero!");
+				}
+				auto remainder = numerator % denominator;
+				auto divisor = numerator / denominator;
+				mach.pushParameter(Number(remainder));
+				mach.pushParameter(Number(divisor));
+			});
 }
 void raiseError(Machine& mach) {
     // raise an error to be caught by the runtime and reported

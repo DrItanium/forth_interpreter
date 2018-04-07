@@ -76,11 +76,8 @@ namespace forth {
 		_curr -= 2;
 	}
 	void Stack::rotMinus() {
-		expectStackDepthAtLeast(3);
-		auto top = *_curr;
-		auto third = *(_curr - 2);
-		_curr->absorb(third);
-		(_curr - 2)->absorb(top);
+		rot();
+		rot();
 	}
 	void Stack::dup2() {
 		expectStackDepthAtLeast(2);

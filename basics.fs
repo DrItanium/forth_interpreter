@@ -123,16 +123,17 @@
 
 variable enum-index
 : {enum ( -- 0 0 ) 0 enum-index v! enum-index v@ ;
-: enum,  ( n1 -- n2 ) enum-index v@ 1+ enum-index v! enum-index v@ ;
-: enum} ( n1? -- ) ;
+: enum;  ( n1 -- n2 ) enum-index v@ 1+ enum-index v! enum-index v@ ;
+: enum} ( n1? -- ) drop ;
+: enum: ( n1 -- n2 ) constant enum; ;
 
 {enum 
 ( section ids )
-constant *number-variant-code* enum,
-constant *word-variant-code* enum, 
-constant *native-function-variant-code* enum,
-constant *string-variant-code* enum, 
-constant *variable-variant-code*
+enum: *number-variant-code*
+enum: *word-variant-code* 
+enum: *native-function-variant-code* 
+enum: *string-variant-code* 
+enum: *variable-variant-code*
 enum}
 
 
@@ -181,5 +182,6 @@ enum}
   ! ;
 : /?  ( numerator denominator -- result | numerator ) 
   dup 0= abort" zero denominator " / ;
+: str-empty? ( s -- f ) string-length 0= ;
 \ must always be last in the file 
 ;s

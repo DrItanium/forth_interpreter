@@ -1222,13 +1222,10 @@ void setupDictionary(Machine& mach) {
 						drop(mach);
 					}
 				};
+				processString(mach);
 				if (mach.currentlyCompiling()) {
-					processString(mach);
-					auto top = expect<std::string>(mach.popParameter());
-					mach.getCurrentlyCompilingWord().value()->addWord(top);
 					mach.getCurrentlyCompilingWord().value()->addWord(normalBody);
 				} else {
-					processString(mach);
 					normalBody(mach);
 				}
 			}, true);

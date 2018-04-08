@@ -1113,8 +1113,11 @@ void setupDictionary(Machine& mach) {
     mach.addWord("then", thenStatement, true);
     mach.addWord("minus", callUnaryNumberOperation(minusOperation<Integer>));
     mach.addWord("invert", callUnaryNumberOperation(notOperation<Address>));
+	auto mulU = callBinaryNumberOperation([](Number a, Number b) {
+		return a.getAddress() * b.getAddress();
+	});
     mach.addWord("*", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() * b.getInteger(); }));
-    mach.addWord("u*", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() * b.getAddress(); }));
+    mach.addWord("u*", mulU);
     mach.addWord("+", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() + b.getInteger(); }));
     mach.addWord("u+", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() + b.getAddress(); }));
     mach.addWord("-", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() - b.getInteger(); }));
@@ -1168,21 +1171,24 @@ void setupDictionary(Machine& mach) {
 	mach.addWord("/n", pushSize<Number>);
 	mach.addWord("/link", pushSize<Number>);
 	mach.addWord("/token", pushSize<Number>);
-	mach.addWord("/token", pushSize<Number>);
-	mach.addWord("/mod", [](Machine& mach) {
-				// ( n1 n2 -- n3 n4 )
-				auto top = expect<Number>(mach.popParameter());
-				auto lower = expect<Number>(mach.popParameter());
-				auto numerator = lower.getInteger();
-				auto denominator = top.getInteger();
-				if (denominator == 0) {
-					throw Problem("Divide by zero!");
-				}
-				auto remainder = numerator % denominator;
-				auto divisor = numerator / denominator;
-				mach.pushParameter(Number(remainder));
-				mach.pushParameter(Number(divisor));
-			});
+	auto performMod = [](Machine& mach) {
+		// ( n1 n2 -- n3 n4 )
+		auto top = expect<Number>(mach.popParameter());
+		auto lower = expect<Number>(mach.popParameter());
+		auto numerator = lower.getInteger();
+		auto denominator = top.getInteger();
+		if (denominator == 0) {
+			throw Problem("Divide by zero!");
+		}
+		auto remainder = numerator % denominator;
+		auto divisor = numerator / denominator;
+		mach.pushParameter(Number(remainder));
+		mach.pushParameter(Number(divisor));
+	};
+	mach.addWord("/mod", performMod);
+	mach.addWord("um/mod", performMod);
+	mach.addWord("ul*", mulU);
+	mach.addWord("um*", mulU);
 }
 void raiseError(Machine& mach) {
     // raise an error to be caught by the runtime and reported

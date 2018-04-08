@@ -1223,6 +1223,10 @@ void setupDictionary(Machine& mach) {
 					normalBody(mach);
 				}
 			}, true);
+	mach.addWord("string-length", [](Machine& mach) {
+				auto top = expect<std::string>(mach.popParameter());
+				mach.pushParameter(Number(top.size()));
+			});
 }
 void raiseError(Machine& mach) {
     // raise an error to be caught by the runtime and reported

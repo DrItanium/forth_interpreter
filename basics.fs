@@ -136,7 +136,7 @@ constant *variable-variant-code*
 enum}
 
 
-: of-type? ( type cv -- flag ) v@ swap type-code = ;
+: of-type? ( type cv -- flag ) swap type-code = ;
 : number? ( a -- flag ) *number-variant-code* of-type? ;
 : word? ( a -- flag ) *word-variant-code* of-type? ;
 : native-function? ( a -- flag ) *native-function-variant-code* of-type? ;

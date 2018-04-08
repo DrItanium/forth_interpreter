@@ -145,7 +145,7 @@ class Machine {
         bool currentlyCompiling() const noexcept { return (bool)_compile; }
         std::string readNext();
         void errorOccurred() noexcept;
-        void addWord(const std::string& name, NativeFunction fn, bool compileTimeInvoke = false, bool fake = false);
+        void addWord(const std::string& name, NativeFunction fn, bool compileTimeInvoke = false);
         std::ostream& getOutput() const noexcept;
         std::istream& getInput() const noexcept;
         void openFileForOutput(const std::string& path);
@@ -321,7 +321,7 @@ NativeFunction unaryOperation(UnaryOperation op) {
 bool leaveEarly = false;
 class DictionaryEntry {
     public:
-        explicit DictionaryEntry(const std::string& name) : _name(name), _fake(false), _compileTimeInvoke(false) { }
+        explicit DictionaryEntry(const std::string& name) : _name(name), _compileTimeInvoke(false) { }
         ~DictionaryEntry();
         void setNext(Word next) noexcept { _next = next; }
         void setNext(OptionalWord next) noexcept { _next = next; }
@@ -334,8 +334,7 @@ class DictionaryEntry {
         void addWord(const std::string&);
         void addWord(SharedVariable v);
         void invoke(Machine& machine);
-        bool isFake() const noexcept { return _fake; }
-        void setFake(bool value) noexcept { _fake = value; }
+        bool isFake() const noexcept { return _name.empty(); }
         bool compileTimeInvokable() const noexcept { return _compileTimeInvoke; }
         void setCompileTimeInvokable(bool value) noexcept { _compileTimeInvoke = value; }
         bool matches(const std::string& name);
@@ -343,21 +342,18 @@ class DictionaryEntry {
         auto size() const noexcept -> std::list<NativeFunction>::size_type { return _contents.size(); }
     private:
         std::string _name;
-        bool _fake, _compileTimeInvoke;
+        bool _compileTimeInvoke;
         OptionalWord _next;
         std::list<NativeFunction> _contents;
 };
 
 bool DictionaryEntry::matches(const std::string& name) {
-    return !_fake && equalsIgnoreCase(name, _name);
+    return !isFake() && equalsIgnoreCase(name, _name);
 }
 
 void Machine::newCompilingWord(const std::string& str) {
     // this can leak but it is the most straight forward
     auto entry = std::make_shared<DictionaryEntry>(str);
-    if (str.empty()) {
-        entry->setFake(true);
-    }
     _compile = entry;
 }
 
@@ -550,9 +546,8 @@ void Machine::errorOccurred() noexcept {
     }
 }
 
-void Machine::addWord(const std::string& str, NativeFunction fn, bool compileInvoke, bool fake) {
+void Machine::addWord(const std::string& str, NativeFunction fn, bool compileInvoke) {
     Word ptr = std::make_shared<DictionaryEntry>(str);
-    ptr->setFake(fake);
     ptr->setCompileTimeInvokable(compileInvoke);
     ptr->addWord(fn);
     if (_front) {

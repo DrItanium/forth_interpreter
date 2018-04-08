@@ -34,11 +34,6 @@
 : /l* ( n1 -- n2 ) /l * ;
 : /w* ( n1 -- n2 ) /w * ;
 : /n* ( n1 -- n2 ) /n * ;
-: /?  ( numerator denominator -- result | numerator ) 
-  ?dup if / 
-       else 
-	   " zero denominator " raise 
-	   then ; 
 : noop ( -- ) ;
 : not ( n1 -- n2 ) invert ;
 : between ( n min max -- f ) 
@@ -184,6 +179,7 @@ enum}
   + ( adr comb -- )
   swap ( comb adr -- )
   ! ;
-
+: /?  ( numerator denominator -- result | numerator ) 
+  dup 0= abort" zero denominator " / ;
 \ must always be last in the file 
 ;s

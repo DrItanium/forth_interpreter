@@ -1075,6 +1075,20 @@ void frontIsImmediate(Machine& mach) {
 		mach.pushParameter(Number(false));
 	}
 }
+void compileNextWord(Machine& mach) {
+	if (!mach.currentlyCompiling()) {
+		throw Problem("Must be compiling!");
+	}
+	auto nextWord = mach.readNext();
+	if (auto ofn = mach.lookupWord(nextWord); ofn) {
+		mach.getCurrentlyCompilingWord().value()->addWord(ofn.value());
+	} else {
+		std::stringstream ss;
+		ss << " : " << nextWord << "?";
+		auto str = ss.str();
+		throw Problem(str);
+	}
+}
 void setupDictionary(Machine& mach) {
 	mach.addWord("here", hereOperation, true);
 	mach.addWord("immediate", markFrontAsImmediate);
@@ -1197,6 +1211,27 @@ void setupDictionary(Machine& mach) {
 	mach.addWord("um/mod", performMod);
 	mach.addWord("ul*", mulU);
 	mach.addWord("um*", mulU);
+	mach.addWord("[compile]", compileNextWord, true);
+	mach.addWord("abort\"", [](Machine& mach) {
+			    auto normalBody = [](Machine& mach) {
+					swap(mach);
+					auto result = expect<Number>(mach.popParameter());
+					if (result.getTruth()) {
+						raiseError(mach);
+					} else {
+						drop(mach);
+					}
+				};
+				if (mach.currentlyCompiling()) {
+					processString(mach);
+					auto top = expect<std::string>(mach.popParameter());
+					mach.getCurrentlyCompilingWord().value()->addWord(top);
+					mach.getCurrentlyCompilingWord().value()->addWord(normalBody);
+				} else {
+					processString(mach);
+					normalBody(mach);
+				}
+			}, true);
 }
 void raiseError(Machine& mach) {
     // raise an error to be caught by the runtime and reported

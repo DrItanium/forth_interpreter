@@ -627,8 +627,7 @@ void loadByte(Machine& m) {
     m.pushParameter(n);
 }
 void storeVariable(Machine& m) {
-    // backwards compared to most other words
-    auto variable = std::get<SharedVariable>(m.popParameter());
+	auto variable = expect<SharedVariable>(m.popParameter());
     auto value = m.popParameter();
     std::visit([variable](auto&& value) {
                 using T = std::decay_t<decltype(value)>;

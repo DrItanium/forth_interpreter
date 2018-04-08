@@ -5,7 +5,7 @@
 : true ( -- -1 ) -1 ;
 : false ( -- 0 ) 0 ;
 : space ( -- ) 0x20 emit ;
-: CR ( -- ) 0xA emit ;
+: cr ( -- ) 0xA emit ;
 : 1 ( -- 1 ) 1 ; 
 : 2 ( -- 2 ) 2 ; 
 : 4 ( -- 4 ) 4 ; 
@@ -34,6 +34,11 @@
 : /l* ( n1 -- n2 ) /l * ;
 : /w* ( n1 -- n2 ) /w * ;
 : /n* ( n1 -- n2 ) /n * ;
+: /?  ( numerator denominator -- result | numerator ) 
+  ?dup if / 
+       else 
+	   " zero denominator " raise 
+	   then ; 
 : noop ( -- ) ;
 : not ( n1 -- n2 ) invert ;
 : between ( n min max -- f ) 
@@ -59,8 +64,6 @@
 : max ( n1 n2 -- n ) 2dup < if swap then drop ;
 : negate ( n1 -- n2 ) minus ;
 : *sizeof-byte* ( -- 1 ) 1 ;
-: bitcount ( n -- v ) *bitwidth* * ;
-: quit ( -- ) bye ;
 
 : half-of ( n -- v ) 2/ ;
 : quarter-of ( n -- v ) 4/ ;
@@ -158,8 +161,7 @@ enum}
   dup ( adr adr )
   @ ( adr n1 )
   swap ( n1 adr )
-  @ ( n1 n2 );
-: 
+  @ ( n1 n2 ) ;
 
 
 : lowerq ( a -- b ) 0xFF bitwise-andu ;

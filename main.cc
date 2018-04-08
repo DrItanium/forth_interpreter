@@ -830,6 +830,12 @@ void subroutineToParameterStack(Machine& mach) {
     // ( -- n1 )
     mach.pushParameter(mach.popSubroutine());
 }
+void copyTopOfSubroutineToParameter(Machine& mach) {
+    // ( -- n1 )
+	auto result = mach.popSubroutine();
+    mach.pushParameter(result);
+	mach.pushSubroutine(result);
+}
 void printTitle(Machine& mach, OptionalWord curr) {
 	if (curr) {
 		auto p = curr.value();
@@ -1083,7 +1089,9 @@ void setupDictionary(Machine& mach) {
     mach.addWord("write-binary-file", writeBinaryFile);
 	mach.addWord("words", words);
     mach.addWord("dump-memory-to-file", dumpMemoryToFile);
-	mach.addWord("R", pushOntoReturnStack);
+	mach.addWord(">r", pushOntoReturnStack);
+	mach.addWord("r>", subroutineToParameterStack);
+	mach.addWord("r@", copyTopOfSubroutineToParameter);
 	mach.addWord("dup", dup);
 	mach.addWord("rot", rot);
 	mach.addWord("over", over);

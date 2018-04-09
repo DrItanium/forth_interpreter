@@ -41,6 +41,7 @@ union Number {
 	Number(Address a) : address(a) { }
     Number(bool value) : integer(value ? -1 : 0) { }
     Number(char c) : integer(c) { }
+    ~Number() = default;
 
 	template<typename T>
 	T get() noexcept {
@@ -323,7 +324,7 @@ bool leaveEarly = false;
 class DictionaryEntry {
     public:
         explicit DictionaryEntry(const std::string& name) : _name(name), _compileTimeInvoke(false) { }
-        ~DictionaryEntry();
+        ~DictionaryEntry() = default;
         void setNext(Word next) noexcept { _next = next; }
         void setNext(OptionalWord next) noexcept { _next = next; }
         OptionalWord getNext() const noexcept { return _next; }
@@ -474,9 +475,6 @@ void DictionaryEntry::invoke(Machine& mach) {
     }
 }
 
-DictionaryEntry::~DictionaryEntry() { }
-
-
 OptionalWord DictionaryEntry::findWord(const std::string& name) {
     if (_next) {
         auto& _n = *_next;
@@ -611,12 +609,12 @@ byte Machine::load(Address addr) {
     return _memory[addr];
 }
 void storeByte(Machine& m) {
-    auto addr = std::get<Number>(m.popParameter()).getAddress();
-    auto value = std::get<Number>(m.popParameter());
-    m.store(addr, forth::decodeBits<Address, byte, 0xFF, 0>(value.getAddress()));
+    auto addr = expect<Number>(m.popParameter()).getAddress();
+    auto value = expect<Number>(m.popParameter()).getAddress();
+    m.store(addr, forth::decodeBits<Address, byte, 0xFF, 0>(value));
 }
 void loadByte(Machine& m) {
-    auto addr = std::get<Number>(m.popParameter()).getAddress();
+    auto addr = expect<Number>(m.popParameter()).getAddress();
 	Number n(Address(m.load(addr)) & 0xFF);
     m.pushParameter(n);
 }
@@ -637,7 +635,7 @@ void storeVariable(Machine& m) {
             }, value);
 }
 void loadVariable(Machine& m) {
-    auto variable = std::get<SharedVariable>(m.popParameter());
+    auto variable = expect<SharedVariable>(m.popParameter());
     std::visit([&m](auto&& value) { m.pushParameter(value); }, variable->_value);
 }
 void printDatum(Machine& m, Datum& top) {
@@ -738,7 +736,7 @@ void closeInputFile(Machine& mach) {
 }
 void openInputFile(Machine& mach) {
     auto top = mach.popParameter();
-    auto path = std::get<std::string>(top);
+    auto path = expect<std::string>(top);
     mach.openFileForInput(path);
 }
 void ifStatement(Machine& mach) {
@@ -778,18 +776,20 @@ void thenStatement(Machine& mach) {
     mach.restoreCurrentlyCompilingWord();
 }
 void bodyInvoke(Machine& mach) {
-    auto onFalse = mach.popParameter();
-    auto onTrue = mach.popParameter();
-    if (auto condition = mach.popParameter() ; std::get<Number>(condition).getTruth()) {
-        std::get<Word>(onTrue)->invoke(mach);
+    auto onFalse = expect<Word>(mach.popParameter());
+    auto onTrue = expect<Word>(mach.popParameter());
+    auto condition = expect<Number>(mach.popParameter());
+    if (condition.getTruth()) {
+        onTrue->invoke(mach);
     } else {
-        std::get<Word>(onFalse)->invoke(mach);
+        onFalse->invoke(mach);
     }
 }
 void predicatedInvoke(Machine& mach) {
-    auto onTrue = mach.popParameter();
-    if (auto condition = mach.popParameter() ; std::get<Number>(condition).getTruth()) {
-        std::get<Word>(onTrue)->invoke(mach);
+    auto onTrue = expect<Word>(mach.popParameter());
+    auto condition = expect<Number>(mach.popParameter());
+    if (condition.getTruth()) {
+        onTrue->invoke(mach);
     }
     // do nothing on false
 }
@@ -843,8 +843,8 @@ void words(Machine& mach) {
 }
 NativeFunction callBinaryNumberOperation(std::function<Number(Number, Number)> fn) {
     return [fn](auto& mach) {
-        auto top = std::get<Number>(mach.popParameter());
-        auto lower = std::get<Number>(mach.popParameter());
+        auto top = expect<Number>(mach.popParameter());
+        auto lower = expect<Number>(mach.popParameter());
         mach.pushParameter(fn(lower, top));
     };
 }
@@ -854,7 +854,7 @@ void invokeBinaryNumberOperation(Machine& mach, std::function<Number(Number, Num
 
 NativeFunction callUnaryNumberOperation(std::function<Number(Number)> fn) {
     return [fn](auto& mach) {
-        auto top = std::get<Number>(mach.popParameter());
+        auto top = expect<Number>(mach.popParameter());
         mach.pushParameter(fn(top));
     };
 }
@@ -876,14 +876,8 @@ void getMemorySize(Machine& mach) {
 }
 
 void resizeMemory(Machine& mach) {
-    std::visit([&mach](auto&& value) {
-                using T = std::decay_t<decltype(value)>;
-                if constexpr (std::is_same_v<T, Number>) {
-                    mach.resizeMemory(value.getAddress());
-                } else {
-                    throw Problem(" top is not a number!");
-                }
-            }, mach.popParameter());
+    auto top = expect<Number>(mach.popParameter());
+    mach.resizeMemory(top.getAddress());
 }
 void addLiteralToCompilation(Machine& mach) {
     mustBeCompiling(mach);
@@ -926,7 +920,7 @@ void defineVariableThenLoad(Machine& mach) {
 }
 void dumpMemoryToFile(Machine& mach) {
     try {
-        mach.dumpMemoryToFile(std::get<std::string>(mach.popParameter()));
+        mach.dumpMemoryToFile(expect<std::string>(mach.popParameter()));
     } catch (std::bad_variant_access&) {
         throw Problem(" top of the stack was not a string!");
     }
@@ -987,7 +981,7 @@ void endStatement(Machine& mach) {
         do {
             c->invoke(mach);
             // now get the top of the stack to see if we should continue
-            terminate = std::get<Number>(mach.popParameter()).getTruth();
+            terminate = expect<Number>(mach.popParameter()).getTruth();
         } while (!terminate);
     };
     mach.getCurrentlyCompilingWord().value()->addWord(fn);
@@ -998,15 +992,15 @@ void continueStatement(Machine& mach) {
     mach.compileCurrentWord();
     mach.restoreCurrentlyCompilingWord();
     auto fn = [c](Machine& mach) {
-        Address top = std::get<Number>(mach.popParameter()).getAddress();
-        Address lower = std::get<Number>(mach.popParameter()).getAddress();
+        Address top = expect<Number>(mach.popParameter()).getAddress();
+        Address lower = expect<Number>(mach.popParameter()).getAddress();
         if (top != lower) {
             mach.pushParameter(Number(lower));
             mach.pushParameter(Number(top));
             do {
                 c->invoke(mach);
-                top = std::get<Number>(mach.popParameter()).getAddress();
-                lower = std::get<Number>(mach.popParameter()).getAddress();
+                top = expect<Number>(mach.popParameter()).getAddress();
+                lower = expect<Number>(mach.popParameter()).getAddress();
                 if (top == lower ) {
                     break;
                 } else {
@@ -1237,9 +1231,6 @@ void setupDictionary(Machine& mach) {
     mach.addWord("then", thenStatement, true);
     mach.addWord("minus", callUnaryNumberOperation(minusOperation<Integer>));
     mach.addWord("invert", callUnaryNumberOperation(notOperation<Address>));
-	auto mulU = callBinaryNumberOperation([](Number a, Number b) {
-		return a.getAddress() * b.getAddress();
-	});
     mach.addWord("*", performOperation<ArithmeticOperations::Multiply>);
     mach.addWord("+", performOperation<ArithmeticOperations::Add>);
     mach.addWord("-", performOperation<ArithmeticOperations::Subtract>);
@@ -1311,8 +1302,8 @@ void setupDictionary(Machine& mach) {
 	};
 	mach.addWord("/mod", performMod);
 	mach.addWord("um/mod", performMod);
-	mach.addWord("ul*", mulU);
-	mach.addWord("um*", mulU);
+	mach.addWord("ul*", performOperation<ArithmeticOperations::UnsignedMultiply>);
+	mach.addWord("um*", performOperation<ArithmeticOperations::UnsignedMultiply>);
 	mach.addWord("[compile]", compileNextWord, true);
 	mach.addWord("abort\"", [](Machine& mach) {
 			    auto normalBody = [](Machine& mach) {
@@ -1340,8 +1331,7 @@ void raiseError(Machine& mach) {
     // raise an error to be caught by the runtime and reported
     // this will cause the stacks to be cleared too!
     // also giving the incorrect set of args will do the same thing :)
-    auto msg = std::get<std::string>(mach.popParameter());
-    throw Problem(msg);
+    throw Problem(expect<std::string>(mach.popParameter()));
 }
 void makeConstant(Machine& mach) {
     // ( a "name" -- )

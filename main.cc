@@ -1253,14 +1253,14 @@ void setupDictionary(Machine& mach) {
     mach.addWord(">", performOperation<ArithmeticOperations::GreaterThan>);
     mach.addWord("<=", performOperation<ArithmeticOperations::LessThanOrEqualTo>);
     mach.addWord(">=", performOperation<ArithmeticOperations::GreaterThanOrEqualTo>);
-    mach.addWord("<<", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() << b.getAddress(); }));
-    mach.addWord(">>", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() >> b.getAddress(); }));
+    mach.addWord("<<", performOperation<ArithmeticOperations::LeftShift>);
+    mach.addWord("u<<", performOperation<ArithmeticOperations::UnsignedLeftShift>);
+    mach.addWord(">>", performOperation<ArithmeticOperations::RightShift>);
+    mach.addWord("u>>", performOperation<ArithmeticOperations::UnsignedRightShift>);
     mach.addWord("u<", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() < b.getAddress() ? -1 : 0 ; }));
     mach.addWord("u>", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() > b.getAddress() ? -1 : 0 ; }));
     mach.addWord("u<=", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() <= b.getAddress() ? -1 : 0 ; }));
     mach.addWord("u>=", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() >= b.getAddress() ? -1 : 0 ; }));
-    mach.addWord("u<<", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() << b.getAddress(); }));
-    mach.addWord("u>>", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() >> b.getAddress(); }));
     mach.addWord("and", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() & b.getAddress(); }));
     mach.addWord("or", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() | b.getAddress(); }));
     mach.addWord("xor", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() ^ b.getAddress(); }));

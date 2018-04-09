@@ -82,10 +82,7 @@ using BinaryOperation = std::function<Datum(Machine&, Datum, Datum)>;
 using Stack = GenericStack<Datum>;
 using InputStack = GenericStack<std::unique_ptr<std::ifstream>>;
 using OutputStack = GenericStack<std::unique_ptr<std::ofstream>>;
-constexpr Address blockSize = 1024;
-using FileBlock = std::array<forth::byte, blockSize>;
-using FileBlockPtr = std::unique_ptr<FileBlock>;
-constexpr Address defaultBlockCount = 1024;
+constexpr Address defaultByteCount = 1024 * 1024;
 template<typename T>
 T expect(const Datum& d) {
     try {
@@ -116,7 +113,7 @@ bool printOk = false;
 Address executionDepth = 0;
 class Machine {
     public:
-        explicit Machine(Address blockCount = defaultBlockCount);
+        explicit Machine(Address blockCount = defaultByteCount);
         ~Machine();
 		void pushParameter(Number n);
         void pushParameter(Word ent);
@@ -179,7 +176,7 @@ class Machine {
         Stack _subroutine;
         InputStack _inputs;
         OutputStack _outputs;
-        std::unique_ptr<FileBlock[]> _memory;
+        std::unique_ptr<byte[]> _memory;
         Address _capacity;
         Address _mask;
         bool _enableDebugging = false;
@@ -223,9 +220,7 @@ void Machine::dumpMemoryToFile(const std::string& path) {
         throw Problem(" couldn't open file for writing!");
     }
     for (auto a = 0; a < _capacity; ++a) {
-        for ( auto b : _memory[a]) {
-            stream << char(b);
-        }
+        stream << char(_memory[a]);
     }
     stream.close();
 }
@@ -244,9 +239,9 @@ std::istream& Machine::getInput() const noexcept {
     }
 }
 void Machine::resizeMemory(Address newCapacity) {
-    _memory = std::make_unique<FileBlock[]>(newCapacity);
+    _memory = std::make_unique<byte[]>(newCapacity);
     _capacity = newCapacity;
-    _mask = (newCapacity * blockSize) - 1;
+    _mask = newCapacity - 1;
 }
 std::string Machine::readNext() {
     std::string word;
@@ -379,9 +374,9 @@ void Machine::restoreCurrentlyCompilingWord() {
 }
 
 Machine::Machine(Address capacity) {
-    _memory = std::make_unique<FileBlock[]>(capacity);
+    _memory = std::make_unique<byte[]>(capacity);
     _capacity = capacity;
-    _mask = (capacity * blockSize) - 1;
+    _mask = capacity - 1;
 }
 Machine::~Machine() { 
     while (_in) {
@@ -601,15 +596,13 @@ void Machine::store(Address addr, byte value) {
     if (addr > getMaximumAddress()) {
         throw Problem("Illegal address!");
     }
-    auto blockId = (_mask & addr) >> 10;
-    _memory[blockId][0x3FF & addr] = value;
+    _memory[addr] = value;
 }
 byte Machine::load(Address addr) {
     if (addr > getMaximumAddress()) {
         throw Problem("Illegal address!");
     }
-    auto blockId = (_mask & addr) >> 10;
-    return _memory[blockId][0x3FF & addr];
+    return _memory[addr];
 }
 void storeByte(Machine& m) {
     auto addr = std::get<Number>(m.popParameter()).address;

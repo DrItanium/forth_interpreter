@@ -1113,6 +1113,9 @@ enum class ArithmeticOperations {
     RightShift,
     UnsignedLeftShift,
     UnsignedRightShift,
+    And,
+    Or,
+    Xor,
 };
 template<ArithmeticOperations op>
 void performOperation(Machine& mach) {
@@ -1180,6 +1183,12 @@ void performOperation(Machine& mach) {
         mach.pushParameter(Number(lower.getInteger() >> top.getInteger()));
     } else if constexpr (op == ArithmeticOperations::UnsignedRightShift) {
         mach.pushParameter(Number(lower.getAddress() >> top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::And) {
+        mach.pushParameter(Number(lower.getAddress() & top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::Or) {
+        mach.pushParameter(Number(lower.getAddress() | top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::Xor) {
+        mach.pushParameter(Number(lower.getAddress() ^ top.getAddress()));
     } else {
         throw Problem("Unimplemented arithmetic operation!");
     }
@@ -1257,13 +1266,13 @@ void setupDictionary(Machine& mach) {
     mach.addWord("u<<", performOperation<ArithmeticOperations::UnsignedLeftShift>);
     mach.addWord(">>", performOperation<ArithmeticOperations::RightShift>);
     mach.addWord("u>>", performOperation<ArithmeticOperations::UnsignedRightShift>);
-    mach.addWord("u<", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() < b.getAddress() ? -1 : 0 ; }));
-    mach.addWord("u>", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() > b.getAddress() ? -1 : 0 ; }));
-    mach.addWord("u<=", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() <= b.getAddress() ? -1 : 0 ; }));
-    mach.addWord("u>=", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() >= b.getAddress() ? -1 : 0 ; }));
-    mach.addWord("and", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() & b.getAddress(); }));
-    mach.addWord("or", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() | b.getAddress(); }));
-    mach.addWord("xor", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() ^ b.getAddress(); }));
+    mach.addWord("u<", performOperation<ArithmeticOperations::UnsignedLessThan>);
+    mach.addWord("u>", performOperation<ArithmeticOperations::UnsignedGreaterThan>);
+    mach.addWord("u<=", performOperation<ArithmeticOperations::UnsignedLessThanOrEqualTo>);
+    mach.addWord("u>=", performOperation<ArithmeticOperations::UnsignedGreaterThanOrEqualTo>);
+    mach.addWord("and", performOperation<ArithmeticOperations::And>);
+    mach.addWord("or", performOperation<ArithmeticOperations::Or>);
+    mach.addWord("xor", performOperation<ArithmeticOperations::Xor>);
     mach.addWord("memory-size", getMemorySize);
     mach.addWord("resize-memory", resizeMemory);
     mach.addWord("literal", addLiteralToCompilation, true);

@@ -19,8 +19,6 @@ using Integer = forth::Integer;
 using Address = forth::Address;
 using byte = forth::byte;
 
-template<typename T>
-using GenericStack = std::list<T>;
 using Problem = forth::Problem;
 using Word = std::shared_ptr<DictionaryEntry>;
 using OptionalWord = std::optional<Word>;
@@ -64,8 +62,9 @@ union Number {
     bool getTruth() const noexcept { return address != 0; }
     Integer getInteger() const noexcept { return integer; }
     Address getAddress() const noexcept { return address; }
-	Integer integer;
-	Address address;
+private:
+    Integer integer;
+    Address address;
 };
 struct Variable;
 using SharedVariable = std::shared_ptr<Variable>;
@@ -79,9 +78,9 @@ using Datum = std::variant<Number, Word, NativeFunction, std::string, SharedVari
 
 using UnaryOperation = std::function<Datum(Machine&, Datum)>;
 using BinaryOperation = std::function<Datum(Machine&, Datum, Datum)>;
-using Stack = GenericStack<Datum>;
-using InputStack = GenericStack<std::unique_ptr<std::ifstream>>;
-using OutputStack = GenericStack<std::unique_ptr<std::ofstream>>;
+using Stack = std::list<Datum>;
+using InputStack = std::list<std::unique_ptr<std::ifstream>>;
+using OutputStack = std::list<std::unique_ptr<std::ofstream>>;
 constexpr unsigned long long operator "" _kb(unsigned long long value) noexcept {
     return value << 10;
 }
@@ -612,12 +611,12 @@ byte Machine::load(Address addr) {
     return _memory[addr];
 }
 void storeByte(Machine& m) {
-    auto addr = std::get<Number>(m.popParameter()).address;
+    auto addr = std::get<Number>(m.popParameter()).getAddress();
     auto value = std::get<Number>(m.popParameter());
-    m.store(addr, forth::decodeBits<Address, byte, 0xFF, 0>(value.address));
+    m.store(addr, forth::decodeBits<Address, byte, 0xFF, 0>(value.getAddress()));
 }
 void loadByte(Machine& m) {
-    auto addr = std::get<Number>(m.popParameter()).address;
+    auto addr = std::get<Number>(m.popParameter()).getAddress();
 	Number n(Address(m.load(addr)) & 0xFF);
     m.pushParameter(n);
 }
@@ -645,7 +644,7 @@ void printDatum(Machine& m, Datum& top) {
     std::visit([&m](auto&& value) {
             using T = std::decay_t<decltype(value)>;
 			if constexpr (std::is_same_v<T, Number>) {
-				m.getOutput() << value.integer;
+				m.getOutput() << value.getInteger();
             } else if constexpr (std::is_same_v<T, Word>) {
                 if (value->isFake()) {
                     m.getOutput() << "fake compiled entry: " << Integer(value.get());
@@ -669,7 +668,7 @@ void printDatumUnsigned(Machine& m, Datum& top) {
     std::visit([&m](auto&& value) {
             using T = std::decay_t<decltype(value)>;
 			if constexpr (std::is_same_v<T, Number>) {
-				m.getOutput() << value.address;
+				m.getOutput() << value.getAddress();
             } else if constexpr (std::is_same_v<T, Word>) {
                 if (value->isFake()) {
                     m.getOutput() << "fake compiled entry: " << Address(value.get());
@@ -880,7 +879,7 @@ void resizeMemory(Machine& mach) {
     std::visit([&mach](auto&& value) {
                 using T = std::decay_t<decltype(value)>;
                 if constexpr (std::is_same_v<T, Number>) {
-                    mach.resizeMemory(value.address);
+                    mach.resizeMemory(value.getAddress());
                 } else {
                     throw Problem(" top is not a number!");
                 }
@@ -893,7 +892,7 @@ void addLiteralToCompilation(Machine& mach) {
 }
 
 Number powOperation(Number a, Number b) {
-    return Number(Integer(pow(double(a.integer), double(b.integer))));
+    return Number(Integer(pow(double(a.getInteger()), double(b.getInteger()))));
 }
 
 void emitCharacter(Machine& mach) {
@@ -937,7 +936,7 @@ void openBinaryFile(Machine& mach) {
     mach.openBinaryFile(top);
 }
 void writeBinaryFile(Machine& mach) {
-    auto top = static_cast<byte>(expect<Number>(mach.popParameter()).address);
+    auto top = static_cast<byte>(expect<Number>(mach.popParameter()).getAddress());
     mach.writeBinaryFile(top);
 }
 void closeBinaryFile(Machine& mach) {

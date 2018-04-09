@@ -82,7 +82,14 @@ using BinaryOperation = std::function<Datum(Machine&, Datum, Datum)>;
 using Stack = GenericStack<Datum>;
 using InputStack = GenericStack<std::unique_ptr<std::ifstream>>;
 using OutputStack = GenericStack<std::unique_ptr<std::ofstream>>;
-constexpr Address defaultByteCount = 1024 * 1024;
+constexpr unsigned long long operator "" _kb(unsigned long long value) noexcept {
+    return value << 10;
+}
+constexpr unsigned long long operator "" _mb(unsigned long long value) noexcept {
+    return value << 20;
+}
+constexpr Address defaultByteCount = 32_mb;
+static_assert(defaultByteCount == Address(32 * 1024 * 1024), "32 megabytes not denoted correctly!");
 template<typename T>
 T expect(const Datum& d) {
     try {

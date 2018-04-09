@@ -1144,10 +1144,8 @@ void performOperation(Machine& mach) {
     } else if constexpr (op == ArithmeticOperations::LessThanOrEqualTo) {
         mach.pushParameter(Number(lower.getInteger() <= top.getInteger()));
     } else if constexpr (op == ArithmeticOperations::Min) {
-        //mach.addWord("min", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() > b.getInteger() ? b.getInteger() : a.getInteger(); }));
         mach.pushParameter(Number(lower.getInteger() > top.getInteger() ? top.getInteger() : lower.getInteger()));
     } else if constexpr (op == ArithmeticOperations::Max) {
-        //mach.addWord("max", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() > b.getInteger() ? a.getInteger() : b.getInteger(); }));
         mach.pushParameter(Number(lower.getInteger() > top.getInteger() ? lower.getInteger() : top.getInteger()));
     } else if constexpr (op == ArithmeticOperations::UnsignedAdd) {
         mach.pushParameter(Number(lower.getAddress() + top.getAddress()));
@@ -1286,7 +1284,7 @@ void setupDictionary(Machine& mach) {
 	mach.addWord("\\c", ignoreInputUntilNewline, true);
     mach.addWord("enable-debug", [](Machine& mach) { mach.setDebugging(true); });
     mach.addWord("disable-debug", [](Machine& mach) { mach.setDebugging(false); });
-    mach.addWord("debug?", [](Machine& mach) { mach.pushParameter(Number(mach.debugActive() ? Address(-1) : Address(0)) ); });
+    mach.addWord("?debug", [](Machine& mach) { mach.pushParameter(Number(mach.debugActive())); });
     mach.addWord("raise", raiseError);
     mach.addWord("constant", makeConstant);
     mach.addWord("immediate", markImmediate);

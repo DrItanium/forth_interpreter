@@ -1096,6 +1096,23 @@ enum class ArithmeticOperations {
     LessThanOrEqualTo,
     Max,
     Min,
+    UnsignedAdd,
+    UnsignedSubtract,
+    UnsignedMultiply,
+    UnsignedDivide,
+    UnsignedRemainder,
+    UnsignedEquals,
+    UnsignedNotEquals,
+    UnsignedGreaterThan,
+    UnsignedLessThan,
+    UnsignedGreaterThanOrEqualTo,
+    UnsignedLessThanOrEqualTo,
+    UnsignedMax,
+    UnsignedMin,
+    LeftShift,
+    RightShift,
+    UnsignedLeftShift,
+    UnsignedRightShift,
 };
 template<ArithmeticOperations op>
 void performOperation(Machine& mach) {
@@ -1129,6 +1146,40 @@ void performOperation(Machine& mach) {
     } else if constexpr (op == ArithmeticOperations::Max) {
         //mach.addWord("max", callBinaryNumberOperation([](Number a, Number b) { return a.getInteger() > b.getInteger() ? a.getInteger() : b.getInteger(); }));
         mach.pushParameter(Number(lower.getInteger() > top.getInteger() ? lower.getInteger() : top.getInteger()));
+    } else if constexpr (op == ArithmeticOperations::UnsignedAdd) {
+        mach.pushParameter(Number(lower.getAddress() + top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::UnsignedSubtract) {
+        mach.pushParameter(Number(lower.getAddress() - top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::UnsignedMultiply) {
+        mach.pushParameter(Number(lower.getAddress() * top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::UnsignedDivide) {
+        mach.pushParameter(Number(lower.getAddress() / top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::UnsignedRemainder) {
+        mach.pushParameter(Number(lower.getAddress() % top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::UnsignedEquals) {
+        mach.pushParameter(Number(lower.getAddress() == top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::UnsignedNotEquals) {
+        mach.pushParameter(Number(lower.getAddress() != top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::UnsignedGreaterThan) {
+        mach.pushParameter(Number(lower.getAddress() > top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::UnsignedGreaterThanOrEqualTo) {
+        mach.pushParameter(Number(lower.getAddress() >= top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::UnsignedLessThan) {
+        mach.pushParameter(Number(lower.getAddress() < top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::UnsignedLessThanOrEqualTo) {
+        mach.pushParameter(Number(lower.getAddress() <= top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::UnsignedMin) {
+        mach.pushParameter(Number(lower.getAddress() > top.getAddress() ? top.getAddress() : lower.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::UnsignedMax) {
+        mach.pushParameter(Number(lower.getAddress() > top.getAddress() ? lower.getAddress() : top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::LeftShift) {
+        mach.pushParameter(Number(lower.getInteger() << top.getInteger()));
+    } else if constexpr (op == ArithmeticOperations::UnsignedLeftShift) {
+        mach.pushParameter(Number(lower.getAddress() << top.getAddress()));
+    } else if constexpr (op == ArithmeticOperations::RightShift) {
+        mach.pushParameter(Number(lower.getInteger() >> top.getInteger()));
+    } else if constexpr (op == ArithmeticOperations::UnsignedRightShift) {
+        mach.pushParameter(Number(lower.getAddress() >> top.getAddress()));
     } else {
         throw Problem("Unimplemented arithmetic operation!");
     }
@@ -1189,13 +1240,13 @@ void setupDictionary(Machine& mach) {
     mach.addWord("mod", performOperation<ArithmeticOperations::Remainder>);
     mach.addWord("min", performOperation<ArithmeticOperations::Min>);
     mach.addWord("max", performOperation<ArithmeticOperations::Max>);
-    mach.addWord("u/", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() / b.getAddress(); }));
-    mach.addWord("u*", mulU);
-    mach.addWord("u+", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() + b.getAddress(); }));
-    mach.addWord("u-", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() - b.getAddress(); }));
-    mach.addWord("umod", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() % b.getAddress(); }));
-    mach.addWord("umin", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() > b.getAddress() ? b.getAddress() : a.getAddress(); }));
-    mach.addWord("umax", callBinaryNumberOperation([](Number a, Number b) { return a.getAddress() > b.getAddress() ? a.getAddress() : b.getAddress(); }));
+    mach.addWord("u/", performOperation<ArithmeticOperations::UnsignedDivide>);
+    mach.addWord("u*", performOperation<ArithmeticOperations::UnsignedMultiply>);
+    mach.addWord("u+", performOperation<ArithmeticOperations::UnsignedAdd>);
+    mach.addWord("u-", performOperation<ArithmeticOperations::UnsignedSubtract>);
+    mach.addWord("umod", performOperation<ArithmeticOperations::UnsignedRemainder>);
+    mach.addWord("umin", performOperation<ArithmeticOperations::UnsignedMin>);
+    mach.addWord("umax", performOperation<ArithmeticOperations::UnsignedMax>);
     mach.addWord("=", performOperation<ArithmeticOperations::Equals>);
     mach.addWord("<>", performOperation<ArithmeticOperations::NotEquals>);
     mach.addWord("<", performOperation<ArithmeticOperations::LessThan>);

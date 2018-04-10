@@ -946,10 +946,6 @@ void switchOutOfCompileMode(Machine& mach) {
 void switchBackToCompileMode(Machine& mach) {
     mach.restoreCurrentlyCompilingWord();
 }
-void switchBackToCompileModeWithLiteral(Machine& mach) {
-    mach.restoreCurrentlyCompilingWord();
-    addLiteralToCompilation(mach);
-}
 void ignoreInputUntilNewline(Machine& mach) {
     mach.getInput().ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
@@ -1048,12 +1044,12 @@ void hereOperation(Machine& mach) {
 		mach.pushParameter(mach.getFront());
 	}
 }
-void markFrontAsImmediate(Machine& mach) {
-	if (auto opt = mach.getFront(); opt) {
-		opt.value()->setCompileTimeInvokable(true);
-	} else {
-		throw Problem("DICTIONARY EMPTY!");
-	}
+void markImmediate(Machine& mach) {
+    if (auto front = mach.getFront(); front) {
+        front.value()->setCompileTimeInvokable(true);
+    } else {
+        throw Problem("no words defined!");
+    }
 }
 void frontIsImmediate(Machine& mach) {
 	if (auto opt = mach.getFront(); opt) {
@@ -1063,9 +1059,7 @@ void frontIsImmediate(Machine& mach) {
 	}
 }
 void compileNextWord(Machine& mach) {
-	if (!mach.currentlyCompiling()) {
-		throw Problem("Must be compiling!");
-	}
+    mustBeCompiling(mach);
 	auto nextWord = mach.readNext();
 	if (auto ofn = mach.lookupWord(nextWord); ofn) {
 		mach.getCurrentlyCompilingWord().value()->addWord(ofn.value());
@@ -1187,7 +1181,7 @@ void performOperation(Machine& mach) {
 }
 void setupDictionary(Machine& mach) {
 	mach.addWord("here", hereOperation, true);
-	mach.addWord("immediate", markFrontAsImmediate);
+    mach.addWord("immediate", markImmediate);
     mach.addWord("'", putWordOnTopOfStack, true);
     mach.addWord("invoke-tos", invokeTopOfStack);
     mach.addWord("begin", beginStatement, true);
@@ -1270,7 +1264,6 @@ void setupDictionary(Machine& mach) {
     mach.addWord("variable$", defineVariableThenLoad);
     mach.addWord("[", switchOutOfCompileMode, true);
     mach.addWord("]", switchBackToCompileMode);
-    mach.addWord("]L", switchBackToCompileModeWithLiteral);
     mach.addWord("\\", ignoreInputUntilNewline, true);
 	mach.addWord("\\c", ignoreInputUntilNewline, true);
     mach.addWord("enable-debug", [](Machine& mach) { mach.setDebugging(true); });
@@ -1278,7 +1271,6 @@ void setupDictionary(Machine& mach) {
     mach.addWord("?debug", [](Machine& mach) { mach.pushParameter(Number(mach.debugActive())); });
     mach.addWord("raise", raiseError);
     mach.addWord("constant", makeConstant);
-    mach.addWord("immediate", markImmediate);
     mach.addWord("exit", exitWordEarly);
 	mach.addWord("/c", pushSize<byte>);
 	mach.addWord("/l", pushSize<Number>);
@@ -1373,13 +1365,6 @@ void interpret(Machine& mach) {
             mach.errorOccurred();
             std::cerr << str <<  " bad variant: " << a.what() << std::endl;
         }
-    }
-}
-void markImmediate(Machine& mach) {
-    if (auto front = mach.getFront(); front) {
-        front.value()->setCompileTimeInvokable(true);
-    } else {
-        throw Problem("no words defined!");
     }
 }
 int main(int argc, char** argv) {

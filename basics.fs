@@ -1,4 +1,5 @@
 ( some words ! )
+: ]L ( n -- ) [compile] ] [compile] literal ;
 : close-input-file ( -- ) ;s ;
 : 0 ( -- 0 ) 0 ; 
 : -1 ( -- -1 ) -1 ;
@@ -58,10 +59,7 @@
 : min ( n1 n2 -- n ) 2dup > if swap then drop ;
 : max ( n1 n2 -- n ) 2dup < if swap then drop ;
 : negate ( n1 -- n2 ) minus ;
-: *sizeof-byte* ( -- 1 ) 1 ;
 
-: half-of ( n -- v ) 2/ ;
-: quarter-of ( n -- v ) 4/ ;
 : *address-plus-offset* ( addr offset -- addr+offset addr )
     over ( addr offset -- addr offset addr )
     +    ( addr offset -- addr offset+addr )

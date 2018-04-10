@@ -197,6 +197,14 @@ enum}
 : field(int16): ( a b -- c c ) sizeof(int16) field: ;
 : field(byte); ( a b -- c c ) sizeof(byte) field: ;
 : field(int64): ( a b -- c c ) sizeof(int64) field: ;
+: field+ ( field adr -- ) + ;
+: field@ ( field adr -- v ) field+ @ ;
 
+: int16@ ( adr -- v ) q@ ;
+: int32@ ( adr -- v ) h@ ;
+: int64@ ( adr -- v ) w@ ;
+: int16! ( value adr -- ) q! ;
+: int32! ( value adr -- ) h! ;
+: int64! ( value adr -- ) w! ;
 
 ;s

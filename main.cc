@@ -1187,6 +1187,44 @@ void performMod(Machine& mach) {
     mach.pushParameter(Number(remainder));
     mach.pushParameter(Number(divisor));
 }
+
+    // void CLIPS_getEndianness(Environment* env, UDFContext* context, UDFValue* ret) {
+    //     static bool init = true;
+    //     static std::string storage;
+    //     if (init) {
+    //         init = false;
+    //         if (syn::isBigEndian()) {
+    //             storage = "big";
+    //         } else if (syn::isLittleEndian()) {
+    //             storage = "little";
+    //         } else {
+    //             storage = "unknown";
+    //         }
+    //     }
+    //     // only compute this once!
+	// 	ret->lexemeValue = CreateSymbol(env, storage.c_str());
+    // }
+
+template<byte check>
+constexpr bool getEndianIdent() noexcept {
+    union {
+        Address i;
+        byte storage[sizeof(Address)];
+    } temp = { 0x0102'0304'0506'0708 };
+    return temp.storage[0] == check;
+}
+constexpr bool isBigEndian() noexcept {
+    return getEndianIdent<1>();
+}
+constexpr bool isLittleEndian() noexcept {
+    return getEndianIdent<8>();
+}
+void platformIsLittleEndian(Machine& mach) {
+    mach.pushParameter(isLittleEndian());
+}
+void platformIsBigEndian(Machine& mach) {
+    mach.pushParameter(isBigEndian());
+}
 void setupDictionary(Machine& mach) {
 	mach.addWord("here", hereOperation, true);
     mach.addWord("immediate", markImmediate);
@@ -1304,6 +1342,8 @@ void setupDictionary(Machine& mach) {
 				auto top = expect<std::string>(mach.popParameter());
 				mach.pushParameter(Number(top.size()));
 			});
+    mach.addWord("?big-endian", platformIsBigEndian);
+    mach.addWord("?little-endian", platformIsLittleEndian);
 }
 void raiseError(Machine& mach) {
     // raise an error to be caught by the runtime and reported

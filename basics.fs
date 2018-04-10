@@ -36,6 +36,7 @@
 : 2/ ( n1 -- n2 ) 2 / ;
 : 4+ ( n1 -- n2 ) 4 + ;
 : 4/ ( n1 -- n2 ) 4 / ;
+: 4* ( n1 -- n2 ) 4 * ;
 : noop ( -- ) ;
 : not ( n1 -- n2 ) invert ;
 : between ( n min max -- f ) 
@@ -46,6 +47,9 @@
   -rot ( f min n )
   <= ( f f )
   and ( f ) ;
+sizeof(byte) 2* constant sizeof(int16)
+sizeof(byte) 4* constant sizeof(int32)
+sizeof(byte) 8 * constant sizeof(int64)
   
 ( compatibility with most other forth dialects )
 : 0< ( n -- f ) 0 < ;
@@ -187,10 +191,12 @@ enum}
 : ?odd ( v -- f ) 1 and 0<> ; 
 
 : {struct ( -- 0 0 ) 0 0 ;
-: struct} ( a b -- ) 2drop ;
+: struct} ( a b -- ) drop ;
 : field: ( a b sz -- a sz ) swap constant + dup ;
 : field(int32): ( a b -- c c ) sizeof(int32) field: ;
 : field(int16): ( a b -- c c ) sizeof(int16) field: ;
 : field(byte); ( a b -- c c ) sizeof(byte) field: ;
+: field(int64): ( a b -- c c ) sizeof(int64) field: ;
+
 
 ;s

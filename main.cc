@@ -946,11 +946,10 @@ void switchOutOfCompileMode(Machine& mach) {
 void switchBackToCompileMode(Machine& mach) {
     mach.restoreCurrentlyCompilingWord();
 }
-void ignoreInputUntilNewline(Machine& mach) {
-    mach.getInput().ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-}
-void enterIgnoreInputMode(Machine& mach) {
-    mach.getInput().ignore(std::numeric_limits<std::streamsize>::max(), ')');
+NativeFunction ignoreInputUntil(char symbol) {
+    return [symbol](Machine& mach) {
+        mach.getInput().ignore(std::numeric_limits<std::streamsize>::max(), symbol);
+    };
 }
 void mustBeCompiling(Machine& mach) {
     if (!mach.currentlyCompiling()) {
@@ -961,11 +960,6 @@ void nestedFakeBodyForCompiling(Machine& mach) {
     mustBeCompiling(mach);
     mach.saveCurrentlyCompilingWord();
     mach.newCompilingWord();
-}
-void beginStatement(Machine& mach) {
-    // need to capture the loop body as a word, it must be free floating right
-    // now
-    nestedFakeBodyForCompiling(mach);
 }
 void endStatement(Machine& mach) {
     mustBeCompiling(mach);
@@ -1007,9 +1001,6 @@ void continueStatement(Machine& mach) {
         }
     };
     mach.getCurrentlyCompilingWord().value()->addWord(fn);
-}
-void doStatement(Machine& mach) {
-    nestedFakeBodyForCompiling(mach);
 }
 void makeConstant(Machine& mach);
 void raiseError(Machine& mach);
@@ -1179,14 +1170,28 @@ void performOperation(Machine& mach) {
         throw Problem("Unimplemented arithmetic operation!");
     }
 }
+void performMod(Machine& mach) {
+    // ( n1 n2 -- n3 n4 )
+    auto top = expect<Number>(mach.popParameter());
+    auto lower = expect<Number>(mach.popParameter());
+    auto numerator = lower.getInteger();
+    auto denominator = top.getInteger();
+    if (denominator == 0) {
+        throw Problem("Divide by zero!");
+    }
+    auto remainder = numerator % denominator;
+    auto divisor = numerator / denominator;
+    mach.pushParameter(Number(remainder));
+    mach.pushParameter(Number(divisor));
+}
 void setupDictionary(Machine& mach) {
 	mach.addWord("here", hereOperation, true);
     mach.addWord("immediate", markImmediate);
     mach.addWord("'", putWordOnTopOfStack, true);
     mach.addWord("invoke-tos", invokeTopOfStack);
-    mach.addWord("begin", beginStatement, true);
+    mach.addWord("begin", nestedFakeBodyForCompiling, true);
     mach.addWord("end", endStatement, true);
-    mach.addWord("do", doStatement, true);
+    mach.addWord("do", nestedFakeBodyForCompiling, true);
     mach.addWord("continue", continueStatement, true);
     mach.addWord("open-binary-file", openBinaryFile);
     mach.addWord("close-binary-file", closeBinaryFile);
@@ -1202,7 +1207,7 @@ void setupDictionary(Machine& mach) {
     mach.addWord("drop", drop);
     mach.addWord("depth", stackDepth);
     mach.addWord("swap", swap);
-    mach.addWord("(", enterIgnoreInputMode, true);
+    mach.addWord("(", ignoreInputUntil(')'), true);
     mach.addWord(";", semicolon, true);
     mach.addWord("bye", bye);
     mach.addWord("c@", loadByte);
@@ -1264,8 +1269,7 @@ void setupDictionary(Machine& mach) {
     mach.addWord("variable$", defineVariableThenLoad);
     mach.addWord("[", switchOutOfCompileMode, true);
     mach.addWord("]", switchBackToCompileMode);
-    mach.addWord("\\", ignoreInputUntilNewline, true);
-	mach.addWord("\\c", ignoreInputUntilNewline, true);
+    mach.addWord("\\", ignoreInputUntil('\n'), true);
     mach.addWord("enable-debug", [](Machine& mach) { mach.setDebugging(true); });
     mach.addWord("disable-debug", [](Machine& mach) { mach.setDebugging(false); });
     mach.addWord("?debug", [](Machine& mach) { mach.pushParameter(Number(mach.debugActive())); });
@@ -1278,24 +1282,7 @@ void setupDictionary(Machine& mach) {
 	mach.addWord("/n", pushSize<Number>);
 	mach.addWord("/link", pushSize<Number>);
 	mach.addWord("/token", pushSize<Number>);
-	auto performMod = [](Machine& mach) {
-		// ( n1 n2 -- n3 n4 )
-		auto top = expect<Number>(mach.popParameter());
-		auto lower = expect<Number>(mach.popParameter());
-		auto numerator = lower.getInteger();
-		auto denominator = top.getInteger();
-		if (denominator == 0) {
-			throw Problem("Divide by zero!");
-		}
-		auto remainder = numerator % denominator;
-		auto divisor = numerator / denominator;
-		mach.pushParameter(Number(remainder));
-		mach.pushParameter(Number(divisor));
-	};
 	mach.addWord("/mod", performMod);
-	mach.addWord("um/mod", performMod);
-	mach.addWord("ul*", performOperation<ArithmeticOperations::UnsignedMultiply>);
-	mach.addWord("um*", performOperation<ArithmeticOperations::UnsignedMultiply>);
 	mach.addWord("[compile]", compileNextWord, true);
 	mach.addWord("abort\"", [](Machine& mach) {
 			    auto normalBody = [](Machine& mach) {

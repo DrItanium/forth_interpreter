@@ -1,4 +1,9 @@
 ( some words ! )
+: 1lower ( n -- 1 n ) 1 swap ;
+: 1<< ( n -- f ) 1lower << ;
+: 1>> ( n -- f ) 1lower >> ;
+: 1u<< ( n -- f ) 1lower u<< ;
+: 1u>> ( n -- f ) 1lower u>> ;
 : ]L ( n -- ) [compile] ] [compile] literal ;
 : close-input-file ( -- ) ;s ;
 : 0 ( -- 0 ) 0 ; 

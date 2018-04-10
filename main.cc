@@ -1338,12 +1338,11 @@ void setupDictionary(Machine& mach) {
 					normalBody(mach);
 				}
 			}, true);
-	mach.addWord("string-length", [](Machine& mach) {
-				auto top = expect<std::string>(mach.popParameter());
-				mach.pushParameter(Number(top.size()));
-			});
+	mach.addWord("string-length", [](Machine& mach) { mach.pushParameter(Number(expect<std::string>(mach.popParameter()).size())); });
     mach.addWord("?big-endian", platformIsBigEndian);
     mach.addWord("?little-endian", platformIsLittleEndian);
+    mach.addWord("srand", [](Machine& mach) { srand48(expect<Number>(mach.popParameter()).getInteger()); });
+    mach.addWord("rand", [](Machine& mach) { mach.pushParameter(Number(lrand48())); });
 }
 void raiseError(Machine& mach) {
     // raise an error to be caught by the runtime and reported

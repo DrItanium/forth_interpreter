@@ -183,4 +183,6 @@ enum}
   dup 0= abort" zero denominator " / ;
 : str-empty? ( s -- f ) string-length 0= ;
 \ must always be last in the file 
+: ?even ( v -- f ) 1 and 0= ;
+: ?odd ( v -- f ) 1 and 0<> ; 
 ;s

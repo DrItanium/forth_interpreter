@@ -185,4 +185,12 @@ enum}
 \ must always be last in the file 
 : ?even ( v -- f ) 1 and 0= ;
 : ?odd ( v -- f ) 1 and 0<> ; 
+
+: {struct ( -- 0 0 ) 0 0 ;
+: struct} ( a b -- ) 2drop ;
+: field: ( a b sz -- a sz ) swap constant + dup ;
+: field(int32): ( a b -- c c ) sizeof(int32) field: ;
+: field(int16): ( a b -- c c ) sizeof(int16) field: ;
+: field(byte); ( a b -- c c ) sizeof(byte) field: ;
+
 ;s

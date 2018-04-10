@@ -1028,6 +1028,9 @@ template<typename T>
 void pushSize(Machine& mach) {
 	mach.pushParameter(Number(sizeof(T)));
 }
+void pushSizeof(Machine& mach) {
+    std::visit([&mach](auto&& value) { mach.pushParameter(Number(sizeof(std::decay_t<decltype(value)>))); }, mach.popParameter());
+}
 void hereOperation(Machine& mach) {
 	if (mach.currentlyCompiling()) {
 		mach.getCurrentlyCompilingWord().value()->addWord(mach.getFront());
@@ -1276,12 +1279,8 @@ void setupDictionary(Machine& mach) {
     mach.addWord("raise", raiseError);
     mach.addWord("constant", makeConstant);
     mach.addWord("exit", exitWordEarly);
-	mach.addWord("/c", pushSize<byte>);
-	mach.addWord("/l", pushSize<Number>);
-	mach.addWord("/w", pushSize<Number>);
-	mach.addWord("/n", pushSize<Number>);
-	mach.addWord("/link", pushSize<Number>);
-	mach.addWord("/token", pushSize<Number>);
+    mach.addWord("sizeof", pushSizeof);
+    mach.addWord("sizeof(byte)", [](Machine& mach) { mach.pushParameter(Number(sizeof(byte))); });
 	mach.addWord("/mod", performMod);
 	mach.addWord("[compile]", compileNextWord, true);
 	mach.addWord("abort\"", [](Machine& mach) {

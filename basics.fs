@@ -207,4 +207,6 @@ enum}
 : int32! ( value adr -- ) h! ;
 : int64! ( value adr -- ) w! ;
 
+: <-> ( c -- ) constant ; \ alias for constant
+
 ;s

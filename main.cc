@@ -116,7 +116,6 @@ T expect(const Datum& d) {
     }
 }
 
-bool printOk = false;
 Address executionDepth = 0;
 class Machine {
     public:
@@ -1008,6 +1007,9 @@ void markImmediate(Machine& mach);
 void invokeTopOfStack(Machine& mach) {
     expect<NativeFunction>(mach.popParameter())(mach);
 }
+void what() {
+    throw Problem("?");
+}
 void putWordOnTopOfStack(Machine& mach) {
     auto next = mach.readNext();
     if (auto ofn = mach.lookupWord(next); ofn) {
@@ -1018,7 +1020,7 @@ void putWordOnTopOfStack(Machine& mach) {
             mach.pushParameter(fn);
         }
     } else {
-		throw Problem("?");
+        what();
 	}
 }
 void exitWordEarly(Machine&) {
@@ -1029,7 +1031,7 @@ void pushSize(Machine& mach) {
 	mach.pushParameter(Number(sizeof(T)));
 }
 void pushSizeof(Machine& mach) {
-    std::visit([&mach](auto&& value) { mach.pushParameter(Number(sizeof(std::decay_t<decltype(value)>))); }, mach.popParameter());
+    mach.pushParameter(Number(std::visit([](auto&& value) { return sizeof(std::decay_t<decltype(value)>); }, mach.popParameter())));
 }
 void hereOperation(Machine& mach) {
 	if (mach.currentlyCompiling()) {
@@ -1188,23 +1190,6 @@ void performMod(Machine& mach) {
     mach.pushParameter(Number(divisor));
 }
 
-    // void CLIPS_getEndianness(Environment* env, UDFContext* context, UDFValue* ret) {
-    //     static bool init = true;
-    //     static std::string storage;
-    //     if (init) {
-    //         init = false;
-    //         if (syn::isBigEndian()) {
-    //             storage = "big";
-    //         } else if (syn::isLittleEndian()) {
-    //             storage = "little";
-    //         } else {
-    //             storage = "unknown";
-    //         }
-    //     }
-    //     // only compute this once!
-	// 	ret->lexemeValue = CreateSymbol(env, storage.c_str());
-    // }
-
 template<byte check>
 constexpr bool getEndianIdent() noexcept {
     union {
@@ -1356,6 +1341,12 @@ void makeConstant(Machine& mach) {
     auto name = mach.readNext();
     mach.addWord(name, [value](Machine& mach) { mach.pushParameter(value); });
 }
+bool shouldPrintOk = false;
+void printOk(Machine& mach) {
+    if (!mach.currentlyCompiling() && shouldPrintOk) {
+        mach.getOutput() << " ok" << std::endl;
+    }
+}
 void interpret(Machine& mach) {
 	std::string str;
     while (keepExecuting) {
@@ -1374,12 +1365,10 @@ void interpret(Machine& mach) {
                     }
                 } else {
                     if (!numberRoutine(mach, str)) {
-                        throw Problem("?");
+                        what();
                     }
                 }
-                if (!mach.currentlyCompiling() && printOk) {
-                    mach.getOutput() << " ok" << std::endl;
-                } 
+                printOk(mach);
             }
 
         } catch (Problem& p) {

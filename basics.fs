@@ -125,8 +125,11 @@ sizeof(byte) 8 * constant sizeof(int64)
 : pow ( a b -- c ) ** ;
 
 variable enum-index
-: {enum ( -- 0 0 ) 0 enum-index v! enum-index v@ ;
-: enum;  ( n1 -- n2 ) enum-index v@ 1+ enum-index v! enum-index v@ ;
+: set-enum-index ( value -- ) enum-index v! ;
+: get-enum-index ( -- v ) enum-index v@ ;
+: ={enum ( n -- n ) dup set-enum-index ;
+: {enum ( -- 0 0 ) 0 ={enum ;
+: enum;  ( -- n2 ) get-enum-index 1+ dup set-enum-index ;
 : enum} ( n1? -- ) drop ;
 : enum: ( n1 -- n2 ) constant enum; ;
 

@@ -26,7 +26,8 @@
 : ?dup ( a -- a a | 0 ) dup if dup then ;
 : nip ( a b -- b ) swap drop ;
 : tuck ( a b -- b a b ) swap over ;
-: 2dup ( a b -- a b a b ) over over ;
+: 2over ( a b -- a b a b ) over over ;
+: 2dup ( a b -- a b b b ) dup dup ;
 ( taken from stack computers: Appendix B )
 : 1+ ( n1 -- n2 ) 1 + ;
 : 1- ( n1 -- n2 ) 1 - ;
@@ -61,8 +62,8 @@ sizeof(byte) 8 * constant sizeof(int64)
 : abs ( n -- u ) dup 0< if minus then ;
 ( TODO: add support for within ! )
 : under+ ( n1 n2 n3 -- n n2 ) rot + swap ;
-: min ( n1 n2 -- n ) 2dup > if swap then drop ;
-: max ( n1 n2 -- n ) 2dup < if swap then drop ;
+: min ( n1 n2 -- n ) 2over > if swap then drop ;
+: max ( n1 n2 -- n ) 2over < if swap then drop ;
 : negate ( n1 -- n2 ) minus ;
 
 : *address-plus-offset* ( addr offset -- addr+offset addr )
@@ -95,14 +96,14 @@ sizeof(byte) 8 * constant sizeof(int64)
   32 *shift-left-then-bitwise-or* ;
 
 : q! ( value addr -- )
-    2dup  ( v a v a )
+    2over ( v a v a )
     c!  ( v a )
     swap 8 u>> ( a v>>8 )
     swap ( v>>8 a )
     1+ ( v>>8 a+1 )
     c! ;
 : h! ( v a -- )
-  2dup ( v a v a )
+  2over ( v a v a )
   q!  ( v a )
   swap 16 u>> ( a v>>16 )
   swap ( v>>16 a )
@@ -110,7 +111,7 @@ sizeof(byte) 8 * constant sizeof(int64)
   q! ; 
 
 : w! ( v a -- )
-  2dup ( v a v a )
+  2over ( v a v a )
   h! ( v a )
   swap 32 u>> ( a v>>32 )
   swap ( v>>32 a )
